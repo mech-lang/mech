@@ -1,0 +1,799 @@
+{
+  "scope": "Optimization15 only. Three high-margin training kernels whose prior profiles had only52/43/42 canonical execution samples. Gram-Schmidt already has317 generated-function samples and Object sites; correlation has the qualified fusion/counter-policy checkpoint. No holdout source diagnosis, profiling or tuning.",
+  "method": "One fresh exact accepted44 driver process per case, sequential in descending frozen ratio. Same source/inputs/limits/cache flush/checked-call loop. Estimate240s residence from the same-case prior wall/call ratio, take one120s nominal1ms macOS sample after1s startup, and attribute only canonical execution stacks using a same-process JIT map. Preserve natural completion/errors and all data; never restart a live process on an observation timeout. Diagnostic times never enter performance scores.",
+  "source_commit": "9bb8ada636a494ae45aae80b7b6b4e83aad9fcf2",
+  "workspace_commit": "5e449f323bb0a3e7dbe976cd7a5f2ee82a7a167c",
+  "workspace_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "accepted_compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "accepted_round": 44,
+  "schema": "mech.polybench.long-training-profile-review.v1",
+  "created_at": "2026-11-27T23:23:29.256205+00:00",
+  "ranked_cases": [
+    {
+      "name": "durbin",
+      "execution_samples": 492,
+      "self_time_mechanisms": [
+        {
+          "name": "Generated code, resolved function",
+          "samples": 250,
+          "percent": 50.8130081300813
+        },
+        {
+          "name": "Other runtime self time",
+          "samples": 125,
+          "percent": 25.40650406504065
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 42,
+          "percent": 8.536585365853659
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 35,
+          "percent": 7.1138211382113825
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 28,
+          "percent": 5.691056910569106
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 12,
+          "percent": 2.4390243902439024
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 492,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 371,
+          "percent": 75.40650406504065
+        },
+        {
+          "name": "JIT::mech_canonical_program_entry_v1",
+          "samples": 359,
+          "percent": 72.96747967479675
+        },
+        {
+          "name": "JIT::mech_canonical_program_entry_v1_numeric_4",
+          "samples": 276,
+          "percent": 56.09756097560975
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 99,
+          "percent": 20.121951219512194
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+          "samples": 87,
+          "percent": 17.682926829268293
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_closed_region",
+          "samples": 32,
+          "percent": 6.504065040650406
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_independent_memory_budget",
+          "samples": 28,
+          "percent": 5.691056910569106
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "samples": 27,
+          "percent": 5.487804878048781
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+          "samples": 27,
+          "percent": 5.487804878048781
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepare_numeric_write",
+          "samples": 27,
+          "percent": 5.487804878048781
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::Prepared>",
+          "samples": 27,
+          "percent": 5.487804878048781
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::state::ExecutionState>",
+          "samples": 26,
+          "percent": 5.284552845528455
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private",
+          "samples": 21,
+          "percent": 4.2682926829268295
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_replace_with<mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, false, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 21,
+          "percent": 4.2682926829268295
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::values::NativeValueArena>",
+          "samples": 21,
+          "percent": 4.2682926829268295
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+          "samples": 21,
+          "percent": 4.2682926829268295
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::snapshot::validation::Value>",
+          "samples": 20,
+          "percent": 4.065040650406504
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+          "samples": 20,
+          "percent": 4.065040650406504
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 19,
+          "percent": 3.861788617886179
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "JIT::mech_canonical_program_entry_v1_numeric_4",
+          "samples": 249,
+          "percent": 50.609756097560975
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 13,
+          "percent": 2.6422764227642275
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 11,
+          "percent": 2.2357723577235773
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "samples": 8,
+          "percent": 1.6260162601626016
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+          "samples": 8,
+          "percent": 1.6260162601626016
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_replace_with<mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, false, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 8,
+          "percent": 1.6260162601626016
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 7,
+          "percent": 1.4227642276422765
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 6,
+          "percent": 1.2195121951219512
+        },
+        {
+          "name": "<mech_gpu::native_artifact::memory::NativeTypedStorage<u64>>::for_slot",
+          "samples": 5,
+          "percent": 1.016260162601626
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 5,
+          "percent": 1.016260162601626
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 4,
+          "percent": 0.8130081300813008
+        },
+        {
+          "name": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "samples": 4,
+          "percent": 0.8130081300813008
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::apply_retirement",
+          "samples": 4,
+          "percent": 0.8130081300813008
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+          "samples": 4,
+          "percent": 0.8130081300813008
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 4,
+          "percent": 0.8130081300813008
+        }
+      ]
+    },
+    {
+      "name": "mvt",
+      "execution_samples": 494,
+      "self_time_mechanisms": [
+        {
+          "name": "Generated code, resolved function",
+          "samples": 144,
+          "percent": 29.149797570850204
+        },
+        {
+          "name": "Other runtime self time",
+          "samples": 142,
+          "percent": 28.74493927125506
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 106,
+          "percent": 21.45748987854251
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 64,
+          "percent": 12.955465587044534
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 19,
+          "percent": 3.8461538461538463
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 19,
+          "percent": 3.8461538461538463
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 494,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 444,
+          "percent": 89.87854251012146
+        },
+        {
+          "name": "JIT::mech_canonical_program_entry_v1",
+          "samples": 437,
+          "percent": 88.46153846153847
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 278,
+          "percent": 56.2753036437247
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+          "samples": 217,
+          "percent": 43.927125506072876
+        },
+        {
+          "name": "<mech_core::schema::Schema>::key",
+          "samples": 80,
+          "percent": 16.194331983805668
+        },
+        {
+          "name": "<mech_core::schema::Schema>::canonical_bytes",
+          "samples": 63,
+          "percent": 12.753036437246964
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "samples": 50,
+          "percent": 10.121457489878543
+        },
+        {
+          "name": "<alloc::raw_vec::RawVecInner>::finish_grow",
+          "samples": 48,
+          "percent": 9.7165991902834
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_composite_call",
+          "samples": 48,
+          "percent": 9.7165991902834
+        },
+        {
+          "name": "_realloc",
+          "samples": 43,
+          "percent": 8.704453441295547
+        },
+        {
+          "name": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>",
+          "samples": 40,
+          "percent": 8.097165991902834
+        },
+        {
+          "name": "mech_core::dimension::encode_dimension_parameters",
+          "samples": 36,
+          "percent": 7.287449392712551
+        },
+        {
+          "name": "_malloc_zone_realloc",
+          "samples": 33,
+          "percent": 6.680161943319838
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 31,
+          "percent": 6.275303643724697
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 28,
+          "percent": 5.668016194331984
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 25,
+          "percent": 5.060728744939271
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "samples": 24,
+          "percent": 4.8582995951417
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget",
+          "samples": 23,
+          "percent": 4.65587044534413
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+          "samples": 22,
+          "percent": 4.4534412955465585
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "JIT::mech_canonical_program_entry_v1",
+          "samples": 144,
+          "percent": 29.149797570850204
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+          "samples": 51,
+          "percent": 10.323886639676113
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 31,
+          "percent": 6.275303643724697
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 22,
+          "percent": 4.4534412955465585
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 12,
+          "percent": 2.42914979757085
+        },
+        {
+          "name": "_xzm_xzone_malloc",
+          "samples": 10,
+          "percent": 2.0242914979757085
+        },
+        {
+          "name": "sha2::sha256::aarch64_sha2::compress",
+          "samples": 10,
+          "percent": 2.0242914979757085
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_body_extents",
+          "samples": 9,
+          "percent": 1.8218623481781377
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 9,
+          "percent": 1.8218623481781377
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 7,
+          "percent": 1.417004048582996
+        },
+        {
+          "name": "xzm_malloc_zone_size",
+          "samples": 7,
+          "percent": 1.417004048582996
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "samples": 6,
+          "percent": 1.214574898785425
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 6,
+          "percent": 1.214574898785425
+        },
+        {
+          "name": "_malloc_zone_malloc",
+          "samples": 6,
+          "percent": 1.214574898785425
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 6,
+          "percent": 1.214574898785425
+        }
+      ]
+    },
+    {
+      "name": "bicg",
+      "execution_samples": 387,
+      "self_time_mechanisms": [
+        {
+          "name": "Other runtime self time",
+          "samples": 125,
+          "percent": 32.299741602067186
+        },
+        {
+          "name": "Generated code, resolved function",
+          "samples": 98,
+          "percent": 25.322997416020673
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 74,
+          "percent": 19.121447028423773
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 47,
+          "percent": 12.144702842377262
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 30,
+          "percent": 7.751937984496124
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 13,
+          "percent": 3.359173126614987
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 387,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 334,
+          "percent": 86.30490956072352
+        },
+        {
+          "name": "JIT::mech_canonical_program_entry_v1",
+          "samples": 326,
+          "percent": 84.23772609819122
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 216,
+          "percent": 55.81395348837209
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+          "samples": 182,
+          "percent": 47.02842377260982
+        },
+        {
+          "name": "<mech_core::schema::Schema>::key",
+          "samples": 61,
+          "percent": 15.762273901808786
+        },
+        {
+          "name": "<mech_core::schema::Schema>::canonical_bytes",
+          "samples": 50,
+          "percent": 12.919896640826874
+        },
+        {
+          "name": "<alloc::raw_vec::RawVecInner>::finish_grow",
+          "samples": 33,
+          "percent": 8.527131782945736
+        },
+        {
+          "name": "_realloc",
+          "samples": 31,
+          "percent": 8.010335917312661
+        },
+        {
+          "name": "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>",
+          "samples": 30,
+          "percent": 7.751937984496124
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_composite_call",
+          "samples": 28,
+          "percent": 7.235142118863049
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "samples": 28,
+          "percent": 7.235142118863049
+        },
+        {
+          "name": "_malloc_zone_realloc",
+          "samples": 26,
+          "percent": 6.718346253229974
+        },
+        {
+          "name": "mech_core::dimension::encode_dimension_parameters",
+          "samples": 26,
+          "percent": 6.718346253229974
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+          "samples": 23,
+          "percent": 5.943152454780361
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 22,
+          "percent": 5.684754521963824
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::Prepared>",
+          "samples": 20,
+          "percent": 5.167958656330749
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::state::ExecutionState>",
+          "samples": 20,
+          "percent": 5.167958656330749
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 19,
+          "percent": 4.909560723514212
+        },
+        {
+          "name": "<mech_core::snapshot::data::F64Bits as alloc::vec::spec_from_elem::SpecFromElem>::from_elem::<alloc::alloc::Global>",
+          "samples": 18,
+          "percent": 4.651162790697675
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "JIT::mech_canonical_program_entry_v1",
+          "samples": 98,
+          "percent": 25.322997416020673
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+          "samples": 53,
+          "percent": 13.695090439276486
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 17,
+          "percent": 4.392764857881137
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 17,
+          "percent": 4.392764857881137
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 16,
+          "percent": 4.134366925064599
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 13,
+          "percent": 3.359173126614987
+        },
+        {
+          "name": "sha2::sha256::aarch64_sha2::compress",
+          "samples": 8,
+          "percent": 2.0671834625322996
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 8,
+          "percent": 2.0671834625322996
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 7,
+          "percent": 1.8087855297157622
+        },
+        {
+          "name": "mech_core::dimension::encode_normalized_dimension_into",
+          "samples": 6,
+          "percent": 1.550387596899225
+        },
+        {
+          "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+          "samples": 5,
+          "percent": 1.2919896640826873
+        },
+        {
+          "name": "<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>::for_slot",
+          "samples": 4,
+          "percent": 1.0335917312661498
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "samples": 4,
+          "percent": 1.0335917312661498
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 4,
+          "percent": 1.0335917312661498
+        },
+        {
+          "name": "_xzm_xzone_malloc_freelist_outlined",
+          "samples": 4,
+          "percent": 1.0335917312661498
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "Durbin has492 execution samples;50.8% are generated-function self time and17.7% inclusive time is in session setup. Its numeric_4 function is the next instruction-inspection target.",
+    "MVT has494 samples;44% are inclusive in numeric_binary_helper and16.2% in Schema::key (12.8% canonical_bytes). BiCG has387 samples;47% are inclusive in numeric_binary_helper and15.8% in Schema::key (12.9% canonical_bytes). These overlapping inclusive percentages are not additive. Investigate repeated canonical schema-key serialization/allocations in numeric helper preparation while retaining complete source fees and current schema/owner checks.",
+    "Actual allocation/deallocation self samples are21.5% MVT and19.1% BiCG. The profile identifies a general metadata mechanism, not a benchmark-specific arithmetic kernel.",
+    "All inputs, checked-call/cache boundaries and accepted44 execution counters remain fixed. Diagnostic timer arrays are preserved but excluded from scores and selection."
+  ],
+  "archives": {
+    "analysis.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/analysis.json.gz",
+      "sha256": "84b1018c0f5f5584c9bae4b218dbb1dec498655e8ddd6d4f04817a72cfb801a3",
+      "compressed_sha256": "bf3168db29b4fd765c15898b52f21fd5cb9bb67196e1e1422a33354f884a3bd6"
+    },
+    "analyzer.log": {
+      "path": "qualification/experiments/accepted44-long-training-profile/analyzer.log.gz",
+      "sha256": "f5a011b4c9dab17e7d87b81a97fd8aba19f85b3bed28546220060193209bfac6",
+      "compressed_sha256": "e4f792f86857b3a0e0ffb3664ae1cbe80690da8f47156701028a99bee7091f6c"
+    },
+    "bicg-driver-output.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg-driver-output.json.gz",
+      "sha256": "c09c0e2f786697c7f18d1f366d6d300edba4b78d9230dec2123f3844d7d73026",
+      "compressed_sha256": "37555bfcfa270bff1e0b08cc3b26f9619e0af1be7e3bc1299842df7a9f6e4d37"
+    },
+    "bicg-driver.stderr": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "bicg-inputs.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg-inputs.json.gz",
+      "sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "compressed_sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81"
+    },
+    "bicg-sample.log": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg-sample.log.gz",
+      "sha256": "992d95c064aa1253f6aa0e42b4f4513d4dbd89534a7e97243307737c15511676",
+      "compressed_sha256": "02edd83d90efd6bc56f4646de3336ec127685a7b3a4ac5756b957b4eb18b048e"
+    },
+    "bicg.perf.map": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg.perf.map.gz",
+      "sha256": "813b0d0d63b8c942cf34aa1780fd96f1c943eb5dbbda88835b57e88dd84e9b87",
+      "compressed_sha256": "6bdecb3165e5db6e09daa80c8ce5345b040ce1496c345a2afe8495c5aa8c9fc7"
+    },
+    "bicg.sample.txt": {
+      "path": "qualification/experiments/accepted44-long-training-profile/bicg.sample.txt.gz",
+      "sha256": "1330d0fd90f8eeaf7c13dfe056a6fbb2a4170ad91bfc92fac4650d8645216e15",
+      "compressed_sha256": "faec36337d21e5ec0ea1e837ac14426fa455ffdc0b7a6246aee3bff1abd9f004"
+    },
+    "collect.py": {
+      "path": "qualification/experiments/accepted44-long-training-profile/collect.py.gz",
+      "sha256": "0cf9031925b344fdb87e95d1907fd71d4c86d52be839686d068d5778b66aa55c",
+      "compressed_sha256": "b1d6b5557c25e6f849c5cc92539b86687f657f97ad8f8ee2ffad60e2e45de9ba"
+    },
+    "durbin-driver-output.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin-driver-output.json.gz",
+      "sha256": "831626595a796a70423b871bda379caf141f12a2405e20bdb3aa93a1a4a0fbaf",
+      "compressed_sha256": "58bf73350a910d4d93e456f56da2b48476f1fd7c36b452e9307caa54a9cb8aa8"
+    },
+    "durbin-driver.stderr": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "durbin-inputs.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin-inputs.json.gz",
+      "sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "compressed_sha256": "1c4405da5f001d79de3e815ddaed455c7f88e79b19286305a46afec148406310"
+    },
+    "durbin-sample.log": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin-sample.log.gz",
+      "sha256": "089b1e36550e10f2d4bb3c3cc0f7c32bb8b48d718f57fe96d0eb93c8a1fd18af",
+      "compressed_sha256": "2aed73cec7eace6c758061f0a9cf2acc20e6f3eb83838ac3c9acc63aac24c166"
+    },
+    "durbin.perf.map": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin.perf.map.gz",
+      "sha256": "fc81b16cdea53b014c9b4f0ee156103a76d3c92bd82a58e711722f308cf5f2b4",
+      "compressed_sha256": "a2883bcda666befdef9fb3bc6c537d44bde7a174c4d58a25a2b027e8821d68e1"
+    },
+    "durbin.sample.txt": {
+      "path": "qualification/experiments/accepted44-long-training-profile/durbin.sample.txt.gz",
+      "sha256": "a1cc2c06fb3bc044c9c392fde834e7a594c1c1f22b4b6ee2c7b0c1b2647d451c",
+      "compressed_sha256": "ce1215765a5f0107c0c7c6b96fd5e70987c54c12fa8f30707fbf8adb0b1b3754"
+    },
+    "live-process.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/live-process.json.gz",
+      "sha256": "2b12a4dc14a9c91d7cd7df271a966e14ad4b55339e4258a43112de85101b8ece",
+      "compressed_sha256": "bf3758d3d7886f01f9edd2fc913872cc7320592662851fd0765661f45951fba7"
+    },
+    "mvt-driver-output.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt-driver-output.json.gz",
+      "sha256": "5b0f36fbab67f4addbdf2af35688efaf8e6248dac1d5a625ef43e6da05e6d025",
+      "compressed_sha256": "20a234088729c81c637ffde16bb69e79ba8d22a68c808ba97c1d57890da59970"
+    },
+    "mvt-driver.stderr": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "mvt-inputs.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt-inputs.json.gz",
+      "sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "compressed_sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac"
+    },
+    "mvt-sample.log": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt-sample.log.gz",
+      "sha256": "097b2f508855b7641d6e2a162b865029bb122feedd26efcb80e915f8f4549f66",
+      "compressed_sha256": "4f10d1a9397c39c4a900cf160d506509004604d5590be75782b28e124531d77a"
+    },
+    "mvt.perf.map": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt.perf.map.gz",
+      "sha256": "1b65fe8c6f726e06765852e565bd6bbcb623916fccfd73c1b8516c4b5475eabc",
+      "compressed_sha256": "c2b3677859d4964be5d9accc99d41de5d4b73c64ed460bea88d8a1346a491770"
+    },
+    "mvt.sample.txt": {
+      "path": "qualification/experiments/accepted44-long-training-profile/mvt.sample.txt.gz",
+      "sha256": "2834ac155cb5772cd095aeee4e7315273ec6dcb3b8af3c6d6ca3f2dd5ab9eaef",
+      "compressed_sha256": "74f3361f5cd87f134f4be0b044a32bb2e277415c1611b4596e6917b17b43c4e0"
+    },
+    "plan.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/plan.json.gz",
+      "sha256": "4e74f03a3ae2cd27c405af717c6288c0e28c3cbc99a05379195150756961fb85",
+      "compressed_sha256": "352ca6fe196b0804bc841b1832882f77bbafc332862eed7040185de3527abdfc"
+    },
+    "preserve.py": {
+      "path": "qualification/experiments/accepted44-long-training-profile/preserve.py.gz",
+      "sha256": "701cf0ca68114fba1485439cc22b2ab0e5f1843d1ec78035ff50ffa53e9d205e",
+      "compressed_sha256": "c8dfc78993f253dbfe96f49ab91b16c2bbcbd1bed9547d06b9ea0fba2bdfd517"
+    },
+    "profile-collection.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/profile-collection.json.gz",
+      "sha256": "f442ca2feae3951ff1737c1fef5b3dfecb2b6eb2c02f6054bb00496fe6a7dd3c",
+      "compressed_sha256": "a991c6a2f23fda816b526374549112a531d8f3ebd6b6cb3f37186339ed402f82"
+    },
+    "training-profile.json": {
+      "path": "qualification/experiments/accepted44-long-training-profile/training-profile.json.gz",
+      "sha256": "9ecfe4d733c9972cc287d09f74afdca146f3d704a14a6317b17b273b412f8dda",
+      "compressed_sha256": "98c962aa0334797f9bcfa6425f9bb9ad66e75bbb747d2efaa946e0328523379f"
+    }
+  },
+  "formal_history_entries_unchanged": 45,
+  "performance_score_observations": 0
+}

@@ -1,0 +1,2520 @@
+{
+  "schema": "mech.polybench.untimed-counter-gate.v3",
+  "created_at": "2026-11-27T23:22:23.961773+00:00",
+  "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "scope": "Optimization15 current-input C-liveout and source-counter proof only. No holdout performance/source diagnosis.",
+  "policy_sha256": "1ef6095941b99d094b0773c67ede92a86b41aab4c5b049db9cc4ca98ad9f5899",
+  "cases": {
+    "2mm": {
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "inputs_sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/2mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/2mm-inputs.json",
+            "0"
+          ],
+          "pid": 10062,
+          "exit_code": 0,
+          "stdout_sha256": "2d7e391389a7dd580a96289a42cd9ddcbfaa5f81657486840b8ec9bcc39d25dc",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 18869400596,
+            "comparison_work": 791787921,
+            "visits": 8,
+            "transport_bytes": 1528,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 18869400596, comparison_work: 791787921, visits: 8, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/2mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/2mm-inputs.json",
+            "0"
+          ],
+          "pid": 10063,
+          "exit_code": 0,
+          "stdout_sha256": "321faef0b5d65fa1282605979acdec12de8e4dcf0a107028657f3a99f0ad31c7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 18869400596,
+            "comparison_work": 791787921,
+            "visits": 8,
+            "transport_bytes": 1528,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 18869400596, comparison_work: 791787921, visits: 8, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "3mm": {
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "inputs_sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/3mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/3mm-inputs.json",
+            "0"
+          ],
+          "pid": 10064,
+          "exit_code": 0,
+          "stdout_sha256": "a42f7e99b6455a16a9eb72a91a38ca94fc10ba6ec2d7d266f03c1f7fffe2491f",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 11553881420,
+            "comparison_work": 485131095,
+            "visits": 6,
+            "transport_bytes": 1096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 11553881420, comparison_work: 485131095, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/3mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/3mm-inputs.json",
+            "0"
+          ],
+          "pid": 10065,
+          "exit_code": 0,
+          "stdout_sha256": "9a3052e6025d606c5ddc3fd2a08e8dbe741be9c99836df9d3fbda31dd75e69c6",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 11553881420,
+            "comparison_work": 485131095,
+            "visits": 6,
+            "transport_bytes": 1096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 11553881420, comparison_work: 485131095, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "atax": {
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "inputs_sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/atax.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/atax-inputs.json",
+            "0"
+          ],
+          "pid": 10066,
+          "exit_code": 0,
+          "stdout_sha256": "642962379081005ae382cf48dc6a73e35a2c920bae4ffdb02d1aa3d2f6e2ee80",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 10989191932,
+            "comparison_work": 463742807,
+            "visits": 6,
+            "transport_bytes": 920,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10989191932, comparison_work: 463742807, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/atax.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/atax-inputs.json",
+            "0"
+          ],
+          "pid": 10067,
+          "exit_code": 0,
+          "stdout_sha256": "a1e13a63f5ea6ecc0f9121f4a274262f04c38b2b6bf27fc07741bae468804e38",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 10989191932,
+            "comparison_work": 463742807,
+            "visits": 6,
+            "transport_bytes": 920,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10989191932, comparison_work: 463742807, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "bicg": {
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "inputs_sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/bicg.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/bicg-inputs.json",
+            "0"
+          ],
+          "pid": 10068,
+          "exit_code": 0,
+          "stdout_sha256": "1484047b2ba0710e22b4fd749cd7019a35e47d067d04e2a3d4a168d2eed0576a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15085010616,
+            "comparison_work": 635036028,
+            "visits": 7,
+            "transport_bytes": 1136,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15085010616, comparison_work: 635036028, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/bicg.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/bicg-inputs.json",
+            "0"
+          ],
+          "pid": 10069,
+          "exit_code": 0,
+          "stdout_sha256": "1019ee0fa090599daf36742eb28ab1020f870f33c1e5e9ef0501333d8d71d113",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15085010616,
+            "comparison_work": 635036028,
+            "visits": 7,
+            "transport_bytes": 1136,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15085010616, comparison_work: 635036028, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "cholesky": {
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "inputs_sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/cholesky.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/cholesky-inputs.json",
+            "0"
+          ],
+          "pid": 10070,
+          "exit_code": 0,
+          "stdout_sha256": "c724201b323b19bc514c3ef7b45f7e86e90a51e5a21c1fcb0737136193c322a1",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 9701738153400,
+            "comparison_work": 1620005485,
+            "visits": 7,
+            "transport_bytes": 14256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 9701738153400, comparison_work: 1620005485, visits: 7, transport_bytes: 14256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/cholesky.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/cholesky-inputs.json",
+            "0"
+          ],
+          "pid": 10071,
+          "exit_code": 0,
+          "stdout_sha256": "e1e19c075ec6d316fb84ff4e33ebeb9ff40845ecb8940bc3dc0c145d7d9028d4",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 9701738153400,
+            "comparison_work": 1620005485,
+            "visits": 7,
+            "transport_bytes": 14256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 9701738153400, comparison_work: 1620005485, visits: 7, transport_bytes: 14256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "correlation": {
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "inputs_sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/correlation.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/correlation-inputs.json",
+            "0"
+          ],
+          "pid": 10072,
+          "exit_code": 0,
+          "stdout_sha256": "2c2baa1757c5393735477b45915e33a98682ba4f7e3d052206d767f3dd430071",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 107839595060,
+            "comparison_work": 5082102222,
+            "visits": 28,
+            "transport_bytes": 8256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 107839595060, comparison_work: 5082102222, visits: 28, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/correlation.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/correlation-inputs.json",
+            "0"
+          ],
+          "pid": 10073,
+          "exit_code": 0,
+          "stdout_sha256": "54cae3d275537bb0eb72baf30a5710a92329248f24e54dc464d7bb66c0aee18e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 99926852068,
+            "comparison_work": 5082102222,
+            "visits": 392,
+            "transport_bytes": 8256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 99926852068, comparison_work: 5082102222, visits: 392, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 7912742992,
+        "comparison_work": 0,
+        "visits": -364,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "source-derived current-bound rectangle",
+        "receipt": "training-experiments/current-bound-rectangles-shared-comparison.json",
+        "old_image_sha256": "c4f6129877cc12c3d36b8bb7ee7b54d70372184be3306d490410ff6af4e1975c",
+        "new_image_sha256": "5d19d047b4aa14293641a345bf38646ce20a35c2b8d463d19ba88a23a9fc7e9e",
+        "source_plan_identical": true,
+        "ordered_body_steps_reads_matrices_and_nested_regions_identical": true,
+        "all_inner_source_sites_covered": true,
+        "actual_callbacks": {
+          "accepted44": {
+            "map": {
+              "13": 2,
+              "47": 56
+            },
+            "transpose": {
+              "43": 28
+            },
+            "collection": {
+              "9": 1,
+              "12": 1,
+              "10": 1,
+              "33": 1,
+              "36": 1,
+              "37": 1,
+              "39": 28,
+              "42": 28,
+              "45": 28,
+              "46": 28,
+              "64": 28,
+              "34": 1
+            },
+            "generic": {
+              "8": 1
+            }
+          },
+          "candidate": {
+            "map": {
+              "13": 2,
+              "38": 2
+            },
+            "transpose": {},
+            "collection": {
+              "9": 1,
+              "12": 1,
+              "10": 1,
+              "33": 1,
+              "36": 1,
+              "37": 1,
+              "34": 1
+            },
+            "generic": {
+              "8": 1
+            }
+          }
+        },
+        "region": {
+          "nested": [],
+          "rectangle": {
+            "inner_collection": 2,
+            "inner_iteration": 2,
+            "inner_element": 29,
+            "range_prepare": 45,
+            "transpose": 63,
+            "bounds": {
+              "Current": {
+                "operands": [
+                  3,
+                  2
+                ]
+              }
+            },
+            "elided_values": [
+              27,
+              33,
+              28
+            ]
+          },
+          "reduction": null,
+          "transpose": null,
+          "collection": 1,
+          "iteration": 1,
+          "header": 38,
+          "exit": 65,
+          "source": 25,
+          "range": true,
+          "element": 26,
+          "result": 31,
+          "output": 24,
+          "input_width": 8,
+          "output_width": 8,
+          "steps": [
+            51,
+            56,
+            59,
+            60
+          ],
+          "body": [
+            48,
+            50,
+            51,
+            52,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            53,
+            61
+          ],
+          "sites": [
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64
+          ],
+          "captures": [
+            4,
+            6,
+            7
+          ],
+          "matrices": [
+            {
+              "value": 23,
+              "witness": 59,
+              "width": 8
+            }
+          ],
+          "reads": [
+            {
+              "site": 59,
+              "matrix": 0,
+              "indices": [
+                29,
+                26
+              ],
+              "output": 32
+            }
+          ]
+        }
+      },
+      "passed": true
+    },
+    "covariance": {
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "inputs_sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/covariance.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/covariance-inputs.json",
+            "0"
+          ],
+          "pid": 10074,
+          "exit_code": 0,
+          "stdout_sha256": "e48ab98174b20df2cde325d7ac8409b702e7b415e9a40bf9c839a8d00fb8dbe9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 21313497752,
+            "comparison_work": 896970226,
+            "visits": 10,
+            "transport_bytes": 1464,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21313497752, comparison_work: 896970226, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/covariance.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/covariance-inputs.json",
+            "0"
+          ],
+          "pid": 10075,
+          "exit_code": 0,
+          "stdout_sha256": "ba68ba7d8e27a3deb57f646058242dd7a8772b7ad0f33423d3fad6291588b808",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 21313497752,
+            "comparison_work": 896970226,
+            "visits": 10,
+            "transport_bytes": 1464,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21313497752, comparison_work: 896970226, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "deriche": {
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "inputs_sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/deriche.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/deriche-inputs.json",
+            "0"
+          ],
+          "pid": 10076,
+          "exit_code": 0,
+          "stdout_sha256": "e95d8553e02b45fd64c5866a6261dae037ee503539f3f4785b157e7761d7c933",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 314669088788039,
+            "comparison_work": 13112212093200,
+            "visits": 32,
+            "transport_bytes": 48144,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 314669088788039, comparison_work: 13112212093200, visits: 32, transport_bytes: 48144, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/deriche.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/deriche-inputs.json",
+            "0"
+          ],
+          "pid": 10077,
+          "exit_code": 0,
+          "stdout_sha256": "02a68eef209f86bc6d95c165557594d35d0089ec54c44bd9704b2eaffb1dea46",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 314669088788039,
+            "comparison_work": 13112212093200,
+            "visits": 32,
+            "transport_bytes": 48144,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 314669088788039, comparison_work: 13112212093200, visits: 32, transport_bytes: 48144, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "doitgen": {
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "inputs_sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/doitgen.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/doitgen-inputs.json",
+            "0"
+          ],
+          "pid": 10078,
+          "exit_code": 0,
+          "stdout_sha256": "f38d4446e5fadf55a06c44b264ca75df2538a92b271e684abefda26bfcdf9bf7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 3890892356,
+            "comparison_work": 164115741,
+            "visits": 4,
+            "transport_bytes": 664,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 3890892356, comparison_work: 164115741, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/doitgen.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/doitgen-inputs.json",
+            "0"
+          ],
+          "pid": 10079,
+          "exit_code": 0,
+          "stdout_sha256": "88eb7a15c5f243a8856d114cc88ca78c7eb32d236f065821ea3c0d57f0bbb765",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 3890892356,
+            "comparison_work": 164115741,
+            "visits": 4,
+            "transport_bytes": 664,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 3890892356, comparison_work: 164115741, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "durbin": {
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "inputs_sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/durbin.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/durbin-inputs.json",
+            "0"
+          ],
+          "pid": 10080,
+          "exit_code": 0,
+          "stdout_sha256": "e088dcad72b8a25607cbb6d641dfb1c61589ac2c0cfbbd84914f8acab7533a7e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 910634770216,
+            "comparison_work": 20662991317,
+            "visits": 6,
+            "transport_bytes": 16096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 910634770216, comparison_work: 20662991317, visits: 6, transport_bytes: 16096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/durbin.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/durbin-inputs.json",
+            "0"
+          ],
+          "pid": 10081,
+          "exit_code": 0,
+          "stdout_sha256": "8bfcb217e897f4b05ffd123bd7dff57b738c4aca5b721eb9704c39bb5843f659",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 910634770216,
+            "comparison_work": 20662991317,
+            "visits": 6,
+            "transport_bytes": 16096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 910634770216, comparison_work: 20662991317, visits: 6, transport_bytes: 16096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "gemm": {
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "inputs_sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gemm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/gemm-inputs.json",
+            "0"
+          ],
+          "pid": 10082,
+          "exit_code": 0,
+          "stdout_sha256": "e57909f65a619259c64df11312e57dff1d6bccb583aed375e95ea9dcd045fe58",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15087870352,
+            "comparison_work": 634307700,
+            "visits": 7,
+            "transport_bytes": 1312,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15087870352, comparison_work: 634307700, visits: 7, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gemm.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/gemm-inputs.json",
+            "0"
+          ],
+          "pid": 10083,
+          "exit_code": 0,
+          "stdout_sha256": "32a726e637c40fa20c5fe04d09d9db8220653666024436100480bf36958484df",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15087870352,
+            "comparison_work": 634307700,
+            "visits": 7,
+            "transport_bytes": 1312,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15087870352, comparison_work: 634307700, visits: 7, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "gramschmidt": {
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "inputs_sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gramschmidt.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/gramschmidt-inputs.json",
+            "0"
+          ],
+          "pid": 10084,
+          "exit_code": 0,
+          "stdout_sha256": "a672460d9cd67cecad6a48dd38386443de65ea82d1abbf4fbcb3eae503358ebb",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 14242762042768,
+            "comparison_work": 135488226805,
+            "visits": 10,
+            "transport_bytes": 33048,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 14242762042768, comparison_work: 135488226805, visits: 10, transport_bytes: 33048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gramschmidt.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/gramschmidt-inputs.json",
+            "0"
+          ],
+          "pid": 10085,
+          "exit_code": 0,
+          "stdout_sha256": "08b10b1206ac6cb0a203ea5b9d7da0e12aa6798d3a9390e71c0bc78c41b2ccfb",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 14242762027152,
+            "comparison_work": 135488225845,
+            "visits": 10,
+            "transport_bytes": 33048,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 14242762027152, comparison_work: 135488225845, visits: 10, transport_bytes: 33048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 15616,
+        "comparison_work": 960,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "mvt": {
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "inputs_sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/mvt.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/mvt-inputs.json",
+            "0"
+          ],
+          "pid": 10086,
+          "exit_code": 0,
+          "stdout_sha256": "82550feacc3c78deecf561e99b2806fc199e7396bd84ce9629f86154b31faca7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 22713761056,
+            "comparison_work": 953986874,
+            "visits": 9,
+            "transport_bytes": 1568,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 22713761056, comparison_work: 953986874, visits: 9, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/mvt.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/mvt-inputs.json",
+            "0"
+          ],
+          "pid": 10087,
+          "exit_code": 0,
+          "stdout_sha256": "c51127d0bf4a4e6216e85fb6a3a592f303fce68ab1cb02bcc12780b5fb152474",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 22713761056,
+            "comparison_work": 953986874,
+            "visits": 9,
+            "transport_bytes": 1568,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 22713761056, comparison_work: 953986874, visits: 9, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "nussinov": {
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "inputs_sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/nussinov.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/nussinov-inputs.json",
+            "0"
+          ],
+          "pid": 10088,
+          "exit_code": 0,
+          "stdout_sha256": "b10408c0ca5cfb0569689662b00a5f7b41bca0615b0154050f589fc0e3b4c11f",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 4301681332,
+            "comparison_work": 37823,
+            "visits": 8,
+            "transport_bytes": 17224,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 4301681332, comparison_work: 37823, visits: 8, transport_bytes: 17224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/nussinov.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/nussinov-inputs.json",
+            "0"
+          ],
+          "pid": 10089,
+          "exit_code": 0,
+          "stdout_sha256": "e179a983832d5af4458e010a653130ac85d7b362fb84cfa9e6630c766be52263",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 4301681332,
+            "comparison_work": 37823,
+            "visits": 8,
+            "transport_bytes": 17224,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 4301681332, comparison_work: 37823, visits: 8, transport_bytes: 17224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    },
+    "seidel-2d": {
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "inputs_sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "actors": {
+        "accepted44": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/seidel-2d.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/seidel-2d-inputs.json",
+            "0"
+          ],
+          "pid": 10090,
+          "exit_code": 0,
+          "stdout_sha256": "74e579b32121275b383fc5fef83a5942ea7cc7c0f19d9ad348665b171eeae3cd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 2360655156,
+            "comparison_work": 29663,
+            "visits": 7,
+            "transport_bytes": 13544,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2360655156, comparison_work: 29663, visits: 7, transport_bytes: 13544, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/seidel-2d.mec",
+            "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-selection/seidel-2d-inputs.json",
+            "0"
+          ],
+          "pid": 10091,
+          "exit_code": 0,
+          "stdout_sha256": "6f6d055cc40a6373f55672f301caaac0d604efdc73cdac05461787b60901d98a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 2360655156,
+            "comparison_work": 29663,
+            "visits": 7,
+            "transport_bytes": 13544,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2360655156, comparison_work: 29663, visits: 7, transport_bytes: 13544, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged"
+      },
+      "passed": true
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "completed_at": "2026-11-27T23:22:27.435599+00:00",
+  "passed": true,
+  "finite_liveouts": 17002,
+  "source_and_driver_unchanged": true,
+  "archives": {
+    "2mm-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/2mm-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "2mm-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/2mm-accepted44-untimed.stdout.gz",
+      "sha256": "2d7e391389a7dd580a96289a42cd9ddcbfaa5f81657486840b8ec9bcc39d25dc",
+      "compressed_sha256": "76eda2775aacb26f59d85d5b6b2ecb1469753fe41925198f0ff2f16b7d68b3c5"
+    },
+    "2mm-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/2mm-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "2mm-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/2mm-candidate-untimed.stdout.gz",
+      "sha256": "321faef0b5d65fa1282605979acdec12de8e4dcf0a107028657f3a99f0ad31c7",
+      "compressed_sha256": "73833c6b9d7cd13331d708a672cfab655b2452fff3c3b2d6d571476a82c35f5d"
+    },
+    "2mm-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/2mm-inputs.json.gz",
+      "sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "compressed_sha256": "5602c071134a0ed5ade81f6c495a1e19ab755b1eacfae24a6232fff252a3b73b"
+    },
+    "3mm-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/3mm-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "3mm-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/3mm-accepted44-untimed.stdout.gz",
+      "sha256": "9a3052e6025d606c5ddc3fd2a08e8dbe741be9c99836df9d3fbda31dd75e69c6",
+      "compressed_sha256": "9d5bfc51f4f22376419a3745c3ee31b70300709e36d0868808ffd20cd57268f9"
+    },
+    "3mm-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/3mm-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "3mm-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/3mm-candidate-untimed.stdout.gz",
+      "sha256": "a42f7e99b6455a16a9eb72a91a38ca94fc10ba6ec2d7d266f03c1f7fffe2491f",
+      "compressed_sha256": "3a7f3991b87ffd533e7cce4dcbd30e5251a9dcbf25ab8091cc8c98fba9685c7e"
+    },
+    "3mm-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/3mm-inputs.json.gz",
+      "sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "compressed_sha256": "fd745e698c7fc8ca9176d99b9b8e2af115ea65b4132c20314a14ba3ebec82f41"
+    },
+    "atax-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/atax-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "atax-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/atax-accepted44-untimed.stdout.gz",
+      "sha256": "642962379081005ae382cf48dc6a73e35a2c920bae4ffdb02d1aa3d2f6e2ee80",
+      "compressed_sha256": "8f893aade872200f34e9c8c37e19b47206cbfd5bd64d132b1b20af1b381980d6"
+    },
+    "atax-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/atax-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "atax-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/atax-candidate-untimed.stdout.gz",
+      "sha256": "a1e13a63f5ea6ecc0f9121f4a274262f04c38b2b6bf27fc07741bae468804e38",
+      "compressed_sha256": "25e8d075d2379f3eb484729022025bc7305cd12884be3957fc44d950ad668846"
+    },
+    "atax-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/atax-inputs.json.gz",
+      "sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "compressed_sha256": "bad0b3739cc9dcd5910f4eeb62e37389bb38759c322be7f22248ef49435e0cba"
+    },
+    "bicg-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/bicg-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "bicg-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/bicg-accepted44-untimed.stdout.gz",
+      "sha256": "1019ee0fa090599daf36742eb28ab1020f870f33c1e5e9ef0501333d8d71d113",
+      "compressed_sha256": "8fc7280f61eca1ab423514b1a54137122d143c1891ab8f457e16bfd189bb6ec0"
+    },
+    "bicg-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/bicg-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "bicg-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/bicg-candidate-untimed.stdout.gz",
+      "sha256": "1484047b2ba0710e22b4fd749cd7019a35e47d067d04e2a3d4a168d2eed0576a",
+      "compressed_sha256": "6286b7e60fe31ea3f93016fe404a99b724474b530b5c57e611790b938b993f8b"
+    },
+    "bicg-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/bicg-inputs.json.gz",
+      "sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "compressed_sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81"
+    },
+    "cholesky-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/cholesky-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "cholesky-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/cholesky-accepted44-untimed.stdout.gz",
+      "sha256": "c724201b323b19bc514c3ef7b45f7e86e90a51e5a21c1fcb0737136193c322a1",
+      "compressed_sha256": "ba16ec621483ab7d4366154b10aa4af99dc961f4a0d19f0d495d4afc54097c0c"
+    },
+    "cholesky-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/cholesky-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "cholesky-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/cholesky-candidate-untimed.stdout.gz",
+      "sha256": "e1e19c075ec6d316fb84ff4e33ebeb9ff40845ecb8940bc3dc0c145d7d9028d4",
+      "compressed_sha256": "7a66c0ac6f68e1faf6becf513555f2d1be7ee868762929803f86c885aa536d12"
+    },
+    "cholesky-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/cholesky-inputs.json.gz",
+      "sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "compressed_sha256": "feb9754246ac52e4fef5e31f50918b4af8010a8d26462ad52214437ba5a3d934"
+    },
+    "correlation-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/correlation-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "correlation-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/correlation-accepted44-untimed.stdout.gz",
+      "sha256": "54cae3d275537bb0eb72baf30a5710a92329248f24e54dc464d7bb66c0aee18e",
+      "compressed_sha256": "26dd5f6d49fe23b282afd4db15fbb46314567db0d87042345ec83f078a169da3"
+    },
+    "correlation-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/correlation-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "correlation-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/correlation-candidate-untimed.stdout.gz",
+      "sha256": "2c2baa1757c5393735477b45915e33a98682ba4f7e3d052206d767f3dd430071",
+      "compressed_sha256": "7c995c6959ceeb92ed8efe2ea9c0625307d8bbc3b910611ee404c257554f5b0c"
+    },
+    "correlation-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/correlation-inputs.json.gz",
+      "sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "compressed_sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62"
+    },
+    "covariance-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/covariance-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "covariance-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/covariance-accepted44-untimed.stdout.gz",
+      "sha256": "e48ab98174b20df2cde325d7ac8409b702e7b415e9a40bf9c839a8d00fb8dbe9",
+      "compressed_sha256": "7f0576bb80cd059029855e29963a4587e461fb83d556b57c02422093a3d4098a"
+    },
+    "covariance-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/covariance-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "covariance-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/covariance-candidate-untimed.stdout.gz",
+      "sha256": "ba68ba7d8e27a3deb57f646058242dd7a8772b7ad0f33423d3fad6291588b808",
+      "compressed_sha256": "f36e55c8bf221a222474d547d9a7c191e074df55728abc3fe5185b85d1bc67ad"
+    },
+    "covariance-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/covariance-inputs.json.gz",
+      "sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "compressed_sha256": "7085a3135550544f36d91d1d458f186f9f9fbcc18d875767dbe1bb96947b6ec8"
+    },
+    "deriche-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/deriche-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "deriche-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/deriche-accepted44-untimed.stdout.gz",
+      "sha256": "02a68eef209f86bc6d95c165557594d35d0089ec54c44bd9704b2eaffb1dea46",
+      "compressed_sha256": "9d40258e8aa852b9cc909ac1e77bf3f3ce5b20d19033ed8034825ccff0343e62"
+    },
+    "deriche-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/deriche-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "deriche-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/deriche-candidate-untimed.stdout.gz",
+      "sha256": "e95d8553e02b45fd64c5866a6261dae037ee503539f3f4785b157e7761d7c933",
+      "compressed_sha256": "c65c5048e511e604e487fa52a186305c4f7cbf98d287eb94ce1538609e0e2eec"
+    },
+    "deriche-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "doitgen-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/doitgen-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "doitgen-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/doitgen-accepted44-untimed.stdout.gz",
+      "sha256": "f38d4446e5fadf55a06c44b264ca75df2538a92b271e684abefda26bfcdf9bf7",
+      "compressed_sha256": "3c38d7a2da1b555270d1051df5d890464fae0aba0a6aee55da23cd2c3299fe34"
+    },
+    "doitgen-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/doitgen-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "doitgen-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/doitgen-candidate-untimed.stdout.gz",
+      "sha256": "88eb7a15c5f243a8856d114cc88ca78c7eb32d236f065821ea3c0d57f0bbb765",
+      "compressed_sha256": "357c404f758e03ff8a556663e22f64466c9a522bec89e55c851d40b71f6b3faf"
+    },
+    "doitgen-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/doitgen-inputs.json.gz",
+      "sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "compressed_sha256": "248848cd22a20ba8f0533633cbd433e7547268b1b8c35953a1a925de1f237d1f"
+    },
+    "durbin-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/durbin-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "durbin-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/durbin-accepted44-untimed.stdout.gz",
+      "sha256": "8bfcb217e897f4b05ffd123bd7dff57b738c4aca5b721eb9704c39bb5843f659",
+      "compressed_sha256": "d17eaf7db0269f91f6d0fc3261cff78e5a191d9f6f3271156df2306c3071e246"
+    },
+    "durbin-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/durbin-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "durbin-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/durbin-candidate-untimed.stdout.gz",
+      "sha256": "e088dcad72b8a25607cbb6d641dfb1c61589ac2c0cfbbd84914f8acab7533a7e",
+      "compressed_sha256": "86cf700af188a593e1bac62465ee700cd2c55c8429caf9172d1208fd642ac738"
+    },
+    "durbin-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/durbin-inputs.json.gz",
+      "sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "compressed_sha256": "1c4405da5f001d79de3e815ddaed455c7f88e79b19286305a46afec148406310"
+    },
+    "gemm-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gemm-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "gemm-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gemm-accepted44-untimed.stdout.gz",
+      "sha256": "e57909f65a619259c64df11312e57dff1d6bccb583aed375e95ea9dcd045fe58",
+      "compressed_sha256": "9899369707096ca6f7dc0a32a43b11d224710c04b4478de0765c442e6a07d260"
+    },
+    "gemm-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gemm-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "gemm-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gemm-candidate-untimed.stdout.gz",
+      "sha256": "32a726e637c40fa20c5fe04d09d9db8220653666024436100480bf36958484df",
+      "compressed_sha256": "6df7f3a1ad17695fe0dd4aed62d2495e52a8ee2362602c7002a5eeff591ba624"
+    },
+    "gemm-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gemm-inputs.json.gz",
+      "sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "compressed_sha256": "c618d5ca18d56426e17ef95a24c63a0887356320b868c22ab618c53f9ba2c952"
+    },
+    "gramschmidt-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gramschmidt-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "gramschmidt-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gramschmidt-accepted44-untimed.stdout.gz",
+      "sha256": "08b10b1206ac6cb0a203ea5b9d7da0e12aa6798d3a9390e71c0bc78c41b2ccfb",
+      "compressed_sha256": "b6a575a1ed0f8144cc172bf07dde903fedc8b4e09fb077fafe74054dc67030e4"
+    },
+    "gramschmidt-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gramschmidt-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "gramschmidt-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gramschmidt-candidate-untimed.stdout.gz",
+      "sha256": "a672460d9cd67cecad6a48dd38386443de65ea82d1abbf4fbcb3eae503358ebb",
+      "compressed_sha256": "91031598e514e24edb5b0a777d5c6a3607a2bda609499d1e93999cf8d72b3ded"
+    },
+    "gramschmidt-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/gramschmidt-inputs.json.gz",
+      "sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "compressed_sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c"
+    },
+    "mvt-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/mvt-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "mvt-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/mvt-accepted44-untimed.stdout.gz",
+      "sha256": "82550feacc3c78deecf561e99b2806fc199e7396bd84ce9629f86154b31faca7",
+      "compressed_sha256": "16f8b9caeb6ddeaef176ad0c5b8e18bfe046228e3c092fb7f8d7b2be5ec7b74e"
+    },
+    "mvt-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/mvt-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "mvt-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/mvt-candidate-untimed.stdout.gz",
+      "sha256": "c51127d0bf4a4e6216e85fb6a3a592f303fce68ab1cb02bcc12780b5fb152474",
+      "compressed_sha256": "0b8a94853963868c936dbd19c84a858411c7392bb7fde2ff277ef03a8911ff50"
+    },
+    "mvt-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/mvt-inputs.json.gz",
+      "sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "compressed_sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac"
+    },
+    "nussinov-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/nussinov-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "nussinov-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/nussinov-accepted44-untimed.stdout.gz",
+      "sha256": "e179a983832d5af4458e010a653130ac85d7b362fb84cfa9e6630c766be52263",
+      "compressed_sha256": "e54d3687a1cb65a99a774a38f9437155981038e228a1aae9e106c99b5d89556d"
+    },
+    "nussinov-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/nussinov-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "nussinov-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/nussinov-candidate-untimed.stdout.gz",
+      "sha256": "b10408c0ca5cfb0569689662b00a5f7b41bca0615b0154050f589fc0e3b4c11f",
+      "compressed_sha256": "cec5ca46197128cf9e4e03b81d064405e2029f7ea6e1f86cdb0486e957d8a176"
+    },
+    "nussinov-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/nussinov-inputs.json.gz",
+      "sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "compressed_sha256": "4cacc7fe25f9f6a9df95cfe6b9c145dc1d52a7c86d66f8bd2c8ad995d931b002"
+    },
+    "plan.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/plan.json.gz",
+      "sha256": "bb2190b687df2c33a09672952eef4e4d13b03d556c06b204363636b02bd22046",
+      "compressed_sha256": "4d5a917abc3be192bea165bc6d2e177f81fa72d982e81c316b0ba6ad046232d8"
+    },
+    "prepare-training-script.py": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/prepare-training-script.py.gz",
+      "sha256": "ef6ac04c5fbe415a94050db2197af50a73a306a4a8e6d9003fc19ab08c8643bc",
+      "compressed_sha256": "1eb3d04604203cfcedba294fd6c76c8f4eed54df221159aed54d3c7fe10a27fa"
+    },
+    "seidel-2d-accepted44-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/seidel-2d-accepted44-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "seidel-2d-accepted44-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/seidel-2d-accepted44-untimed.stdout.gz",
+      "sha256": "74e579b32121275b383fc5fef83a5942ea7cc7c0f19d9ad348665b171eeae3cd",
+      "compressed_sha256": "c2e1e8a6c66e2967b7951550ba592fc48dc8f6792b909fb939488e91d61a562f"
+    },
+    "seidel-2d-candidate-untimed.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/seidel-2d-candidate-untimed.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "seidel-2d-candidate-untimed.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/seidel-2d-candidate-untimed.stdout.gz",
+      "sha256": "6f6d055cc40a6373f55672f301caaac0d604efdc73cdac05461787b60901d98a",
+      "compressed_sha256": "957b0817ca25a97bd6ec3661dc515187eb4aacdb2e87c21d410d06025de5fa71"
+    },
+    "seidel-2d-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/seidel-2d-inputs.json.gz",
+      "sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "compressed_sha256": "e8fcd1f4d36f2dbc89891dfa9f8fd21871d4612911ae205b7c0a6d223b5f5f21"
+    },
+    "training-probe-plan.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/training-probe-plan.json.gz",
+      "sha256": "2c3b6a13e6ab68ecaeb5c9bfbe4f305038ffe501289c06e7f54495cd5c6a3e03",
+      "compressed_sha256": "f0974ce6d8caba575ceea52b3dc14197c50255c1df991576c8942f5db72bfacb"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/training-probe.py.gz",
+      "sha256": "b42b3c5710189e2706131f5dd30a4d9337a4e199c272a8944033ab5cb058dd87",
+      "compressed_sha256": "d1045a1226d75fea797dc9e64be439a50e83397a771c430543ee3d1544dcd922"
+    },
+    "untimed-counter-gate.json": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/untimed-counter-gate.json.gz",
+      "sha256": "4410d860557cc506b6722e72df9ae56a3d0a56c35f58305eb21bf6936d215496",
+      "compressed_sha256": "f721fa6e85e8d89eba2892333449e401a3a352aefc84c9ee1dfd0e552df260a2"
+    },
+    "untimed-counter-gate.py": {
+      "path": "qualification/round-45-current-bound-rectangles/selection-gate/untimed-counter-gate.py.gz",
+      "sha256": "6924af3e85f49d2bd45436d335334b429ff46f0ae1e3acd8c43d8b24d613b80b",
+      "compressed_sha256": "389ee9f71772cf090b4cf62c267143659eded0b472bd726ac42b5ef4de328b7d"
+    }
+  }
+}
