@@ -1,0 +1,53 @@
+{
+  "schema": "mech.polybench.performance-acceptance-snapshot.v1",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "promotion": "Both scores must be strictly below the last accepted run.",
+    "failed_run": "Both scores increased versus the immediately preceding measured run.",
+    "ties_or_mixed_results": "Retain the measurements without promotion.",
+    "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
+    "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
+    "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+  },
+  "decision": {
+    "history_index": 24,
+    "label": "round-24-typed-reductions",
+    "source_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+    "history_entry_sha256": "e69077712b1a7af52cf92fa8b4b0d1762d6809c7888ba83a504e5ad6c844528a",
+    "scores": {
+      "optimization": 30.72497867548146,
+      "holdout": 64.04715094835615
+    },
+    "previous_measured_index": 23,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 23,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9985574445353579,
+      "holdout": 1.0050662796954692
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 23
+  },
+  "accepted_history_index": 23,
+  "accepted": {
+    "history_index": 23,
+    "label": "round-23-shared-bounds",
+    "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+    "history_entry_sha256": "38d9f28778985f00b8144f02f6b08a4eafc5d11c7502f0a942092e2c8ecabc0c",
+    "scores": {
+      "optimization": 30.769365191381855,
+      "holdout": 63.7243057918152
+    },
+    "previous_measured_index": 22,
+    "run_outcome": "improved_both",
+    "compared_to_accepted_index": 22,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9726926851605154,
+      "holdout": 0.9305959885125102
+    },
+    "performance_gate": "accepted",
+    "accepted_index_after_run": 23
+  }
+}

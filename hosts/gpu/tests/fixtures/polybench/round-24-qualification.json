@@ -1,0 +1,685 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-24-typed-reductions",
+  "compiler_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+  "compiler_fingerprint": "86d2492951277e34975b4a9aaeddeba8e688652c90ed09f90df719970183284b",
+  "driver_sha256": "7d2a90bdbb3b0d556cc7161ff7528695f956055eb2af6937eb5ff6ebaef02d93",
+  "frozen_candidate_sha256": "b1dd1e7994cc52db3da2a4b0d4c1a1ca41be9ea12ec7a0a8f430f74df8ada989",
+  "native_typed_ir_version": 383,
+  "native_work_policy_version": 150,
+  "native_abi_version": 42,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "all13 resident packed numeric leaf checks including three typed-sum differential checks",
+      "passed_by_target": [
+        13,
+        0
+      ],
+      "log": "focused-2.log",
+      "log_sha256": "deba563e0397936d4c13c914e06e783528ccf29508efd132b013d8a68fcbbfb4"
+    },
+    {
+      "suite": "native numeric, phase, maps/cells, private publication and exact Huffman equations",
+      "passed_by_target": [
+        377
+      ],
+      "log": "numeric-regressions.log",
+      "log_sha256": "cec961263c427bd2a0434b66bb3d44dedd51a1fc02baa5374442d1b352cb03ca"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench C live-outs",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "matrix-polybench.log",
+      "log_sha256": "22a8bbcd324f46ee7105c6db18cf8f2bf416eca0fce3a5d5395986f556a52ae2"
+    },
+    {
+      "suite": "selected scalar, frame, compression, collection and range/cursor regressions",
+      "passed_by_target": [
+        114
+      ],
+      "log": "program-regressions.log",
+      "log_sha256": "5d2816729a9ebb10808317908704215eea6e338b05f55e90084055ea56efa889"
+    },
+    {
+      "suite": "helper tag round-trip and output reservation",
+      "passed_by_target": [
+        1
+      ],
+      "log": "protocol.log",
+      "log_sha256": "2797507bcacee0509886c4ae367fe90e9182d735c3f8c5eb146b2f86fbd4530b"
+    }
+  ],
+  "total_selected_checks": 559,
+  "feature_checks": [
+    {
+      "feature": "canonical-native-program-runtime",
+      "status": "passed",
+      "log": "runtime-feature.log",
+      "log_sha256": "a5cb32532f95b8f4252cc8b479e43788459eb5a2d35ca0e4ae7cef599442e955"
+    },
+    {
+      "feature": "canonical-native-program",
+      "status": "passed",
+      "log": "production-feature.log",
+      "log_sha256": "460260161d8be6230deaed81ded226afc746efbfa8147d34c1602761b15f4e6c"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 64.04715094835615,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.016547085
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 25.291690222091777,
+      "median_speedup": 1.5640521848475322,
+      "minimum_speedup": 1.0879697221535902,
+      "maximum_speedup": 19497.578309784174,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 30.72497867548146,
+      "geomean_mech_over_c_fresh": 19.445797837201745,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 111.59860925785031,
+      "sum_mech_median_seconds": 0.004800958,
+      "geomean_speedup_from_contemporaneous_baseline": 24.8854454205101,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.048662428966106
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 31.703905439251333,
+      "median_speedup": 23.009403991741223,
+      "minimum_speedup": 1.0770906000460347,
+      "maximum_speedup": 469.1339242284236,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 64.04715094835615,
+      "geomean_mech_over_c_fresh": 38.106102403417516,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 454.87577352119234,
+      "sum_mech_median_seconds": 0.016547085,
+      "geomean_speedup_from_contemporaneous_baseline": 31.466330566365155,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0472210910249828
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 28.316874036518143,
+      "median_speedup": 13.554014978565863,
+      "minimum_speedup": 1.0770906000460347,
+      "maximum_speedup": 19497.578309784174,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 44.36042546136798,
+      "geomean_mech_over_c_fresh": 27.221380635459404,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 454.87577352119234,
+      "sum_mech_median_seconds": 0.021348043,
+      "geomean_speedup_from_contemporaneous_baseline": 27.98309582396145,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0472210910249828
+    }
+  },
+  "cases": {
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003487584,
+      "c_median_seconds": 7.667113095521927e-06,
+      "mech_over_c_kernel": 454.87577352119234,
+      "starting_mech_over_c_kernel": 9612.11646057087,
+      "speedup_from_recorded_baseline": 21.130016653362325,
+      "speedup_from_paired_original": 21.210170134970227,
+      "speedup_from_round23": 1.003452533329663,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000181625,
+      "c_median_seconds": 4.577450454235077e-07,
+      "mech_over_c_kernel": 396.782011768057,
+      "starting_mech_over_c_kernel": 7168.140899468677,
+      "speedup_from_recorded_baseline": 23.009403991741223,
+      "speedup_from_paired_original": 22.929343427391604,
+      "speedup_from_round23": 0.9782078458362009,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008638625,
+      "c_median_seconds": 4.558265209197998e-05,
+      "mech_over_c_kernel": 189.5156293795358,
+      "starting_mech_over_c_kernel": 21631.38022675036,
+      "speedup_from_recorded_baseline": 111.8467686697825,
+      "speedup_from_paired_original": 111.16968846315241,
+      "speedup_from_round23": 1.0024598822150514,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000306959,
+      "c_median_seconds": 1.7918646335601807e-06,
+      "mech_over_c_kernel": 171.30702523555925,
+      "starting_mech_over_c_kernel": 260.7344433964597,
+      "speedup_from_recorded_baseline": 1.5212389928296615,
+      "speedup_from_paired_original": 1.5117360950485244,
+      "speedup_from_round23": 1.000540788834991,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000112958,
+      "c_median_seconds": 9.997747838497162e-07,
+      "mech_over_c_kernel": 112.9834456966856,
+      "starting_mech_over_c_kernel": 112.37666473873892,
+      "speedup_from_recorded_baseline": 1.0770906000460347,
+      "speedup_from_paired_original": 1.0472210910249828,
+      "speedup_from_round23": 0.9915189716531808,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000153459,
+      "c_median_seconds": 1.375097781419754e-06,
+      "mech_over_c_kernel": 111.59860925785031,
+      "starting_mech_over_c_kernel": 138.9627991919192,
+      "speedup_from_recorded_baseline": 1.1688789839631433,
+      "speedup_from_paired_original": 1.1083286089444087,
+      "speedup_from_round23": 0.9771926051909631,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002841791,
+      "c_median_seconds": 2.933293581008911e-05,
+      "mech_over_c_kernel": 96.88055155469851,
+      "starting_mech_over_c_kernel": 43560.74017727218,
+      "speedup_from_recorded_baseline": 443.259300912699,
+      "speedup_from_paired_original": 441.6583299053308,
+      "speedup_from_round23": 0.9840772949171842,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001035542,
+      "c_median_seconds": 1.2791715562343597e-05,
+      "mech_over_c_kernel": 80.95411400863546,
+      "starting_mech_over_c_kernel": 20723.719650259725,
+      "speedup_from_recorded_baseline": 240.9711532704613,
+      "speedup_from_paired_original": 240.72027788346585,
+      "speedup_from_round23": 1.0025349044268606,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000117542,
+      "c_median_seconds": 1.62515789270401e-06,
+      "mech_over_c_kernel": 72.32651087484699,
+      "starting_mech_over_c_kernel": 87.93647372142229,
+      "speedup_from_recorded_baseline": 1.0914566708070308,
+      "speedup_from_paired_original": 1.1435657041738274,
+      "speedup_from_round23": 0.9751833387214783,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000309458,
+      "c_median_seconds": 4.37488779425621e-06,
+      "mech_over_c_kernel": 70.73507128715103,
+      "starting_mech_over_c_kernel": 327.9356878116524,
+      "speedup_from_recorded_baseline": 4.548274725487788,
+      "speedup_from_paired_original": 4.228360552966801,
+      "speedup_from_round23": 1.0337978013171418,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.2958e-05,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 66.37516709045603,
+      "starting_mech_over_c_kernel": 79.13415176878613,
+      "speedup_from_recorded_baseline": 1.1526917235227463,
+      "speedup_from_paired_original": 1.2094553870633333,
+      "speedup_from_round23": 1.0206007859398731,
+      "observations": 30
+    },
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00011675,
+      "c_median_seconds": 1.875218003988266e-06,
+      "mech_over_c_kernel": 62.259427838092876,
+      "starting_mech_over_c_kernel": 77.03124240848712,
+      "speedup_from_recorded_baseline": 1.347254817987152,
+      "speedup_from_paired_original": 1.3319057815845825,
+      "speedup_from_round23": 1.0085653104925054,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00020875,
+      "c_median_seconds": 3.5832636058330536e-06,
+      "mech_over_c_kernel": 58.25694756595192,
+      "starting_mech_over_c_kernel": 27896.336343602026,
+      "speedup_from_recorded_baseline": 478.91217724550893,
+      "speedup_from_paired_original": 476.6760479041916,
+      "speedup_from_round23": 0.9379209580838324,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000649958,
+      "c_median_seconds": 1.1583324521780014e-05,
+      "mech_over_c_kernel": 56.111524698966186,
+      "starting_mech_over_c_kernel": 20830.730988440668,
+      "speedup_from_recorded_baseline": 371.2230897996486,
+      "speedup_from_paired_original": 370.5945876502789,
+      "speedup_from_round23": 0.9930133947116584,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000308542,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 44.87868461942671,
+      "starting_mech_over_c_kernel": 224.54405071064102,
+      "speedup_from_recorded_baseline": 4.8816951987087664,
+      "speedup_from_paired_original": 4.843343855941817,
+      "speedup_from_round23": 0.9816329705518212,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000165125,
+      "c_median_seconds": 3.958120942115784e-06,
+      "mech_over_c_kernel": 41.718027926588235,
+      "starting_mech_over_c_kernel": 218.1017246501925,
+      "speedup_from_recorded_baseline": 4.9530658591975785,
+      "speedup_from_paired_original": 4.911430734292203,
+      "speedup_from_round23": 1.0116093868281606,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.0002255,
+      "c_median_seconds": 5.458015948534012e-06,
+      "mech_over_c_kernel": 41.31537945772545,
+      "starting_mech_over_c_kernel": 245.10186705759173,
+      "speedup_from_recorded_baseline": 5.978013303769401,
+      "speedup_from_paired_original": 5.933481152993348,
+      "speedup_from_round23": 0.9329268292682926,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000125208,
+      "c_median_seconds": 3.3332034945487976e-06,
+      "mech_over_c_kernel": 37.56386317390109,
+      "starting_mech_over_c_kernel": 219.61129772332706,
+      "speedup_from_recorded_baseline": 5.626637275573446,
+      "speedup_from_paired_original": 5.5760574404191425,
+      "speedup_from_round23": 0.99334707047473,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.9042e-05,
+      "c_median_seconds": 2.5830231606960297e-06,
+      "mech_over_c_kernel": 34.47200991260429,
+      "starting_mech_over_c_kernel": 38.12304900128275,
+      "speedup_from_recorded_baseline": 1.0879697221535902,
+      "speedup_from_paired_original": 1.048662428966106,
+      "speedup_from_round23": 1.0093551357786212,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000147625,
+      "c_median_seconds": 4.583969712257385e-06,
+      "mech_over_c_kernel": 32.20461941649736,
+      "starting_mech_over_c_kernel": 50.45658200493294,
+      "speedup_from_recorded_baseline": 1.5094530059271805,
+      "speedup_from_paired_original": 1.5213141405588484,
+      "speedup_from_round23": 1.0347163420829806,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000181125,
+      "c_median_seconds": 6.9998204708099365e-06,
+      "mech_over_c_kernel": 25.87566363384779,
+      "starting_mech_over_c_kernel": 10500.55203711869,
+      "speedup_from_recorded_baseline": 400.9486984126984,
+      "speedup_from_paired_original": 398.0110420979986,
+      "speedup_from_round23": 1.021167701863354,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 2.9916e-05,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 23.935961554980626,
+      "starting_mech_over_c_kernel": 3899.393007189661,
+      "speedup_from_recorded_baseline": 173.77406738868834,
+      "speedup_from_paired_original": 172.85482684850916,
+      "speedup_from_round23": 0.9721553683647546,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00042675,
+      "c_median_seconds": 1.7916783690452576e-05,
+      "mech_over_c_kernel": 23.818449079530097,
+      "starting_mech_over_c_kernel": 4178.378618335307,
+      "speedup_from_recorded_baseline": 173.79388869361455,
+      "speedup_from_paired_original": 170.41984065612183,
+      "speedup_from_round23": 1.0108377270064441,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000101792,
+      "c_median_seconds": 4.416797310113907e-06,
+      "mech_over_c_kernel": 23.046563573770797,
+      "starting_mech_over_c_kernel": 36.05363035229189,
+      "speedup_from_recorded_baseline": 1.5640521848475322,
+      "speedup_from_paired_original": 1.5071518390443255,
+      "speedup_from_round23": 0.9901760452687834,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.5209e-05,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 22.407249702993376,
+      "starting_mech_over_c_kernel": 3606.1591485281647,
+      "speedup_from_recorded_baseline": 155.07521123408307,
+      "speedup_from_paired_original": 154.4157642111944,
+      "speedup_from_round23": 1.0446269189575152,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.6083e-05,
+      "c_median_seconds": 3.084074705839157e-06,
+      "mech_over_c_kernel": 18.184708656316474,
+      "starting_mech_over_c_kernel": 22.47169074801,
+      "speedup_from_recorded_baseline": 1.268958507925753,
+      "speedup_from_paired_original": 1.1158996487349107,
+      "speedup_from_round23": 0.9918335324429862,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000676375,
+      "c_median_seconds": 6.520794704556465e-05,
+      "mech_over_c_kernel": 10.37258540783958,
+      "starting_mech_over_c_kernel": 4841.308551231542,
+      "speedup_from_recorded_baseline": 469.1339242284236,
+      "speedup_from_paired_original": 466.38674256144884,
+      "speedup_from_round23": 1.004065791905378,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.4542e-05,
+      "c_median_seconds": 7.042195647954941e-06,
+      "mech_over_c_kernel": 7.745027648562852,
+      "starting_mech_over_c_kernel": 23662.233271603498,
+      "speedup_from_recorded_baseline": 2910.3030691943823,
+      "speedup_from_paired_original": 2910.345073521323,
+      "speedup_from_round23": 1.0442961387554546,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000184083,
+      "c_median_seconds": 2.929195761680603e-05,
+      "mech_over_c_kernel": 6.284421219235407,
+      "starting_mech_over_c_kernel": 119638.17928254372,
+      "speedup_from_recorded_baseline": 19497.578309784174,
+      "speedup_from_paired_original": 19609.300560073447,
+      "speedup_from_round23": 0.9932095848068534,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000307167,
+      "c_median_seconds": 0.00010799989104270935,
+      "mech_over_c_kernel": 2.8441417582405575,
+      "starting_mech_over_c_kernel": 50168.862826898156,
+      "speedup_from_recorded_baseline": 18027.250241725185,
+      "speedup_from_paired_original": 18070.976729271046,
+      "speedup_from_round23": 1.0067813274212398,
+      "observations": 30
+    }
+  },
+  "inter_round_aggregates_vs23": {
+    "optimization": {
+      "mech_runtime_multiplier": 1.0017193062883665,
+      "reference_runtime_multiplier": 1.01067423262271,
+      "c_runtime_multiplier": 1.0031664295031917,
+      "raw_mech_speedup": 0.9982836446521761,
+      "reference_adjusted_mech_speedup": 1.0089395564986403,
+      "mech_over_c_score_multiplier": 0.998557444535358
+    },
+    "holdout": {
+      "mech_runtime_multiplier": 1.0021517142506369,
+      "reference_runtime_multiplier": 1.0026768748653274,
+      "c_runtime_multiplier": 0.9971001261272882,
+      "raw_mech_speedup": 0.9978529056828029,
+      "reference_adjusted_mech_speedup": 1.0005240330453191,
+      "mech_over_c_score_multiplier": 1.0050662796954695
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "gramschmidt",
+      "reference": "frozen round23 Mech",
+      "runtime_multiplier": 1.0661879248790802
+    },
+    {
+      "partition": "holdout",
+      "case": "syrk",
+      "reference": "frozen round23 Mech",
+      "runtime_multiplier": 1.0718954248366013
+    }
+  ],
+  "performance_acceptance": {
+    "schema": "mech.polybench.performance-acceptance-snapshot.v1",
+    "policy": {
+      "metric": "geomean_mech_over_c_kernel",
+      "lower_is_better": true,
+      "promotion": "Both scores must be strictly below the last accepted run.",
+      "failed_run": "Both scores increased versus the immediately preceding measured run.",
+      "ties_or_mixed_results": "Retain the measurements without promotion.",
+      "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
+      "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
+      "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
+      "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+    },
+    "decision": {
+      "history_index": 24,
+      "label": "round-24-typed-reductions",
+      "source_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+      "history_entry_sha256": "e69077712b1a7af52cf92fa8b4b0d1762d6809c7888ba83a504e5ad6c844528a",
+      "scores": {
+        "optimization": 30.72497867548146,
+        "holdout": 64.04715094835615
+      },
+      "previous_measured_index": 23,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 23,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9985574445353579,
+        "holdout": 1.0050662796954692
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 23
+    },
+    "accepted_history_index": 23,
+    "accepted": {
+      "history_index": 23,
+      "label": "round-23-shared-bounds",
+      "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+      "history_entry_sha256": "38d9f28778985f00b8144f02f6b08a4eafc5d11c7502f0a942092e2c8ecabc0c",
+      "scores": {
+        "optimization": 30.769365191381855,
+        "holdout": 63.7243057918152
+      },
+      "previous_measured_index": 22,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 22,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9726926851605154,
+        "holdout": 0.9305959885125102
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 23
+    }
+  },
+  "implementation": [
+    "Shared resident sum_snapshot uses exact current BorrowedNumericOperand::F64 banks and the maintained packed F64 constructor after unchanged complete preflight.",
+    "Four independent output accumulators expose adjacent reads without reassociating any reduction. Each keeps its original positive-zero seed and ordered additions; tails and empty axes retain exact current geometry.",
+    "Current input NaNs retain ordinary numeric_sum. Differential tests caught host instruction selection choosing different NaN payloads in an unguarded prototype; its source diff and failed log are retained.",
+    "Other scalar kinds, unmatched backing and unsupported output schemas retain ordinary reduction and constructor validation. Full original source work, fuel/physical admission, aliasing and atomic publication remain.",
+    "No image, ABI, work policy, call signature or source CFG changed: IR383/work150/ABI42 remain. All15 optimization probes must retain exact accepted23 execution reports."
+  ],
+  "case_order": "Descending current Mech/C kernel ratio (largest first).",
+  "training_probe": {
+    "receipt_sha256": "20b9e84e75ff032a85bf42826f40ce97ff5fece6a244e660e6a2983e655e040f",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_23_replay": 1.0107678193415517,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.004340753,
+      "sum_reference_median_seconds": 0.004380167
+    },
+    "selection": {
+      "selected_at": "2026-11-26T23:56:50.290990+00:00",
+      "compiler_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+      "compiler_fingerprint": "86d2492951277e34975b4a9aaeddeba8e688652c90ed09f90df719970183284b",
+      "driver_sha256": "7d2a90bdbb3b0d556cc7161ff7528695f956055eb2af6937eb5ff6ebaef02d93",
+      "probe_sha256": "20b9e84e75ff032a85bf42826f40ce97ff5fece6a244e660e6a2983e655e040f",
+      "probe_completed_at": "2026-11-26T23:55:31.950144+00:00",
+      "scope": "All15 optimization programs only; no candidate holdout timing or profile.",
+      "criterion": "559 selected correctness checks and both feature builds; all15 optimization geomean speedup>1.0; every accepted23 execution report must match. Criterion fixed before candidate timing.",
+      "summary": {
+        "count": 15,
+        "geomean_speedup_from_round_23_replay": 1.0107678193415517,
+        "regressions_over_five_percent": 0,
+        "sum_candidate_median_seconds": 0.004340753,
+        "sum_reference_median_seconds": 0.004380167
+      },
+      "interpretation": "Modest training gain; no claim every program improves or generalization established."
+    },
+    "frozen_aggregate_qualification": false
+  },
+  "development_failure": {
+    "receipt_sha256": "df176d88823c968d702e38bd2ad40fa4908806850c346419113cd17de45d63da",
+    "holdout_measured": false,
+    "failed_check": "exact NaN payload parity",
+    "correction": "Current input NaNs retain ordinary numeric_sum; no arithmetic or source error rule is relaxed."
+  },
+  "profiling": {
+    "receipt_sha256": "794204db4f83df25f41febff76394d29f06c433d6ffce7764f5d48c6353dde48",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "correlation",
+      "seidel-2d",
+      "gramschmidt",
+      "nussinov"
+    ],
+    "canonical_execution_samples": 3022,
+    "coverage_of_training_sum": 0.8021834392219219,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.26648661301012533,
+        "estimated_seconds_in_training_sum": 0.0010263063018686321
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.22268172627904748,
+        "estimated_seconds_in_training_sum": 0.0008576027756504554
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.2030614483092285,
+        "estimated_seconds_in_training_sum": 0.000782040199739468
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.10159739409598824,
+        "estimated_seconds_in_training_sum": 0.0003912768624147806
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.10123243918992186,
+        "estimated_seconds_in_training_sum": 0.0003898713301977474
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.09871360052010858,
+        "estimated_seconds_in_training_sum": 0.00038017065528946764
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.005760966226582415,
+        "estimated_seconds_in_training_sum": 2.2186915419159303e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0004658123689976563,
+        "estimated_seconds_in_training_sum": 1.793959420289855e-06
+      }
+    ]
+  },
+  "development_checks": {
+    "plan_log_sha256": "86d70541dfd1201300d4856b3774fa548d06ffe177b52cd555e20479aa71e0c1",
+    "focused_log_sha256": "deba563e0397936d4c13c914e06e783528ccf29508efd132b013d8a68fcbbfb4",
+    "development_failures_retained": {
+      "unguarded/focused.log": "7963cf735e03ace9cea2821f8b716ad4e513f59f3d35cc7248690cc1e79e0904"
+    },
+    "corrections": [
+      "Keep ordinary numeric_sum for current input NaNs after differential payload failure.",
+      "Add independent finite/infinite corpora to exercise actual typed selection on all large, empty and tail shapes."
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regression checks are qualified; larger datasets, GPU/SIMD selection, linked Object execution, full compression/AOT and a fresh external application remain unqualified.",
+    "Choose and tune only from optimization-set profiles, source inspection and probes. Freeze before final optimization/holdout timing. Holdout aggregate informs acceptance/rejection; subsequent tuning again uses optimization evidence.",
+    "The split and prior holdout results were exposed; reused holdout is not blind external validation. No new candidate holdout timing/profile selected or retuned this candidate.",
+    "All limits, full original source prices, physical admission, C binaries/flags, inputs, tolerances, objective, split and timing boundaries remain.",
+    "Each process validates all untimed finite warm-up live-outs; timed checked calls must succeed but timed outputs are not separately flattened.",
+    "The measured source/executable stay unchanged from freeze through qualification/profile audit. Any restoration after aggregate rejection is recorded separately. Only PR1001 may change; PR1000 remains unchanged."
+  ],
+  "interpretation": "Optimization 30.724979x C; holdout 64.047151x C. Performance gate: not_promoted. Goal requires holdout strictly below1.0x C; all regressions remain in each aggregate.",
+  "receipts": {
+    "round-24-frozen.json": "b1dd1e7994cc52db3da2a4b0d4c1a1ca41be9ea12ec7a0a8f430f74df8ada989",
+    "round-24-optimization.json": "e31097f3d3cb7670bbbf652edbcbfa6bb3046f60a662d4b0f5b036cde9aa7740",
+    "round-24-holdout.json": "40c9bfd5077b2d8ea19bf97c3dbd6f32adda46f2c974292fb076b042c048dbb5",
+    "round-24-progress.json": "e94def6e2bb9b99a16ce4d9715bdd10d85ae020e1ccf13e0034772eb59b3b961",
+    "round-24-training-probe.json": "20b9e84e75ff032a85bf42826f40ce97ff5fece6a244e660e6a2983e655e040f",
+    "round-24-development-failure.json": "df176d88823c968d702e38bd2ad40fa4908806850c346419113cd17de45d63da",
+    "round-24-performance-acceptance.json": "33e94ac595a6d35bc4a68e3eb45e52950c936f9473fee653dfaaeab2ce896ec7",
+    "round-24-training-profile.json": "794204db4f83df25f41febff76394d29f06c433d6ffce7764f5d48c6353dde48"
+  }
+}

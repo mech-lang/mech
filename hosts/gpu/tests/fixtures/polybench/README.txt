@@ -1845,3 +1845,55 @@ floyd-warshall     holdout             4,841.31           10.45
 cholesky           optimization       23,662.23            8.28
 nussinov           optimization      119,638.18            6.07
 seidel-2d          optimization       50,168.86            2.86
+
+Round24: typed ordered F64 reductions
+Source f1f701bcb14b7c4d76737177cd2dec46d68bb2ae; IR383/work150/ABI42; executable 7d2a90bdbb3b0d556cc7161ff7528695f956055eb2af6937eb5ff6ebaef02d93.
+Current exact F64 banks feed the maintained packed constructor after the complete original preflight. Four independent accumulators retain each sum positive-zero seed and original term order. Input NaNs, other kinds and unmatched backing retain ordinary numeric_sum. No source prices, fuel, memory admission, aliases, ports or arithmetic rules change.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 30.724979x C; 25.291690x faster than recorded start; 24.885445x faster than paired original; summed medians 0.004800958s; raw Mech speedup vs23 0.998284x; original-reference runtime multiplier 1.010674x; C runtime multiplier 1.003166x; reference-adjusted speedup 1.008940x.
+holdout: 64.047151x C; 31.703905x faster than recorded start; 31.466331x faster than paired original; summed medians 0.016547085s; raw Mech speedup vs23 0.997853x; original-reference runtime multiplier 1.002677x; C runtime multiplier 0.997100x; reference-adjusted speedup 1.000524x.
+
+Training-only seven-sample replay vs23: 1.010768x; 0 regressions over5%. Every exact execution report matches accepted23. Selected source/executable frozen before either formal set.
+An unguarded development prototype failed one exact NaN payload check (12 passed). Its full log and reconstructible source patch remain in round-24-development-failure.json. No performance was measured for it. Current input NaNs now use the original reduction; all IEEE bits remain checked.
+559 selected checks (546 native and13 resident numeric) and both feature builds pass. All900 formal observations,29482 finite warm-up live-outs per artifact and25 history entries remain. Five optimization-only profiles contain 3022 canonical execution samples and cover 80.218344% of training summed medians.
+Performance gate: not_promoted; accepted history index23. Both aggregate scores must improve against the last accepted run.
+Raw runtime regressions over5% vs23: optimization gramschmidt (+6.62%), holdout syrk (+7.19%).
+Selection and tuning use only the optimization pile. Holdout aggregate informs accept/reject after freeze; this previously exposed split is not blind validation. The below1.0x holdout goal remains open unless measured achieved.
+
+All thirty kernels, descending current Mech/C kernel ratio. Each C ratio uses its own round C measurement; raw speedups remain separate.
+kernel             set            start xC          now xC
+jacobi-2d          holdout             9,612.12          454.88
+jacobi-1d          holdout             7,168.14          396.78
+adi                holdout            21,631.38          189.52
+gemver             holdout               260.73          171.31
+gesummv            holdout               112.38          112.98
+mvt                optimization          138.96          111.60
+deriche            optimization       43,560.74           96.88
+ludcmp             holdout            20,723.72           80.95
+bicg               optimization           87.94           72.33
+correlation        optimization          327.94           70.74
+atax               optimization           79.13           66.38
+2mm                optimization           77.03           62.26
+gramschmidt        optimization       27,896.34           58.26
+lu                 holdout            20,830.73           56.11
+syr2k              holdout               224.54           44.88
+symm               holdout               218.10           41.72
+syrk               holdout               245.10           41.32
+trmm               holdout               219.61           37.56
+3mm                optimization           38.12           34.47
+covariance         optimization           50.46           32.20
+fdtd-2d            holdout            10,500.55           25.88
+durbin             optimization        3,899.39           23.94
+heat-3d            holdout             4,178.38           23.82
+gemm               optimization           36.05           23.05
+trisolv            holdout             3,606.16           22.41
+doitgen            optimization           22.47           18.18
+floyd-warshall     holdout             4,841.31           10.37
+cholesky           optimization       23,662.23            7.75
+nussinov           optimization      119,638.18            6.28
+seidel-2d          optimization       50,168.86            2.84
+
+Round24 promotion decision and source restoration
+
+Round24 is mixed and not promoted. Accepted23 remains optimization30.769365x C and holdout63.724306x C. After the frozen candidate/profile audit passed, all4 Rust changes were restored exactly from a9d3efc15e. Complete compiler fingerprint is again 0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2, matching accepted23. The rejected source f1f701bcb14b7c4d76737177cd2dec46d68bb2ae,559-check qualification,900 observations, development failure and training profiles remain. round-24-restoration.json links the exact decision and byte restoration; no holdout per-case tuning was performed.

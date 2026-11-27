@@ -4,7 +4,6 @@ use borrowed_numeric::BorrowedNumericOperand;
 mod compact_range;
 mod compact_string_access;
 mod direct_float_binary;
-mod direct_float_sum;
 pub mod linkage_factories;
 mod nested_assignment;
 mod packed_indexed_assign;
@@ -13691,11 +13690,6 @@ fn sum_snapshot(
     }
     if let Some(shape) = &output_shape {
         let operand = BorrowedNumericOperand::snapshot(input, element);
-        if let Some(next) =
-            direct_float_sum::try_construct(kernel, shape, rows, columns, column, &operand)
-        {
-            return write_snapshot_value(kernel, output, next?);
-        }
         if let Some(next) =
             packed_snapshot_output::try_construct(kernel, shape, output_count, |at| {
                 if column {
