@@ -2521,3 +2521,18 @@ The one prospective v2 optimization15 probe uses seven fresh-process samples per
 The strict two-set gate rejects this run; exact accepted31 source and driver are restored. All900 formal observations,29482 finite liveouts,40 append-only history entries, all regressions and development failures remain. Holdout use is aggregate acceptance only. The below1.0x C holdout goal remains unmet.
 
 [Qualification](round-39-qualification.json) · [Frozen source](round-39-frozen.json) · [Acceptance](round-39-performance-acceptance.json) · [Optimization profiles](training-experiments/optimization-margin-profile.json) · [Constructor profile](training-experiments/composite-pack-profile.json)
+
+Round40: native map range facts and private copies (not promoted)
+
+The compiler recovers each source-literal range fact independently, checks current frame metadata, then retains known start/cardinality and the checked total element count in native SSA. Dynamic ends preserve dynamic counts while known starts remain constants. The complete map still succeeds in private scratch before a byte-preserving packed copy initializes the existing result bank, with exact tails. No source-port change, benchmark-name checks, FP arithmetic changes, new frame fields, weaker admission or source work reduction. All686 broad checks,122 focused checks and both feature configurations pass, including all30 finite C-liveout programs. IR405/work156/ABI47.
+
+The single prospective v2 optimization15 probe uses seven fresh-process observations per actor in alternating accepted31/candidate order. Raw geomean speedup is1.015342x; Gram-Schmidt is1.225011x. All210 observations and3 regressions>5% remain. Visits match and source work/comparison charges do not decrease. Before timing, actual checked optimization Objects show packed private copies and source-literal large cell bounds retained in the profiled native function, without new FMA. Static loop counts do not establish runtime cost or feasibility. Source and driver were committed/frozen before both formal sets.
+
+| Set | Accepted31 x C | Round40 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 12.17672x | 0.97907x | 0.99370x |
+| Holdout | 39.31570x | 39.59330x | 1.00206x | 1.01801x |
+
+The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,41 append-only history entries, all regressions and development stages remain. No holdout per-case diagnosis, profiling or tuning. The below1.0x C holdout goal remains unmet.
+
+[Qualification](round-40-qualification.json) · [Frozen source](round-40-frozen.json) · [Acceptance](round-40-performance-acceptance.json) · [Optimization-only native loop profile](training-experiments/native-map-memory-profile.json)
