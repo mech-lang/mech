@@ -2215,3 +2215,59 @@ Formal summed medians: 1.503ms/15.684ms. The goal remains strictly below1.0x C o
 | seidel-2d | Opt | 2.94x | 3.01x | 50168.86x | 316.791 | 105.333 |
 
 [Qualification](round-30-qualification.json) · [Frozen source](round-30-frozen.json) · [Acceptance](round-30-performance-acceptance.json) · [Optimization-only profile](round-30-training-profile.json)
+
+Round31: inverse scalar bitcasts and native profile attribution
+
+Lossless scalar bitcast round trips alias the existing SSA source when flags and original/result types match. Live inner uses, every FP operation, memory access, branch, source error/debit, observation and publication remain. Vectors and mismatched flags remain unchanged. Existing ordered matrix sum source from30 remains included.
+
+Performance gate: accepted; outcome: improved_both. Accepted compiler after this run: round31.
+
+| Set | Accepted29 x C | Round31 x C | Raw speedup vs29 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 14.24x | 11.44x | 1.191x | 66.14x |
+| Holdout | 41.53x | 39.32x | 1.044x | 51.16x |
+
+582 selected checks and both standalone features pass, including all30 original/decoded C-liveout programs and Object emission. New direct JIT witnesses preserve arbitrary F32/F64 bits, signaling/quiet NaNs, signedzero, live word stores, unfused multiply/add and reached error branches. IR390/work156/ABI47.
+
+Optimization-only seven-sample replay measured 1.19992x vs accepted29 and 1.07209x vs base30, with 2 raw regressions>5% vs29. All execution counters match base30 exactly. No case or observation was dropped.
+
+Profiling only the five largest round30 optimization medians covered 75.99% of summed optimization time: 1306 canonical execution samples and 970 resolved JIT self samples. Same-process maps attribute real native instructions; all136 sampled hot-site instructions and surrounding68-byte windows matched actual frozen JIT bytes to real checked Objects. Current Object emission removes84 inverse pairs across six training programs. Profiles, debugger snapshots and Object inspection never enter timing scores.
+
+Original-reference runtime multipliers vs29: 0.99889x/0.98743x. Reference-adjusted gains: 1.18984x/1.03096x. C multipliers: 1.04497x/1.01181x. Raw regressions>5% vs29: 0/0 (optimization/holdout), all retained.
+
+Formal summed medians: 1.280ms/15.617ms. Goal remains strictly below1.0x C on the fixed15 holdout.
+
+| Kernel | Set | Accepted29 x C | Round31 x C | Starting x C | Round31 Mech us | Round31 C us |
+|---|---|---:|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 451.95x | 458.98x | 9612.12x | 3538.250 | 7.709 |
+| jacobi-1d | Holdout | 397.02x | 388.01x | 7168.14x | 177.791 | 0.458 |
+| adi | Holdout | 192.91x | 191.08x | 21631.38x | 8550.917 | 44.750 |
+| ludcmp | Holdout | 84.41x | 85.37x | 20723.72x | 1092.125 | 12.792 |
+| gramschmidt | Opt | 60.40x | 54.48x | 27896.34x | 197.500 | 3.625 |
+| lu | Holdout | 59.10x | 53.43x | 20830.73x | 641.084 | 12.000 |
+| mvt | Opt | 58.27x | 44.97x | 138.96x | 73.083 | 1.625 |
+| bicg | Opt | 47.12x | 42.71x | 87.94x | 71.208 | 1.667 |
+| correlation | Opt | 42.99x | 32.72x | 327.94x | 147.208 | 4.500 |
+| fdtd-2d | Holdout | 26.55x | 25.45x | 10500.55x | 174.958 | 6.875 |
+| trisolv | Holdout | 23.82x | 22.67x | 3606.16x | 25.500 | 1.125 |
+| trmm | Holdout | 23.37x | 21.52x | 219.61x | 75.333 | 3.500 |
+| syrk | Holdout | 20.96x | 21.20x | 245.10x | 111.292 | 5.250 |
+| durbin | Opt | 24.26x | 21.03x | 3899.39x | 28.917 | 1.375 |
+| symm | Holdout | 21.60x | 20.30x | 218.10x | 77.834 | 3.834 |
+| heat-3d | Holdout | 24.81x | 19.11x | 4178.38x | 341.667 | 17.875 |
+| gesummv | Holdout | 18.37x | 18.49x | 112.38x | 17.708 | 0.958 |
+| syr2k | Holdout | 18.65x | 17.94x | 224.54x | 123.333 | 6.875 |
+| gemver | Holdout | 18.51x | 16.42x | 260.73x | 35.583 | 2.167 |
+| atax | Opt | 14.92x | 13.31x | 79.13x | 17.750 | 1.333 |
+| 2mm | Opt | 13.68x | 11.63x | 77.03x | 20.833 | 1.792 |
+| floyd-warshall | Holdout | 10.38x | 9.61x | 4841.31x | 633.958 | 66.000 |
+| 3mm | Opt | 8.29x | 8.65x | 38.12x | 22.000 | 2.542 |
+| cholesky | Opt | 7.91x | 7.79x | 23662.23x | 54.541 | 7.000 |
+| deriche | Opt | 10.78x | 7.04x | 43560.74x | 206.583 | 29.333 |
+| covariance | Opt | 15.49x | 6.34x | 50.46x | 29.083 | 4.584 |
+| nussinov | Opt | 6.35x | 5.83x | 119638.18x | 172.709 | 29.625 |
+| gemm | Opt | 4.75x | 4.57x | 36.05x | 20.583 | 4.500 |
+| doitgen | Opt | 5.83x | 4.42x | 22.47x | 14.375 | 3.250 |
+| seidel-2d | Opt | 2.94x | 1.89x | 50168.86x | 203.708 | 107.750 |
+
+[Qualification](round-31-qualification.json) · [Frozen source](round-31-frozen.json) · [Acceptance](round-31-performance-acceptance.json) · [Optimization-only native profiles](round-31-training-profile.json)
