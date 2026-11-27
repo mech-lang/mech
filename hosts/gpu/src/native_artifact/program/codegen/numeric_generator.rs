@@ -693,7 +693,7 @@ fn clone_field(
             let valid = b.ins().icmp_imm(IntCC::Equal, actual, expected as i64);
             guard(b, valid, miss, crate::native_artifact::abi::STATUS_ABI);
         }
-        copy(b, old[0], destination, extents[0] * extents[1])?;
+        copy(b, old[0], destination, extents[0] * extents[1]);
         let data = arrays::description(b, destination, extents);
         write_view(b, words, at, &data);
         b.ins().jump(done, &[]);
