@@ -1797,3 +1797,73 @@ fn native_rectangular_numeric_maps_current_bounds_are_rederived_and_reject_chang
         }
     }
 }
+
+#[test]
+fn numeric_type_slots_reject_key_schema_and_value_index_substitution() {
+    use crate::native_artifact::program::prepare::validate_type_slots;
+    let catalog = mech_stdlib::source_catalog();
+    let source = "xs := input<[f64]>\n(xs + peer<[f64]>, code<u64>)\n";
+    for artifact in artifacts(source) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let metadata = object.descriptor().metadata();
+        let original = &metadata.types;
+        assert!(validate_type_slots(&metadata.plan, &metadata.schemas, original).is_ok());
+        let encoded = object.descriptor().encode_build_owned_image().unwrap();
+        let image: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+        let mut substitutions = Vec::new();
+        // Every ordinary value and transport output must retain its exact
+        // semantic identity, even when another valid key/ID exists in the table.
+        for (index, slot) in original.iter().enumerate() {
+            let other = original.iter().find(|other| other.key != slot.key).unwrap();
+            for which in 0..3 {
+                let mut slots = original.to_vec();
+                match which {
+                    0 => slots[index].key = other.key,
+                    1 => slots[index].schema = other.schema,
+                    _ => slots[index] = *other,
+                }
+                substitutions.push(slots);
+            }
+        }
+        let mut missing = original.to_vec();
+        missing.pop();
+        substitutions.push(missing);
+        let mut extra = original.to_vec();
+        extra.push(original[0]);
+        substitutions.push(extra);
+        for slots in substitutions {
+            // This is the same source/image gate the runtime relies on, not
+            // only a later binding digest rejecting the modified image.
+            assert!(validate_type_slots(&metadata.plan, &metadata.schemas, &slots).is_err());
+            let mut changed = image.clone();
+            changed["descriptor"]["types"] = serde_json::to_value(slots).unwrap();
+            let bytes = serde_json::to_vec(&changed).unwrap();
+            for wire in [bytes.clone(), super::super::packing::pack(&bytes).unwrap()] {
+                // SAFETY: wire-only rejection test. No changed descriptor or
+                // fabricated native entry is ever executed.
+                assert!(
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&wire, &catalog) }
+                        .is_err()
+                );
+            }
+        }
+        for wire in [
+            encoded.clone(),
+            super::super::packing::pack(&encoded).unwrap(),
+        ] {
+            // SAFETY: confined metadata from this genuine checked Object.
+            let restored =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&wire, &catalog) }
+                    .unwrap();
+            assert_eq!(restored.encode_build_owned_image().unwrap(), encoded);
+            assert!(
+                validate_type_slots(
+                    &restored.metadata().plan,
+                    &restored.metadata().schemas,
+                    &restored.metadata().types,
+                )
+                .is_ok()
+            );
+        }
+    }
+}

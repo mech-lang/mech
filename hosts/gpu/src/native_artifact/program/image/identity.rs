@@ -562,7 +562,8 @@ fn selected_template(
 // IR387 emits source-closed fixed matrix generators with bounded numeric FSM children.
 // IR390 cancels lossless scalar bitcast round trips before allocation.
 // IR409 selects canonical numeric tuple/record construction from the same sealed factory.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 410;
+// IR411 reuses exact prepared value/output keys in current numeric validation.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 411;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

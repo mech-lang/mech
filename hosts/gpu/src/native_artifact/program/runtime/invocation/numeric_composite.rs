@@ -81,8 +81,10 @@ impl Invocation<'_, '_, '_> {
                 else {
                     return Ok(false);
                 };
+                // Reuse the independently validated key at this source value
+                // index; current identity and account checks still run here.
                 if value.schema() != ty.schema()
-                    || value.schema_key() != ty.schema_key()
+                    || value.schema_key() != metadata.types[operand.get() as usize].key
                     || value.memory_budget_retained_bytes(&memory).is_none()
                 {
                     return Ok(false);
