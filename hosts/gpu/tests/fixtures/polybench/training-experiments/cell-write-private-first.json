@@ -5,7 +5,7 @@
   "decision": "rejected_before_formal",
   "scope": "Optimization15 selection only. One prospective seven-sample probe; no C or original-reference timing in this probe, no holdout performance and no formal900-observation run.",
   "source_parent": "58ee33ab7973367e4d25b9c75b1dec49e36a7b5a",
-  "source_commit": null,
+  "source_commit": "6eab99fc9089868a8e2f7ab1db8f0d5fb45f40cf",
   "compiler_fingerprint": "4b43b9c92408146c85fa954aa087bf4d5e2f359fb4d41611c3043010ad38f087",
   "driver_sha256": "433f43f2765444ec63a8716580980319a09bfe57b07bf3f538f14e573bb8e13d",
   "versions": {
@@ -3771,5 +3771,6 @@
     "313 canonical execution samples,307 in the native numeric function (98.08%). All30 sampled instruction/windows match actual JIT executable bytes to the checked Object.",
     "The rejected function has three F64 divisions versus two before; control/data placement now duplicates the arithmetic expression in more branches. This is a code-generation regression; no host-runtime reduction is claimed.",
     "The shared SSA Words bank declares every home as I64. Investigate preserving known F64 scalar homes through phis/cold synchronization, retaining exact raw-word ABI and bits."
-  ]
+  ],
+  "compiler_restored_to_accepted31": true
 }
