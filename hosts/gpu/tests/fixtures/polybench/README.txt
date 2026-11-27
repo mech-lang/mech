@@ -2327,3 +2327,59 @@ Formal summed medians: 1.283ms/15.198ms. Goal remains strictly below1.0x C on th
 | seidel-2d | Opt | 1.89x | 1.89x | 50168.86x | 204.208 | 108.000 |
 
 [Qualification](round-32-qualification.json) · [Frozen source](round-32-frozen.json) · [Acceptance](round-32-performance-acceptance.json) · [Optimization-only profiles](round-32-training-profile.json)
+
+Round33: direct source-ordered rectangular loops
+
+Rectangular comprehensions visit complete columns with direct column/row counters, retaining the exact scalar body, term and error order, checked accesses and row-major storage. One-row rectangles retain one loop. Genuine current loans, ownership, initialized banks, finite admission, full source costs/replay, actual fixed-template funding and atomic publication remain. Rejected32 SIMD-copy source is excluded.
+
+Performance gate: not_promoted; outcome vs previous measured run: improved_both. Promotion compares accepted31. Accepted compiler after this run: round31.
+
+| Set | Accepted31 x C | Round33 x C | Raw speedup vs31 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 11.44x | 11.81x | 1.002x | 66.26x |
+| Holdout | 39.32x | 38.82x | 1.003x | 51.31x |
+
+585 selected checks and both standalone feature checks pass, including all30 original/decoded C-liveout programs and Object emission. New production-emitter JIT tests cover all exact scalar kinds/widths, NaN payloads/signedzero, one/two-row shapes, range/value and reordered/empty sources, column-first failure and malformed frames. Simple two-axis fixtures emit no Udiv/Urem. IR392/work156/ABI47.
+
+The optimization-only probe measured 1.00727x against accepted31, retaining 2 regressions>5%. Every execution counter matches exactly. Gram-Schmidt measured1.19228x; its actual Object function has three fewer integer division/multiply-high instructions,26 to23.
+
+Accepted31 optimization profiles used 1099 canonical samples and 806 resolved JIT self samples, covering 72.47% of summed optimization medians. All130 sampled hot-site instructions/windows matched actual checked JIT bytes to real Objects. No diagnostic times enter performance scores.
+
+Original-reference runtime multipliers vs31: 1.00329x/1.00120x. Reference-adjusted gains: 1.00511x/1.00403x. C multipliers: 0.96635x/1.00994x. Raw regressions>5% vs31: 2/4 (optimization/holdout), all retained.
+
+Formal summed medians: 1.268ms/15.300ms. Goal remains strictly below1.0x C on fixed15 holdout.
+
+| Kernel | Set | Accepted31 x C | Round33 x C | Starting x C | Round33 Mech us | Round33 C us |
+|---|---|---:|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 458.98x | 462.11x | 9612.12x | 3581.333 | 7.750 |
+| jacobi-1d | Holdout | 388.01x | 452.29x | 7168.14x | 188.500 | 0.417 |
+| adi | Holdout | 191.08x | 186.00x | 21631.38x | 8323.333 | 44.750 |
+| ludcmp | Holdout | 85.37x | 85.68x | 20723.72x | 1056.667 | 12.333 |
+| lu | Holdout | 53.43x | 55.07x | 20830.73x | 635.584 | 11.541 |
+| mvt | Opt | 44.97x | 51.04x | 138.96x | 70.167 | 1.375 |
+| gramschmidt | Opt | 54.48x | 49.63x | 27896.34x | 175.791 | 3.542 |
+| bicg | Opt | 42.71x | 42.15x | 87.94x | 68.500 | 1.625 |
+| correlation | Opt | 32.72x | 37.11x | 327.94x | 157.708 | 4.250 |
+| trisolv | Holdout | 22.67x | 24.40x | 3606.16x | 26.417 | 1.083 |
+| symm | Holdout | 20.30x | 23.51x | 218.10x | 87.166 | 3.708 |
+| durbin | Opt | 21.03x | 22.39x | 3899.39x | 28.916 | 1.292 |
+| gemver | Holdout | 16.42x | 22.19x | 260.73x | 38.833 | 1.750 |
+| fdtd-2d | Holdout | 25.45x | 22.01x | 10500.55x | 152.250 | 6.917 |
+| trmm | Holdout | 21.52x | 21.75x | 219.61x | 75.208 | 3.458 |
+| syrk | Holdout | 21.20x | 20.50x | 245.10x | 111.916 | 5.459 |
+| syr2k | Holdout | 17.94x | 19.96x | 224.54x | 131.417 | 6.583 |
+| heat-3d | Holdout | 19.11x | 18.44x | 4178.38x | 328.083 | 17.792 |
+| atax | Opt | 13.31x | 12.85x | 79.13x | 17.125 | 1.333 |
+| 2mm | Opt | 11.63x | 12.46x | 77.03x | 21.291 | 1.709 |
+| gesummv | Holdout | 18.49x | 9.70x | 112.38x | 17.375 | 1.792 |
+| floyd-warshall | Holdout | 9.61x | 8.37x | 4841.31x | 546.084 | 65.209 |
+| 3mm | Opt | 8.65x | 7.98x | 38.12x | 21.292 | 2.667 |
+| cholesky | Opt | 7.79x | 7.44x | 23662.23x | 53.333 | 7.167 |
+| deriche | Opt | 7.04x | 7.26x | 43560.74x | 208.792 | 28.750 |
+| covariance | Opt | 6.34x | 6.68x | 50.46x | 30.042 | 4.500 |
+| nussinov | Opt | 5.83x | 6.33x | 119638.18x | 172.792 | 27.292 |
+| doitgen | Opt | 4.42x | 5.04x | 22.47x | 15.958 | 3.167 |
+| gemm | Opt | 4.57x | 4.90x | 36.05x | 20.833 | 4.250 |
+| seidel-2d | Opt | 1.89x | 1.90x | 50168.86x | 205.542 | 107.958 |
+
+[Qualification](round-33-qualification.json) · [Frozen source](round-33-frozen.json) · [Acceptance](round-33-performance-acceptance.json) · [Optimization-only profiles](round-33-training-profile.json)
