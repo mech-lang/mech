@@ -102,6 +102,7 @@ pub(super) fn optimize(
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
     origins: Option<&[Block]>,
+    equate_transports: bool,
 ) -> Report {
     let mut report = Report::default();
     // Unknown/exceptional edge values keep the original entry/landing contract.
@@ -151,7 +152,7 @@ pub(super) fn optimize(
     report.candidates = edges.len();
     let plans = edges
         .into_iter()
-        .filter_map(|edge| route::find(f, dom, &uses, edge, known.clone()))
+        .filter_map(|edge| route::find(f, dom, &uses, edge, known.clone(), equate_transports))
         .collect::<Vec<_>>();
     drop(uses);
     let targets = plans.iter().map(|p| p.target).collect::<BTreeSet<_>>();

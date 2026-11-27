@@ -7,6 +7,7 @@ pub(in crate::native_artifact) mod admitted_spans;
 pub(in crate::native_artifact) mod argument_jumps;
 mod boolean_words;
 pub(in crate::native_artifact) mod bounded_byte_histogram;
+mod branch_outcomes;
 pub(in crate::native_artifact) mod checked_adds;
 pub(in crate::native_artifact) mod compared_bytes;
 pub(in crate::native_artifact) mod composed_reads;
@@ -36,6 +37,7 @@ mod selected_increments;
 mod selected_ranges;
 mod selected_values;
 pub(in crate::native_artifact) mod shared_clamp;
+mod tagged_store_tail;
 mod threaded_edges;
 mod unsigned_intervals;
 mod window_bounds;
@@ -50,8 +52,51 @@ use cranelift_codegen::ir::{
 };
 use cranelift_codegen::isa::TargetIsa;
 pub(in crate::native_artifact::program) use dead_values::eliminate as eliminate_dead_values;
+pub(in crate::native_artifact::program) use known_widths::admit_loop_masks;
 pub(in crate::native_artifact::program) use local_phis::controller_passthrough;
 pub(in crate::native_artifact::program) use local_phis::incoming as incoming_block_arguments;
+
+pub(in crate::native_artifact::program) fn carry_branch_outcomes(
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    fold_inverted_uses: bool,
+) -> Result<usize, NativeCompileError> {
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let joins = branch_outcomes::carry(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        fold_inverted_uses,
+    );
+    if joins != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(joins)
+}
+
+pub(in crate::native_artifact::program) fn specialize_tagged_store_tails(
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    let mut changed = 0;
+    // Each specialization copies a bounded tail. Cap growth per function.
+    for _ in 0..MAX_ROUNDS {
+        if !tagged_store_tail::specialize(&mut context.func, &context.cfg) {
+            break;
+        }
+        context.flowgraph();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        changed += 1;
+    }
+    if changed != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(changed)
+}
 
 const MAX_ROUNDS: usize = 8;
 const MAX_CONSTANT_DEPTH: usize = 16;
@@ -368,9 +413,14 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
         context.func.dfg.resolve_all_aliases();
         context.compute_cfg();
         context.compute_domtree();
-        report.identity_edges =
-            identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, None)
-                .threaded_edges;
+        report.identity_edges = identity_routes::optimize(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+            None,
+            false,
+        )
+        .threaded_edges;
         if report.identity_edges != 0 {
             finish_route(context)?;
         }
@@ -541,7 +591,7 @@ pub(in crate::native_artifact) fn forward_identity_routes(
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<identity_routes::Report, NativeCompileError> {
-    forward_identity_routes_from(controls, context, isa, None)
+    forward_identity_routes_from(controls, context, isa, None, false)
 }
 
 pub(in crate::native_artifact) fn forward_identity_routes_from(
@@ -549,6 +599,7 @@ pub(in crate::native_artifact) fn forward_identity_routes_from(
     context: &mut Context,
     isa: &dyn TargetIsa,
     origins: Option<&[Block]>,
+    equate_transports: bool,
 ) -> Result<identity_routes::Report, NativeCompileError> {
     if !controls.enabled(OptimizationPass::CfgCleanup)
         || !controls.enabled(OptimizationPass::IdentityRoutes)
@@ -558,8 +609,13 @@ pub(in crate::native_artifact) fn forward_identity_routes_from(
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let report =
-        identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, origins);
+    let report = identity_routes::optimize(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        origins,
+        equate_transports,
+    );
     if report.threaded_edges != 0 {
         optimize_ordered(controls, context, isa, true)?;
         context.func.dfg.resolve_all_aliases();

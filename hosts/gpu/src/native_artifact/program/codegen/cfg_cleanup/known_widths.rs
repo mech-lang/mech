@@ -6,7 +6,7 @@ use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{
     Block, BlockCall, Function, Inst, InstBuilder, InstructionData as Data, Opcode, Value, ValueDef,
 };
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 enum Rule {
     Fixed(u32),
@@ -319,6 +319,90 @@ fn infer(
         .into_iter()
         .map(|node| (node.value, node.width))
         .collect()
+}
+
+/// Move a low-half mask out of a carried word when its only wider inputs
+/// come from the immutable entry packet. The caller checks the words at the
+/// returned indices before invoking the specialized body.
+pub(in crate::native_artifact) fn admit_loop_masks(
+    function: &mut Function,
+    cfg: &ControlFlowGraph,
+    captures: &BTreeMap<Value, usize>,
+) -> Vec<usize> {
+    if captures.is_empty()
+        || function.layout.blocks().any(|block| {
+            function
+                .layout
+                .block_insts(block)
+                .any(|inst| function.dfg.insts[inst].exception_table().is_some())
+        })
+    {
+        return Vec::new();
+    }
+    let incoming = boolean_words::inputs(function, cfg);
+    let masks = function
+        .layout
+        .blocks()
+        .flat_map(|block| function.layout.block_insts(block))
+        .filter_map(|inst| {
+            let (value, limit) = match function.dfg.insts[inst] {
+                Data::Binary {
+                    opcode: Opcode::Band,
+                    args,
+                } => constant_operand(function, args)?,
+                Data::BinaryImm64 {
+                    opcode: Opcode::BandImm,
+                    arg,
+                    imm,
+                } => (function.dfg.resolve_aliases(arg), imm.bits() as u64),
+                _ => return None,
+            };
+            (limit == u64::from(u16::MAX)
+                && bits(function, value) == Some(64)
+                && incoming.contains_key(&value))
+            .then_some((inst, value))
+        })
+        .collect::<Vec<_>>();
+    if masks.is_empty() {
+        return Vec::new();
+    }
+    let widths = infer(function, cfg, masks.iter().map(|&(_, value)| value), false);
+    let mut admitted = BTreeSet::new();
+    for (inst, value) in masks {
+        let Some(words) = carried_captures(value, &incoming, &widths, captures) else {
+            continue;
+        };
+        admitted.extend(words);
+        function.dfg.replace(inst).iadd_imm(value, 0);
+    }
+    admitted.into_iter().collect()
+}
+
+fn carried_captures(
+    root: Value,
+    incoming: &BTreeMap<Value, Vec<Value>>,
+    widths: &BTreeMap<Value, u32>,
+    captures: &BTreeMap<Value, usize>,
+) -> Option<BTreeSet<usize>> {
+    let mut pending = incoming.get(&root)?.clone();
+    let mut visited = BTreeSet::from([root]);
+    let mut words = BTreeSet::new();
+    let mut carried = false;
+    let mut narrowed = false;
+    while let Some(value) = pending.pop() {
+        carried |= value == root;
+        if !visited.insert(value) {
+            continue;
+        }
+        if let Some(args) = incoming.get(&value) {
+            pending.extend(args);
+        } else if widths.get(&value).is_some_and(|&width| width <= 16) {
+            narrowed = true;
+        } else {
+            words.insert(*captures.get(&value)?);
+        }
+    }
+    (carried && narrowed && !words.is_empty()).then_some(words)
 }
 
 fn unsigned_guard(function: &Function, value: Value) -> Option<(Value, u32, bool)> {

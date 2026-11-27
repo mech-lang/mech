@@ -1,5 +1,5 @@
 //! Share repeated checked regions with explicit continuation boundaries.
-use super::body_relocations::matching_relocations;
+use super::{body_relocations::matching_relocations, checked_byte_append::ShortAppend};
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes},
@@ -1200,6 +1200,7 @@ struct Prepared {
     relocs: Vec<ModuleReloc>,
     stack: u64,
     traversals: Vec<Traversal>,
+    short_append: Option<ShortAppend>,
 }
 
 pub(super) fn share<M: Module>(
@@ -1335,6 +1336,9 @@ fn prepare_bodies<M: Module>(
 ) -> Result<Vec<Prepared>, NativeCompileError> {
     let refusal_regions = region_kind == RegionKind::Refusal;
     let compose_origins = region_kind.is_continuation();
+    let short_appends = compose_origins
+        && module.isa().name() == "aarch64"
+        && std::env::var_os("MECH_COMPACT_SHORT_BYTE_APPENDS").is_some();
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
     let compact_refusal_bodies =
         refusal_regions && std::env::var_os("MECH_COMPACT_PREPARE_REFUSAL_IR").is_some();
@@ -1497,6 +1501,9 @@ fn prepare_bodies<M: Module>(
             .iter()
             .map(|reloc| ModuleReloc::from_mach_reloc(reloc, &context.func, function))
             .collect::<Vec<_>>();
+        let short_append = short_appends
+            .then(|| ShortAppend::recognize(&context.func))
+            .flatten();
         let bytes = compiled.buffer.data();
         let alignment = compiled.buffer.alignment;
         let stack = compiled_stack_bytes(&compiled.buffer)?;
@@ -1536,6 +1543,9 @@ fn prepare_bodies<M: Module>(
                 && other.bytes.as_ref() == bytes
                 && matching_relocations(other.function, &other.relocs, function, &relocs)
         }) {
+            if winner.short_append != short_append {
+                winner.short_append = None;
+            }
             winner.traversals.push(traversal);
         } else {
             groups.push(Prepared {
@@ -1546,6 +1556,7 @@ fn prepare_bodies<M: Module>(
                 relocs,
                 stack,
                 traversals: vec![traversal],
+                short_append,
             });
         }
     }
@@ -1760,9 +1771,9 @@ fn share_families<M: Module>(
         .transpose()?;
     let cold = refusal_regions
         && std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
-    let mut report = Vec::new();
-    for selected in groups {
-        if region_kind != RegionKind::Phase {
+    if region_kind != RegionKind::Phase {
+        // Lay out the checked bodies before adding specialized entries.
+        for selected in &groups {
             module
                 .define_function_bytes(
                     selected.function,
@@ -1772,14 +1783,49 @@ fn share_families<M: Module>(
                 )
                 .map_err(backend)?;
         }
+    }
+    let mut report = Vec::new();
+    let inline_short_appends = std::env::var_os("MECH_COMPACT_INLINE_SHORT_BYTE_APPENDS").is_some();
+    let mut short_bodies = BTreeMap::new();
+    for selected in groups {
+        let mut code_bytes = selected.bytes.len();
+        let mut stack_bytes = selected.stack;
+        let mut short_append_report = None;
+        let target = if let Some(append) = selected.short_append {
+            let header = selected.traversals[0].candidate.header;
+            let symbol = format!("mech_compact_checked_layout_continuation_{header}_short");
+            let entry = module
+                .declare_function(&symbol, Linkage::Local, &selected.signature)
+                .map_err(backend)?;
+            let context = append.define(module, entry, selected.function)?;
+            let fast = context.compiled_code().expect("compiled short append");
+            let fast_stack = compiled_stack_bytes(&fast.buffer)?;
+            code_bytes = fast.code_info().total_size as usize;
+            stack_bytes += fast_stack;
+            short_append_report = Some(serde_json::json!({
+                "symbol": symbol,
+                "stack_bytes": fast_stack,
+                "checked_code_bytes": selected.bytes.len(),
+                "checked_stack_bytes": selected.stack,
+            }));
+            if inline_short_appends {
+                short_bodies.insert(entry, context.func);
+            }
+            entry
+        } else {
+            selected.function
+        };
         for traversal in &selected.traversals {
-            traversal.replace(module, root, selected.function, packets, observer, cold);
+            traversal.replace(module, root, target, packets, observer, cold);
         }
         let mut entry = serde_json::json!({
             "headers":selected.traversals.iter().map(|t| t.candidate.header).collect::<Vec<_>>(),
-            "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
+            "code_bytes":code_bytes,"stack_bytes":stack_bytes,
             "input_words":selected.signature.params.len(),
         });
+        if let Some(short_append) = short_append_report {
+            entry["short_byte_append"] = short_append;
+        }
         if selected.traversals[0].return_error_origin {
             entry["returns_error_origin"] = serde_json::json!(true);
         }
@@ -1844,6 +1890,19 @@ fn share_families<M: Module>(
                 serde_json::json!(selected.traversals[0].output_words());
         }
         report.push(entry);
+    }
+    if !short_bodies.is_empty() {
+        let bodies = short_bodies.iter().map(|(&id, body)| (id, body)).collect();
+        let mut context = Context::for_function(root.clone());
+        // The short body retains the call to the original checked continuation.
+        // Its inlined hot path returns through the same continuation arguments.
+        if context
+            .inline(super::inlining::OnceCalled(&bodies))
+            .map_err(backend)?
+        {
+            context.verify(module.isa()).map_err(backend)?;
+            *root = context.func;
+        }
     }
     Ok((!report.is_empty()).then_some(serde_json::Value::Array(report)))
 }

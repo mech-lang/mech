@@ -181,10 +181,15 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .flat_map(|b| fast.func.layout.block_insts(b))
             .filter(|&inst| matches!(fast.func.dfg.insts[inst], Data::Brif { .. }))
             .count();
-        let grouped = mode == 3 || mode == 5;
-        let vector = mode == 4 || mode == 5;
-        let admitted = if grouped {
-            optimize_grouped_counter_capacity(&mut fast, header, &loads, &input, &bins)
+        let grouping = match mode {
+            3 | 5 => Some(ByteGrouping::Four),
+            6 => Some(ByteGrouping::AddressedEight),
+            7 | 8 => Some(ByteGrouping::PackedEight),
+            _ => None,
+        };
+        let vector = matches!(mode, 4 | 5 | 8);
+        let admitted = if let Some(grouping) = grouping {
+            optimize_grouped_counter_capacity(&mut fast, header, &loads, &input, &bins, grouping)
         } else if mode >= 2 {
             optimize_counter_capacity(&mut fast, header, &loads, &input, &bins)
         } else {
@@ -198,7 +203,15 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .flat_map(|b| fast.func.layout.block_insts(b))
             .filter(|&inst| matches!(fast.func.dfg.insts[inst], Data::Brif { .. }))
             .count();
-        assert_eq!(before - after, if mode >= 2 && !grouped { 5 } else { 4 });
+        let extra_branches = match grouping {
+            None => 0,
+            Some(ByteGrouping::Four) => 1,
+            Some(ByteGrouping::AddressedEight | ByteGrouping::PackedEight) => 2,
+        };
+        assert_eq!(
+            before - after,
+            if mode >= 2 { 5 - extra_branches } else { 4 }
+        );
         assert_eq!(
             admitted,
             Admission {
@@ -215,7 +228,9 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .unwrap();
         module.define_function(id, &mut fast).unwrap();
         let call = module.declare_func_in_func(id, &mut ctx.func);
-        if vector {
+        if grouping == Some(ByteGrouping::PackedEight) {
+            guard_packed_counter_capacity(&mut ctx, admitted, call, vector);
+        } else if vector {
             guard_vector_counter_capacity(&mut ctx, admitted, call);
         } else if mode >= 2 {
             guard_counter_capacity(&mut ctx, admitted, call);
@@ -295,7 +310,7 @@ fn bounded_byte_histogram_keeps_defaulting_reads_partial_writes_and_errors() {
 
 #[test]
 fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
-    let entries: Vec<_> = [0, 2, 3, 4, 5].into_iter().map(compile).collect();
+    let entries: Vec<_> = [0, 2, 3, 4, 5, 6, 7, 8].into_iter().map(compile).collect();
     let bytes: Vec<u8> = (0..4096).map(|i| (i as u8).wrapping_mul(197)).collect();
     for seed_index in [0, 17, 255] {
         for room in [0, 1, 7, 16, 4096] {
@@ -328,7 +343,7 @@ fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
     // input read still observes all preceding source-order counter writes.
     for head in [0, 255, 65535, 0x00ff_ffff] {
         for seed in [0, u32::MAX - 1, u32::MAX] {
-            for end in [0, 1, 7, 255, 256, 1024] {
+            for end in [0, 1, 7, 8, 9, 255, 256, 1024] {
                 let mut initial: Vec<u32> = (0..256).map(|i| i * 257).collect();
                 initial[0] = head;
                 initial[255] = seed;

@@ -65,7 +65,9 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
     // SAFETY: the new allocation is disjoint from immutable prefix/span
     // storage. The width decomposition writes precisely the admitted extent.
     unsafe {
-        if length != 0 {
+        if length < 16 {
+            copy_short_bytes(source[0] as *const u8, dest, length);
+        } else {
             ptr::copy_nonoverlapping(source[0] as *const u8, dest, length);
         }
         let tail = dest.add(length);
@@ -87,15 +89,7 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
             tail.write(packed as u8);
         }
         let dest = tail.add(packed_len);
-        if span_len >= 8 {
-            copy_ends::<u64>(span, dest, span_len);
-        } else if span_len >= 4 {
-            copy_ends::<u32>(span, dest, span_len);
-        } else if span_len >= 2 {
-            copy_ends::<u16>(span, dest, span_len);
-        } else if span_len == 1 {
-            dest.write(span.read());
-        }
+        copy_short_bytes(span, dest, span_len);
     }
     heap.counters.initialized_bytes_copied += length as u64;
     let total = (length + packed_len + span_len) as u64;
@@ -106,6 +100,29 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
         output.write(result);
     }
     0
+}
+
+/// Copy up to 15 bytes between disjoint ranges, touching only the exact extent.
+///
+/// # Safety
+/// When `len` is nonzero the input must contain `len` initialized bytes, and
+/// the destination must permit writing them. For zero length neither pointer
+/// is accessed.
+#[inline]
+unsafe fn copy_short_bytes(src: *const u8, dst: *mut u8, len: usize) {
+    debug_assert!(len < 16);
+    // SAFETY: each selected word fits, and the two words cover the full range.
+    unsafe {
+        if len >= 8 {
+            copy_ends::<u64>(src, dst, len);
+        } else if len >= 4 {
+            copy_ends::<u32>(src, dst, len);
+        } else if len >= 2 {
+            copy_ends::<u16>(src, dst, len);
+        } else if len == 1 {
+            dst.write(src.read());
+        }
+    }
 }
 
 /// Copy the first and last words of a span, including a possible overlap.
@@ -141,7 +158,9 @@ mod copy_ends_tests {
         let borrowed = b"immutable-prefix-and-source-span";
         for packed_len in 1..=8 {
             for span_len in 0..16 {
-                for (prefix_len, extra) in [(0, 0), (3, 2), (8, 32)] {
+                for prefix_len in (0..=17).chain([borrowed.len()]) {
+                    // Alternate exact and spare capacity at both ends of every copy width.
+                    let extra = if prefix_len % 2 == 0 { 0 } else { 32 };
                     for use_owner_storage in [false, true] {
                         let length = prefix_len + packed_len + span_len;
                         let capacity = length + extra;

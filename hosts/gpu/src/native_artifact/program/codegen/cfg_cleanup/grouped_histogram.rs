@@ -17,6 +17,8 @@ mod arm;
 
 #[path = "grouped_histogram_chunks.rs"]
 mod chunks;
+#[path = "grouped_histogram_seed.rs"]
+pub(in crate::native_artifact) mod seeded;
 
 #[cfg(test)]
 #[path = "grouped_histogram_tests.rs"]
@@ -27,18 +29,29 @@ pub(in crate::native_artifact) struct Admission {
     pub node_word: usize,
     pub bin_word: usize,
     pub minimum_bins: u64,
+    #[serde(skip)]
+    pub end_word: Option<usize>,
 }
 
 pub(in crate::native_artifact) struct Options {
     pub visits: usize,
     pub wide_keys: bool,
     pub progressive: bool,
+    pub vector_chunks: bool,
+    pub stream_chunks: bool,
+    pub byte_keys: bool,
+    pub pair_vector_chunks: bool,
 }
 
+#[derive(Clone, Copy)]
 struct Group {
     header: Block,
     cursor: Value,
     end: Value,
+    top: Value,
+    length: Value,
+    body: Block,
+    done: Block,
     ordinal: Value,
     nodes: Value,
     bins: Value,
@@ -158,6 +171,7 @@ fn recognize(
     }
     let active = calls[usize::from(sense == IntCC::Equal)];
     let body = active.block(&f.dfg.value_lists);
+    let done = calls[usize::from(sense == IntCC::NotEqual)].block(&f.dfg.value_lists);
     if active.args(&f.dfg.value_lists).next().is_some()
         || sole_predecessor(cfg, body)?.1 != boundary
     {
@@ -249,6 +263,10 @@ fn recognize(
         header,
         cursor,
         end,
+        top,
+        length,
+        body,
+        done,
         ordinal: read.index,
         nodes: input(read.view.pointer_word)?,
         bins: input(tail.view.pointer_word)?,
@@ -262,6 +280,7 @@ fn recognize(
             node_word: read.view.pointer_word,
             bin_word: tail.view.pointer_word,
             minimum_bins: u64::from(tail.key_mask) + 1,
+            end_word: super::bounded_byte_histogram::fixed_word(f, cfg, loads, end),
         },
     })
 }
@@ -368,24 +387,19 @@ pub(in crate::native_artifact) fn optimize(
     bins: &[View],
     options: Options,
 ) -> Option<Admission> {
-    let Options {
-        visits,
-        wide_keys,
-        progressive,
-    } = options;
     // Keep code growth finite. Each descending input read is covered by the
     // original current read and the group's non-wrapping ordinal floor.
-    if !matches!(visits, 4 | 8 | 16) {
+    if !matches!(options.visits, 4 | 8 | 16) {
         return None;
     }
     ctx.compute_cfg();
     ctx.compute_domtree();
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
-    if progressive && visits > 4 {
-        chunks::emit(&mut ctx.func, group, visits, wide_keys);
+    if options.progressive && options.visits > 4 {
+        chunks::emit(&mut ctx.func, group, options);
     } else {
-        emit(&mut ctx.func, group, visits, wide_keys);
+        emit(&mut ctx.func, group, options.visits, options.wide_keys);
     }
     ctx.compute_cfg();
     ctx.compute_domtree();

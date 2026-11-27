@@ -10,7 +10,7 @@ pub(in crate::native_artifact) fn fold_parallel(function: &mut Function) -> usiz
 
 /// This changes only scalar integer reductions. A full-width packed value,
 /// including any store or error/resource use, retains its original definition.
-pub(in crate::native_artifact) fn fold(function: &mut Function) -> usize {
+pub(in crate::native_artifact) fn fold(function: &mut Function, bitwise_immediates: bool) -> usize {
     let mut changes = Vec::new();
     for block in function.layout.blocks() {
         for inst in function.layout.block_insts(block) {
@@ -27,7 +27,7 @@ pub(in crate::native_artifact) fn fold(function: &mut Function) -> usize {
             }
             let bits = ty.bits();
             let mut steps = 64;
-            if zero_low_bits(function, arg, bits, 8, &mut steps) {
+            if zero_low_bits(function, arg, bits, bitwise_immediates, 8, &mut steps) {
                 changes.push((inst, ty, None));
                 continue;
             }
@@ -44,7 +44,7 @@ pub(in crate::native_artifact) fn fold(function: &mut Function) -> usize {
             }
             for (zero, keep) in [(args[0], args[1]), (args[1], args[0])] {
                 let mut steps = 64;
-                if zero_low_bits(function, zero, bits, 8, &mut steps) {
+                if zero_low_bits(function, zero, bits, bitwise_immediates, 8, &mut steps) {
                     changes.push((inst, ty, Some(keep)));
                     break;
                 }
@@ -65,6 +65,7 @@ fn zero_low_bits(
     function: &Function,
     value: Value,
     bits: u32,
+    bitwise_immediates: bool,
     depth: usize,
     steps: &mut usize,
 ) -> bool {
@@ -80,7 +81,8 @@ fn zero_low_bits(
     let ValueDef::Result(inst, 0) = function.dfg.value_def(value) else {
         return false;
     };
-    let mut zero = |value, bits| zero_low_bits(function, value, bits, depth - 1, steps);
+    let mut zero =
+        |value, bits| zero_low_bits(function, value, bits, bitwise_immediates, depth - 1, steps);
     match function.dfg.insts[inst] {
         InstructionData::UnaryImm {
             opcode: Opcode::Iconst,
@@ -114,6 +116,18 @@ fn zero_low_bits(
         } => {
             let amount = (imm.bits() as u64 & u64::from(ty.bits() - 1)) as u32;
             amount >= bits || zero(arg, bits - amount)
+        }
+        InstructionData::BinaryImm64 {
+            opcode: opcode @ (Opcode::BandImm | Opcode::BorImm | Opcode::BxorImm),
+            arg,
+            imm,
+        } if bitwise_immediates => {
+            let immediate_zero = (imm.bits() as u64) & (u64::MAX >> (64 - bits)) == 0;
+            if opcode == Opcode::BandImm {
+                immediate_zero || zero(arg, bits)
+            } else {
+                immediate_zero && zero(arg, bits)
+            }
         }
         _ => false,
     }

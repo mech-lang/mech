@@ -139,6 +139,43 @@ pub trait MachInst: Clone + Debug {
         None
     }
 
+    /// Replace this allocated instruction and its adjacent successor with one
+    /// instruction. The successor still has its virtual operands. A sole-use
+    /// proof includes instruction operands and outgoing block arguments.
+    fn fold_allocated_pair(
+        &mut self,
+        _next: &Self,
+        _next_allocs: &[regalloc2::Allocation],
+        _next_is_sole_use: bool,
+    ) -> bool {
+        false
+    }
+
+    /// Rewrite a branch using flags preserved by its two preceding allocated
+    /// instructions. All three must be consecutive within a block.
+    fn reuse_allocated_branch_flags(&mut self, _condition: &Self, _between: &Self) {}
+
+    /// Return the physical register set to zero by this immediate move.
+    fn allocated_zero_move(&self, _allocs: &[regalloc2::Allocation]) -> Option<Reg> {
+        None
+    }
+
+    /// Identify a direct block exit that leaves the registers intact.
+    fn is_register_preserving_direct_branch(&self) -> bool {
+        false
+    }
+
+    /// Replace a predicate and its mask by one allocated instruction. The
+    /// mask and its result each have only the following instruction as a user.
+    fn select_allocated_branch_bit(
+        &self,
+        _mask: &Self,
+        _branch: &Self,
+        _allocations: [&[regalloc2::Allocation]; 3],
+    ) -> Option<Self> {
+        None
+    }
+
     /// Should this instruction's clobber-list be included in the
     /// clobber-set?
     fn is_included_in_clobbers(&self) -> bool;

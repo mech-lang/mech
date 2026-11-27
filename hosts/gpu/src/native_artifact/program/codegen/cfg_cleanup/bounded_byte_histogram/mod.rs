@@ -24,6 +24,22 @@ pub(in crate::native_artifact) struct Admission {
     pub cursor_word: usize,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(in crate::native_artifact) enum ByteGrouping {
+    Four,
+    AddressedEight,
+    PackedEight,
+}
+
+impl ByteGrouping {
+    pub(in crate::native_artifact) fn visits(self) -> usize {
+        match self {
+            Self::Four => 4,
+            Self::AddressedEight | Self::PackedEight => 8,
+        }
+    }
+}
+
 fn branch(f: &Function, inst: Inst) -> Option<[BlockCall; 2]> {
     match f.dfg.insts[inst] {
         Data::Brif { blocks, .. } => Some(blocks),
@@ -462,7 +478,7 @@ pub(in crate::native_artifact) fn optimize_counter_capacity(
     input: &[View],
     bins: &[View],
 ) -> Option<Admission> {
-    optimize_capacity(ctx, header, loads, input, bins, false)
+    optimize_capacity(ctx, header, loads, input, bins, None)
 }
 
 pub(in crate::native_artifact) fn optimize_grouped_counter_capacity(
@@ -471,8 +487,9 @@ pub(in crate::native_artifact) fn optimize_grouped_counter_capacity(
     loads: &BTreeMap<Value, (Inst, usize)>,
     input: &[View],
     bins: &[View],
+    grouping: ByteGrouping,
 ) -> Option<Admission> {
-    optimize_capacity(ctx, header, loads, input, bins, true)
+    optimize_capacity(ctx, header, loads, input, bins, Some(grouping))
 }
 
 fn optimize_capacity(
@@ -481,7 +498,7 @@ fn optimize_capacity(
     loads: &BTreeMap<Value, (Inst, usize)>,
     input: &[View],
     bins: &[View],
-    grouped: bool,
+    grouping: Option<ByteGrouping>,
 ) -> Option<Admission> {
     ctx.compute_cfg();
     ctx.compute_domtree();
@@ -491,20 +508,20 @@ fn optimize_capacity(
         ctx,
         histogram.bounds.into_iter().chain([histogram.increment]),
     );
-    if grouped {
-        group_visits(ctx, header, loads, histogram.admission);
+    if let Some(grouping) = grouping {
+        group_visits(ctx, header, loads, histogram.admission, grouping);
     }
     Some(histogram.admission)
 }
 
-// Only the exact, effect-checked histogram reaches this construction. Four
-// visits preserve read/increment/write order, even when the views alias. The
-// original admitted loop handles the last zero to three bytes unchanged.
+// Only the exact, effect-checked histogram reaches this construction.
+// Reads and own-bin increments remain ordered in both byte-load forms.
 fn group_visits(
     ctx: &mut Context,
     header: Block,
     loads: &BTreeMap<Value, (Inst, usize)>,
     a: Admission,
+    grouping: ByteGrouping,
 ) {
     let f = &mut ctx.func;
     let field = |word| {
@@ -526,27 +543,62 @@ fn group_visits(
     let mut c = FuncCursor::new(f);
     c.goto_bottom(header);
     let remaining = c.ins().isub(end, cursor);
-    let four = c
-        .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 4);
-    c.ins().brif(four, group, &[], tail, &[]);
-    c.goto_bottom(group);
-    let position = c.ins().iadd(begin, cursor);
-    for offset in 0..4 {
-        let position = c.ins().iadd_imm(position, offset);
-        let source = c.ins().iadd(input, position);
-        let byte = c.ins().uload8(types::I64, MemFlags::new(), source, 0);
-        let bytes = c.ins().ishl_imm(byte, 2);
-        let destination = c.ins().iadd(bins, bytes);
-        let count = c.ins().uload32(MemFlags::new(), destination, 0);
-        let increment = c.ins().iadd_imm(count, 1);
-        let value = c.ins().ireduce(types::I32, increment);
-        c.ins().store(MemFlags::new(), value, destination, 0);
+    if grouping == ByteGrouping::Four {
+        let four = c
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 4);
+        c.ins().brif(four, group, &[], tail, &[]);
+        c.goto_bottom(group);
+        let position = c.ins().iadd(begin, cursor);
+        for offset in 0..4 {
+            let position = c.ins().iadd_imm(position, offset);
+            let source = c.ins().iadd(input, position);
+            let byte = c.ins().uload8(types::I64, MemFlags::new(), source, 0);
+            increment_bin(&mut c, bins, byte);
+        }
+        let next = c.ins().iadd_imm(cursor, 4);
+        c.ins().jump(header, &[next.into()]);
+    } else {
+        // The entry guard proves cursor <= end and at most u32::MAX visits.
+        // Advance a single address across full groups, then hand the exact
+        // logical cursor back to the original loop for the remaining bytes.
+        let bulk = c.ins().band_imm(remaining, -8);
+        let tail_at = c.ins().iadd(cursor, bulk);
+        let position = c.ins().iadd(begin, cursor);
+        let base = c.ins().iadd(input, position);
+        let stop = c.ins().iadd(base, bulk);
+        let address = c.func.dfg.append_block_param(group, types::I64);
+        c.ins().brif(bulk, group, &[base.into()], tail, &[]);
+        c.goto_bottom(group);
+        // The packed entry additionally proves these source bytes disjoint
+        // from all bin writes. Equal keys still increment in visit order.
+        let word = (grouping == ByteGrouping::PackedEight)
+            .then(|| c.ins().load(types::I64, MemFlags::new(), address, 0));
+        for offset in 0..8 {
+            let byte = if let Some(word) = word {
+                let shifted = c.ins().ushr_imm(word, i64::from(offset) * 8);
+                c.ins().band_imm(shifted, 255)
+            } else {
+                c.ins().uload8(types::I64, MemFlags::new(), address, offset)
+            };
+            increment_bin(&mut c, bins, byte);
+        }
+        let next = c.ins().iadd_imm(address, 8);
+        let done = c.ins().icmp(IntCC::Equal, next, stop);
+        c.ins()
+            .brif(done, header, &[tail_at.into()], group, &[next.into()]);
     }
-    let next = c.ins().iadd_imm(cursor, 4);
-    c.ins().jump(header, &[next.into()]);
     ctx.compute_cfg();
     ctx.compute_domtree();
+}
+
+fn increment_bin(c: &mut FuncCursor<'_>, bins: Value, byte: Value) {
+    let bytes = c.ins().ishl_imm(byte, 2);
+    let destination = c.ins().iadd(bins, bytes);
+    let count = c.ins().uload32(MemFlags::new(), destination, 0);
+    let increment = c.ins().iadd_imm(count, 1);
+    let value = c.ins().ireduce(types::I32, increment);
+    c.ins().store(MemFlags::new(), value, destination, 0);
 }
 
 fn block(f: &mut Function) -> Block {
@@ -559,7 +611,7 @@ fn block(f: &mut Function) -> Block {
 // Source initialization is not assumed: overflowing existing counts still fail
 // at the original checked increment in the specialized function.
 pub(in crate::native_artifact) fn guard_entry(ctx: &mut Context, a: Admission, fast: FuncRef) {
-    guard(ctx, a, fast, false, false);
+    guard(ctx, a, fast, None, false);
 }
 
 pub(in crate::native_artifact) fn guard_counter_capacity(
@@ -567,7 +619,7 @@ pub(in crate::native_artifact) fn guard_counter_capacity(
     a: Admission,
     fast: FuncRef,
 ) {
-    guard(ctx, a, fast, true, false);
+    guard(ctx, a, fast, Some(CounterScan::Scalar), false);
 }
 
 pub(in crate::native_artifact) fn guard_vector_counter_capacity(
@@ -575,10 +627,35 @@ pub(in crate::native_artifact) fn guard_vector_counter_capacity(
     a: Admission,
     fast: FuncRef,
 ) {
-    guard(ctx, a, fast, true, true);
+    guard(ctx, a, fast, Some(CounterScan::Vector), false);
 }
 
-fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool, vector: bool) {
+pub(in crate::native_artifact) fn guard_packed_counter_capacity(
+    ctx: &mut Context,
+    a: Admission,
+    fast: FuncRef,
+    vector: bool,
+) {
+    let scan = if vector {
+        CounterScan::Vector
+    } else {
+        CounterScan::Scalar
+    };
+    guard(ctx, a, fast, Some(scan), true);
+}
+
+enum CounterScan {
+    Scalar,
+    Vector,
+}
+
+fn guard(
+    ctx: &mut Context,
+    a: Admission,
+    fast: FuncRef,
+    counters: Option<CounterScan>,
+    disjoint: bool,
+) {
     let f = &mut ctx.func;
     let original = f.layout.entry_block().expect("numeric entry");
     let entry = f.dfg.make_block();
@@ -601,6 +678,7 @@ fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool, vector:
     let at = load(a.cursor_word);
     let input_len = load(a.input_word + 1);
     let bins = load(a.bin_word + 1);
+    let pointers = disjoint.then(|| (load(a.input_word), load(a.bin_word)));
     let start = c
         .ins()
         .icmp(IntCC::UnsignedLessThanOrEqual, begin, input_len);
@@ -612,8 +690,34 @@ fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool, vector:
         .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, bins, 256);
     let left = c.ins().band(start, span);
     let right = c.ins().band(cursor, histogram);
-    let admitted = c.ins().band(left, right);
-    if counters {
+    let mut admitted = c.ins().band(left, right);
+    if let Some((input_pointer, bin_pointer)) = pointers {
+        // The geometry above proves begin+at <= begin+end <= input_len.
+        // Reject endpoint wrap before using the absolute ranges to admit
+        // a read that can move ahead of the group's earlier increments.
+        let first_byte = c.ins().iadd(begin, at);
+        let input_start = c.ins().iadd(input_pointer, first_byte);
+        let last_byte = c.ins().iadd(begin, end);
+        let input_end = c.ins().iadd(input_pointer, last_byte);
+        let bin_end = c.ins().iadd_imm(bin_pointer, 256 * 4);
+        let input_no_wrap =
+            c.ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, input_end, input_pointer);
+        let bins_no_wrap = c
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThanOrEqual, bin_end, bin_pointer);
+        let input_first = c
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, input_end, bin_pointer);
+        let bins_first = c
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, bin_end, input_start);
+        let separated = c.ins().bor(input_first, bins_first);
+        let no_wrap = c.ins().band(input_no_wrap, bins_no_wrap);
+        let separated = c.ins().band(separated, no_wrap);
+        admitted = c.ins().band(admitted, separated);
+    }
+    if let Some(counter_scan) = counters {
         // The span is end - cursor, not end - begin: begin is an input offset.
         // Bounds admission precedes all extra reads. Empty loops need no scan.
         let work = c.ins().isub(end, at);
@@ -638,7 +742,7 @@ fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool, vector:
         let limit = c.ins().isub(maximum, work);
         let zero = c.ins().iconst(types::I64, 0);
         let empty = c.ins().icmp_imm(IntCC::Equal, work, 0);
-        if vector {
+        if matches!(counter_scan, CounterScan::Vector) {
             let maximum = c.func.dfg.append_block_param(scan, types::I32X4);
             let final_maximum = c.func.dfg.append_block_param(step, types::I32X4);
             let zero32 = c.ins().iconst(types::I32, 0);

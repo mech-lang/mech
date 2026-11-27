@@ -79,7 +79,7 @@ fn general_numeric_addresses_emit_one_machine_division() {
         if cfg!(target_arch = "aarch64") {
             let divisions = assembly
                 .lines()
-                .filter(|line| line.contains("udiv "))
+                .filter(|line| line.trim_start().starts_with("udiv "))
                 .count();
             assert_eq!(divisions, 1, "width={width}\n{assembly}");
         }

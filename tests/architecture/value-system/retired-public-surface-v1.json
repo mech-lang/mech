@@ -292,7 +292,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/settings.rs",
-      "sha256": "6308129b598742518eafa1f4146b762bd60429af55fd7fe4d790ff61df9009ba"
+      "sha256": "f41e11e782711dc9378af454887d03373d104370253134d2c39d9e2ae9692f3f"
     }
   ]
 }

@@ -589,6 +589,18 @@ fn define_entry<M: Module>(
     } else {
         None
     };
+    let use_seed =
+        worker.is_none() && !observe && std::env::var_os("MECH_COMPACT_SEEDED_HISTOGRAM").is_some();
+    #[cfg(feature = "early-region-emission")]
+    let use_seed = use_seed && early.is_none();
+    let seed_proofs = use_seed.then(|| {
+        phases::prove_seeded_histograms(prepared, layout, &flow, actions, &owner_flow, &phases)
+    });
+    let seeded = if let Some(proofs) = &seed_proofs {
+        phases::define_seeded_histograms(module, &phases, proofs)?
+    } else {
+        BTreeMap::new()
+    };
     let emit_body = |module: &mut M,
                      #[cfg(feature = "early-region-emission")] unit: Option<
         super::early_units::View<'_>,
@@ -1582,6 +1594,7 @@ fn define_entry<M: Module>(
                         &blocks,
                         error,
                         worker.is_none(),
+                        seeded.get(&site),
                         vector_guards.as_mut(),
                     )?;
                     if outline_traversals && let Some(key) = phase.checked_traversal_key() {
@@ -2622,13 +2635,22 @@ fn define_entry<M: Module>(
         root["early_source_region"] = summary;
         return Ok(root);
     }
-    let report = emit_body(
+    let mut report = emit_body(
         module,
         #[cfg(feature = "early-region-emission")]
         None,
     )?;
     if let Some(function) = reduction_function {
         widening_reduction::define(module, function)?;
+    }
+    if let Some(proofs) = seed_proofs {
+        report["seeded_histogram_proofs"] = serde_json::json!(proofs);
+        report["seeded_histograms"] = serde_json::json!(
+            seeded
+                .values()
+                .map(|route| &route.summary)
+                .collect::<Vec<_>>()
+        );
     }
     Ok(report)
 }

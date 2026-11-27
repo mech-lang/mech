@@ -241,6 +241,56 @@ pub(in crate::native_artifact) fn split_admitted_cost_checks(
     count
 }
 
+/// Fold lower-bound checks of the admitted cost length or a nonwrapping suffix.
+pub(in crate::native_artifact) fn fold_admitted_cost_minimum(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    capture: &Capture<'_>,
+    admission: Admission,
+) -> usize {
+    let Some(view) = capture
+        .views
+        .iter()
+        .find(|view| view.array == admission.costs)
+    else {
+        return 0;
+    };
+    let proven = f
+        .layout
+        .blocks()
+        .flat_map(|block| f.layout.block_insts(block))
+        .filter(|&inst| {
+            let Data::IntCompareImm {
+                cond: IntCC::UnsignedGreaterThanOrEqual,
+                arg,
+                imm,
+                ..
+            } = f.dfg.insts[inst]
+            else {
+                return false;
+            };
+            if f.dfg.value_type(arg) != types::I64 {
+                return false;
+            }
+            let (base, offset) = constant_offset(f, arg);
+            let offset = offset as i64;
+            // The accumulated offset is modular. A nonpositive adjustment
+            // has an ordinary subtraction interpretation within this floor.
+            offset <= 0
+                && admission
+                    .minimum_costs
+                    .checked_sub(offset.unsigned_abs())
+                    .is_some_and(|minimum| minimum >= imm.bits() as u64)
+                && packet_word(f, cfg, capture.packet_loads, base) == Some(view.length_word)
+        })
+        .collect::<Vec<_>>();
+    for &inst in &proven {
+        let ty = f.dfg.value_type(f.dfg.first_result(inst));
+        f.dfg.replace(inst).iconst(ty, 1);
+    }
+    proven.len()
+}
+
 fn minus_one(f: &Function, value: Value) -> Option<Value> {
     let (_, data) = definition(f, value)?;
     match data {

@@ -888,6 +888,26 @@ fn emit_compact_closed_object(
             flags.push(("regalloc_checker", "true"));
         }
     }
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && llvm_root.is_none()
+        && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
+    {
+        flags.push(("enable_inverted_cset_folding", "true"));
+        if mode == "branch" || mode == "select" {
+            flags.push(("enable_cset_branch_flags", "true"));
+        }
+        if mode == "select" {
+            flags.push(("enable_cset_bit_select", "true"));
+        }
+    }
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && llvm_root.is_none()
+        && std::env::var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO").is_some()
+    {
+        flags.push(("enable_redundant_zero_folding", "true"));
+    }
     let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
     if cfg!(target_arch = "aarch64")
         && !observe

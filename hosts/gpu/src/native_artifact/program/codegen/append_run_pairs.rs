@@ -9,12 +9,27 @@ use cranelift_codegen::ir::{
 };
 use std::collections::BTreeMap;
 
+const BYTE_LITERAL_COUNT: i64 = 1_i64 << u8::BITS;
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct Options {
+    pub allow_biased_costs: bool,
+    pub rebase_costs: bool,
+    pub check_literal_bytes: bool,
+    pub limit_literal_span: bool,
+    pub group_four: bool,
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct Pair {
     cache: Value,
     literals: Value,
     literal_limit: Word,
     literal_bias: i64,
+    lookup_bias_bytes: Option<i64>,
+    check_literal_bytes: bool,
+    literal_prefix_bytes: Option<i64>,
+    group_four: bool,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -96,7 +111,7 @@ impl Pair {
         context: &Context,
         trace: &Trace,
         params: &[Value],
-        allow_biased_costs: bool,
+        options: Options,
     ) -> Result<Self, &'static str> {
         let window = trace.window.ok_or("missing readable window")?;
         // The trace's operand bindings are the values on the empty edge.
@@ -146,7 +161,7 @@ impl Pair {
         let (literals, literal, literal_bias) = walk
             .scaled_address(cost_addr, 4)
             .ok_or("unsupported cost address")?;
-        if literal_bias != 0 && !allow_biased_costs {
+        if literal_bias != 0 && !options.allow_biased_costs {
             return Err("cost ordinal has an offset");
         }
         let (packed, bits) =
@@ -315,11 +330,28 @@ impl Pair {
         {
             return Err("packet words are unavailable at pair entry");
         }
+        let lookup_bias_bytes = literal_bias
+            .checked_mul(4)
+            .filter(|&bytes| options.rebase_costs && bytes > 0);
+        let check_literal_bytes = options.check_literal_bytes
+            && selector_bits <= u32::BITS - u8::BITS
+            && (literal_bias == 0 || lookup_bias_bytes.is_some());
+        let literal_prefix_bytes = if options.limit_literal_span && check_literal_bytes {
+            lookup_bias_bytes
+                .unwrap_or(0)
+                .checked_add(BYTE_LITERAL_COUNT * 4)
+        } else {
+            None
+        };
         Ok(Self {
             cache,
             literals,
             literal_limit,
             literal_bias,
+            lookup_bias_bytes,
+            check_literal_bytes,
+            literal_prefix_bytes,
+            group_four: options.group_four && check_literal_bytes,
             output,
             selector_bits,
             item_shift,
@@ -364,7 +396,15 @@ impl Pair {
         let end = b.ins().iadd(length, count);
         let (out_end, out_valid) = span(b, output, end, 8);
         let (cache_end, cache_valid) = span(b, cache, cache_cursor, 4);
-        let (lit_end, lit_valid) = span(b, literals, literal_limit, 4);
+        let (lit_end, lit_valid) = if let Some(bytes) = self.literal_prefix_bytes {
+            // The byte check admits only indices below 256. The entry gate
+            // admits the biased prefix before any lookup can be reached.
+            let end = b.ins().iadd_imm(literals, bytes);
+            let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, literals, end);
+            (end, ordered)
+        } else {
+            span(b, literals, literal_limit, 4)
+        };
         let cache_clear = disjoint(b, output, out_end, cache, cache_end);
         let lit_clear = disjoint(b, output, out_end, literals, lit_end);
         let enough = b
@@ -375,17 +415,69 @@ impl Pair {
         let separated = b.ins().band(cache_clear, lit_clear);
         let valid = b.ins().band(valid, separated);
         let valid = b.ins().band(valid, enough);
-        let first = [count, cache_cursor, length, previous].map(BlockArg::Value);
+        let (lookup_base, lookup_limit, index_bias, valid) =
+            if let Some(bytes) = self.lookup_bias_bytes {
+                // A header extracts at most 31 bits, so adding a positive
+                // signed bias cannot wrap. The bias must fit in the admitted
+                // original cost span before the adjusted base is dereferenced.
+                let fits = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    literal_limit,
+                    self.literal_bias,
+                );
+                let base = b.ins().iadd_imm(literals, bytes);
+                let limit = b.ins().iadd_imm(literal_limit, -self.literal_bias);
+                (base, limit, 0, b.ins().band(valid, fits))
+            } else {
+                (literals, literal_limit, self.literal_bias, valid)
+            };
+        let valid = if self.check_literal_bytes {
+            let covers_bytes = b.ins().icmp_imm(
+                IntCC::UnsignedGreaterThanOrEqual,
+                lookup_limit,
+                BYTE_LITERAL_COUNT,
+            );
+            b.ins().band(valid, covers_bytes)
+        } else {
+            valid
+        };
+        let mut first = Vec::from([count, cache_cursor, length, previous].map(BlockArg::Value));
+        let four = self.group_four.then(|| {
+            let entry = block(b.func);
+            for _ in 0..4 {
+                b.func.dfg.append_block_param(entry, types::I64);
+            }
+            let stop = b.func.dfg.append_block_param(start, types::I64);
+            // Finish eight ordinary pairs before promotion. The position is
+            // exactly reachable by the two-visit loop and leaves four words.
+            let enough = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 20);
+            let prefix_end = b.ins().iadd_imm(count, -16);
+            let one = b.ins().iconst(types::I64, 1);
+            first.push(b.ins().select(enough, prefix_end, one).into());
+            (entry, stop)
+        });
         b.ins().brif(valid, start, &first, scalar, scalar_args);
 
         b.goto_bottom(start);
         let [count, cache_cursor, length, previous] =
-            b.func.dfg.block_params(start).try_into().unwrap();
+            b.func.dfg.block_params(start)[..4].try_into().unwrap();
         let resume = [count, cache_cursor, length, previous].map(BlockArg::Value);
-        let enough = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 2);
-        b.ins().brif(enough, load, &[], scalar, &resume);
+        if let Some((entry, stop)) = four {
+            let leave = block(b.func);
+            let more = b.ins().icmp(IntCC::UnsignedGreaterThan, count, stop);
+            b.ins().brif(more, load, &[], leave, &[]);
+            b.goto_bottom(leave);
+            let prefix_finished = b.ins().icmp_imm(IntCC::NotEqual, stop, 1);
+            b.ins()
+                .brif(prefix_finished, entry, &resume, scalar, &resume);
+        } else {
+            let enough = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 2);
+            b.ins().brif(enough, load, &[], scalar, &resume);
+        }
 
         b.goto_bottom(load);
         let next_cache = b.ins().iadd_imm(cache_cursor, -2);
@@ -396,8 +488,14 @@ impl Pair {
             .with_endianness(Endianness::Little)
             .with_trap_code(self.header_flags.trap_code());
         let packed = b.ins().load(types::I64, flags, address, 0);
-        let selector_mask = (1_i64 << self.selector_bits) - 1;
-        let mask = selector_mask | (selector_mask << 32);
+        let mask = if self.check_literal_bytes {
+            // Entry admits the entire byte-indexed cost span. Reject
+            // selector bits and wider literal indices in the same check.
+            i64::from(u32::MAX) ^ ((BYTE_LITERAL_COUNT - 1) << self.selector_bits)
+        } else {
+            (1_i64 << self.selector_bits) - 1
+        };
+        let mask = mask | (mask << 32);
         let selectors = b.ins().band_imm(packed, mask);
         let empty = b.ins().icmp_imm(IntCC::Equal, selectors, 0);
         b.ins().brif(empty, check_literals, &[], scalar, &resume);
@@ -410,20 +508,24 @@ impl Pair {
             .band_imm(second, i64::from(u32::MAX >> self.selector_bits));
         // Keep the original modular index arithmetic. A failed lookahead
         // returns to the same scalar visit before either append is committed.
-        let first_index = b.ins().iadd_imm(first, self.literal_bias);
-        let second_index = b.ins().iadd_imm(second, self.literal_bias);
-        let first_valid = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThan, first_index, literal_limit);
-        let second_valid = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThan, second_index, literal_limit);
-        let both = b.ins().band(first_valid, second_valid);
-        b.ins().brif(both, append, &[], scalar, &resume);
+        let first_index = b.ins().iadd_imm(first, index_bias);
+        let second_index = b.ins().iadd_imm(second, index_bias);
+        if self.check_literal_bytes {
+            b.ins().jump(append, &[]);
+        } else {
+            let first_valid = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThan, first_index, lookup_limit);
+            let second_valid = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThan, second_index, lookup_limit);
+            let both = b.ins().band(first_valid, second_valid);
+            b.ins().brif(both, append, &[], scalar, &resume);
+        }
 
         b.goto_bottom(append);
-        let first_addr = indexed(b, literals, first_index, 4);
-        let second_addr = indexed(b, literals, second_index, 4);
+        let first_addr = indexed(b, lookup_base, first_index, 4);
+        let second_addr = indexed(b, lookup_base, second_index, 4);
         let first_cost = b.ins().load(types::I32, self.cost_flags, first_addr, 0);
         let second_cost = b.ins().load(types::I32, self.cost_flags, second_addr, 0);
         let previous = b.ins().ireduce(types::I32, previous);
@@ -436,8 +538,100 @@ impl Pair {
         stores.push(b.ins().store(self.output_flags, second_word, address, 8));
         let next_count = b.ins().iadd_imm(count, -2);
         let next_length = b.ins().iadd_imm(length, 2);
-        let args = [next_count, next_cache, next_length, second_word].map(BlockArg::Value);
+        let mut args =
+            Vec::from([next_count, next_cache, next_length, second_word].map(BlockArg::Value));
+        if let Some((_, stop)) = four {
+            args.push(stop.into());
+        }
         b.ins().jump(start, &args);
+
+        if let Some((entry, _)) = four {
+            self.emit_four_loop(
+                b,
+                entry,
+                start,
+                cache,
+                lookup_base,
+                output,
+                mask,
+                flags,
+                stores,
+            );
+        }
+    }
+
+    fn emit_four_loop(
+        self,
+        b: &mut FuncCursor<'_>,
+        entry: Block,
+        pairs: Block,
+        cache: Value,
+        lookup_base: Value,
+        output: Value,
+        mask: i64,
+        flags: MemFlags,
+        stores: &mut Vec<Inst>,
+    ) {
+        let load = block(b.func);
+        let append = block(b.func);
+        b.goto_bottom(entry);
+        let [count, cache_cursor, length, previous] =
+            b.func.dfg.block_params(entry).try_into().unwrap();
+        // A failed group returns to the existing pair loop at the same cursor.
+        // Its cutoff of one keeps that loop active for the rest of this run.
+        let tail = b.ins().iconst(types::I64, 1);
+        let resume = [count, cache_cursor, length, previous, tail].map(BlockArg::Value);
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 4);
+        b.ins().brif(enough, load, &[], pairs, &resume);
+
+        b.goto_bottom(load);
+        let source = b.ins().iadd_imm(cache_cursor, -4);
+        let address = indexed(b, cache, source, 4);
+        let earlier = b.ins().load(types::I64, flags, address, 0);
+        let packed = b.ins().load(types::I64, flags, address, 8);
+        let bits = b.ins().bor(earlier, packed);
+        let bits = b.ins().band_imm(bits, mask);
+        let literals_only = b.ins().icmp_imm(IntCC::Equal, bits, 0);
+        b.ins().brif(literals_only, append, &[], pairs, &resume);
+
+        b.goto_bottom(append);
+        let mut literals = [packed; 4];
+        for (words, half) in [packed, earlier]
+            .into_iter()
+            .zip(literals.chunks_exact_mut(2))
+        {
+            half[0] = b.ins().ushr_imm(words, i64::from(self.selector_bits + 32));
+            let lower = b.ins().ushr_imm(words, i64::from(self.selector_bits));
+            half[1] = b.ins().band_imm(lower, BYTE_LITERAL_COUNT - 1);
+        }
+        let [first, second, third, fourth] = literals.map(|literal| {
+            let address = indexed(b, lookup_base, literal, 4);
+            b.ins().load(types::I32, self.cost_flags, address, 0)
+        });
+        let before = b.ins().ireduce(types::I32, previous);
+        let first = b.ins().iadd(before, first);
+        let second = b.ins().iadd(first, second);
+        let final_pair = b.ins().iadd(third, fourth);
+        let third = b.ins().iadd(second, third);
+        let fourth = b.ins().iadd(second, final_pair);
+        let costs = [first, second, third, fourth];
+        let target = indexed(b, output, length, 8);
+        let words = core::array::from_fn::<_, 4, _>(|index| {
+            let value = self.pack(b, literals[index], costs[index]);
+            stores.push(
+                b.ins()
+                    .store(self.output_flags, value, target, index as i32 * 8),
+            );
+            value
+        });
+        let left = b.ins().iadd_imm(count, -4);
+        let length = b.ins().iadd_imm(length, 4);
+        b.ins().jump(
+            entry,
+            &[left, source, length, words[3]].map(BlockArg::Value),
+        );
     }
 
     fn pack(self, b: &mut FuncCursor<'_>, item: Value, cost: Value) -> Value {

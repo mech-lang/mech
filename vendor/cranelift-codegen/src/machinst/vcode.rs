@@ -902,7 +902,7 @@ impl<I: VCodeInst> VCode<I> {
         flags: &settings::Flags,
         ctrl_plane: &mut ControlPlane,
     ) -> EmitResult {
-        self.emit_with_cold_epilogue_sharing(regalloc, want_disasm, flags, ctrl_plane, None)
+        self.emit_with_cold_epilogue_sharing(regalloc, want_disasm, flags, ctrl_plane, None, false)
     }
 
     pub(crate) fn emit_with_cold_epilogue_sharing(
@@ -912,6 +912,7 @@ impl<I: VCodeInst> VCode<I> {
         flags: &settings::Flags,
         ctrl_plane: &mut ControlPlane,
         cold_epilogue_branch_range: Option<CodeOffset>,
+        fold_single_use_cset: bool,
     ) -> EmitResult {
         let _tt = timing::vcode_emit();
         // Emission replaces virtual instruction operands with their allocated
@@ -948,11 +949,22 @@ impl<I: VCodeInst> VCode<I> {
             self.arrange_fallthrough(&mut final_order);
         }
         final_order.extend(cold_blocks.clone());
-        let pair_spills = flags.enable_regalloc_spill_pairs()
-            && self.debug_value_labels.is_empty()
+        let can_fold = self.debug_value_labels.is_empty()
             && self.user_stack_maps.is_empty()
             && self.debug_tags.is_empty()
             && regalloc.debug_locations.is_empty();
+        let pair_spills = can_fold && flags.enable_regalloc_spill_pairs();
+        let fold_inverted_cset = can_fold && flags.enable_inverted_cset_folding();
+        let allow_redirect = fold_inverted_cset && fold_single_use_cset;
+        let reuse_branch_flags = can_fold && flags.enable_cset_branch_flags();
+        let redundant_heads = (can_fold && flags.enable_redundant_zero_folding())
+            .then(|| self.redundant_zero_heads(regalloc));
+        let select_bits = can_fold && flags.enable_cset_bit_select();
+        let use_counts = (allow_redirect || select_bits)
+            .then(|| self.vreg_use_counts())
+            .unwrap_or_default();
+        let bit_selects =
+            select_bits.then(|| self.allocated_branch_bit_selects(regalloc, &use_counts));
 
         // Compute/save info we need for the prologue: clobbers and
         // number of spillslots.
@@ -1091,9 +1103,17 @@ impl<I: VCodeInst> VCode<I> {
             }
 
             let mut operations = regalloc.block_insts_and_edits(&self, block).peekable();
+            let redundant_head = redundant_heads
+                .as_ref()
+                .and_then(|heads| heads[block.index()]);
+            let mut prior: [Option<InsnIndex>; 2] = [None; 2];
             while let Some(inst_or_edit) = operations.next() {
                 match inst_or_edit {
                     InstOrEdit::Inst(iix) => {
+                        let selected_bit = bit_selects.as_ref().and_then(|folds| folds.get(&iix));
+                        if redundant_head == Some(iix) || matches!(selected_bit, Some(None)) {
+                            continue;
+                        }
                         if !self.debug_value_labels.is_empty() {
                             // If we need to produce debug info,
                             // record the offset of each instruction
@@ -1120,6 +1140,12 @@ impl<I: VCodeInst> VCode<I> {
                             }
                             buffer.start_srcloc(srcloc);
                             cur_srcloc = Some(srcloc);
+                        }
+
+                        if let Some(Some(inst)) = selected_bit {
+                            do_emit(inst, &mut disasm, &mut buffer, &mut state);
+                            prior = [None; 2];
+                            continue;
                         }
 
                         // If this is a safepoint, compute a stack map
@@ -1246,6 +1272,45 @@ impl<I: VCodeInst> VCode<I> {
                             );
                             debug_assert!(allocs.next().is_none());
 
+                            // The iterator exposes an adjacent instruction only
+                            // when no allocator edit or block boundary intervenes.
+                            let mut redirected_cset = false;
+                            if fold_inverted_cset
+                                && let Some(&InstOrEdit::Inst(next)) = operations.peek()
+                                && self.srclocs[next.index()] == srcloc
+                            {
+                                let sole_use = allow_redirect
+                                    && self.next_has_sole_use(iix, next, &use_counts);
+                                let next_allocs = regalloc.inst_allocs(next);
+                                let (prefix, successor) = self.insts.split_at_mut(next.index());
+                                if prefix[iix.index()].fold_allocated_pair(
+                                    &successor[0],
+                                    next_allocs,
+                                    sole_use,
+                                ) {
+                                    operations.next();
+                                    redirected_cset =
+                                        sole_use && matches!(next_allocs, [dst, src] if dst != src);
+                                }
+                            }
+
+                            if reuse_branch_flags {
+                                if let [Some(condition), Some(between)] = prior
+                                    && self.srclocs[condition.index()] == srcloc
+                                    && self.srclocs[between.index()] == srcloc
+                                {
+                                    let (prefix, rest) = self.insts.split_at_mut(iix.index());
+                                    rest[0].reuse_allocated_branch_flags(
+                                        &prefix[condition.index()],
+                                        &prefix[between.index()],
+                                    );
+                                }
+                                // Preserve branches on the result of a redirected
+                                // CSET. They can use the result without another
+                                // dependency on the original flags.
+                                prior = [prior[1], (!redirected_cset).then_some(iix)];
+                            }
+
                             log::trace!("emitting: {:?}", self.insts[iix.index()]);
 
                             // Emit the instruction!
@@ -1272,6 +1337,7 @@ impl<I: VCodeInst> VCode<I> {
                     }
 
                     InstOrEdit::Edit(movement @ Edit::Move { from, to }) => {
+                        prior = [None; 2];
                         if pair_spills
                             && let Some(InstOrEdit::Edit(next)) = operations.peek()
                             && let Some(pair) = I::ABIMachineSpec::gen_spill_pair(
@@ -1434,6 +1500,127 @@ impl<I: VCodeInst> VCode<I> {
             disasm: if want_disasm { Some(disasm) } else { None },
             value_labels_ranges,
         }
+    }
+
+    fn redundant_zero_heads(&self, regalloc: &regalloc2::Output) -> Vec<Option<InsnIndex>> {
+        let mut redundant = vec![None; self.num_blocks()];
+        for (index, skipped) in redundant.iter_mut().enumerate() {
+            let block = BlockIndex::new(index);
+            if block == self.entry || self.block_order.is_indirect_branch_target(block) {
+                continue;
+            }
+            let &[predecessor] = self.block_preds(block) else {
+                continue;
+            };
+            let Some(InstOrEdit::Inst(head)) = regalloc.block_insts_and_edits(self, block).next()
+            else {
+                continue;
+            };
+            let Some(register) =
+                self.insts[head.index()].allocated_zero_move(regalloc.inst_allocs(head))
+            else {
+                continue;
+            };
+            let mut tail = [None, None];
+            for operation in regalloc.block_insts_and_edits(self, predecessor) {
+                tail[0] = tail[1].replace(operation);
+            }
+            let [
+                Some(InstOrEdit::Inst(write)),
+                Some(InstOrEdit::Inst(branch)),
+            ] = tail
+            else {
+                continue;
+            };
+            // A witness at the predecessor's head could itself be removed.
+            if write != self.block_insns(predecessor).first()
+                && self.insts[branch.index()].is_register_preserving_direct_branch()
+                && self.srclocs[head.index()] == self.srclocs[write.index()]
+                && self.insts[write.index()].allocated_zero_move(regalloc.inst_allocs(write))
+                    == Some(register)
+            {
+                *skipped = Some(head);
+            }
+        }
+        redundant
+    }
+
+    fn vreg_use_counts(&self) -> Vec<u8> {
+        let mut uses = vec![0_u8; self.num_vregs()];
+        for value in self
+            .operands
+            .iter()
+            .filter(|op| op.kind() == OperandKind::Use)
+            .map(|op| op.vreg())
+            .chain(self.branch_block_args.iter().copied())
+        {
+            uses[value.vreg()] = uses[value.vreg()].saturating_add(1);
+        }
+        uses
+    }
+
+    fn next_has_sole_use(&self, iix: InsnIndex, next: InsnIndex, uses: &[u8]) -> bool {
+        let ([definition], [_, source]) = (self.inst_operands(iix), self.inst_operands(next))
+        else {
+            return false;
+        };
+        definition.kind() == OperandKind::Def
+            && source.kind() == OperandKind::Use
+            && definition.vreg() == source.vreg()
+            && uses[source.vreg().vreg()] == 1
+    }
+
+    fn allocated_branch_bit_selects(
+        &self,
+        regalloc: &regalloc2::Output,
+        uses: &[u8],
+    ) -> FxHashMap<InsnIndex, Option<I>> {
+        let mut folds = FxHashMap::default();
+        for index in 0..self.num_blocks() {
+            let block = BlockIndex::new(index);
+            let mut tail = [None, None, None];
+            for operation in regalloc.block_insts_and_edits(self, block) {
+                tail[0] = tail[1].take();
+                tail[1] = tail[2].replace(operation);
+            }
+            let [
+                Some(InstOrEdit::Inst(predicate)),
+                Some(InstOrEdit::Inst(mask)),
+                Some(InstOrEdit::Inst(branch)),
+            ] = tail
+            else {
+                continue;
+            };
+            let [defined] = self.inst_operands(predicate) else {
+                continue;
+            };
+            let [masked, lhs, rhs] = self.inst_operands(mask) else {
+                continue;
+            };
+            let [tested] = self.inst_operands(branch) else {
+                continue;
+            };
+            let defined = defined.vreg();
+            let masked = masked.vreg();
+            if uses[defined.vreg()] != 1
+                || uses[masked.vreg()] != 1
+                || (lhs.vreg() != defined && rhs.vreg() != defined)
+                || tested.vreg() != masked
+                || self.srclocs[predicate.index()] != self.srclocs[mask.index()]
+                || self.srclocs[predicate.index()] != self.srclocs[branch.index()]
+            {
+                continue;
+            }
+            if let Some(selected) = self.insts[predicate.index()].select_allocated_branch_bit(
+                &self.insts[mask.index()],
+                &self.insts[branch.index()],
+                [predicate, mask, branch].map(|iix| regalloc.inst_allocs(iix)),
+            ) {
+                folds.insert(predicate, Some(selected));
+                folds.insert(mask, None);
+            }
+        }
+        folds
     }
 
     fn monotonize_inst_offsets(&self, inst_offsets: &mut [CodeOffset], func_body_len: u32) {

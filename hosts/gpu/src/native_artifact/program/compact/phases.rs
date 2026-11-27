@@ -28,7 +28,10 @@ use std::collections::{BTreeMap, BTreeSet};
 mod function;
 #[path = "private_phase.rs"]
 mod private;
+#[path = "phase_seed.rs"]
+mod seeded_histograms;
 pub(in crate::native_artifact) use private::{HANDOFF as PRIVATE_HANDOFF, PrivatePhase};
+pub(super) use seeded_histograms::{define_seeded_histograms, prove_seeded_histograms};
 
 // Only this caller constructs the contract and emits its current-view guards.
 // General matrices retain the original native body, not a weakened index rule.
@@ -181,6 +184,7 @@ pub(super) struct Phase {
     fixed_arrays: Vec<usize>,
     entry_bounds: Vec<(usize, u64, bool)>,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    entry_halfwords: Vec<usize>,
     invariant_views: BTreeSet<usize>,
     outputs: Vec<(usize, Output)>,
     output_owners: Vec<usize>,
@@ -190,6 +194,9 @@ pub(super) struct Phase {
     observe: bool,
     private: Option<PrivatePhase>,
     relative_error_origins: bool,
+    histogram: Option<function::Histogram>,
+    seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
+    fixed_transform_scalars: Option<usize>,
 }
 impl Phase {
     #[cfg(feature = "early-region-emission")]
@@ -204,8 +211,15 @@ impl Phase {
                 for &word in &self.inputs {
                     effect.read(word);
                 }
+                for &word in &self.entry_halfwords {
+                    effect.read(word);
+                }
                 for span in &self.entry_spans {
-                    for word in [span.begin_word, span.end_word, span.length_word] {
+                    for word in span
+                        .begin_word
+                        .into_iter()
+                        .chain([span.end_word, span.length_word])
+                    {
                         effect.read(word);
                     }
                 }
@@ -418,6 +432,7 @@ impl Phase {
         source_blocks: &[Option<Block>],
         error: Block,
         root_entry: bool,
+        seeded: Option<&seeded_histograms::Route>,
         mut vector_guards: Option<&mut Vec<vector_guard_facts::Guard>>,
     ) -> Result<(), NativeCompileError> {
         let observe = observer(module, b, self.observe)?;
@@ -448,9 +463,19 @@ impl Phase {
             let base = self.arrays[array].0;
             let length = words.read(b, base + 1);
             let capacity = words.read(b, base + 2);
-            let fits = b
+            let mut fits = b
                 .ins()
                 .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+            // A fixed writable extent shares the capacity refusal edge.
+            for span in self
+                .entry_spans
+                .iter()
+                .filter(|span| span.begin_word.is_none() && span.length_word == base + 1)
+            {
+                let end = words.read(b, span.end_word);
+                let within = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
+                fits = b.ins().band(fits, within);
+            }
             let next = b.create_block();
             b.ins().brif(fits, next, &[], fallback, &[]);
             b.switch_to_block(next);
@@ -477,8 +502,12 @@ impl Phase {
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
         }
+        let mut halfwords = self.entry_halfwords.split_first();
         for span in &self.entry_spans {
-            let begin = words.read(b, span.begin_word);
+            let Some(begin) = span.begin_word else {
+                continue;
+            };
+            let begin = words.read(b, begin);
             let end = words.read(b, span.end_word);
             let length = words.read(b, span.length_word);
             let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
@@ -492,9 +521,25 @@ impl Phase {
                 );
                 valid = b.ins().band(valid, enough);
             }
+            if let Some((&first, rest)) = halfwords.take() {
+                // Check the carried words on the same refusal edge as the span.
+                let combined = rest.iter().fold(words.read(b, first), |bits, &word| {
+                    let value = words.read(b, word);
+                    b.ins().bor(bits, value)
+                });
+                let narrow = b.ins().icmp_imm(
+                    IntCC::UnsignedLessThanOrEqual,
+                    combined,
+                    i64::from(u16::MAX),
+                );
+                valid = b.ins().band(valid, narrow);
+            }
             let next = b.create_block();
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
+        }
+        if halfwords.is_some() {
+            return Err(backend("halfword admission lacks a scalar span guard"));
         }
         if let Some(observe) = observe.filter(|_| self.vector.is_none()) {
             let header = b.ins().iconst(types::I64, self.header as i64);
@@ -573,6 +618,29 @@ impl Phase {
             } else {
                 None
             };
+        let replay = self
+            .fixed_transform_scalars
+            .filter(|_| root_entry && observe.is_none() && phase_timer.is_none());
+        let call_fixed = |module: &mut M, b: &mut FunctionBuilder<'_>, function| {
+            let function = module.declare_func_in_func(function, b.func);
+            let call = if let Some(scalars) = replay {
+                let mut signature = module.make_signature();
+                signature.params.extend([AbiParam::new(types::I64); 5]);
+                signature.returns.extend([AbiParam::new(types::I64); 2]);
+                let replay = module
+                    .declare_function("mech_compact_fixed_transform", Linkage::Import, &signature)
+                    .map_err(backend)?;
+                let replay = module.declare_func_in_func(replay, b.func);
+                let address = b.ins().func_addr(types::I64, function);
+                let scalars = b.ins().iconst(types::I64, scalars as i64);
+                b.ins()
+                    .call(replay, &[storage.heap, input, out, address, scalars])
+            } else {
+                b.ins().call(function, &[storage.heap, input, out])
+            };
+            let result = b.inst_results(call);
+            Ok::<_, NativeCompileError>((result[0], result[1]))
+        };
         let (status, at) = if let Some((_, composed)) = dense {
             let function = module.declare_func_in_func(composed.function, b.func);
             let call = b.ins().call(function, &[storage.heap, input, out]);
@@ -650,30 +718,47 @@ impl Phase {
                 let yes = b.ins().iconst(types::I64, 2);
                 b.ins().call(observe, &[storage.heap, header, yes]);
             }
-            let function = module.declare_func_in_func(vector.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
-            let result = b.inst_results(call).to_vec();
-            b.ins()
-                .jump(returned, &[result[0].into(), result[1].into()]);
+            let (status, at) = call_fixed(module, b, vector.function)?;
+            b.ins().jump(returned, &[status.into(), at.into()]);
             b.switch_to_block(general);
             if let Some(observe) = observe {
                 let header = b.ins().iconst(types::I64, self.header as i64);
                 let yes = b.ins().iconst(types::I64, 1);
                 b.ins().call(observe, &[storage.heap, header, yes]);
             }
-            let function = module.declare_func_in_func(self.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
-            let result = b.inst_results(call).to_vec();
-            b.ins()
-                .jump(returned, &[result[0].into(), result[1].into()]);
+            let (status, at) = call_fixed(module, b, self.function)?;
+            b.ins().jump(returned, &[status.into(), at.into()]);
             b.switch_to_block(returned);
             let result = b.block_params(returned);
             (result[0], result[1])
         } else {
-            let function: FuncRef = module.declare_func_in_func(self.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
-            let result = b.inst_results(call);
-            (result[0], result[1])
+            if let Some(route) = seeded {
+                let target = module.declare_func_in_func(route.target, b.func);
+                let raw = route.seed.raw_view;
+                let seed = route.seed.seed_view;
+                let raw_ptr = words.read(b, raw);
+                let raw_len = words.read(b, raw + 1);
+                let begin = words.read(b, route.seed.begin);
+                let seed_ptr = words.read(b, seed);
+                let seed_len = words.read(b, seed + 1);
+                let call = b.ins().call(
+                    target,
+                    &[
+                        storage.heap,
+                        input,
+                        out,
+                        raw_ptr,
+                        raw_len,
+                        begin,
+                        seed_ptr,
+                        seed_len,
+                    ],
+                );
+                let result = b.inst_results(call);
+                (result[0], result[1])
+            } else {
+                call_fixed(module, b, self.function)?
+            }
         };
         if let Some((callback, header)) = phase_timer {
             let returned = b.ins().iconst(types::I64, 1);
@@ -1473,6 +1558,8 @@ pub(super) fn define<M: Module>(
         let mut vector = None;
         let mut packed_input = None;
         let mut entry_spans = Vec::new();
+        let mut entry_halfwords = Vec::new();
+        let mut histogram = general.as_ref().and_then(|body| body.histogram);
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
             let used = general.as_ref().is_none_or(|body| fast.code != body.code);
@@ -1481,6 +1568,7 @@ pub(super) fn define<M: Module>(
             info["selected_by_guard"] = serde_json::json!(used);
             summary["vector_variant"] = info;
             if used {
+                histogram = fast.histogram.or(histogram);
                 for mut span in fast.entry_spans {
                     let slot = |at| {
                         inputs
@@ -1488,11 +1576,29 @@ pub(super) fn define<M: Module>(
                             .copied()
                             .ok_or_else(|| backend("span guard lacks input word"))
                     };
-                    span.begin_word = slot(span.begin_word)?;
+                    span.begin_word = span.begin_word.map(slot).transpose()?;
                     span.end_word = slot(span.end_word)?;
                     span.length_word = slot(span.length_word)?;
+                    if span.begin_word.is_none()
+                        && (span.minimum_length != 0
+                            || !fixed_arrays
+                                .iter()
+                                .any(|&array| arrays[array].0 + 1 == span.length_word))
+                    {
+                        return Err(backend("entry extent needs a fixed writable length"));
+                    }
                     entry_spans.push(span);
                 }
+                entry_halfwords = fast
+                    .entry_halfwords
+                    .into_iter()
+                    .map(|at| {
+                        inputs
+                            .get(at)
+                            .copied()
+                            .ok_or_else(|| backend("halfword guard lacks input word"))
+                    })
+                    .collect::<Result<_, _>>()?;
                 packed_input = fast.packed_input;
                 vector = Some(VectorAlternative {
                     function: fast.function,
@@ -1590,6 +1696,7 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
+        let seeded = general.and_then(|body| body.seeded);
         let (inputs, input_words) = if let Some(words) = packed_input {
             // Only the selected vector body can read this layout. Geometry
             // refusal still branches to the source continuation before the call.
@@ -1597,11 +1704,66 @@ pub(super) fn define<M: Module>(
                 return Err(backend("packed phase inputs require one selected body"));
             }
             let compact = words.iter().map(|&word| inputs[word]).collect::<Vec<_>>();
+            histogram = None;
             summary["private_packed_input_words"] = serde_json::json!(compact.len());
             (compact, words.len())
         } else {
             (inputs, input_words)
         };
+        // The same-plan proof accounts for all scalar captures and aliased
+        // views. Select only a single fixed writable U32 body with its direct
+        // result, no other effects, and the exact runtime replay packet.
+        let fixed_transform_scalars = (|| {
+            use crate::native_artifact::program::prepare::numeric_plan::ExitKind;
+            let enabled = std::env::var("MECH_COMPACT_FIXED_TRANSFORMS").ok()?;
+            if !cfg!(all(target_os = "macos", target_arch = "aarch64"))
+                || !enabled.split(',').any(|item| item.parse() == Ok(header))
+                || compact_packet
+                || no_growth.is_some()
+                || seeded.is_some()
+                || fixed_arrays.as_slice() != [0]
+                || !invariant_views.contains(&0)
+                || proof.result.direct_array() != Some(0)
+                || !proof.scalar_captures.is_empty()
+                || !proof.scalar_outputs.is_empty()
+                || !proof.prepaid_sites.is_empty()
+                || proof
+                    .actions
+                    .iter()
+                    .any(|(_, action)| matches!(action, Operation::Fallback) || action.grows())
+                || proof
+                    .exits
+                    .iter()
+                    .any(|exit| exit.kind == ExitKind::Unsupported)
+                || private
+                    .as_ref()
+                    .is_some_and(|phase| !phase.handoffs.is_empty())
+                || outputs
+                    .iter()
+                    .any(|(_, source)| matches!(source, Output::Stack(_)))
+            {
+                return None;
+            }
+            let [array] = proof.arrays.as_slice() else {
+                return None;
+            };
+            let [(base, true)] = arrays.as_slice() else {
+                return None;
+            };
+            let [scalars @ .., data, len, rows, cols] = inputs.as_slice() else {
+                return None;
+            };
+            (array.width == 4
+                && array.witness != usize::MAX
+                && !array.appends
+                && scalars.len() <= 4
+                && [*data, *len, *rows, *cols] == [*base, base + 1, base + 3, base + 4]
+                && input_words == inputs.len() + 2)
+                .then_some(scalars.len())
+        })();
+        if let Some(scalars) = fixed_transform_scalars {
+            summary["fixed_transform_scalar_words"] = serde_json::json!(scalars);
+        }
         result.push(Phase {
             header,
             exit: region.tail.exit() as usize,
@@ -1614,6 +1776,7 @@ pub(super) fn define<M: Module>(
             fixed_arrays,
             entry_bounds,
             entry_spans,
+            entry_halfwords,
             invariant_views,
             outputs,
             output_owners,
@@ -1623,6 +1786,9 @@ pub(super) fn define<M: Module>(
             observe,
             private,
             relative_error_origins,
+            histogram,
+            seeded,
+            fixed_transform_scalars,
         });
         covered.extend(proof.sites.iter().copied());
     }

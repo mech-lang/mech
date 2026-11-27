@@ -14,7 +14,7 @@ type Fixture = (
     Vec<View>,
 );
 
-fn fixture(module: &JITModule, shift: u32) -> Fixture {
+fn fixture(module: &JITModule, shift: u32, key_mask: u32) -> Fixture {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -71,7 +71,7 @@ fn fixture(module: &JITModule, shift: u32) -> Fixture {
     b.ins().brif(literal, selected, &[], skip, &[]);
     b.switch_to_block(selected);
     let shifted = b.ins().ushr_imm(packed, i64::from(shift));
-    let key = b.ins().band_imm(shifted, 255);
+    let key = b.ins().band_imm(shifted, i64::from(key_mask));
     let fits = b.ins().icmp(IntCC::UnsignedLessThan, key, bin_len);
     b.ins().brif(fits, update, &[], error, &[]);
     b.switch_to_block(update);
@@ -104,7 +104,7 @@ fn fixture(module: &JITModule, shift: u32) -> Fixture {
     (ctx, header, loads, vec![view(0, 0, 8)], vec![view(1, 2, 4)])
 }
 
-fn compile(shift: u32, tuning: Option<(usize, bool, bool)>) -> (JITModule, Run) {
+fn compile(shift: u32, key_mask: u32, tuning: Option<Options>) -> (JITModule, Run) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -112,29 +112,19 @@ fn compile(shift: u32, tuning: Option<(usize, bool, bool)>) -> (JITModule, Run) 
         )
         .unwrap(),
     );
-    let (mut ctx, header, loads, nodes, bins) = fixture(&module, shift);
-    if let Some((visits, wide, progressive)) = tuning {
+    let (mut ctx, header, loads, nodes, bins) = fixture(&module, shift, key_mask);
+    if let Some(options) = tuning {
         let mut fast = module.make_context();
         fast.func = ctx.func.clone();
-        let admission = optimize(
-            &mut fast,
-            header,
-            &loads,
-            &nodes,
-            &bins,
-            Options {
-                visits,
-                wide_keys: wide,
-                progressive,
-            },
-        )
-        .expect("recognized descending packed-node histogram");
+        let admission = optimize(&mut fast, header, &loads, &nodes, &bins, options)
+            .expect("recognized descending packed-node histogram");
         assert_eq!(
             admission,
             Admission {
                 node_word: 0,
                 bin_word: 2,
-                minimum_bins: 256
+                minimum_bins: u64::from(key_mask) + 1,
+                end_word: Some(5),
             }
         );
         fast.verify(module.isa()).unwrap();
@@ -184,6 +174,7 @@ fn oracle(
     end: u64,
     mut at: u64,
     shift: u32,
+    key_mask: u32,
 ) -> (u64, u64) {
     while at != end {
         let packed = nodes
@@ -192,7 +183,7 @@ fn oracle(
             .unwrap_or(0)
             >> 32;
         if packed & 0x1ff == 1 {
-            let key = ((packed >> shift) & 255) as usize;
+            let key = ((packed >> shift) & u64::from(key_mask)) as usize;
             let Some(count) = bins.get_mut(key) else {
                 return (1, at);
             };
@@ -203,20 +194,53 @@ fn oracle(
     (0, at)
 }
 
+fn variants() -> impl Iterator<Item = Options> {
+    [4, 8, 16].into_iter().flat_map(|visits| {
+        [false, true].into_iter().flat_map(move |wide_keys| {
+            [
+                (false, false, false, false, false),
+                (true, false, false, false, false),
+                (true, true, false, false, false),
+                (true, false, true, false, false),
+                (true, true, true, false, false),
+                (true, true, true, true, false),
+                (true, true, true, false, true),
+                (true, true, true, true, true),
+            ]
+            .into_iter()
+            .filter(move |&(_, vector, stream, _, _)| {
+                (!vector || cfg!(target_arch = "aarch64")) && (visits > 4 || !(vector || stream))
+            })
+            .map(
+                move |(
+                    progressive,
+                    vector_chunks,
+                    stream_chunks,
+                    byte_keys,
+                    pair_vector_chunks,
+                )| {
+                    Options {
+                        visits,
+                        wide_keys,
+                        progressive,
+                        vector_chunks,
+                        stream_chunks,
+                        byte_keys,
+                        pair_vector_chunks,
+                    }
+                },
+            )
+        })
+    })
+}
+
 #[test]
 fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_errors() {
     let mut calls = 0;
     for shift in [0, 9, 31] {
         let entries: Vec<_> = std::iter::once(None)
-            .chain([4, 8, 16].into_iter().flat_map(|n| {
-                [
-                    Some((n, false, false)),
-                    Some((n, true, false)),
-                    Some((n, false, true)),
-                    Some((n, true, true)),
-                ]
-            }))
-            .map(|tuning| compile(shift, tuning))
+            .chain(variants().map(Some))
+            .map(|tuning| compile(shift, 255, tuning))
             .collect();
         for pattern in 0..4 {
             let nodes: Vec<_> = (0..96u64)
@@ -226,7 +250,7 @@ fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_error
                     } else {
                         (i * 197 + 3) & 255
                     };
-                    let tag = if pattern == 2 && i % 7 == 0 { 2 } else { 1 };
+                    let tag = if pattern == 2 && i % 7 == 0 { i % 3 } else { 1 };
                     let high = (0xff00_0000 | (key << 9) | tag) << 32;
                     high | (i.wrapping_mul(0xabcdef01) & u32::MAX as u64)
                 })
@@ -242,15 +266,17 @@ fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_error
                     (0, 15),
                     (0, 16),
                     (0, 17),
+                    (0, 80),
                     (2, 39),
                     (u64::MAX - 7, 9),
+                    (u64::MAX - 20, u64::MAX),
                 ] {
                     for top in [0, 3, 15, 63, 95, u64::MAX] {
                         for cells in [0, 1, 17, 255, 256] {
                             let seed = if pattern == 3 { u32::MAX - 1 } else { 0 };
                             let mut expected = vec![seed; cells];
                             let expected_status =
-                                oracle(&nodes[..len], &mut expected, top, end, start, shift);
+                                oracle(&nodes[..len], &mut expected, top, end, start, shift, 255);
                             for (_, run) in &entries {
                                 let guard = 0xabcdef01;
                                 let mut actual = vec![seed; cells + 2];
@@ -286,7 +312,7 @@ fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_error
 fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
     let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
     for visits in [0, 1, 2, 3, 5, 32, usize::MAX] {
-        let (mut ctx, header, loads, nodes, bins) = fixture(&module, 9);
+        let (mut ctx, header, loads, nodes, bins) = fixture(&module, 9, 255);
         let before = ctx.func.display().to_string();
         assert_eq!(
             optimize(
@@ -298,7 +324,11 @@ fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
                 Options {
                     visits,
                     wide_keys: true,
-                    progressive: false
+                    progressive: false,
+                    vector_chunks: false,
+                    stream_chunks: false,
+                    byte_keys: false,
+                    pair_vector_chunks: false,
                 }
             ),
             None
@@ -307,15 +337,56 @@ fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
     }
 }
 
+#[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+#[test]
+fn grouped_histogram_byte_keys_preserve_full_vector_keys_when_mask_is_wider() {
+    let mask = 511;
+    let (_module, run) = compile(
+        9,
+        mask,
+        Some(Options {
+            visits: 8,
+            wide_keys: false,
+            progressive: true,
+            vector_chunks: true,
+            stream_chunks: true,
+            byte_keys: true,
+            pair_vector_chunks: true,
+        }),
+    );
+    let nodes: Vec<_> = (0..80u64)
+        .rev()
+        .map(|visit| {
+            let key = 256 + ((visit * 197 + 3) & 255);
+            let tag = if visit == 10 { 2 } else { 1 };
+            ((key << 9) | tag) << 32
+        })
+        .collect();
+    for end in [11, 12, 17, 20, 21, 79, 80] {
+        let mut expected = [0u32; 512];
+        let status = oracle(&nodes, &mut expected, 79, end, 0, 9, mask);
+        let mut actual = [0u32; 512];
+        let packet = [
+            nodes.as_ptr() as u64,
+            nodes.len() as u64,
+            actual.as_mut_ptr() as u64,
+            actual.len() as u64,
+            79,
+            end,
+            0,
+        ];
+        let mut at = 0;
+        // Both views are fully initialized and disjoint.
+        let code = unsafe { run(0, packet.as_ptr(), &mut at) };
+        assert_eq!((code, at), status);
+        assert_eq!(actual, expected);
+    }
+}
+
 #[test]
 fn grouped_histogram_current_entry_preserves_overlapping_node_bin_observations() {
-    let entries: Vec<_> = [4, 8, 16]
-        .into_iter()
-        .flat_map(|visits| {
-            [false, true].into_iter().flat_map(move |wide| {
-                [false, true].map(move |progressive| compile(9, Some((visits, wide, progressive))))
-            })
-        })
+    let entries: Vec<_> = variants()
+        .map(|options| compile(9, 255, Some(options)))
         .collect();
     let mut calls = 0;
     for bin_base in [0, 1, 96, 191, 192] {

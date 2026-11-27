@@ -345,6 +345,8 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
                     generated_code::constructor_put_in_reg_sext32(self, value)
                 } else if narrow {
                     generated_code::constructor_put_in_reg_zext32(self, value)
+                } else if let Some(reg) = self.ccmp_literal(value, comparison.ty) {
+                    reg
                 } else {
                     self.put_in_reg(value)
                 }
@@ -394,6 +396,46 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         }
         (instructions, lower_condcode(cc))
     }
+
+    fn ccmp_literal(&mut self, value: Value, ty: Type) -> Option<Reg> {
+        if !self.lower_ctx.f.aarch64_ccmp_literal_constants || !matches!(ty, I32 | I64) {
+            return None;
+        }
+        let (definition, 0) = self
+            .lower_ctx
+            .get_value_as_source_or_const(value)
+            .inst
+            .as_inst()?
+        else {
+            return None;
+        };
+        let InstructionData::UnaryImm {
+            opcode: Opcode::Iconst,
+            imm,
+        } = self.lower_ctx.dfg().insts[definition]
+        else {
+            return None;
+        };
+        let word = if ty == I32 {
+            u64::from(imm.bits() as u32)
+        } else {
+            imm.bits() as u64
+        };
+        // Keep constants already encodable as a single move or logical immediate.
+        if MInst::load_constant(writable_zero_reg(), word).len() == 1 {
+            return None;
+        }
+        let addr = self
+            .lower_ctx
+            .use_constant(VCodeConstantData::U64(word.to_le_bytes()));
+        let rd = self.temp_writable_reg(I64);
+        self.lower_ctx.emit(MInst::ULoad64 {
+            rd,
+            mem: super::AMode::Const { addr },
+            flags: MemFlags::trusted(),
+        });
+        Some(rd.to_reg())
+    }
 }
 
 impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
@@ -402,12 +444,21 @@ impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
     fn icmp_conjunction(&mut self, value: Value) -> Option<ComparisonChain> {
         // This is the pure ISLE preflight. It does not normalize operands,
         // lower instructions, sink values or emit machine code.
-        super::boolean_conjunction::derive(self.lower_ctx.dfg(), value, |value| {
+        let unique = |value| {
             matches!(
                 self.lower_ctx.get_value_as_source_or_const(value).inst,
                 InputSourceInst::UniqueUse(_, 0)
             )
-        })
+        };
+        let dfg = self.lower_ctx.dfg();
+        #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+        if self.lower_ctx.f.aarch64_branch_on_negated_disjunction
+            && let Some(chain) =
+                super::boolean_conjunction::derive_negated_disjunction(dfg, value, unique)
+        {
+            return Some(chain);
+        }
+        super::boolean_conjunction::derive(dfg, value, unique)
     }
 
     fn emit_icmp_conjunction_branch(

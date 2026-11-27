@@ -154,6 +154,7 @@ impl TargetIsa for AArch64Backend {
             &self.flags,
             ctrl_plane,
             cold_epilogue_branch_range,
+            func.aarch64_fold_single_use_cset,
         );
         if cold_epilogue_branch_range.is_some()
             && (func.aarch64_share_cold_tails || func.aarch64_share_frame_copies)

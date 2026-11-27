@@ -1,6 +1,7 @@
 //! Specialize a byte histogram only under the existing numeric caller's
 //! ownership/current-view gates and a new whole-span guard before source work.
 use super::*;
+use cfg_cleanup::bounded_byte_histogram::{self, Admission, ByteGrouping};
 
 pub(super) fn prepare<M: Module>(
     module: &mut M,
@@ -12,7 +13,7 @@ pub(super) fn prepare<M: Module>(
     symbol: &str,
     signature: &Signature,
     bodies: Option<&mut PhaseBodies>,
-) -> Result<Option<serde_json::Value>, NativeCompileError> {
+) -> Result<Option<(Option<Admission>, serde_json::Value)>, NativeCompileError> {
     let Some(loads) = phase_storage::input_word_loads(&context.func, input_words) else {
         return Ok(None);
     };
@@ -43,20 +44,29 @@ pub(super) fn prepare<M: Module>(
     }
     let mut specialized = module.make_context();
     specialized.func = context.func.clone();
-    let grouped = std::env::var_os("MECH_HISTOGRAM_GROUP_BYTE_VISITS").is_some();
+    let grouping = std::env::var_os("MECH_HISTOGRAM_GROUP_BYTE_VISITS").map(|mode| {
+        if mode == "addressed-eight" {
+            ByteGrouping::AddressedEight
+        } else if mode == "packed-eight" {
+            ByteGrouping::PackedEight
+        } else {
+            ByteGrouping::Four
+        }
+    });
     let vector_scan = std::env::var_os("MECH_HISTOGRAM_VECTOR_COUNTER_SCAN").is_some();
     let counter_capacity =
         std::env::var_os("MECH_HISTOGRAM_ENTRY_COUNTER_CAPACITY").and_then(|_| {
-            if grouped {
-                cfg_cleanup::bounded_byte_histogram::optimize_grouped_counter_capacity(
+            if let Some(grouping) = grouping {
+                bounded_byte_histogram::optimize_grouped_counter_capacity(
                     &mut specialized,
                     header,
                     &loads,
                     &inputs,
                     &bins,
+                    grouping,
                 )
             } else {
-                cfg_cleanup::bounded_byte_histogram::optimize_counter_capacity(
+                bounded_byte_histogram::optimize_counter_capacity(
                     &mut specialized,
                     header,
                     &loads,
@@ -67,13 +77,7 @@ pub(super) fn prepare<M: Module>(
         });
     let bounded_counters = counter_capacity.is_some();
     let Some(admission) = counter_capacity.or_else(|| {
-        cfg_cleanup::bounded_byte_histogram::optimize(
-            &mut specialized,
-            header,
-            &loads,
-            &inputs,
-            &bins,
-        )
+        bounded_byte_histogram::optimize(&mut specialized, header, &loads, &inputs, &bins)
     }) else {
         return Ok(None);
     };
@@ -108,22 +112,30 @@ pub(super) fn prepare<M: Module>(
         "code_bytes": machine.code_info().total_size,
         "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
     });
-    if bounded_counters && grouped {
-        result["grouped_byte_visits"] = serde_json::json!(4);
+    if let Some(grouping) = grouping.filter(|_| bounded_counters) {
+        result["grouped_byte_visits"] = serde_json::json!(grouping.visits());
+        if grouping == ByteGrouping::PackedEight {
+            result["packed_byte_load"] = serde_json::json!(true);
+        }
     }
     if bounded_counters && vector_scan {
         result["vector_counter_scan"] = serde_json::json!(true);
     }
     let fast = module.declare_func_in_func(id, &mut context.func);
-    if bounded_counters && vector_scan {
-        cfg_cleanup::bounded_byte_histogram::guard_vector_counter_capacity(
-            context, admission, fast,
+    if bounded_counters && grouping == Some(ByteGrouping::PackedEight) {
+        bounded_byte_histogram::guard_packed_counter_capacity(
+            context,
+            admission,
+            fast,
+            vector_scan,
         );
+    } else if bounded_counters && vector_scan {
+        bounded_byte_histogram::guard_vector_counter_capacity(context, admission, fast);
     } else if bounded_counters {
-        cfg_cleanup::bounded_byte_histogram::guard_counter_capacity(context, admission, fast);
+        bounded_byte_histogram::guard_counter_capacity(context, admission, fast);
     } else {
-        cfg_cleanup::bounded_byte_histogram::guard_entry(context, admission, fast);
+        bounded_byte_histogram::guard_entry(context, admission, fast);
     }
     context.verify(module.isa()).map_err(backend)?;
-    Ok(Some(result))
+    Ok(Some((bounded_counters.then_some(admission), result)))
 }

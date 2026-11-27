@@ -66,7 +66,12 @@ pub struct ScratchAudit {
 // cannot be a legal packed level-12 match/header.
 const CACHE_WORDS: usize = 1_500_513;
 
+mod fixed_transform;
+mod gap_kernel;
+mod owner_registry;
 mod owner_storage;
+mod small_scratch;
+use owner_registry::OwnerRegistry;
 pub use owner_storage::OwnerStorage;
 
 #[derive(Default)]
@@ -77,8 +82,7 @@ pub struct Heap<'storage> {
     first_owner: *mut Owner,
     owner_storage: Option<NonNull<Owner>>,
     owner_loan: PhantomData<&'storage mut OwnerStorage>,
-    owners: Vec<*mut Owner>,
-    free: Vec<usize>,
+    registry: Option<Box<OwnerRegistry>>,
     pub counters: Counters,
     pub scratch_audit: ScratchAudit,
     pub scratch_poison: Option<u32>,
@@ -103,7 +107,7 @@ impl<'storage> Heap<'storage> {
         if slot == 0 {
             Some(self.first_owner)
         } else {
-            self.owners.get(slot - 1).copied()
+            self.registry.as_ref()?.get(slot)
         }
     }
 
@@ -112,14 +116,25 @@ impl<'storage> Heap<'storage> {
         let slot = if self.first_owner.is_null() {
             self.first_owner = owner;
             0
-        } else if let Some(index) = self.free.pop() {
-            self.owners[index] = owner;
-            index + 1
         } else {
-            self.owners.push(owner);
-            self.owners.len()
+            self.registry().insert(owner)
         };
         unsafe { (*owner).slot = slot };
+    }
+
+    fn registry(&mut self) -> &mut OwnerRegistry {
+        self.registry.get_or_insert_with(Box::default)
+    }
+
+    fn remove_slot(&mut self, slot: usize) {
+        if slot == 0 {
+            self.first_owner = ptr::null_mut();
+        } else {
+            self.registry
+                .as_mut()
+                .expect("registered secondary slot")
+                .remove(slot);
+        }
     }
 
     pub fn discard_private(&mut self) {
@@ -131,9 +146,15 @@ impl<'storage> Heap<'storage> {
                     .expect("owned diagnostic backing cleanup");
             }
         }
-        for index in 0..self.owners.len() {
-            let owner = self.owners[index];
-            if !owner.is_null() {
+        let slots = if self.counters.live_payload_bytes == 0 {
+            0
+        } else {
+            self.registry
+                .as_ref()
+                .map_or(0, |registry| registry.slots())
+        };
+        for slot in 1..=slots {
+            if let Some(owner) = self.owner_at(slot).filter(|owner| !owner.is_null()) {
                 unsafe {
                     (*owner).references = 0;
                     self.release(owner)
@@ -163,13 +184,37 @@ impl<'storage> Heap<'storage> {
         debug_assert_eq!(alignment & Owner::MAPPED, 0);
         // Fresh page mappings provide the same initialized zero words.
         // Byte outputs keep their original allocator for direct Vec transfer.
-        let mapping = if zeroed && stride != 1 {
+        // Worker heaps use owned descriptors and can transfer them to their
+        // caller. Only the final invocation heap borrows owner storage.
+        let small = if stride != 1
+            && !self.first_owner.is_null()
+            && self.owner_storage.is_some()
+            && owner_storage::RECORDS == 1
+        {
+            self.registry().scratch.acquire(layout)
+        } else {
+            None
+        };
+        let mapping = if small.is_none() && zeroed && stride != 1 {
             zero_pages::reserve(layout)?
         } else {
             None
         };
         let mapped = mapping.is_some();
-        let data = if let Some(mapping) = mapping {
+        let data = if let Some(header) = small {
+            // SAFETY: the acquired span includes this complete payload and
+            // is exclusively reserved for the current logical allocation.
+            let payload = unsafe {
+                header
+                    .as_ptr()
+                    .cast::<u8>()
+                    .add(std::mem::size_of::<Owner>())
+            };
+            if zeroed {
+                unsafe { payload.write_bytes(0, bytes) };
+            }
+            payload
+        } else if let Some(mapping) = mapping {
             mapping.as_ptr()
         } else {
             // SAFETY: checked nonzero layout. The selected allocator operation
@@ -208,15 +253,19 @@ impl<'storage> Heap<'storage> {
                 alignment
             },
         };
-        let owner = if owner_storage::RECORDS > 1
+        let owner = if let Some(header) = small {
+            // SAFETY: the scratch span remains exclusive up to retirement.
+            unsafe { header.as_ptr().write(owner) };
+            header.as_ptr()
+        } else if owner_storage::RECORDS > 1
             && let Some(storage) = self.owner_storage
         {
             let vacant = if self.first_owner.is_null() {
                 0
             } else {
-                self.free
-                    .last()
-                    .map_or(self.owners.len() + 1, |&index| index + 1)
+                self.registry
+                    .as_ref()
+                    .map_or(1, |registry| registry.next_slot())
             };
             // SAFETY: this heap exclusively borrows the storage, and vacant is
             // exactly the unoccupied slot that register consumes next.
@@ -282,26 +331,31 @@ impl<'storage> Heap<'storage> {
                 }
             }
         }
-        if record.is_mapped() {
-            // SAFETY: this exact mapping is live, exclusive and registered.
-            unsafe { zero_pages::release(data, bytes)? };
-            #[cfg(test)]
-            {
-                self.counters.live_mapped_payload_bytes -= bytes as u64;
+        if let Some(registry) = self
+            .registry
+            .as_mut()
+            .filter(|registry| registry.scratch.contains(owner))
+        {
+            // SAFETY: owner and payload are the two disjoint parts of this
+            // live scratch reservation. No source reference remains.
+            unsafe { owner.drop_in_place() };
+            registry.scratch.release(owner, bytes);
+        } else {
+            if record.is_mapped() {
+                // SAFETY: this exact mapping is live, exclusive and registered.
+                unsafe { zero_pages::release(data, bytes)? };
+                #[cfg(test)]
+                {
+                    self.counters.live_mapped_payload_bytes -= bytes as u64;
+                }
+            } else {
+                // SAFETY: this pointer retains its original allocator layout.
+                unsafe { dealloc(data, layout) };
             }
-        } else {
-            // SAFETY: this pointer retains its original allocator layout.
-            unsafe { dealloc(data, layout) };
+            // SAFETY: this owner belongs to the heap and its payload is retired.
+            unsafe { self.retire_record(owner) };
         }
-        // SAFETY: this owner belongs to the heap and its payload is retired.
-        unsafe { self.retire_record(owner) };
-        if slot == 0 {
-            self.first_owner = ptr::null_mut();
-        } else {
-            let index = slot - 1;
-            self.owners[index] = ptr::null_mut();
-            self.free.push(index);
-        }
+        self.remove_slot(slot);
         self.counters.live_payload_bytes -= bytes as u64;
         Ok(())
     }
@@ -770,8 +824,7 @@ mod tests {
         let mut result = heap.allocate(13, 1, 1, false).unwrap();
         let owner = result[5] as *mut Owner;
         assert_eq!(heap.owner_at(0), Some(owner));
-        assert_eq!(heap.owners.capacity(), 0);
-        assert_eq!(heap.free.capacity(), 0);
+        assert!(heap.registry.is_none());
         let scratch = heap.allocate(4, 8, 8, false).unwrap();
         let scratch_owner = scratch[5] as *mut Owner;
         assert_eq!(heap.owner_at(1), Some(scratch_owner));
@@ -789,7 +842,11 @@ mod tests {
         assert_eq!(published.capacity(), 13);
         assert_eq!(heap.owner_at(0), Some(ptr::null_mut()));
         assert_eq!(heap.owner_at(1), Some(scratch_owner));
-        assert_eq!(heap.free.capacity(), 0);
+        assert!(
+            heap.registry
+                .as_ref()
+                .is_some_and(|r| r.get(1) == Some(scratch_owner))
+        );
         let next = heap.allocate(9, 2, 2, false).unwrap();
         assert_eq!(heap.owner_at(0), Some(next[5] as *mut Owner));
         heap.discard_private();
@@ -937,15 +994,7 @@ impl Heap<'_> {
             return Err(INVALID);
         }
         let slot = record.slot;
-        if slot == 0 {
-            self.first_owner = ptr::null_mut();
-        } else if slot == self.owners.len() {
-            self.owners.pop();
-        } else {
-            let index = slot - 1;
-            self.owners[index] = ptr::null_mut();
-            self.free.push(index);
-        }
+        self.remove_slot(slot);
         self.counters.live_payload_bytes -= capacity;
         // SAFETY: the validated record is sole and belongs to the current heap.
         unsafe { self.retire_record(owner) };
@@ -1085,7 +1134,8 @@ impl Heap<'_> {
             other.owner_storage.is_none(),
             "workers use owned descriptors"
         );
-        for owner in std::iter::once(other.first_owner).chain(other.owners.iter().copied()) {
+        let secondary = other.registry.iter().flat_map(|registry| registry.owners());
+        for owner in std::iter::once(other.first_owner).chain(secondary) {
             if owner.is_null() {
                 continue;
             }
@@ -1110,8 +1160,7 @@ impl Heap<'_> {
             .peak_payload_bytes
             .max(self.counters.live_payload_bytes);
         other.first_owner = ptr::null_mut();
-        other.owners.clear();
-        other.free.clear();
+        other.registry = None;
         other.counters.live_payload_bytes = 0;
     }
 }
@@ -1326,7 +1375,8 @@ mod parallel_tests {
             assert_eq!(parent.counters.payload_requests, 1 + count as u64);
             assert_eq!(parent.first_owner, existing[5] as *mut Owner);
             for (i, view) in output.iter().enumerate() {
-                assert!(parent.owners.contains(&(view[5] as *mut Owner)));
+                let owner = view[5] as *mut Owner;
+                assert_eq!(parent.owner_at(unsafe { (*owner).slot }), Some(owner));
                 let values = unsafe { std::slice::from_raw_parts(view[0] as *const u64, 3) };
                 assert_eq!(values, borrowed.map(|v| v + i as u64));
                 assert_eq!(unsafe { (*(view[5] as *const Owner)).references }, 1);
@@ -1372,7 +1422,7 @@ mod parallel_tests {
         assert_eq!(status.origin, 101);
         assert_eq!(parent.counters.live_payload_bytes, 24);
         assert_eq!(parent.first_owner, existing[5] as *mut Owner);
-        assert!(parent.owners.iter().all(|p| p.is_null()));
+        assert!(parent.registry.is_none());
         parent.discard_private();
     }
     #[test]
