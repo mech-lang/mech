@@ -54,8 +54,6 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     NumericCollections,
-    /// Carry source-ordered rectangle coordinates through native nested loops.
-    RectangularMapInduction,
     /// Complete fixed matrix generators containing bounded numeric FSMs.
     NumericGenerators,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.

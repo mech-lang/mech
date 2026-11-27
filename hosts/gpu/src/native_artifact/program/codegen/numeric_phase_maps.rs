@@ -24,7 +24,6 @@ pub(super) fn emit(
     proof: &Proof,
     replacement: &Replacement,
     plan: &Plan,
-    rectangular_induction: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &replacement.source;
@@ -101,7 +100,6 @@ pub(super) fn emit(
         &matrices,
         &captures,
         Some((scratch, capacity)),
-        rectangular_induction,
         miss,
     )?;
     // The complete checked map succeeded. No fallible source operation or

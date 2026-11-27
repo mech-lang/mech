@@ -29,7 +29,6 @@ pub(super) fn emit(
     proof: &Proof,
     fold: &Fold,
     plan: &Plan,
-    rectangular_induction: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
@@ -49,17 +48,7 @@ pub(super) fn emit(
         .iter()
         .map(|&v| (v, words.read(b, v as usize)))
         .collect::<BTreeMap<_, _>>();
-    let value = emit_from_views(
-        b,
-        source,
-        plan,
-        first,
-        last,
-        &matrices,
-        &captures,
-        rectangular_induction,
-        miss,
-    )?;
+    let value = emit_from_views(b, source, plan, first, last, &matrices, &captures, miss)?;
     words.write(
         b,
         source
@@ -83,7 +72,6 @@ pub(super) fn emit_from_views(
     last: Value,
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
-    rectangular_induction: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let region = &source.region;
@@ -115,16 +103,7 @@ pub(super) fn emit_from_views(
         count
     };
     let frame = emit_region(
-        b,
-        region,
-        plan,
-        first,
-        count,
-        matrices,
-        captures,
-        None,
-        rectangular_induction,
-        miss,
+        b, region, plan, first, count, matrices, captures, None, miss,
     )?;
     let value = b.ins().load(
         types::I64,
@@ -146,7 +125,6 @@ pub(super) fn emit_region(
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
     output: Option<(Value, Value)>,
-    rectangular_induction: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let slot = b.create_sized_stack_slot(StackSlotData::new(
@@ -245,17 +223,7 @@ pub(super) fn emit_region(
     let complete = b.create_block();
     let arithmetic = b.create_block();
     b.append_block_param(arithmetic, types::I64);
-    super::numeric_map::emit(
-        b,
-        frame,
-        region,
-        plan,
-        captures,
-        rectangular_induction,
-        complete,
-        arithmetic,
-        miss,
-    )?;
+    super::numeric_map::emit(b, frame, region, plan, captures, complete, arithmetic, miss)?;
     b.switch_to_block(arithmetic);
     b.ins().jump(miss, &[]);
     b.switch_to_block(complete);

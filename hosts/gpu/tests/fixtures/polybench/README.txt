@@ -2476,3 +2476,18 @@ The one prospective optimization15 probe measured1.07776x raw geomean speedup ve
 | Holdout | 39.31570x | 41.57038x | 0.97499x | 0.99461x |
 
 Both scores regress. All900 observations,29482 finite liveouts,37 append-only history entries, failed source and raw evidence remain. Accepted31 compiler source and driver are restored. No push is made. The below1.0x C holdout goal remains unmet. Profiling now covers all15 accepted optimization programs, prioritized by Mech/C; no holdout per-case diagnosis was used. Investigate the training-probe/formal sampling difference and the largest optimization-set native loop next.
+
+Round37: carried rectangular comprehension coordinates (not promoted)
+
+The shared Cranelift map emitter carries outer-column and inner-row coordinates for multi-row rectangular comprehensions, preserving source column-then-row order, exact checked scalar arithmetic, current loans, private output mapping and source bills. Standalone maps, phase maps and nested reductions share this lowering. Empty/one-row cases retain existing paths. No source-port changes, benchmark-name checks, FP reassociation or FMA. All685 broad checks,109 focused checks and both feature checks pass, including all30 finite C-liveout programs. IR400/work156/ABI47.
+
+The single prospective v2 optimization15 probe uses seven fresh-process samples per actor, interleaving accepted31 and candidate. It measures1.006893x raw geomean speedup and1.135240x on Gram-Schmidt, retaining both>5% regressions (BiCG and covariance) and all210 observations. Every execution counter matches. The actual hot Gram-Schmidt function loses3 high-multiplies,3 shifts and7 multiply-subtracts from coordinate reconstruction; other14 training programs have unchanged generated code. Source/driver were committed/frozen before both formal sets.
+
+| Set | Accepted31 x C | Round37 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 12.10729x | 0.98270x | 0.99723x |
+| Holdout | 39.31570x | 39.45198x | 1.01649x | 1.03755x |
+
+The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,38 append-only history entries, all regressions, failed development sources and raw evidence remain. No holdout per-case tuning was used. The below1.0x C holdout goal remains unmet.
+
+[Qualification](round-37-qualification.json) · [Frozen source](round-37-frozen.json) · [Acceptance](round-37-performance-acceptance.json) · [Optimization-only profiles](training-experiments/optimization-margin-profile.json)
