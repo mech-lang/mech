@@ -1,0 +1,31 @@
+{
+  "schema": "mech.polybench.training-selection.v2",
+  "compiler_fingerprint": "400550586d229d026bd1381cde2f8bc6650a654642db34e2d185384b08502b8a",
+  "driver_sha256": "12e5e2cd90b071bd4794ed82233f4ddd5a34de40e4241634409f58c8b57a70d9",
+  "accepted_round": 31,
+  "policy": {
+    "schema": "mech.polybench.training-selection-policy.v2",
+    "scope": "Optimization15 only; no holdout performance or per-case diagnosis.",
+    "accepted_round": 31,
+    "samples_per_actor": 7,
+    "actors": [
+      "accepted31",
+      "candidate"
+    ],
+    "sampling": "A new driver process for each single checked-call sample; interleave actors within each pair, alternating their order by case and pair. Same driver cache flush, warmup, finite limits and checked-call timer as formal evaluation.",
+    "selection": "One prospective probe per exact qualified source fingerprint. Select only if equal-weight geometric mean of accepted31/candidate median seconds is strictly greater than1, visits match and original work/comparison bills do not decrease. Preserve every sample, case, regression and failure; no retries or exclusions.",
+    "formal_gate": "Commit and freeze selected source/driver before both formal sets. Promote only if BOTH primary Mech/C scores strictly improve.",
+    "benchmark_protocol_unchanged": true,
+    "observations": 210
+  },
+  "result": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0124628362957055,
+    "regressions_over_five_percent": 3,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "selected": true,
+  "formal_evaluation_started": false
+}

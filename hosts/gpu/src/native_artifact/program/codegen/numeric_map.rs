@@ -103,15 +103,41 @@ fn integer(width: u8) -> cranelift_codegen::ir::Type {
         _ => unreachable!(),
     }
 }
-/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
-/// checked native emitter; no source visit, helper or per-operation dispatch
-/// occurs between the exact prepare and finish boundaries.
+/// A source-proved identity tail may keep a cell only when its current view
+/// is already the fresh private output bank. No FP operation is bypassed.
+pub(super) struct Identity {
+    pub current_bank: Value,
+    pub sites: std::collections::BTreeSet<u32>,
+    pub bounds: crate::native_artifact::program::prepare::numeric_phase::total_maps::ReadBounds,
+    pub columns:
+        crate::native_artifact::program::prepare::numeric_phase::total_maps::RetainedColumns,
+}
+
 pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    complete: Block,
+    miss: Block,
+    malformed: Block,
+) -> Result<(), NativeCompileError> {
+    emit_with_identity(
+        b, frame, region, plan, captures, None, complete, miss, malformed,
+    )
+}
+
+/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
+/// checked native emitter; no source visit, helper or per-operation dispatch
+/// occurs between the exact prepare and finish boundaries.
+pub(super) fn emit_with_identity(
+    b: &mut FunctionBuilder<'_>,
+    frame: Value,
+    region: &Region,
+    plan: &Plan,
+    captures: &BTreeMap<u32, Value>,
+    identity: Option<&Identity>,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -382,7 +408,39 @@ pub(super) fn emit(
             continue;
         }
         if let Some(read) = region.reads.iter().find(|r| r.site == site) {
-            let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
+            if let Some(identity) = identity.filter(|proof| proof.sites.contains(&site)) {
+                let load = b.create_block();
+                let retain = b.create_block();
+                b.ins().brif(identity.current_bank, retain, &[], load, &[]);
+                b.switch_to_block(retain);
+                if let Some(row) = rectangle_row.filter(|_| identity.columns.contains(site)) {
+                    // 0<=row<rows and at<rows*source_count: this advances to
+                    // the next column, never beyond the admitted total count.
+                    // The pure invariant prefix selects the same identity
+                    // tail for every remaining row; no FP work is skipped.
+                    let remaining = b.ins().isub(inner_count, row);
+                    let next = b.ins().iadd(at, remaining);
+                    b.def_var(cursor, next);
+                    b.ins().jump(head, &[]);
+                } else {
+                    b.ins().jump(latch, &[]);
+                }
+                b.switch_to_block(load);
+            }
+            let value = if let Some(identity) = identity {
+                emit_read_with_bounds(
+                    b,
+                    read,
+                    region,
+                    plan,
+                    &matrices,
+                    &words,
+                    Some(&identity.bounds),
+                    index_miss,
+                )?
+            } else {
+                emit_read(b, read, region, plan, &matrices, &words, index_miss)?
+            };
             b.def_var(words[&read.output], value);
         } else {
             match plan.blocks()[site as usize].action() {
@@ -574,7 +632,22 @@ fn emit_read(
     words: &BTreeMap<u32, Variable>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
+    emit_read_with_bounds(b, read, region, plan, matrices, words, None, miss)
+}
+fn emit_read_with_bounds(
+    b: &mut FunctionBuilder<'_>,
+    read: &crate::native_artifact::program::prepare::numeric_maps::MatrixRead,
+    region: &Region,
+    plan: &Plan,
+    matrices: &[(Value, Value, Value, Value)],
+    words: &BTreeMap<u32, Variable>,
+    bounds: Option<
+        &crate::native_artifact::program::prepare::numeric_phase::total_maps::ReadBounds,
+    >,
+    miss: Block,
+) -> Result<Value, NativeCompileError> {
     let (pointer, cells, rows, columns) = matrices[read.matrix];
+    let bounded = bounds.is_some_and(|proof| proof.contains(read.site));
     let indices = read
         .indices
         .iter()
@@ -586,8 +659,10 @@ fn emit_read(
             // Unsigned (index - 1) < length checks zero and the upper bound
             // together, including zero-length and maximum-word selectors.
             let ordinal = b.ins().iadd_imm(*linear, -1);
-            let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, cells);
-            require(b, valid, miss);
+            if !bounded {
+                let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, cells);
+                require(b, valid, miss);
+            }
             super::numeric_words::linear_address(
                 b,
                 ordinal,
@@ -600,9 +675,19 @@ fn emit_read(
                 |_| pointer,
             )?
         }
-        [row, column] => super::numeric_words::cell_address(
-            b, *row, *column, rows, columns, width, pointer, miss,
-        )?,
+        [row, column] => {
+            if bounded {
+                let row = b.ins().iadd_imm(*row, -1);
+                let column = b.ins().iadd_imm(*column, -1);
+                super::numeric_words::cell_address_from_ordinals(
+                    b, row, column, columns, width, pointer,
+                )?
+            } else {
+                super::numeric_words::cell_address(
+                    b, *row, *column, rows, columns, width, pointer, miss,
+                )?
+            }
+        }
         _ => return Err(backend("numeric map read selector count")),
     };
     Ok(super::numeric_words::load_unsigned_word(
