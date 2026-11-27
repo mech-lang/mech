@@ -1655,9 +1655,9 @@ jobs:
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Provision unsigned math linkage build swap
-        if: ${{ matrix.surface == 'extended-math-shard-unsigned-small' }}
-        # The validated cold build peaked near the hosted runner's physical RAM.
+      - name: Provision linkage build swap
+        if: ${{ matrix.surface == 'extended-math-shard-unsigned-small' || matrix.surface == 'extended-engine-shard-signed' }}
+        # Keep swap headroom for the largest cold linkage builds.
         run: |
           linkage_swap_file="${RUNNER_TEMP}/native-linkage-build.swap"
           sudo fallocate -l 8G "$linkage_swap_file"
