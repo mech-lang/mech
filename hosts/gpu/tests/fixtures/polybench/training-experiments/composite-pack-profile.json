@@ -5,7 +5,7 @@
   "source_commit": "b13397c08b6f749b63c10b1094f66ffc0541ae98",
   "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
   "driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
-  "prior_profile_receipt": "training-experiments/root-matrix-regression-profile.json",
+  "prior_profile_receipt": "training-experiments/matrix-region-regression-profile.json",
   "cases": {
     "mvt": {
       "native_prepare_finish_sites": {
@@ -539,5 +539,7 @@
       "sha256": "6953b2d1ee53005aba6e17732ff1fb7d131878235d85bc487af9f6cdd44706ae",
       "compressed_sha256": "6ebb450e731f7c2d6cf55026563d14476e63eab3cef3afe196c6b13efd1d18ac"
     }
-  }
+  },
+  "source_profile_receipt_sha256": "e5b0830247a83b5b8a53fcbb5c97df4c7f9a4aa920dcc21d5455170f8d972186",
+  "archived_analysis_reference_note": "The original archived analysis used an incorrect profile receipt filename; the published prior_profile_receipt above is corrected. Raw archive bytes and hashes remain unchanged."
 }

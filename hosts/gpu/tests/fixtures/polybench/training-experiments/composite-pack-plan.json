@@ -31,5 +31,19 @@
     "Freeze selected exact committed source/driver before both formal sets and promote only if BOTH primary scores strictly improve. No retries/exclusions."
   ],
   "new_performance_samples": 0,
-  "compiler_changes_started": false
+  "compiler_changes_started": false,
+  "implementation_references": {
+    "canonical_constructor": "src/core/src/snapshot/validation.rs:3193",
+    "resident_constructor_and_full_admission": "src/engine/src/resident/composite.rs:1184",
+    "shared_source_envelopes": "src/engine/src/resident/general/native_collection_numeric_binary.rs",
+    "current_compiler_call_boundary": "hosts/gpu/src/native_artifact/program/runtime/invocation/helper_fallbacks.rs",
+    "existing_frame_source_witness": "src/engine/src/native_artifact/buffer_frames.rs",
+    "ordinary_helper_census": "/private/tmp/mech-polybench-optimization/round-39/composite-pack-profile/admission-census.json"
+  },
+  "clarifications": [
+    "Packed F64 input construction and finite storage caps are already correct; do not add a packing workaround. Actual matrix arithmetic/transpose already uses native callbacks.",
+    "The generic CompositePack receives two canonical numeric matrix children with turn-varying shape parameters; no escaping buffer-frame specialization is selected.",
+    "Use current actual child schemas/keys/shapes and existing canonical constructors. Do not hardcode MINI dimensions or cache concrete inputs. Scalar-only aggregate routes must remain efficient.",
+    "A direct compiler-selected construction recipe should remove generic call/turn-memory planning while retaining original source work, resource limits, error order, aliases and ordinary fallback. Native source-visit accounting must remain unchanged."
+  ]
 }
