@@ -1,21 +1,17 @@
 //! Simultaneous whole-map replacement through the maintained native map DAG.
-//! Proved total same-cell/disjoint maps write an already exclusive bank.
-//! Other maps retain the complete scratch result before a non-failing copy.
-//! Current view/ownership publication still follows complete source success.
+//! Old current views remain read-only until every output cell succeeds. Only an
+//! already exclusive phase bank receives the final non-failing typed copy.
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::{
-    numeric_phase::matrix_maps::{MatrixMap, Replacement},
-    readonly_numeric::Proof,
+    numeric_phase::matrix_maps::Replacement, readonly_numeric::Proof,
 };
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::ir::{
-    Block, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Value, condcodes::IntCC, types,
+    Block, InstBuilder, MemFlags, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeProgramArtifactPlan as Plan;
 use std::collections::BTreeMap;
-#[path = "numeric_phase_direct_maps.rs"]
-mod direct;
 fn require(b: &mut FunctionBuilder<'_>, good: cranelift_codegen::ir::Value, miss: Block) {
     let next = b.create_block();
     b.ins().brif(good, next, &[], miss, &[]);
@@ -29,8 +25,7 @@ pub(super) fn emit(
     replacement: &Replacement,
     plan: &Plan,
     miss: Block,
-    direct_enabled: bool,
-) -> Result<Option<Value>, NativeCompileError> {
+) -> Result<(), NativeCompileError> {
     let source = &replacement.source;
     let target = replacement.target;
     let width = proof.arrays[target].width;
@@ -76,6 +71,15 @@ pub(super) fn emit(
     require(b, good, miss);
     // The equality guard above proves this exact fixed source cardinality.
     let count = b.ins().iconst(types::I64, source.count as i64);
+    let bytes = source
+        .elements
+        .checked_mul(u64::from(width))
+        .and_then(|n| u32::try_from(n).ok())
+        .filter(|&n| n > 0 && n <= 65536)
+        .ok_or_else(|| backend("phase map lost finite scratch geometry"))?;
+    let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, bytes, 3));
+    let scratch = b.ins().stack_addr(types::I64, slot, 0);
+    let capacity = b.ins().iconst(types::I64, i64::from(bytes));
     let matrices = replacement
         .arrays
         .iter()
@@ -87,77 +91,26 @@ pub(super) fn emit(
         .iter()
         .map(|&v| (v, words.read(b, v as usize)))
         .collect::<BTreeMap<_, _>>();
-    let base = words.read(b, owned.map_or(view, |bank| shadow + bank));
-    let direct = emit_map(
-        b,
-        source,
-        plan,
-        base,
-        first,
-        count,
-        &matrices,
-        &captures,
-        direct_enabled,
-        miss,
-    )?;
-    if owned.is_some() {
-        words.write(b, view, base);
-        let one = b.ins().iconst(types::I64, 1);
-        words.write(b, shadow + proof.private_flag(target), one);
-    }
-    Ok(direct)
-}
-
-/// The caller already owns the exact bounded destination. Entry selection
-/// permits in-place writes only when every possible source body is total and
-/// every read is either disjoint or reads its own current output cell. No
-/// fallible source operation or helper can then observe a partial result.
-fn emit_map(
-    b: &mut FunctionBuilder<'_>,
-    source: &MatrixMap,
-    plan: &Plan,
-    base: Value,
-    first: Value,
-    count: Value,
-    matrices: &[[Value; 4]],
-    captures: &BTreeMap<u32, Value>,
-    direct_enabled: bool,
-    miss: Block,
-) -> Result<Option<Value>, NativeCompileError> {
-    let width = source.region.output_width;
-    let bytes = source
-        .elements
-        .checked_mul(u64::from(width))
-        .and_then(|n| u32::try_from(n).ok())
-        .filter(|&n| n > 0 && n <= 65536)
-        .ok_or_else(|| backend("phase map lost finite scratch geometry"))?;
-    let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, bytes, 3));
-    let scratch = b.ins().stack_addr(types::I64, slot, 0);
-    let capacity = b.ins().iconst(types::I64, i64::from(bytes));
-    let direct = direct_enabled
-        .then(|| direct::guard(b, source, plan, base, first, matrices, captures))
-        .flatten();
-    let destination = direct.map_or(scratch, |allowed| b.ins().select(allowed, base, scratch));
     super::numeric_phase_reductions::emit_region(
         b,
         &source.region,
         plan,
         first,
         count,
-        matrices,
-        captures,
-        Some((destination, capacity)),
+        &matrices,
+        &captures,
+        Some((scratch, capacity)),
         miss,
     )?;
+    // The complete checked map succeeded. No fallible source operation or
+    // helper occurs after the first destination store, so reverse/overlapping
+    // source reads observe the entire old vector and failures publish nothing.
+    let base = words.read(b, owned.map_or(view, |bank| shadow + bank));
     let copy = b.create_block();
     let done = b.create_block();
     b.append_block_param(copy, types::I64);
     let zero = b.ins().iconst(types::I64, 0);
-    if let Some(allowed) = direct {
-        b.ins().brif(allowed, done, &[], copy, &[zero.into()]);
-    } else {
-        b.ins().jump(copy, &[zero.into()]);
-    }
+    b.ins().jump(copy, &[zero.into()]);
     b.switch_to_block(copy);
     let offset = b.block_params(copy)[0];
     let input = b.ins().iadd(scratch, offset);
@@ -177,9 +130,10 @@ fn emit_map(
         .icmp_imm(IntCC::UnsignedLessThan, next, i64::from(bytes));
     b.ins().brif(more, copy, &[next.into()], done, &[]);
     b.switch_to_block(done);
-    Ok(direct)
+    if owned.is_some() {
+        words.write(b, view, base);
+        let one = b.ins().iconst(types::I64, 1);
+        words.write(b, shadow + proof.private_flag(target), one);
+    }
+    Ok(())
 }
-
-#[cfg(all(test, feature = "jit"))]
-#[path = "numeric_phase_direct_maps_tests.rs"]
-mod direct_tests;

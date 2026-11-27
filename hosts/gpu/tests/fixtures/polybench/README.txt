@@ -2411,3 +2411,17 @@ measurement or history entry was added. All cases, correctness logs, actual
 emitter witnesses, checked Objects and source commit remain in
 training-experiments/f64-fold-accumulators.json and
 qualification/experiments/f64-fold-accumulators/.
+
+
+Training-only experiment: guarded direct phase maps (IR396), not promoted
+
+Checked totality, range and alias proofs allowed complete same-cell/disjoint
+maps to write existing exclusive banks without the completion copy. All585
+selected checks and both features passed. Actual JIT pages matched checked
+Objects at30 sampled sites and across the entire profiled numeric function.
+Only Gram-Schmidt changed native code: the single optimization15 probe measured
+1.04468x there and0.973791x overall, with three regressions above5%. The trial
+was rejected before holdout. Accepted31 remains11.436358x C optimization and
+39.315695x C holdout. All measurements, failures, profiles and source remain in
+training-experiments/direct-phase-maps.json and
+qualification/experiments/direct-phase-maps/.
