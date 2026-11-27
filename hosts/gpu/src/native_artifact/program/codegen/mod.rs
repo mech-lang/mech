@@ -130,3 +130,6 @@ mod prefetch_base_tests;
 
 #[cfg(all(test, feature = "jit"))]
 mod fp_spill_tests;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_binary;

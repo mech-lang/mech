@@ -741,9 +741,12 @@ pub(in crate::native_artifact) fn validate_image(
     // parent sites. Reconstruct the same optional native-header fees used by
     // normal preparation before deriving any complete source summaries.
     let numeric_maps = super::numeric_maps::Layout::derive(plan)?;
+    let numeric_binary = super::numeric_binary::Layout::derive(plan)?;
     let utf8_reads = super::utf8_reads::Layout::derive(plan)?;
     for (site, visit) in visits.iter_mut().enumerate() {
-        let extra = if utf8_reads.at_header(site).is_some() {
+        let extra = if numeric_binary.at(site).is_some() {
+            super::numeric_binary::HEADER_WORK
+        } else if utf8_reads.at_header(site).is_some() {
             super::utf8_reads::HEADER_WORK
         } else if numeric_maps.at_header(site).is_some() {
             super::numeric_maps::HEADER_WORK

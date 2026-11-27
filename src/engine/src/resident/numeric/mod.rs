@@ -18787,6 +18787,21 @@ fn matrix_dot_f64(
     Ok(changed)
 }
 
+/// Current row-major broadcast geometry shared with the native matrix emitter.
+/// This computes no value and grants no execution or allocation permission.
+pub(in crate::resident) fn native_binary_geometry(
+    left: (usize, usize),
+    right: (usize, usize),
+) -> Result<[u64; 4], ResidentKernelError> {
+    let (rows, columns) = snapshot_broadcast_dimensions(left, right)?;
+    let output = resident_shape_for_dimensions(rows, columns)?;
+    let mode = |input: (usize, usize)| {
+        binary_broadcast_mode(resident_shape_for_dimensions(input.0, input.1)?, output)
+            .ok_or(ResidentKernelError::InvalidShape)
+    };
+    Ok([rows as u64, columns as u64, mode(left)?, mode(right)?])
+}
+
 fn snapshot_binary_broadcast_index(mode: u64, row: usize, column: usize, columns: usize) -> usize {
     match mode {
         BINARY_BROADCAST_SCALAR => 0,

@@ -556,6 +556,8 @@ fn decode_inner<
             derived
         }
     };
+    let numeric_binary =
+        native::program::prepare::numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
     // Keep the zero-completion base prices intact for funding validation below.
     // Final charges (including completion) overlay a separate eagerly built box.
     let base_visits = native::iteration_abi::control_visits(
@@ -654,6 +656,22 @@ fn decode_inner<
             .ok_or("guarded dictionary exit price overflows")?;
         if visits.get(site).is_none_or(|visit| visit.work < required) {
             return Err("guarded dictionary publication template is not funded".into());
+        }
+    }
+    for site in 0..plan.blocks().len() {
+        if numeric_binary.at(site).is_none() {
+            continue;
+        }
+        let required = base_visits
+            .get(site)
+            .and_then(|visit| {
+                visit
+                    .work
+                    .checked_add(native::program::prepare::numeric_binary::HEADER_WORK)
+            })
+            .ok_or("numeric arithmetic header price overflows")?;
+        if visits.get(site).is_none_or(|visit| visit.work < required) {
+            return Err("numeric arithmetic header template is not funded".into());
         }
     }
     for region in &numeric_maps.regions {
@@ -893,6 +911,7 @@ fn decode_inner<
             fixed_key_loops,
             utf8_reads,
             numeric_maps,
+            numeric_binary,
             nested_numeric,
             frozen_maps,
             map_admission: w.map_admission,

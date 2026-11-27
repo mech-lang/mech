@@ -50,14 +50,16 @@ mod nested_phase_growing;
 mod nested_phase_handoff;
 mod nested_scalar_array;
 mod nullary_phases;
+mod numeric_binary;
 mod numeric_bindings;
-mod numeric_summary_branches;
 mod numeric_boolean_relations;
 mod numeric_call_cache;
 mod numeric_cell_phases;
 mod numeric_cell_write_ownership;
+mod numeric_composition_diagnostic;
 mod numeric_induction;
 mod numeric_outlining;
+mod numeric_summary_branches;
 mod numeric_tree;
 mod numeric_tree_owner_handoff;
 pub(super) mod observe;
@@ -167,8 +169,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                150
+                151
             );
+            // Policy151 adds F64 matrix arithmetic fees. This unsigned fixture
+            // has no selected elementwise calls; its exact equations remain.
             // Policy150 moves map/fold attempt charges to reached source sites.
             // This unsigned fixture has no such summaries; retain its exact bill.
             // Policy149 retains this unsigned fixture’s existing funding, the
@@ -687,7 +691,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                150
+                151
             );
             assert_eq!(
                 report.work,

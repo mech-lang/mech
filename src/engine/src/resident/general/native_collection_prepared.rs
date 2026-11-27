@@ -442,6 +442,8 @@ mod map_owner_constructors;
 mod map_seed;
 #[cfg(feature = "sequence_buffers")]
 pub use map_seed::{NativeMapSeedChoice, NativeMapSeedFrame};
+#[path = "native_collection_numeric_binary.rs"]
+mod numeric_binary;
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_record_selector.rs"]
 mod record_selector;

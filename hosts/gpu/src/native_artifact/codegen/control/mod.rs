@@ -1577,6 +1577,19 @@ impl<'plan> CfgDefinition<'plan> {
                     } else {
                         None
                     };
+                    #[cfg(feature = "canonical-native-program")]
+                    let numeric_binary_done = if controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::NumericElementwise,
+                    ) && operation == GlobalHelper::Library.raw() {
+                        if let plan::CodePlan::Program(program) = plan
+                            && let Some(proof) = program.metadata().numeric_binary.at(index)
+                        {
+                            Some(crate::native_artifact::program::codegen::numeric_binary::emit_entry(
+                                b, hooks, index, proof, operands, locals,
+                                |operand| plan.kind(operand).is_some(), error,
+                            )?)
+                        } else { None }
+                    } else { None };
                     hooks.library_operation(
                         b,
                         index,
@@ -1586,6 +1599,12 @@ impl<'plan> CfgDefinition<'plan> {
                         |operand| plan.kind(operand).is_some(),
                         error,
                     )?;
+                    #[cfg(feature = "canonical-native-program")]
+                    if let Some(done) = numeric_binary_done {
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                    }
+
                     #[cfg(feature = "canonical-native-program")]
                     if let Some((_, function)) =
                         joined_maps.iter().find(|(site, _)| *site as usize == index)
@@ -2244,7 +2263,9 @@ fn emission_template_bound(
                 )
                 .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
                 .and_then(|n| {
-                    n.checked_add(if metadata.utf8_reads.at_header(index).is_some() {
+                    n.checked_add(if metadata.numeric_binary.at(index).is_some() {
+                        crate::native_artifact::program::prepare::numeric_binary::HEADER_WORK
+                    } else if metadata.utf8_reads.at_header(index).is_some() {
                         crate::native_artifact::program::prepare::utf8_reads::HEADER_WORK
                     } else if metadata.numeric_maps.at_header(index).is_some() {
                         // The same header debit is already present in both

@@ -556,7 +556,8 @@ fn selected_template(
 // IR382 reconciles exact source-site summary attempts at every phase boundary.
 // IR383 shares combined map/cell-axis guards at the original source positions,
 // retaining checked addresses, scalar bits, source errors and first changes.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 383;
+// IR384 emits source-selected typed F64 matrix arithmetic with current loans.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 384;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -828,7 +829,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 383;
 // publication, physical coexistence, initialized scratch and cold replay.
 // Work150 charges complete map/fold bounds only on reached source branches,
 // preserving all original visits, physical admission and full replay bounds.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 150;
+// Work151 retains full source binding/staging/publication and replay bounds
+// for each admitted native matrix arithmetic loan. Existing prices remain.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 151;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

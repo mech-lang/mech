@@ -12,6 +12,7 @@ mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
+mod numeric_binary;
 mod numeric_exits;
 mod numeric_map;
 mod numeric_map_banks;
@@ -211,6 +212,7 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
     pub(super) numeric_prepaid: Option<NumericPrepaid>,
+    pub(super) numeric_binary: Option<Box<numeric_binary::Pending>>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -502,6 +504,11 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         let tag = GlobalHelper::decode(operation);
+        if self.numeric_binary.is_some() && tag != GlobalHelper::NumericBinaryFinish {
+            return Err(invalid(
+                "helper while native matrix arithmetic loan is active",
+            ));
+        }
         if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
             return Err(invalid("helper while compiled histogram loan is active"));
         }
@@ -622,6 +629,12 @@ impl Invocation<'_, '_, '_> {
             return Err(invalid(
                 "helper while a numeric reduction completion is pending",
             ));
+        }
+        if matches!(
+            tag,
+            GlobalHelper::NumericBinaryPrepare | GlobalHelper::NumericBinaryFinish
+        ) {
+            return self.numeric_binary_helper(site, tag, args);
         }
         if tag == GlobalHelper::NumericTransposeFinish {
             return self.finish_numeric_transpose(site, args);
@@ -816,6 +829,11 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self.numeric_binary.is_some() {
+            return Err(invalid(
+                "source visit while matrix arithmetic loan is active",
+            ));
+        }
         if self.histogram.is_some() {
             return Err(invalid(
                 "source visit while compiled histogram loan is active",

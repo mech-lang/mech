@@ -19,6 +19,7 @@ pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
+pub(in crate::native_artifact) mod numeric_binary;
 pub(in crate::native_artifact) mod numeric_phase;
 pub(in crate::native_artifact) mod numeric_prefix;
 #[cfg(feature = "canonical-native-program")]
@@ -108,6 +109,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
     pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
+    // Pure source-derived cache, rebuilt independently on every image load.
+    pub(in crate::native_artifact) numeric_binary: numeric_binary::Layout,
     // Pure nonserialized source funds; rebuilt with exact selected calls.
     pub(in crate::native_artifact) nested_numeric: numeric_maps::nested::Funding,
     pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
@@ -221,6 +224,7 @@ impl PreparedNativeProgram {
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
         let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
+        let numeric_binary = numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -243,7 +247,9 @@ impl PreparedNativeProgram {
             &mut analysis_visits,
             &mut visits,
             |site| {
-                Ok(if utf8_reads.at_header(site).is_some() {
+                Ok(if numeric_binary.at(site).is_some() {
+                    numeric_binary::HEADER_WORK
+                } else if utf8_reads.at_header(site).is_some() {
                     utf8_reads::HEADER_WORK
                 } else if numeric_maps.at_header(site).is_some() {
                     numeric_maps::HEADER_WORK
@@ -534,6 +540,7 @@ impl PreparedNativeProgram {
             uniform_word_collections,
             utf8_reads,
             numeric_maps,
+            numeric_binary,
             nested_numeric,
             word_collections,
             unsigned_buffer_calls,

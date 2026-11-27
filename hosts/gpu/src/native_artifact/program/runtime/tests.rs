@@ -1007,7 +1007,17 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 42);
+    assert_eq!(VERSION, 43);
+    // The new synchronous arithmetic loan is separate from the unchanged
+    // 144-byte root frame and frozen scalar prefix checked below.
+    assert_eq!(
+        core::mem::size_of::<crate::native_artifact::program::protocol::abi::NumericBinaryFrame>(),
+        72
+    );
+    assert_eq!(
+        core::mem::align_of::<crate::native_artifact::program::protocol::abi::NumericBinaryFrame>(),
+        8
+    );
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3
