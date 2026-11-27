@@ -2704,3 +2704,18 @@ The earlier approval question is not a prerequisite; silence is not treated as
 approval. Complete the running accepted44 profiles before any census or trial.
 
 [Prospective v3 policy](training-experiments/current-bound-rectangles-training-policy-v3.json)
+
+Round45: current-bound rectangles with complete source fees (accepted)
+
+Immutable current inner bounds are certified by the genuine original range/transpose factories; the existing Cranelift body fills one row-major private bank. Shared ordinary transpose funding retains all original row fees on the same comparison account, with full finite/physical/replay/current-owner/atomicity checks. Fixed phases decline dynamic cardinality. All712 broad/102 focused checks and both features pass; restored helpers additionally validate60 original/decoded forms and58964 finite C liveouts. IR410/work157/ABI47.
+
+The single prospective v3 optimization probe retains all210 fresh-process observations. Raw GM speedup versus accepted44 is1.033376x; correlation1.872073x. All1 regressions>5% remain. The untimed all15 gate proves the only physical-visit reduction, preserves all source work/comparison bills and matches every other counter. The exact source/driver were committed/pushed/frozen before both formal sets.
+
+| Set | Accepted44 x C | Round45 x C | Raw speedup vs44 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 10.24618x | 9.78419x | 1.05001x | 1.02774x |
+| Holdout | 38.46048x | 25.86145x | 1.52216x | 1.49809x |
+
+Both primary scores strictly improve; round45 is accepted. All900 observations,29482 finite liveouts,46 append-only history entries and every regression remain. Holdout is the aggregate gate only. Below1.0x C holdout is unchanged and requires a separate completion audit.
+
+[Qualification](round-45-qualification.json) · [Frozen source](round-45-frozen.json) · [Acceptance](round-45-performance-acceptance.json) · [Source-fee audit](training-experiments/current-bound-rectangles-shared-comparison.json)
