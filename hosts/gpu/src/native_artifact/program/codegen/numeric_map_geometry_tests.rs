@@ -380,3 +380,156 @@ fn numeric_map_cell_reads_share_one_bounds_branch_and_keep_non_square_bits_and_e
         }
     }
 }
+
+#[test]
+fn numeric_map_literal_range_facts_come_from_the_exact_source_cursor() {
+    for (range, expected) in [
+        ("3u64..=9u64", (Some(3), Some(7))),
+        ("3u64..9u64", (Some(3), Some(6))),
+        ("7u64..9u64", (Some(7), Some(2))),
+        ("0u64..=0u64", (Some(0), Some(1))),
+        ("first<u64>..=last<u64>", (None, None)),
+        ("first<u64>..9u64", (None, None)),
+        ("1u64..=last<u64>", (Some(1), None)),
+    ] {
+        let jit = compile_source(format!("data := input<[f64]>\n[data[i] | i <- {range}]\n"));
+        let plan = jit.descriptor().plan();
+        let collections = plan
+            .iterations()
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| {
+                matches!(
+                    c,
+                    mech_engine::native_artifact::NativeControlLoop::Collection(_)
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(collections.len(), 1, "{range}");
+        assert_eq!(
+            fixed_range(plan, collections[0].0 as u32),
+            expected,
+            "{range}"
+        );
+        assert_eq!(fixed_range(plan, u32::MAX), (None, None));
+    }
+    // Source literals still obey the language's nonempty range contract.
+    // Arithmetic/frame helpers below also defend zero and overflow metadata.
+    for range in ["7u64..7u64", "7u64..6u64"] {
+        let source = format!("data := input<[f64]>\n[data[i] | i <- {range}]\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x4d415045), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean());
+        let result = mech_engine::CanonicalSourceFrontend.compile_document_with_catalog(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            mech_stdlib::source_catalog(),
+        );
+        let error = result
+            .err()
+            .expect("literal empty/backward range remains rejected");
+        assert!(format!("{error:?}").contains("source-semantics/invalid-range"));
+    }
+    for (first, last, inclusive, expected) in [
+        (0, 0, false, Some(0)),
+        (0, 0, true, Some(1)),
+        (7, 6, false, None),
+        (7, 6, true, None),
+        (0, u64::MAX, true, None),
+        (1, u64::MAX, true, Some(u64::MAX)),
+        (u64::MAX, u64::MAX, false, Some(0)),
+    ] {
+        assert_eq!(range_cardinality(first, last, inclusive), expected);
+    }
+}
+
+type RangeGuard = unsafe extern "C" fn(u64, u64) -> u64;
+fn compile_range_guard(
+    expected: (Option<u64>, Option<u64>),
+) -> (cranelift_jit::JITModule, RangeGuard) {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func = Function::new();
+    context.func.signature.call_conv = module.make_signature().call_conv;
+    context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut frontend = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut context.func, &mut frontend);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let bad = b.create_block();
+        let (first, count) = guard_fixed_range(&mut b, expected, args[0], args[1], bad);
+        let result = b.ins().bxor(first, count);
+        b.ins().return_(&[result]);
+        b.switch_to_block(bad);
+        let sentinel = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[sentinel]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    let id = module
+        .declare_function(
+            "literal_range_guard",
+            Linkage::Local,
+            &context.func.signature,
+        )
+        .unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    // SAFETY: this retained Cranelift function has two word inputs and one
+    // word result. It performs no pointer access or memory operation.
+    let guard =
+        unsafe { core::mem::transmute::<*const u8, RangeGuard>(module.get_finalized_function(id)) };
+    (module, guard)
+}
+#[test]
+fn numeric_map_literal_range_native_guards_refuse_forgery_and_leave_dynamic_values_dynamic() {
+    for expected in [
+        (None, None),
+        (Some(3), None),
+        (None, Some(7)),
+        (Some(3), Some(7)),
+        (Some(7), Some(0)),
+        (Some(u64::MAX), Some(0)),
+    ] {
+        let (_module, guard) = compile_range_guard(expected);
+        let mut cases = vec![
+            (0, 0),
+            (1, 3),
+            (3, 7),
+            (3, 6),
+            (2, 7),
+            (3, 8),
+            (7, 0),
+            (u64::MAX, 0),
+            (u64::MAX, 1),
+            (1, u64::MAX),
+        ];
+        if let (Some(first), Some(count)) = expected {
+            cases.push((first, count));
+        }
+        for (first, count) in cases {
+            let value = if expected.0.is_some_and(|n| n != first)
+                || expected.1.is_some_and(|n| n != count)
+            {
+                BAD
+            } else {
+                first ^ count
+            };
+            // SAFETY: the function accepts only scalar words, including forged
+            // and extreme metadata; every mismatch must take its bad edge.
+            assert_eq!(
+                unsafe { guard(first, count) },
+                value,
+                "expected={expected:?} actual={first},{count}"
+            );
+        }
+    }
+}

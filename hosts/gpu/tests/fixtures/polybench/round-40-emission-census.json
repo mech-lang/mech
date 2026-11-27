@@ -1,0 +1,1237 @@
+{
+  "schema": "mech.polybench.training-emission-census.v1",
+  "scope": "Real checked Object export for optimization15 only; Objects inspected, never linked/executed. No timing observations.",
+  "compiler_fingerprint": "aff69a1ec36d1da319824a4e5218f4a07d92658da026722018060cf3ca2136ef",
+  "driver_sha256": "e1cc3d5cb1d3daaa04c897176668f8790377b732aa7f58becc08d905c7c4d062",
+  "cases": {
+    "2mm": {
+      "code_bytes": 3876,
+      "stack_bytes": 96,
+      "object_sha256": "4181117c17d086d42a989afa6ac6348d023382a383594eee93870da0d527f477",
+      "metadata_sha256": "ee33179e1c0a137506f21ccf43b9000f99b3b7b73d8353e7a892925eb1fdb095",
+      "disassembly_sha256": "dfbd5605473d65e1d1314f8076bc6db4e60592403df6b901509c612a9a10777e",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "packed_loads": 14,
+          "packed_stores": 14,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "packed_loads": 14,
+          "packed_stores": 14,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "3mm": {
+      "code_bytes": 2040,
+      "stack_bytes": 96,
+      "object_sha256": "54c84528c3d5f8a74f2eaf332b49d44c9a2e53b1f86e5031303e3748dd4ad6f4",
+      "metadata_sha256": "251a93fefb96d7214b802f25e4f2daa6c36070594a3083a7f7e54727d2925811",
+      "disassembly_sha256": "ed82c1fa5aa3f161db228e1b90ba5d12fe118e1d210604cf67e880fc9b450aa4",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "packed_loads": 3,
+          "packed_stores": 3,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "packed_loads": 3,
+          "packed_stores": 3,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "atax": {
+      "code_bytes": 2256,
+      "stack_bytes": 96,
+      "object_sha256": "6267bdf0049ed44d4198477b6c8a7be20b1a5d4c44bf0d44c8f9908fdac5f86b",
+      "metadata_sha256": "da905d1971a5e015bb5a9cd66055f4af1de909a9db614ed71e359f53409ff5f5",
+      "disassembly_sha256": "2c41327a54c105f53b86fbe957d5704c51809ac3332eca7987e4e2bc2257159f",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "packed_loads": 2,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "packed_loads": 2,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "bicg": {
+      "code_bytes": 2224,
+      "stack_bytes": 96,
+      "object_sha256": "347a038136e22950fda705e77134c47e759a4a1f262fa1c4c7fcec1f0cc96f82",
+      "metadata_sha256": "a353106914bdb97cf88dda9567d3627770cc5c5a4b9668a94b8ccddfb97c06b3",
+      "disassembly_sha256": "c55dda375f96df4a02db87e0b068faf5bb0c7fc5554c5140592d5d39afbc281e",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "packed_loads": 2,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "packed_loads": 2,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "cholesky": {
+      "code_bytes": 19960,
+      "stack_bytes": 1584,
+      "object_sha256": "c4ae92c6d75734d4b90b3526de2dac00235223ba8ef799bcd4672b30a27c9685",
+      "metadata_sha256": "d62350895bdb181455ba9ee826872bab4e8a637b67ac25b71b653941c4da6b05",
+      "disassembly_sha256": "33edf23e695d406b679b5f3069744249419ac5f58670690a4d4de9326bc714ef",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1652,
+          "sha256": "c727057bcb1626055eaf2684561e4f410143a043c995be630912b404fa28c970",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3338,
+          "sha256": "74e4271168d660fc182b45a4d42f23887cce7aed72ee36b704be4ab2ff27b98d",
+          "packed_loads": 0,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "packed_loads": 0,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "correlation": {
+      "code_bytes": 13116,
+      "stack_bytes": 128,
+      "object_sha256": "1f65968e1d1e11a6b0314bc802cfa2174476192396b89c6034e98504146b5620",
+      "metadata_sha256": "f76db07e5c927ff2d1464ea9201e0d42250be7f452b9d1770be10dfa6272c380",
+      "disassembly_sha256": "a2ae993c027ded3dbd629a53753bc22b43e10e84461f57e4d3a87464f9dac93e",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3279,
+          "sha256": "b4ed02e9eb3bcadcb11d9cb99fb05b9344ea7d6743383d533fd011fa187ab956",
+          "packed_loads": 27,
+          "packed_stores": 27,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3277,
+          "sha256": "5c1919ae880d64bcba130b5af3d9e4806aa954e97b4043334922637001e0678b",
+          "packed_loads": 27,
+          "packed_stores": 27,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "covariance": {
+      "code_bytes": 4884,
+      "stack_bytes": 112,
+      "object_sha256": "bd79ae47129aac9012a0f248ee871f0fa2de525e145c8f62d7a1dfc8a1e84f77",
+      "metadata_sha256": "c8f73794e6f13b1b0f455c293e1fc4eee0744daf95cbcef015587d1c6431b803",
+      "disassembly_sha256": "0005848321f6968093b144290b444fa6fac1304c5134b3b42e4220040eac5b84",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "packed_loads": 14,
+          "packed_stores": 14,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "packed_loads": 14,
+          "packed_stores": 14,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "deriche": {
+      "code_bytes": 61908,
+      "stack_bytes": 496,
+      "object_sha256": "e173b2dcfbd94e15c68d5e90a5a16c6533f98e610b33d101d024a999c18a5be7",
+      "metadata_sha256": "89d7f168fcaaa9d271fe64f6862be2c6a1a18d28c07dcfe1567aae481c313e3b",
+      "disassembly_sha256": "67e883c037482b86489965627396c072f93ac6ab3d80bc68972ea827a6fb0b83",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12599,
+          "sha256": "c169563e949e728afd8d3454a2cf76cb85972836f6f4518950643b357e3b5d30",
+          "packed_loads": 8,
+          "packed_stores": 8,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "packed_loads": 8,
+          "packed_stores": 8,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "doitgen": {
+      "code_bytes": 1200,
+      "stack_bytes": 96,
+      "object_sha256": "5d5236ee53f232b261d6ebb85e54a72e3ca857001d60e746c49be1559cf278b2",
+      "metadata_sha256": "eb32f0709e8d6f82e070e19185bbaa8a09b39596bc470d99b67ee18aa947356b",
+      "disassembly_sha256": "11200905c78a40816669702c776cdebbf484887879f88ea36ae79da9523b38e7",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "packed_loads": 1,
+          "packed_stores": 1,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "packed_loads": 1,
+          "packed_stores": 1,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "durbin": {
+      "code_bytes": 19828,
+      "stack_bytes": 1952,
+      "object_sha256": "e39245b642ee2127b9a06e46d1f440bb851f40aaf331f78c3cd8c2474a319370",
+      "metadata_sha256": "8966b33be6111c3cb24332a46c34cba71f0c9713c72491aa48ba6ec0e8023e58",
+      "disassembly_sha256": "39d3222f9fb71d1b9e7c6affe79b1b1c5d4fb2a3fe5e7b5a0f7f32acb149effa",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1613,
+          "sha256": "04212b6fa18c84ec810a3b4d02d360bd8921ad9a9d6970c9ff2c2d1bbddf9730",
+          "packed_loads": 2,
+          "packed_stores": 2,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3344,
+          "sha256": "aa998dbf9e22f2b48c6159e78fa76a82cef1d61ba75a31112f83d7e1944b2194",
+          "packed_loads": 0,
+          "packed_stores": 1,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "packed_loads": 0,
+          "packed_stores": 1,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "gemm": {
+      "code_bytes": 3424,
+      "stack_bytes": 96,
+      "object_sha256": "c2c4a9abd641555be61afbf7270801b26064ff59b9f9b15877dfef05c001e6af",
+      "metadata_sha256": "d9d92755156602b315a95eb6f70ce4a154e82ddeeefbb9f3fa176ff02da6b1d3",
+      "disassembly_sha256": "5253a348b1471826bafbfac3f42710df58e1fc623868b39ac63cb424dd7042ec",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "packed_loads": 13,
+          "packed_stores": 13,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "packed_loads": 13,
+          "packed_stores": 13,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "gramschmidt": {
+      "code_bytes": 47896,
+      "stack_bytes": 22832,
+      "object_sha256": "e468a15a00421bbd8e01fe6879ac3382c170f1b08333c2fdd5eaa6919f19880c",
+      "metadata_sha256": "24e7eeddb712826ac78f4020abfdee0a25131f25debefdd2c03aa66b86ae3b8f",
+      "disassembly_sha256": "b34e7a8cf01337a0bf7a2563ed21f3783d1b7dfd9d4ea1a2d02b5051c9378cf6",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4059,
+          "sha256": "390217bc049b8aef2fd28e75ac68c4db3080ac15789045c6a42e11967be68ebe",
+          "packed_loads": 11,
+          "packed_stores": 11,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 7915,
+          "sha256": "803a82cd794abd6ad8c58431772738a9797ccd75a6fac673d1b0477275451922",
+          "packed_loads": 0,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "packed_loads": 0,
+          "packed_stores": 2,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "mvt": {
+      "code_bytes": 3812,
+      "stack_bytes": 96,
+      "object_sha256": "128d370525c53e3568ee16b8bd5ca719c097af1725b9b413d6f67552bb3b8b80",
+      "metadata_sha256": "fb47005e3beb7dcd12063deb8485ea0977398d60c6d5da6e8ca923620564bd7e",
+      "disassembly_sha256": "bffb211702afd0e3dcc3ef0fc3d6edd6971ba8b40a1d7a8f02e26718a3d63670",
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "packed_loads": 10,
+          "packed_stores": 10,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "packed_loads": 10,
+          "packed_stores": 10,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "nussinov": {
+      "code_bytes": 19360,
+      "stack_bytes": 320,
+      "object_sha256": "8b3247ab9e47721396bdc71d1289a897e79643fb047cec23e654701a4fa13a35",
+      "metadata_sha256": "88ed81f475d6cb194d66c64f86e86643f8b38717a8d0badb9f29e3f1df350c69",
+      "disassembly_sha256": "4d5545ba3e7421a165f92a32d69e545545341419ecd9a2c2771b0d30060c8dd0",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    },
+    "seidel-2d": {
+      "code_bytes": 16104,
+      "stack_bytes": 288,
+      "object_sha256": "7e920685d59537731afb6519e464a3b9aedacc87a264e933ae3ddabf02146c2a",
+      "metadata_sha256": "f36500e40c419a26069c63602b4b2a7ce62501e5d8cecc965530203e7d4c3222",
+      "disassembly_sha256": "6d671dd6255b477331631264abd0ef6aad7c239d2b948e30d5ed4adda10126a3",
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        }
+      },
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "packed_loads": 0,
+          "packed_stores": 0,
+          "fma": 0
+        }
+      },
+      "object_executed": false
+    }
+  },
+  "complete": true,
+  "gramschmidt_loop_census": {
+    "accepted31": {
+      "method": "AArch64 instruction CFG, reachable dominators and natural backedges; innermost loops contain no strict natural subloop. Static counts are not runtime percentages.",
+      "instructions": 4286,
+      "reachable_instructions": 4284,
+      "natural_loops": 13,
+      "innermost_loops": 11,
+      "innermost_union": {
+        "instructions": 234,
+        "integer_comparisons": 37,
+        "conditional_branches": 30
+      },
+      "loops": [
+        {
+          "header": 2792,
+          "instructions": 25,
+          "integer_comparisons": 3,
+          "conditional_branches": 3,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 25,
+          "cycle_addresses": [
+            2792,
+            2796,
+            12536,
+            12540,
+            12544,
+            12548,
+            12552,
+            12556,
+            12560,
+            12564,
+            12568,
+            12572,
+            12576,
+            12580,
+            12592,
+            12596,
+            12600,
+            12604,
+            12908,
+            12912,
+            12916,
+            12920,
+            12924,
+            12928,
+            12932
+          ]
+        },
+        {
+          "header": 3824,
+          "instructions": 20,
+          "integer_comparisons": 3,
+          "conditional_branches": 2,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 2,
+          "cycle_instructions": 20,
+          "cycle_addresses": [
+            3824,
+            3828,
+            12164,
+            12168,
+            12172,
+            12176,
+            12180,
+            12184,
+            12188,
+            12192,
+            12496,
+            12500,
+            12504,
+            12508,
+            12512,
+            12516,
+            12520,
+            12524,
+            12528,
+            12532
+          ]
+        },
+        {
+          "header": 3840,
+          "instructions": 6,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 6,
+          "cycle_addresses": [
+            3840,
+            3844,
+            3848,
+            3852,
+            3856,
+            3860
+          ]
+        },
+        {
+          "header": 5124,
+          "instructions": 8,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 8,
+          "cycle_addresses": [
+            5124,
+            5128,
+            5132,
+            5136,
+            5140,
+            5144,
+            5148,
+            5152
+          ]
+        },
+        {
+          "header": 6424,
+          "instructions": 31,
+          "integer_comparisons": 5,
+          "conditional_branches": 4,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 23,
+          "cycle_addresses": [
+            6424,
+            6428,
+            10280,
+            10284,
+            10288,
+            10292,
+            10296,
+            10300,
+            10304,
+            10308,
+            10312,
+            10316,
+            10320,
+            10364,
+            10368,
+            10372,
+            10676,
+            10680,
+            10684,
+            10688,
+            10692,
+            10696,
+            10700
+          ]
+        },
+        {
+          "header": 6440,
+          "instructions": 7,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 7,
+          "cycle_addresses": [
+            6440,
+            6444,
+            6448,
+            6452,
+            6456,
+            6460,
+            6464
+          ]
+        },
+        {
+          "header": 7748,
+          "instructions": 50,
+          "integer_comparisons": 9,
+          "conditional_branches": 7,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 25,
+          "cycle_addresses": [
+            7748,
+            7752,
+            9772,
+            9776,
+            9780,
+            9784,
+            9788,
+            9792,
+            9796,
+            9800,
+            9804,
+            9808,
+            9812,
+            9860,
+            9864,
+            9868,
+            10244,
+            10248,
+            10252,
+            10256,
+            10260,
+            10264,
+            10268,
+            10272,
+            10276
+          ]
+        },
+        {
+          "header": 7764,
+          "instructions": 7,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 7,
+          "cycle_addresses": [
+            7764,
+            7768,
+            7772,
+            7776,
+            7780,
+            7784,
+            7788
+          ]
+        },
+        {
+          "header": 9096,
+          "instructions": 48,
+          "integer_comparisons": 8,
+          "conditional_branches": 6,
+          "minimum_cycle_integer_comparisons": 4,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 25,
+          "cycle_addresses": [
+            9096,
+            9100,
+            9268,
+            9272,
+            9276,
+            9280,
+            9284,
+            9288,
+            9292,
+            9296,
+            9300,
+            9304,
+            9308,
+            9312,
+            9316,
+            9320,
+            9324,
+            9336,
+            9340,
+            9344,
+            9752,
+            9756,
+            9760,
+            9764,
+            9768
+          ]
+        },
+        {
+          "header": 9112,
+          "instructions": 7,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 7,
+          "cycle_addresses": [
+            9112,
+            9116,
+            9120,
+            9124,
+            9128,
+            9132,
+            9136
+          ]
+        },
+        {
+          "header": 11724,
+          "instructions": 25,
+          "integer_comparisons": 4,
+          "conditional_branches": 3,
+          "minimum_cycle_integer_comparisons": 4,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 25,
+          "cycle_addresses": [
+            11724,
+            11728,
+            11768,
+            11772,
+            11776,
+            11780,
+            11784,
+            11788,
+            11800,
+            11804,
+            11808,
+            11812,
+            11816,
+            11820,
+            11824,
+            12124,
+            12128,
+            12132,
+            12136,
+            12140,
+            12144,
+            12148,
+            12152,
+            12156,
+            12160
+          ]
+        }
+      ],
+      "minimum_cycle_comparison_sum": 25,
+      "minimum_comparison_cycle_branch_sum": 22,
+      "cycle_limit": "Static minimum-comparison CFG cycles demonstrate an available path, not input feasibility, dynamic counts or measured speed. Differential execution proves current-input correctness and the subsequent one-probe measurements decide performance.",
+      "unsupported_edges": [],
+      "decoded_dispatches": [
+        {
+          "branch": 544,
+          "table": 548,
+          "bound": 2,
+          "targets": [
+            572,
+            556
+          ]
+        }
+      ],
+      "literal_large_cell_bound_compares": {
+        "5300": {
+          "loop_header": 892,
+          "instruction": "cmp x0, #600"
+        },
+        "6612": {
+          "loop_header": 892,
+          "instruction": "cmp x8, #900"
+        },
+        "7940": {
+          "loop_header": 892,
+          "instruction": "cmp x10, #600"
+        }
+      }
+    },
+    "candidate": {
+      "method": "AArch64 instruction CFG, reachable dominators and natural backedges; innermost loops contain no strict natural subloop. Static counts are not runtime percentages.",
+      "instructions": 4059,
+      "reachable_instructions": 4057,
+      "natural_loops": 13,
+      "innermost_loops": 11,
+      "innermost_union": {
+        "instructions": 201,
+        "integer_comparisons": 32,
+        "conditional_branches": 27
+      },
+      "loops": [
+        {
+          "header": 2764,
+          "instructions": 18,
+          "integer_comparisons": 2,
+          "conditional_branches": 3,
+          "minimum_cycle_integer_comparisons": 2,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 18,
+          "cycle_addresses": [
+            2764,
+            2768,
+            2772,
+            2776,
+            2780,
+            2792,
+            2796,
+            2800,
+            2804,
+            2808,
+            3112,
+            3116,
+            3120,
+            3124,
+            3128,
+            3132,
+            3136,
+            3140
+          ]
+        },
+        {
+          "header": 4116,
+          "instructions": 17,
+          "integer_comparisons": 2,
+          "conditional_branches": 2,
+          "minimum_cycle_integer_comparisons": 2,
+          "cycle_conditional_branches": 2,
+          "cycle_instructions": 17,
+          "cycle_addresses": [
+            4116,
+            4120,
+            4124,
+            4128,
+            4132,
+            4436,
+            4440,
+            4444,
+            4448,
+            4452,
+            4456,
+            4460,
+            4464,
+            4468,
+            4472,
+            4476,
+            4480
+          ]
+        },
+        {
+          "header": 4492,
+          "instructions": 9,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 9,
+          "cycle_addresses": [
+            4492,
+            4496,
+            4500,
+            4504,
+            4508,
+            4512,
+            4516,
+            4520,
+            4524
+          ]
+        },
+        {
+          "header": 6692,
+          "instructions": 15,
+          "integer_comparisons": 3,
+          "conditional_branches": 2,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 2,
+          "cycle_instructions": 15,
+          "cycle_addresses": [
+            6692,
+            6696,
+            6700,
+            6704,
+            7004,
+            7008,
+            7012,
+            7016,
+            7020,
+            7024,
+            7028,
+            7032,
+            7036,
+            7040,
+            7044
+          ]
+        },
+        {
+          "header": 7088,
+          "instructions": 9,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 9,
+          "cycle_addresses": [
+            7088,
+            7092,
+            7096,
+            7100,
+            7104,
+            7108,
+            7112,
+            7116,
+            7120
+          ]
+        },
+        {
+          "header": 8364,
+          "instructions": 26,
+          "integer_comparisons": 5,
+          "conditional_branches": 4,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 19,
+          "cycle_addresses": [
+            8364,
+            8368,
+            8372,
+            8376,
+            8380,
+            8384,
+            8388,
+            8392,
+            8396,
+            8436,
+            8440,
+            8444,
+            8748,
+            8752,
+            8756,
+            8760,
+            8764,
+            8768,
+            8772
+          ]
+        },
+        {
+          "header": 8788,
+          "instructions": 10,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 10,
+          "cycle_addresses": [
+            8788,
+            8792,
+            8796,
+            8800,
+            8804,
+            8808,
+            8812,
+            8816,
+            8820,
+            8824
+          ]
+        },
+        {
+          "header": 10048,
+          "instructions": 35,
+          "integer_comparisons": 8,
+          "conditional_branches": 6,
+          "minimum_cycle_integer_comparisons": 3,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 19,
+          "cycle_addresses": [
+            10048,
+            10052,
+            10056,
+            10060,
+            10064,
+            10068,
+            10072,
+            10076,
+            10080,
+            10084,
+            10120,
+            10124,
+            10128,
+            10472,
+            10476,
+            10480,
+            10484,
+            10488,
+            10492
+          ]
+        },
+        {
+          "header": 10508,
+          "instructions": 10,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 10,
+          "cycle_addresses": [
+            10508,
+            10512,
+            10516,
+            10520,
+            10524,
+            10528,
+            10532,
+            10536,
+            10540,
+            10544
+          ]
+        },
+        {
+          "header": 11800,
+          "instructions": 42,
+          "integer_comparisons": 7,
+          "conditional_branches": 5,
+          "minimum_cycle_integer_comparisons": 4,
+          "cycle_conditional_branches": 3,
+          "cycle_instructions": 22,
+          "cycle_addresses": [
+            11800,
+            11804,
+            11808,
+            11812,
+            11816,
+            11820,
+            11824,
+            11828,
+            11832,
+            11836,
+            11840,
+            11844,
+            11848,
+            11860,
+            11864,
+            11868,
+            12256,
+            12260,
+            12264,
+            12268,
+            12272,
+            12276
+          ]
+        },
+        {
+          "header": 12292,
+          "instructions": 10,
+          "integer_comparisons": 1,
+          "conditional_branches": 1,
+          "minimum_cycle_integer_comparisons": 1,
+          "cycle_conditional_branches": 1,
+          "cycle_instructions": 10,
+          "cycle_addresses": [
+            12292,
+            12296,
+            12300,
+            12304,
+            12308,
+            12312,
+            12316,
+            12320,
+            12324,
+            12328
+          ]
+        }
+      ],
+      "minimum_cycle_comparison_sum": 22,
+      "minimum_comparison_cycle_branch_sum": 21,
+      "cycle_limit": "Static minimum-comparison CFG cycles demonstrate an available path, not input feasibility, dynamic counts or measured speed. Differential execution proves current-input correctness and the subsequent one-probe measurements decide performance.",
+      "unsupported_edges": [],
+      "decoded_dispatches": [
+        {
+          "branch": 544,
+          "table": 548,
+          "bound": 2,
+          "targets": [
+            568,
+            556
+          ]
+        }
+      ],
+      "literal_large_cell_bound_compares": {
+        "8768": {
+          "loop_header": 868,
+          "instruction": "cmp x11, #600"
+        },
+        "10488": {
+          "loop_header": 868,
+          "instruction": "cmp x10, #900"
+        },
+        "12272": {
+          "loop_header": 868,
+          "instruction": "cmp x10, #600"
+        },
+        "7276": {
+          "loop_header": 868,
+          "instruction": "cmp x0, #600"
+        },
+        "7660": {
+          "loop_header": 868,
+          "instruction": "cmp x0, #600"
+        },
+        "7788": {
+          "loop_header": 868,
+          "instruction": "cmp x8, #600"
+        },
+        "8972": {
+          "loop_header": 868,
+          "instruction": "cmp x8, #900"
+        },
+        "9352": {
+          "loop_header": 868,
+          "instruction": "cmp x0, #900"
+        },
+        "9480": {
+          "loop_header": 868,
+          "instruction": "cmp x8, #900"
+        },
+        "10696": {
+          "loop_header": 868,
+          "instruction": "cmp x0, #600"
+        },
+        "11056": {
+          "loop_header": 868,
+          "instruction": "cmp x0, #600"
+        },
+        "11160": {
+          "loop_header": 868,
+          "instruction": "cmp x8, #600"
+        }
+      }
+    }
+  },
+  "literal_large_cell_compares_before": 3,
+  "literal_large_cell_compares_after": 12,
+  "changed_cases": [
+    "cholesky",
+    "correlation",
+    "deriche",
+    "durbin",
+    "gramschmidt"
+  ],
+  "new_performance_observations": 0
+}

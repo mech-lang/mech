@@ -121,15 +121,33 @@ pub(super) fn emit(
     let index_miss = b.create_block();
     let count = get(b, frame, offset_of!(Frame, count));
     let source_count = get(b, frame, offset_of!(Frame, source_count));
-    let inner_count = b.ins().iconst(
-        types::I64,
-        region.rectangle.as_ref().map_or(1, |r| r.rows) as i64,
-    );
-    let (expected, overflow) = b.ins().umul_overflow(source_count, inner_count);
-    let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
-    require(b, good, malformed);
+    let start = get(b, frame, offset_of!(Frame, range_start));
+    // The actual loan remains checked. Source literals are compiler facts,
+    // not authority from a serialized/current control-frame word.
+    let expected_range = if region.range {
+        fixed_range(plan, region.iteration)
+    } else {
+        (None, None)
+    };
+    let (start, source_count) =
+        guard_fixed_range(b, expected_range, start, source_count, malformed);
+    let rows = region.rectangle.as_ref().map_or(1, |r| r.rows);
+    let expected = if let Some(count) = expected_range.1.and_then(|n| n.checked_mul(rows)) {
+        // Actual source_count has already matched this literal. Preserve its
+        // checked product explicitly: backend overflow folding is optional.
+        b.ins().iconst(types::I64, count as i64)
+    } else {
+        let inner_count = b.ins().iconst(types::I64, rows as i64);
+        let (expected, overflow) = b.ins().umul_overflow(source_count, inner_count);
+        let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        require(b, good, malformed);
+        expected
+    };
     let good = b.ins().icmp(IntCC::Equal, expected, count);
     require(b, good, malformed);
+    // Keep the checked product, rather than the opaque control-frame load,
+    // live through the body. Literal ranges now retain a literal loop bound.
+    let count = expected;
     let input = get(b, frame, offset_of!(Frame, input));
     let output = get(b, frame, offset_of!(Frame, output));
     for (field, expected) in [
@@ -242,7 +260,6 @@ pub(super) fn emit(
         );
         matrices.push((pointer, cells, rows, columns));
     }
-    let start = get(b, frame, offset_of!(Frame, range_start));
     if region.range {
         // count==0 has no generated element; otherwise the last value must fit.
         let last = b.ins().iadd_imm(source_count, -1);
@@ -511,6 +528,64 @@ pub(super) fn emit(
     let no_diagnostic = b.ins().iconst(types::I64, 0);
     b.ins().jump(miss, &[no_diagnostic.into()]);
     Ok(())
+}
+
+/// Recover each literal fact from this exact source cursor independently.
+/// A dynamic end leaves cardinality dynamic while retaining a literal start.
+fn fixed_range(plan: &Plan, iteration: u32) -> (Option<u64>, Option<u64>) {
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as P, NativeCollectionSource as S, NativeControlLoop as L,
+    };
+    let Some(L::Collection(collection)) = plan.iterations().get(iteration as usize) else {
+        return (None, None);
+    };
+    let S::U64Range(cursor) = collection.source() else {
+        return (None, None);
+    };
+    let [first, last] = cursor.operands();
+    let constant = |value| {
+        plan.constants()
+            .iter()
+            .find(|c| c.value() == value)
+            .and_then(|c| {
+                if let mech_core::ValueData::U64(n) = c.constant().data() {
+                    Some(*n)
+                } else {
+                    None
+                }
+            })
+    };
+    let first = constant(*first);
+    let last = constant(*last);
+    let inclusive = match cursor.template().primitive() {
+        P::RangeExclusive => false,
+        P::RangeInclusive => true,
+        _ => return (None, None),
+    };
+    let count = first
+        .zip(last)
+        .and_then(|(first, last)| range_cardinality(first, last, inclusive));
+    (first, count)
+}
+fn range_cardinality(first: u64, last: u64, inclusive: bool) -> Option<u64> {
+    last.checked_sub(first)?.checked_add(u64::from(inclusive))
+}
+fn guard_fixed_range(
+    b: &mut FunctionBuilder<'_>,
+    expected: (Option<u64>, Option<u64>),
+    start: Value,
+    count: Value,
+    malformed: Block,
+) -> (Value, Value) {
+    let mut values = [start, count];
+    for (at, literal) in [expected.0, expected.1].into_iter().enumerate() {
+        if let Some(literal) = literal {
+            let good = b.ins().icmp_imm(IntCC::Equal, values[at], literal as i64);
+            require(b, good, malformed);
+            values[at] = b.ins().iconst(types::I64, literal as i64);
+        }
+    }
+    (values[0], values[1])
 }
 
 /// Literal source extents only. Current entry guards retain their authority;
