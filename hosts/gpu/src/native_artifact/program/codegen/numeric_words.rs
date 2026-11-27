@@ -518,19 +518,6 @@ pub(super) fn cell_address(
     let good = b.create_block();
     b.ins().brif(valid, good, &[], bad, &[]);
     b.switch_to_block(good);
-    cell_address_from_ordinals(b, row, column, columns, width, base)
-}
-/// Physical address only, after both ordinal axes have either passed their
-/// source checks or a private current-geometry/source-range proof. No memory
-/// flags, alias promise, alignment, source error or resource authority is added.
-pub(super) fn cell_address_from_ordinals(
-    b: &mut FunctionBuilder<'_>,
-    row: Value,
-    column: Value,
-    columns: Value,
-    width: u8,
-    base: Value,
-) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     let start = b.ins().imul(row, columns);
     let physical = b.ins().iadd(start, column);
     element_address(b, physical, width, |_| base)

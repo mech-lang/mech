@@ -1,0 +1,35 @@
+{
+  "schema": "mech.polybench.round-performance-acceptance.v1",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "promotion": "Both scores must be strictly below the last accepted run.",
+    "failed_run": "Both scores increased versus the immediately preceding measured run.",
+    "ties_or_mixed_results": "Retain the measurements without promotion.",
+    "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
+    "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
+    "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+  },
+  "decision": {
+    "history_index": 43,
+    "label": "round-43-guarded-map-domains",
+    "source_commit": "4d95bf34fcd32d63bfaf9bf65f0c78a194bc46e3",
+    "history_entry_sha256": "3cf61853ef10a61ee58535a230893a17ab7a57a013be389444e72373eb9432c4",
+    "scores": {
+      "optimization": 12.378819382185672,
+      "holdout": 40.55974559274308
+    },
+    "previous_measured_index": 42,
+    "run_outcome": "failed_both_regressed",
+    "compared_to_accepted_index": 31,
+    "multipliers_vs_accepted": {
+      "optimization": 1.0824092256456777,
+      "holdout": 1.0316425816207428
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 31
+  },
+  "performance_history_sha256": "2a27f4f2c049fa2e7b3bd760c4d80af90375ab655c2567cf85bc0bee632f628a",
+  "interpretation": "Strictly compare both frozen scores with accepted31. All measurements and regressions remain. No tolerance or post-hoc exclusion."
+}
