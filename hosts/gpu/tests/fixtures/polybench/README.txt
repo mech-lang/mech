@@ -2719,3 +2719,18 @@ The single prospective v3 optimization probe retains all210 fresh-process observ
 Both primary scores strictly improve; round45 is accepted. All900 observations,29482 finite liveouts,46 append-only history entries and every regression remain. Holdout is the aggregate gate only. Below1.0x C holdout is unchanged and requires a separate completion audit.
 
 [Qualification](round-45-qualification.json) · [Frozen source](round-45-frozen.json) · [Acceptance](round-45-performance-acceptance.json) · [Source-fee audit](training-experiments/current-bound-rectangles-shared-comparison.json)
+
+Round46: reuse existing validated native type slots (not promoted)
+
+Numeric input validation and output retirement reuse the exact type keys already bound to their source value/transport indexes. Complete current schema ID/key, shape, account, finite/cold/replay, ownership and atomicity checks remain. No new retained cache, wire field, allocation or instruction change. All 713 broad/12 focused checks pass, including key/schema/index substitution negatives, 60 original/decoded restored forms and 58,964 finite C liveouts. Both features pass. IR411/work157/ABI47.
+
+One prospective probe retained all 210 fresh-process observations: raw GM speedup versus accepted45 1.071221x; all 0 regressions over5% remain. The untimed all15 gate verifies exact counters and native instructions. Selected source/driver were committed/pushed/frozen before both formal sets.
+
+| Set | Accepted45 x C | Round46 x C | Raw speedup vs45 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 9.78419x | 11.13864x | 0.82799x | 0.95082x |
+| Holdout | 25.86145x | 24.97576x | 1.05150x | 1.06661x |
+
+The strict two-set gate rejects this run; exact accepted45 source and driver are restored. All 900 observations, 29,482 finite liveouts, 47 append-only history entries and every regression remain. Holdout is the aggregate gate only; the below1.0x C goal requires a separate completion audit.
+
+[Qualification](round-46-qualification.json) · [Freeze](round-46-frozen.json) · [Acceptance](round-46-performance-acceptance.json) · [Development](training-experiments/prepared-type-slots-development.json)

@@ -57,8 +57,7 @@ fn admit_output_retirement(
     memory: &ManagedMemoryBudget,
     library: &NativeLibraryWorkBudget,
 ) -> Result<(), NativeProgramExecutionError> {
-    let metadata = descriptor.metadata();
-    let plan = &metadata.plan;
+    let plan = &descriptor.metadata().plan;
     if outputs.len() != plan.transport_output_count() {
         return Err(NativeExecutionError::InvalidOutputs {
             expected: plan.transport_output_count(),
@@ -71,9 +70,8 @@ fn admit_output_retirement(
         .enumerate()
         .filter_map(|(index, value)| value.as_ref().map(|value| (index, value)))
     {
-        // Transport outputs occupy the validated tail after ordinary values.
-        let ty = &metadata.types[plan.values().len() + index];
-        if value.schema() != ty.schema || value.schema_key() != ty.key {
+        let ty = plan.transport_output_type(index);
+        if value.schema() != ty.schema() || value.schema_key() != ty.schema_key() {
             return Err(NativeValueError::TypeMismatch.into());
         }
         let retained = value

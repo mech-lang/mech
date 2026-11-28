@@ -128,10 +128,8 @@ impl Invocation<'_, '_, '_> {
             else {
                 return Ok(Some(0));
             };
-            // The exact plan slot is already bound to its complete definition
-            // and canonical table key on both preparation and image loading.
             if value.schema() != ty.schema()
-                || value.schema_key() != m.types[id as usize].key
+                || value.schema_key() != ty.schema_key()
                 || value.memory_budget_retained_bytes(&memory).is_none()
             {
                 return Ok(Some(0));
