@@ -126,6 +126,10 @@ impl Invocation<'_, '_, '_> {
             let mut modes = [1u64; MAX_INPUTS];
             let mut product_axes = [0u64; 3];
             let mut domain_axes = [0usize; 2];
+            // Pure source bounds are computed once for this exact geometry.
+            // Reuse their replay credit; no metadata or loan survives the call.
+            let mut replay = 0u64;
+            let mut output_shape = None;
             for (index, node) in recipe.nodes.iter().enumerate() {
                 let call = m.calls[node.site as usize].as_ref()?;
                 let inputs = node
@@ -195,7 +199,7 @@ impl Invocation<'_, '_, '_> {
                     .try_fold(0u64, |sum, axes| {
                         sum.checked_add((axes[0] as u64).checked_mul(axes[1] as u64)?)
                     })?;
-                let (demand, replay) = match node.kind {
+                let (demand, node_replay) = match node.kind {
                     Kind::Product => {
                         call.f64_matrix_product_source_bound(input_count, count, inner)?
                     }
@@ -205,18 +209,20 @@ impl Invocation<'_, '_, '_> {
                     Kind::Sum { .. } => call.f64_matrix_sum_source_bound(input_count, count)?,
                     Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(count)?,
                 };
+                replay = replay.checked_add(node_replay)?;
                 // Every omitted logical factory still has its original shape.
                 mech_core::shape_for_resolved_extents(call.template().output(), &[rows, columns])
                     .ok()?;
-                mech_core::shape_for_resolved_extents(
+                let source_shape = mech_core::shape_for_resolved_extents(
                     m.plan.values()[node.output.get() as usize].definition(),
                     &[rows, columns],
                 )
                 .ok()?;
+                if index + 1 == recipe.nodes.len() && node.output == recipe.output {
+                    output_shape = Some(source_shape);
+                }
                 node_dims.push([usize::try_from(rows).ok()?, usize::try_from(columns).ok()?]);
                 demands.push(demand);
-                // No per-node replay arrays are required after this preflight.
-                let _ = replay;
             }
             if reduction_axis.is_some() {
                 // Every pointwise node is evaluated at coordinates in the
@@ -252,11 +258,17 @@ impl Invocation<'_, '_, '_> {
                 return None;
             }
             let count = rows.checked_mul(columns)?;
-            let shape = mech_core::shape_for_resolved_extents(
-                m.plan.values()[recipe.output.get() as usize].definition(),
-                &[rows, columns],
-            )
-            .ok()?;
+            // The last-node axis equality above proves these are the same
+            // extents. Only the exact same source output may reuse its shape;
+            // a differently named alias retains its original validation.
+            let shape = match output_shape {
+                Some(shape) => shape,
+                None => mech_core::shape_for_resolved_extents(
+                    m.plan.values()[recipe.output.get() as usize].definition(),
+                    &[rows, columns],
+                )
+                .ok()?,
+            };
             let metadata = (core::mem::size_of::<Loan>() as u64)
                 .checked_add(
                     (recipe.external.len() as u64)
@@ -270,24 +282,7 @@ impl Invocation<'_, '_, '_> {
             let mut cloned = 0u64;
             let mut max_output = 0u64;
             let mut max_elements = count;
-            let mut replay = 0u64;
             for (index, (node, demand)) in recipe.nodes.iter().zip(&demands).enumerate() {
-                let call = m.calls[node.site as usize].as_ref()?;
-                let ds = node
-                    .inputs
-                    .map(|s| source_dims(s, &external_dims, &node_dims));
-                let inputs = ds[..node.operands().len()].iter().try_fold(0u64, |n, a| {
-                    n.checked_add((a[0] as u64).checked_mul(a[1] as u64)?)
-                })?;
-                let output =
-                    (node_dims[index][0] as u64).checked_mul(node_dims[index][1] as u64)?;
-                let (_, bound) = match node.kind {
-                    Kind::Product => call.f64_matrix_product_source_bound(inputs, output, inner)?,
-                    Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(inputs, output)?,
-                    Kind::Sum { .. } => call.f64_matrix_sum_source_bound(inputs, output)?,
-                    Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(output)?,
-                };
-                replay = replay.checked_add(bound)?;
                 compute = compute.checked_add(demand.work.compute)?;
                 comparison = comparison.checked_add(demand.work.comparison)?;
                 temporary = temporary
