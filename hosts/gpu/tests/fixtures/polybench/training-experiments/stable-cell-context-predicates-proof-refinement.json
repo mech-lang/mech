@@ -1,0 +1,5 @@
+{
+  "created_at": "2026-11-28T18:20:49.183795+00:00",
+  "basis": "Attempt01 focused15/16: duplicate pattern projections of the same source carrier field were conservatively declined by exact SSA UID equality. No performance observations.",
+  "proof": "Retained source field may be the exact same UID or a distinct pure U64/canonical observation/copy of the identical actual carrier structural path. Both complete projection chains must have unique same-plan definitions available in this visit before their consumer (the retained source before the successful point). Exact enum variant/tuple path equality is required; changed columns/matrix/library values still decline. This normalizes source provenance; it does not assume that equal integer IDs, shapes or runtime values identify fields."
+}
