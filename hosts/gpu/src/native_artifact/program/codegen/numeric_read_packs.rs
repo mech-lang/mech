@@ -272,10 +272,7 @@ impl Finder<'_, '_> {
     }
 }
 
-pub(in crate::native_artifact) fn derive(
-    facts: &NativeProgramFacts<'_>,
-    proof: &Proof,
-) -> Vec<Pack> {
+pub(super) fn source_boundaries(facts: &NativeProgramFacts<'_>, proof: &Proof) -> BTreeSet<usize> {
     let mut boundaries = BTreeSet::new();
     if let Some(phase) = &proof.phase {
         for debit in &phase.loops {
@@ -304,6 +301,14 @@ pub(in crate::native_artifact) fn derive(
             );
         }
     }
+    boundaries
+}
+
+pub(in crate::native_artifact) fn derive(
+    facts: &NativeProgramFacts<'_>,
+    proof: &Proof,
+) -> Vec<Pack> {
+    let boundaries = source_boundaries(facts, proof);
     let finder = Finder {
         facts,
         proof,
