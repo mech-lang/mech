@@ -15,11 +15,6 @@ fn tile(
     epilogue: Option<&Epilogue<'_>>,
 ) {
     debug_assert!([1, 2, 4].contains(&row_width));
-    let ty = if vector {
-        types::F64.by(2).unwrap()
-    } else {
-        types::F64
-    };
     let left0 = b.ins().imul(row, inner);
     let index0 = b.ins().imul(row, columns);
     let index0 = b.ins().iadd(index0, column);
@@ -32,51 +27,29 @@ fn tile(
         states.push((r, base, index));
         prior_index = index;
     }
-    let k = b.declare_var(types::I64);
-    let sums = (0..row_width)
-        .map(|_| b.declare_var(ty))
+    let left_step = b.ins().iconst(types::I64, 8);
+    let right_step = b.ins().imul_imm(columns, 8);
+    let right_pointer = address(b, right, column);
+    let streams = states
+        .iter()
+        .map(|(_, base, _)| Stream {
+            pointer: address(b, left, *base),
+            step: left_step,
+            vector: false,
+        })
         .collect::<Vec<_>>();
-    let zero = b.ins().iconst(types::I64, 0);
-    let identity = b.ins().f64const(0.0);
-    let identity = if vector {
-        b.ins().splat(ty, identity)
-    } else {
-        identity
-    };
-    b.def_var(k, zero);
-    for &sum in &sums {
-        b.def_var(sum, identity);
-    }
-    let header = b.create_block();
-    let body = b.create_block();
-    let finish = b.create_block();
-    b.ins().jump(header, &[]);
-    b.switch_to_block(header);
-    let at = b.use_var(k);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, inner);
-    b.ins().brif(more, body, &[], finish, &[]);
-    b.switch_to_block(body);
-    let ri = b.ins().imul(at, columns);
-    let ri = b.ins().iadd(ri, column);
-    let rp = address(b, right, ri);
-    // One reached RHS load feeds every independent row in this register tile.
-    let rhs = b.ins().load(ty, MemFlags::new(), rp, 0);
-    for ((_, base, _), &sum) in states.iter().zip(&sums) {
-        let li = b.ins().iadd(*base, at);
-        let lp = address(b, left, li);
-        let lhs = b.ins().load(types::F64, MemFlags::new(), lp, 0);
-        let lhs = if vector { b.ins().splat(ty, lhs) } else { lhs };
-        let term = f64_arithmetic(b, NativeScalarOp::F64Mul, lhs, rhs);
-        let prior = b.use_var(sum);
-        let next = f64_arithmetic(b, NativeScalarOp::F64Add, prior, term);
-        b.def_var(sum, next);
-    }
-    let advanced = b.ins().iadd_imm(at, 1);
-    b.def_var(k, advanced);
-    b.ins().jump(header, &[]);
-    b.switch_to_block(finish);
-    for ((r, _, index), &sum) in states.iter().zip(&sums) {
-        let result = b.use_var(sum);
+    let sums = numeric_dot_core::emit(
+        b,
+        &streams,
+        Stream {
+            pointer: right_pointer,
+            step: right_step,
+            vector,
+        },
+        inner,
+        vector,
+    );
+    for ((r, _, index), result) in states.iter().zip(sums) {
         let result = if let Some(e) = epilogue {
             e.apply(b, result, *r, column, *index, vector)
         } else {

@@ -1,0 +1,237 @@
+{
+  "schema": "mech.polybench.ordered-map-dots-core-development.v1",
+  "created_at": "2026-11-28T11:22:50.752589+00:00",
+  "stage": "Shared ordered core integrated with existing products; new map-dot scalar/batch source lowering not yet implemented/enabled",
+  "compiler_fingerprint": "2d0386b3b280b9ee7479f7ff60352e1bfb127465d3c8edb9efb6dcc27b99fef0",
+  "ir": 425,
+  "work": 157,
+  "abi": 48,
+  "source_parent": "f0eec8471c5da39124c02e7e79f2f66dde56d97d",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "69a052b67e350f81a5d5346d8c72e0285c702ceb0ca3cfc02fcbafc3c3f55353",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": "1b507cc8dfd88f786b0a1f9299e1efaad9bb6e90c61a56a279c1d1179e0fece9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": "a4cd22d8bb5f9d9996d887e78312293fba3b872e9dc6a71d6d7a6e7419fc3630",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "037d58ab5a0ede575bfe5f12bbad49e8fce5d942c886e08c64d193a9b5ec5551",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": "747a93cc88cb94e098604c9e0d0f58fa5dcc0cb3dbb01e8f99d08bdbfc46cfd4",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "9bea404eddac4651604d800996e223610f6eb0b94859cbbc3b0f4f9d91562865"
+  },
+  "core_checks": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "ordered_map_dot_core",
+      "numeric_product",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 95.9595831669867,
+    "compiler_fingerprint": "2d0386b3b280b9ee7479f7ff60352e1bfb127465d3c8edb9efb6dcc27b99fef0",
+    "source_unchanged": true,
+    "passed_tests": [
+      20
+    ],
+    "performance_observations": 0
+  },
+  "failed_attempts": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "ordered_map_dot_core",
+        "numeric_product",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 14.892791333142668,
+      "compiler_fingerprint": "80589dedb59b3f7ee00aa929118bf21ca6051870a359cfbea876e90bc200ff69",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "performance_observations": 0
+    }
+  ],
+  "performance_observations": 0,
+  "accepted_round_unchanged": 54,
+  "accepted_scores": {
+    "optimization": 8.365861893301812,
+    "holdout": 24.599383003745523
+  },
+  "next": "Implement closed affine-dot and exact parent-control proofs, guarded stream emission and independent-output batching; qualify complete pass before any timing.",
+  "archives": {
+    "plan.json": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/plan.json.gz",
+      "sha256": "05c352dcb5bb5fbd9f5679d7d123cd337f05910b9ff0588c20a1ac12a7d55ee2",
+      "compressed_sha256": "6640c712f0e2f106ca46b281ff0a7e736e882da910ef46a3ba1d8be6c45790ea"
+    },
+    "run-core-tests.py": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/run-core-tests.py.gz",
+      "sha256": "c5abef3a5ef8fae75905743f7fb01f391f2dfcc41a329d4bc5fe8a440f8c5d43",
+      "compressed_sha256": "2e6438a4afbdc8e1a34ee5a172a898702a025d5c93a4f787840a922535d879c5"
+    },
+    "source-before/hosts/gpu/src/native_artifact/codegen/control/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+      "sha256": "6f44f561c13f7056ca3affad56e8cc0d2498302cfac666c2e168bfacaf0dd6e5",
+      "compressed_sha256": "9c150b7c76e82bf08586ad7ea212f08880552a3de9ab84618a83039fb120047c"
+    },
+    "source-before/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "00fd4e61d913d4a04a4d249d60a58478ebed098e806789a0a1c9499068126f37",
+      "compressed_sha256": "836051428bf77db3df1d28348ddb95ec40b43e52408178c31aba10aa3a2df2f1"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "9b934a7f5ae7d814e4d6b4f69805e803d4f58d4afe023569025f310d180bc156",
+      "compressed_sha256": "ee88e95f4c24382afc6e2146761ad4b053585bfa6486879ff6373256fa87009a"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz",
+      "sha256": "87eb599ae4c1e7fd8ad0f8b949b4eb7c724dbb60dca2d922cdf6444f80b52b78",
+      "compressed_sha256": "bf9669a4bd7b04e412f6f9e9f357c9fa0c5110d12f98401e97861fe7901c648f"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz",
+      "sha256": "9232662f455de400f14fa77577b9f9b3e0d20bc1b4617c3144ebc0afe7d2d618",
+      "compressed_sha256": "54a241faad8c0f01d09b2d2c4e9415dfd719d3d612617a798b0c6903745dfd56"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz",
+      "sha256": "bb92dcc99915b4c6c2b7541ae5437feb20294a40bf8bd7bef842552844b4bef9",
+      "compressed_sha256": "04f45e223897322cd8c5910d93054e4bcb684ee745947814e69c566b6ea06b6c"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz",
+      "sha256": "290488204dc1a19f912935e569a86abb5f65214829ddaf5651656dfa8590a0bf",
+      "compressed_sha256": "b1d90a3dd5397f8354416f6a999d1d66bed5ec9c12c3b36d80739a3aa78f3d02"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz",
+      "sha256": "993c8ef183c2ff4fe2ea106ad0c311b4e5c31adaff4dd1a786354bd4a974ca97",
+      "compressed_sha256": "d54c11b38ae47ed8dca074d579b7adda965d6166d365cf9ab4c65b3cbe4acbad"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs.gz",
+      "sha256": "f097694f87c38cf341d1006f3e1cd0c78986a82636f2d8b2dc54a579075dfe27",
+      "compressed_sha256": "d1d814c9acbf8962208f5c919d0a18a56b99495220c03b4ca0a6fc7b8966c056"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "7f7c7ca3fc2b381a192dfcefafbe8977e18c4711c6d9f85841c0d4d29f8902d9",
+      "compressed_sha256": "43716a22ba876b090b85f429021bf8e83e27004fa6d16e9a9cc2ec73e27ef35a"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "496fc990b9cd54f52cf3d7d0617f657a6f81d2b130d7199253d9b80448304115",
+      "compressed_sha256": "0d3e8f21b92fdc36de902994309836c1ea7077a173a2d59a3cc6c4e300ca0dbc"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs.gz",
+      "sha256": "8d7e774dabe80ed6141cea050e9a62adc0630c55bf7293d951f2ccad4a944876",
+      "compressed_sha256": "8cc4ec572c898fe33b3b974501b4efd327be07a1034c62fc9a0831431d023b46"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "f17186abe51a60665c31d76bc6213fde478ac5b835e96b63ba8d9239b0a3d06a",
+      "compressed_sha256": "40fa6092403d3c8a1678a592a284a36324f62851eb7713af21d7430152828c7e"
+    },
+    "stage-a-attempt-01/core-tests-result.json": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/core-tests-result.json.gz",
+      "sha256": "f41310e0da4115676a423fddc404324b11ef8648390259f3664a35996a417bf9",
+      "compressed_sha256": "1e0461cd411696dee365cfb3671c172ebea08177d69e80092973c3dbadac4d22"
+    },
+    "stage-a-attempt-01/core-tests.log": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/core-tests.log.gz",
+      "sha256": "950172d0e3afc960b9ace0da8851cba9e4c3494af50a34100d32eb4429d4351a",
+      "compressed_sha256": "bb716dd4a3e47ddcda4ac3d1020e282692c559bf95fb7ee7788a78967369a25c"
+    },
+    "stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "69a052b67e350f81a5d5346d8c72e0285c702ceb0ca3cfc02fcbafc3c3f55353",
+      "compressed_sha256": "82bf7aa3fb1bf3f8a682b1fcfa467ceda103d5a7297f1287645e490e5f368e14"
+    },
+    "stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs.gz",
+      "sha256": "1b507cc8dfd88f786b0a1f9299e1efaad9bb6e90c61a56a279c1d1179e0fece9",
+      "compressed_sha256": "a78e49345bbd1a545a580f1d42a9db34000ac2d95ba2c74bd16962aa2f3d3f47"
+    },
+    "stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs.gz",
+      "sha256": "9d65266d1de9a1de45ab3bae97bd00ebfdbd28711f7e9687bec3baae6523ae09",
+      "compressed_sha256": "bab76c595a65befcdaa96016f6ea72c47954efa81fef932517a2f4397148adbc"
+    },
+    "stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz",
+      "sha256": "037d58ab5a0ede575bfe5f12bbad49e8fce5d942c886e08c64d193a9b5ec5551",
+      "compressed_sha256": "dc6b515f0a9e7847036f960e8ea72fc4b10d22d6e5c55d92e4f7345cf5e348ec"
+    },
+    "stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs.gz",
+      "sha256": "747a93cc88cb94e098604c9e0d0f58fa5dcc0cb3dbb01e8f99d08bdbfc46cfd4",
+      "compressed_sha256": "1dbcd443ff09c9e1c92c69ad8d77a8c239014ebf42713d210dddbc31c97b5bec"
+    },
+    "stage-a-attempt-01/source-manifest.json": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-01/source-manifest.json.gz",
+      "sha256": "9d009956fd4b8f7f5f4f9c14942ec6bf9ff5807b35d4244ee4137330c2cf2d7d",
+      "compressed_sha256": "a715bc7a82b902e6d63dd32ab7cc3657bdd071aec69b4dae4d7a8ff66de96f30"
+    },
+    "stage-a-attempt-02/core-tests-result.json": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/core-tests-result.json.gz",
+      "sha256": "77e1e2accd0b1b924e3024c342529e64d77f4c825c03b82cd685d339839b4d15",
+      "compressed_sha256": "9bb7e9cc9d098063cf3d68a82487ecdad576745bbbc260dbc7e7083dd3a02b31"
+    },
+    "stage-a-attempt-02/core-tests.log": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/core-tests.log.gz",
+      "sha256": "a7ed8796529b24a824168ede00722099609cbb2f1d04b34f854f0f6ff2d4d823",
+      "compressed_sha256": "d05444cf9b0310913a6f91e0f3530c21be1bc8cc6a721644457fa81cb621289f"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "69a052b67e350f81a5d5346d8c72e0285c702ceb0ca3cfc02fcbafc3c3f55353",
+      "compressed_sha256": "82bf7aa3fb1bf3f8a682b1fcfa467ceda103d5a7297f1287645e490e5f368e14"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs.gz",
+      "sha256": "1b507cc8dfd88f786b0a1f9299e1efaad9bb6e90c61a56a279c1d1179e0fece9",
+      "compressed_sha256": "a78e49345bbd1a545a580f1d42a9db34000ac2d95ba2c74bd16962aa2f3d3f47"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs.gz",
+      "sha256": "a4cd22d8bb5f9d9996d887e78312293fba3b872e9dc6a71d6d7a6e7419fc3630",
+      "compressed_sha256": "d5219c5a436d67ad8ec4c8d9c93378c9e2401aed069b970268480352d431a168"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz",
+      "sha256": "037d58ab5a0ede575bfe5f12bbad49e8fce5d942c886e08c64d193a9b5ec5551",
+      "compressed_sha256": "dc6b515f0a9e7847036f960e8ea72fc4b10d22d6e5c55d92e4f7345cf5e348ec"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs.gz",
+      "sha256": "747a93cc88cb94e098604c9e0d0f58fa5dcc0cb3dbb01e8f99d08bdbfc46cfd4",
+      "compressed_sha256": "1dbcd443ff09c9e1c92c69ad8d77a8c239014ebf42713d210dddbc31c97b5bec"
+    },
+    "stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "9bea404eddac4651604d800996e223610f6eb0b94859cbbc3b0f4f9d91562865",
+      "compressed_sha256": "b83eb68761617036fd375f61edee9fab0c306f88672a04e6bbf0c5dc2e21c922"
+    },
+    "stage-a-attempt-02/source-manifest.json": {
+      "path": "qualification/round-62-ordered-map-dots/core-development/stage-a-attempt-02/source-manifest.json.gz",
+      "sha256": "ec7bf96c08f3c542c266053252b999008f8193930787535f27d3bd53cdd1ba39",
+      "compressed_sha256": "b2cfa189afd21e9c41237f018ab0ff1aaf64309c70ed032fd89586970c6d2d99"
+    }
+  }
+}

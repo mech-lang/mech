@@ -1,11 +1,10 @@
 //! Ordered products over admitted row-major F64 banks. SIMD lanes compute
 //! independent columns; each cell keeps the ordinary +0 identity and k order.
 use super::numeric_binary::address;
+use super::numeric_dot_core::{self, Stream};
 use super::numeric_product_epilogues::Epilogue;
-use crate::native_artifact::compiler::f64_arithmetic;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_engine::native_artifact::NativeScalarOp;
 #[path = "numeric_product_rows.rs"]
 mod rows;
 
@@ -20,51 +19,28 @@ fn cell(
     vector: bool,
     epilogue: Option<&Epilogue<'_>>,
 ) {
-    let kind = if vector {
-        types::F64.by(2).unwrap()
-    } else {
-        types::F64
-    };
     let row = b.ins().udiv(index, columns);
     let column = b.ins().urem(index, columns);
     let left_base = b.ins().imul(row, inner);
-    let offset = b.declare_var(types::I64);
-    let accumulator = b.declare_var(kind);
-    let zero = b.ins().iconst(types::I64, 0);
-    let identity = b.ins().f64const(0.0);
-    let identity = if vector {
-        b.ins().splat(kind, identity)
-    } else {
-        identity
-    };
-    b.def_var(offset, zero);
-    b.def_var(accumulator, identity);
-    let header = b.create_block();
-    let body = b.create_block();
-    let finish = b.create_block();
-    b.ins().jump(header, &[]);
-    b.switch_to_block(header);
-    let k = b.use_var(offset);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, k, inner);
-    b.ins().brif(more, body, &[], finish, &[]);
-    b.switch_to_block(body);
-    let li = b.ins().iadd(left_base, k);
-    let ri = b.ins().imul(k, columns);
-    let ri = b.ins().iadd(ri, column);
-    let lp = address(b, left, li);
-    let rp = address(b, right, ri);
-    let a = b.ins().load(types::F64, MemFlags::new(), lp, 0);
-    let a = if vector { b.ins().splat(kind, a) } else { a };
-    let c = b.ins().load(kind, MemFlags::new(), rp, 0);
-    let term = f64_arithmetic(b, NativeScalarOp::F64Mul, a, c);
-    let prior = b.use_var(accumulator);
-    let next = f64_arithmetic(b, NativeScalarOp::F64Add, prior, term);
-    b.def_var(accumulator, next);
-    let advanced = b.ins().iadd_imm(k, 1);
-    b.def_var(offset, advanced);
-    b.ins().jump(header, &[]);
-    b.switch_to_block(finish);
-    let result = b.use_var(accumulator);
+    let left_pointer = address(b, left, left_base);
+    let right_pointer = address(b, right, column);
+    let left_step = b.ins().iconst(types::I64, 8);
+    let right_step = b.ins().imul_imm(columns, 8);
+    let result = numeric_dot_core::emit(
+        b,
+        &[Stream {
+            pointer: left_pointer,
+            step: left_step,
+            vector: false,
+        }],
+        Stream {
+            pointer: right_pointer,
+            step: right_step,
+            vector,
+        },
+        inner,
+        vector,
+    )[0];
     let result = if let Some(epilogue) = epilogue {
         epilogue.apply(b, result, row, column, index, vector)
     } else {

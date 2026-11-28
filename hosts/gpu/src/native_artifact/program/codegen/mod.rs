@@ -135,6 +135,7 @@ mod fp_spill_tests;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_binary;
+mod numeric_dot_core;
 mod numeric_product;
 mod numeric_sum;
 #[cfg(feature = "canonical-native-program")]
