@@ -15,16 +15,14 @@ fn cell(
     columns: Value,
     inner: Value,
     vector: bool,
-    row: Value,
-    column: Value,
-    left_stride: Value,
-    transposed: [bool; 2],
 ) {
     let kind = if vector {
         types::F64.by(2).unwrap()
     } else {
         types::F64
     };
+    let row = b.ins().udiv(index, columns);
+    let column = b.ins().urem(index, columns);
     let left_base = b.ins().imul(row, inner);
     let offset = b.declare_var(types::I64);
     let accumulator = b.declare_var(kind);
@@ -46,35 +44,14 @@ fn cell(
     let more = b.ins().icmp(IntCC::UnsignedLessThan, k, inner);
     b.ins().brif(more, body, &[], finish, &[]);
     b.switch_to_block(body);
-    let li = if transposed[0] {
-        // The original matrix is [inner, rows]. Its admitted row stride
-        // was computed outside this ordered reduction over the pinned owner.
-        let base = b.ins().imul(k, left_stride);
-        b.ins().iadd(base, row)
-    } else {
-        b.ins().iadd(left_base, k)
-    };
-    let ri = if transposed[1] {
-        let base = b.ins().imul(column, inner);
-        b.ins().iadd(base, k)
-    } else {
-        let base = b.ins().imul(k, columns);
-        b.ins().iadd(base, column)
-    };
+    let li = b.ins().iadd(left_base, k);
+    let ri = b.ins().imul(k, columns);
+    let ri = b.ins().iadd(ri, column);
     let lp = address(b, left, li);
     let rp = address(b, right, ri);
     let a = b.ins().load(types::F64, MemFlags::new(), lp, 0);
     let a = if vector { b.ins().splat(kind, a) } else { a };
-    let c = if transposed[1] && vector {
-        let first = b.ins().load(types::F64, MemFlags::new(), rp, 0);
-        let second_index = b.ins().iadd(ri, inner);
-        let second_pointer = address(b, right, second_index);
-        let second = b.ins().load(types::F64, MemFlags::new(), second_pointer, 0);
-        let pair = b.ins().splat(kind, first);
-        b.ins().insertlane(pair, second, 1)
-    } else {
-        b.ins().load(kind, MemFlags::new(), rp, 0)
-    };
+    let c = b.ins().load(kind, MemFlags::new(), rp, 0);
     let term = f64_arithmetic(b, NativeScalarOp::F64Mul, a, c);
     let prior = b.use_var(accumulator);
     let next = f64_arithmetic(b, NativeScalarOp::F64Add, prior, term);
@@ -98,30 +75,6 @@ pub(super) fn emit(
     inner: Value,
     done: Block,
 ) {
-    emit_with_views(
-        b,
-        left,
-        right,
-        output,
-        count,
-        columns,
-        inner,
-        [false, false],
-        done,
-    );
-}
-
-pub(super) fn emit_with_views(
-    b: &mut FunctionBuilder<'_>,
-    left: Value,
-    right: Value,
-    output: Value,
-    count: Value,
-    columns: Value,
-    inner: Value,
-    transposed: [bool; 2],
-    done: Block,
-) {
     let index = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(index, zero);
@@ -137,16 +90,7 @@ pub(super) fn emit_with_views(
     b.switch_to_block(body);
     // This body is reached only for a nonempty result, which certifies
     // columns>0. A vector may never straddle a row, even on an odd width.
-    let row = b.ins().udiv(at, columns);
-    let row_base = b.ins().imul(row, columns);
-    let column = b.ins().isub(at, row_base);
-    // Geometry is invariant across k. Keep its division outside both scalar
-    // and SIMD reductions; empty results never reach this division.
-    let left_stride = if transposed[0] {
-        b.ins().udiv(count, columns)
-    } else {
-        inner
-    };
+    let column = b.ins().urem(at, columns);
     let remaining = b.ins().isub(columns, column);
     let two = b
         .ins()
@@ -154,20 +98,7 @@ pub(super) fn emit_with_views(
     b.ins().brif(two, pair, &[], single, &[]);
     for (block, vector, width) in [(pair, true, 2), (single, false, 1)] {
         b.switch_to_block(block);
-        cell(
-            b,
-            left,
-            right,
-            output,
-            at,
-            columns,
-            inner,
-            vector,
-            row,
-            column,
-            left_stride,
-            transposed,
-        );
+        cell(b, left, right, output, at, columns, inner, vector);
         let advanced = b.ins().iadd_imm(at, width);
         b.def_var(index, advanced);
         b.ins().jump(header, &[]);

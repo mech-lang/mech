@@ -1,7 +1,5 @@
 //! Exact-site loans for one generated F64 matrix operation.
 //! Inputs stay pinned; one initialized private result bank publishes atomically.
-#[path = "numeric_transpose_product.rs"]
-mod transpose_product;
 use super::*;
 use crate::native_artifact::program::prepare::numeric_binary::Kind;
 use crate::native_artifact::program::protocol::{GlobalHelper, abi::NumericBinaryFrame};
@@ -10,12 +8,6 @@ use mech_core::{
     ShapeInstance,
     snapshot::{F64Bits, SequenceView},
 };
-
-// Ordinary broadcast modes are 0..=3. Only the genuine two-operand source
-// proof can issue this private product mode. Product arithmetic does not read
-// mode/scalar words; its immutable issued frame also holds the entry epoch.
-// This keeps ordinary Pending storage and the shared frame ABI unchanged.
-const TRANSPOSE_PRODUCT_MODE: u64 = 1 << 63;
 
 pub(in crate::native_artifact::program::runtime) struct Pending {
     pub frame: NumericBinaryFrame,
@@ -81,17 +73,6 @@ impl Invocation<'_, '_, '_> {
     ) -> Result<Option<u64>, Error> {
         if tag == GlobalHelper::NumericBinaryFinish {
             return self.finish_numeric_binary(site, args);
-        }
-        if tag == GlobalHelper::NumericBinaryPrepare
-            && args[1] == 2
-            && self
-                .descriptor
-                .metadata()
-                .numeric_binary
-                .product_view(site)
-                .is_some()
-        {
-            return self.prepare_transpose_product(site, args);
         }
         let descriptor = self.descriptor;
         let m = descriptor.metadata();
@@ -413,23 +394,6 @@ impl Invocation<'_, '_, '_> {
             ));
         }
         let metadata = self.descriptor.metadata();
-        let view_end = if pending.issued.left_mode == TRANSPOSE_PRODUCT_MODE {
-            let view = metadata
-                .numeric_binary
-                .product_view(site)
-                .ok_or_else(|| invalid("transpose/product finish lost its source proof"))?;
-            if view.output != pending.output
-                || self.state.control.visits != pending.issued.right_scalar
-                || self.state.control.current != view.parent
-            {
-                return Err(invalid(
-                    "transpose/product finish differs from its admitted path",
-                ));
-            }
-            Some(view.product)
-        } else {
-            None
-        };
         let ty = &metadata.types[pending.output as usize];
         let value = Value::from_f64_matrix(
             ty.schema,
@@ -445,11 +409,6 @@ impl Invocation<'_, '_, '_> {
         self.state
             .arena
             .put(pending.output, &value, &mut self.state.control.work)?;
-        if let Some(end) = view_end {
-            // One genuine source-proved transition, with all original source
-            // fees paid at entry. Do not fabricate the skipped physical visits.
-            self.state.control.previous = Some(end);
-        }
         self.state.consumed = true;
         Ok(Some(1))
     }

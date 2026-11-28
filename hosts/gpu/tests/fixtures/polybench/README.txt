@@ -2765,3 +2765,11 @@ Initial transpose/product-view probe (not selected)
 All728 broad/eight focused checks, both features, all30 C cases and the untimed optimization15 fee/callback/Object gate passed. The single210-observation probe measured0.9957168176603722x raw GM speedup versus accepted47, with four regressions over5%. All four physically transformed optimization programs improved, but the complete optimization aggregate did not meet the preregistered selection rule. All observations remain; the fingerprint is ineligible for an exact retry. No holdout or formal timing ran. Exact accepted47 compiler is restored; measurement history remains48 entries and accepted scores remain9.575943659594117x optimization /27.506517683644883x holdout.
 
 [Unselected observations](training-experiments/transpose-product-views-unselected-probe.json) · [Qualification/restoration](training-experiments/transpose-product-views-unselected.json)
+
+Hoisted product geometry and original loan storage (not selected)
+
+All728 broad/eight focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 fee/callback/Object gate passed. Actual MVT Object innermost dot-product loops have zero integer divisions, versus two static division sites in the initial transpose-view candidate. Original Pending fields match accepted47; no floating-point order or timing-boundary change. These static reductions do not establish a runtime gain.
+
+The single210-observation optimization-only probe measured0.9883820880980985x raw GM speedup versus accepted47, with 2 regressions over5%. The complete optimization aggregate fails the prospective selection rule; all observations remain and the fingerprint is ineligible for an exact retry. No holdout or formal timing ran. Exact accepted47 source is restored; history remains48 entries and accepted scores remain9.575943659594117x optimization /27.506517683644883x holdout (reported independently).
+
+[Unselected observations](training-experiments/hoisted-transpose-product-views-unselected-probe.json) · [Qualification/restoration](training-experiments/hoisted-transpose-product-views-unselected.json) · [All30 source line counts](training-experiments/source-line-counts.json)

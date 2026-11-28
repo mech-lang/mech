@@ -321,7 +321,6 @@ impl NativeProgramObject {
         metadata["compiled_numeric_map_regions"] =
             serde_json::to_value(&self.descriptor.metadata().numeric_maps.regions).unwrap();
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
-        metadata["compiled_transpose_product_views"] = serde_json::json!(&self.codegen.transpose_product_views);
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         let prepared = self.descriptor.metadata();

@@ -26,7 +26,6 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub admits: BTreeMap<u64, u64>,
     pub admission_callbacks: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
-    pub transpose_products: Vec<(usize, u64, u64, bool)>,
     pub selected: u64,
     pub fused_numeric_entries: u64,
     pub phases: u64,
@@ -58,19 +57,6 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub callback_work: Vec<(u64, u64, u64, u64)>,
     pub segment_retirements: BTreeMap<(u32, u32), u64>,
     pub virtual_retirements: BTreeMap<u32, u64>,
-}
-pub(in crate::native_artifact::program::runtime) fn transpose_product(
-    site: usize,
-    source: u64,
-    result: u64,
-    intermediate_present: bool,
-) {
-    COUNTS.with(|counts| {
-        counts
-            .borrow_mut()
-            .transpose_products
-            .push((site, source, result, intermediate_present))
-    });
 }
 pub(in crate::native_artifact::program::runtime) fn prepaid_source_visit(site: usize) {
     COUNTS.with(|counts| {
