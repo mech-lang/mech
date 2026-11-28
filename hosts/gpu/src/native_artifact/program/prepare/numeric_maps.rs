@@ -11,6 +11,10 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+#[path = "numeric_map_dots/mod.rs"]
+pub(in crate::native_artifact) mod dots;
+
 #[path = "numeric_map_nested.rs"]
 pub(in crate::native_artifact) mod nested;
 #[path = "numeric_rectangles.rs"]
