@@ -2781,3 +2781,11 @@ General source-closed ordered F64 product epilogues remove real product/scaling/
 The single210-observation optimization probe selected at1.0093501643084763x raw GM speedup. One frozen900-observation formal evaluation matched29482 finite C liveouts and appended history49 without altering earlier entries. The v4 optimization-only gate accepts optimization9.401799375716326x C; holdout24.666190246754944x C is independently reported. Raw optimization Mech runtime was essentially flat (0.9985868065558229x speedup); measured C runtime rose1.0199638482497508x, contributing to the ratio gain. Holdout raw Mech speedup is1.1407256700285937x. No source tuning or rollback uses holdout. The below1.0x C holdout goal remains unmet.
 
 [Qualification](round-48-qualification.json) · [Performance audit](round-48-audit.json) · [Progress](round-48-progress.json) · [Accepted evidence](training-experiments/ordered-product-epilogues-accepted.json) · [Static telemetry](round-48-static-telemetry.json)
+
+Accepted48 auxiliary optimization telemetry
+
+The instrumented external host allocator passed known-allocation/reallocation/live-peak calibration. Eight untimed checked calls for every optimization program matched frozen counters and153018 finite cell comparisons, with managed cleanup to baseline. Requested-heap counts were identical across all8 calls per case. Peak additional live requested heap ranges7072..242656B; Deriche1094 requests/451163B requested per call, correlation608/116052B, MVT114/24133B, Gram–Schmidt90/67101B. OS process peaks include compiler/catalog/input/diagnostic storage and are kept separate from checked-call requested heap.
+
+Uninstrumented warm-residence CPU samples resolve actual owned PID JIT maps; fresh Objects for all5 sampled optimization programs exactly match the frozen accepted48 Objects. Generated self time is87.4514% Gram–Schmidt,53.6851% Durbin,32.8063% MVT,30.0745% correlation and63.3362% Deriche. These samples do not reproduce cold-cache benchmark timing and do not enter selection or performance history. Hardware retired-instruction/cache counters were unavailable. No holdout diagnosis was performed.
+
+[Full15-program telemetry](round-48-runtime-telemetry.json) · [CPU sampling](round-48-cpu-telemetry.json) · [Reproducible probe sources/raw evidence](training-experiments/accepted48-telemetry.json)
