@@ -556,6 +556,8 @@ fn decode_inner<
             derived
         }
     };
+    let numeric_binary =
+        native::program::prepare::numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
     // Keep the zero-completion base prices intact for funding validation below.
     // Final charges (including completion) overlay a separate eagerly built box.
     let base_visits = native::iteration_abi::control_visits(
@@ -621,6 +623,29 @@ fn decode_inner<
         }
     };
 
+    // Reconstruct generator source closure and the original header fee even
+    // on the verified Object path. No serialized generator grants authority.
+    let numeric_generator_candidates =
+        native::program::prepare::numeric_generators::Layout::derive(
+            &plan,
+            &buffer_frames,
+            &w.scalar_aggregates,
+            &closed_tails,
+        )
+        .map_err(str::to_owned)?;
+    for region in &numeric_generator_candidates.regions {
+        let site = region.header as usize;
+        let required = base_visits
+            .get(site)
+            .and_then(|v| {
+                v.work
+                    .checked_add(native::program::prepare::numeric_generators::HEADER_WORK)
+            })
+            .ok_or("numeric generator header price overflows")?;
+        if visits.get(site).is_none_or(|v| v.work < required) {
+            return Err("numeric generator header template is not funded".into());
+        }
+    }
     for region in &utf8_reads.regions {
         let site = region.header as usize;
         let required = base_visits
@@ -656,6 +681,22 @@ fn decode_inner<
             return Err("guarded dictionary publication template is not funded".into());
         }
     }
+    for site in 0..plan.blocks().len() {
+        if numeric_binary.at(site).is_none() {
+            continue;
+        }
+        let required = base_visits
+            .get(site)
+            .and_then(|visit| {
+                visit
+                    .work
+                    .checked_add(native::program::prepare::numeric_binary::HEADER_WORK)
+            })
+            .ok_or("numeric arithmetic header price overflows")?;
+        if visits.get(site).is_none_or(|visit| visit.work < required) {
+            return Err("numeric arithmetic header template is not funded".into());
+        }
+    }
     for region in &numeric_maps.regions {
         let required = base_visits
             .get(region.header as usize)
@@ -670,6 +711,21 @@ fn decode_inner<
             .is_none_or(|visit| visit.work < required)
         {
             return Err("numeric map header template is not funded".into());
+        }
+    }
+    for region in &numeric_maps.regions {
+        if let Some(projection) = &region.transpose {
+            let site = projection.finish as usize;
+            let required = base_visits
+                .get(site)
+                .and_then(|v| {
+                    v.work
+                        .checked_add(native::program::prepare::numeric_maps::TRANSPOSE_FINISH_WORK)
+                })
+                .ok_or("numeric transpose finish price overflows")?;
+            if visits.get(site).is_none_or(|v| v.work < required) {
+                return Err("numeric transpose finish template is not funded".into());
+            }
         }
     }
     let word_collections =
@@ -806,6 +862,9 @@ fn decode_inner<
             )
         }
     };
+    if w.max_library_inputs < numeric_binary.epilogue_arguments() {
+        return Err("restored product epilogue arguments exceed admitted backing".into());
+    }
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }
@@ -831,6 +890,23 @@ fn decode_inner<
             return Err("worker import recipe differs from source capture proof".into());
         }
     }
+    // These funds are not a serialized grant, including on the verified Object
+    // path. Rebuild them from this exact source, calls and final visit prices.
+    let nested_numeric = native::program::prepare::numeric_maps::nested::Funding::derive(
+        &plan,
+        &numeric_maps,
+        &calls,
+        &visits,
+    );
+    let numeric_generators = native::program::prepare::numeric_generators::funding::Layout::derive(
+        numeric_generator_candidates,
+        &plan,
+        &closed_tails,
+        &calls,
+        &visits,
+        w.scalar_bytes,
+        w.observation_schema_bytes,
+    );
     let mut descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -870,6 +946,9 @@ fn decode_inner<
             fixed_key_loops,
             utf8_reads,
             numeric_maps,
+            numeric_binary,
+            numeric_generators,
+            nested_numeric,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,

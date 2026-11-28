@@ -70,6 +70,8 @@ pub(in crate::native_artifact) fn boundary_work(
             _ => {}
         }
     }
+    scalar.extend(forest.reductions.iter().flat_map(|r| r.scalar_values()));
+    scalar.extend(forest.maps.iter().flat_map(|r| r.scalar_values()));
     let words = scalar
         .len()
         .checked_add(packed.len())

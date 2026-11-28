@@ -39,6 +39,7 @@ pub(in crate::native_artifact) struct Report {
     pub ordinary_capture_reads: Vec<(usize, usize)>,
     #[serde(skip)]
     pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
+    pub cell_expression_prefixes: Vec<(usize, usize, usize, usize)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -58,6 +59,14 @@ pub(in crate::native_artifact) struct Report {
     pub owned_handoff_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
+    pub fused_reductions: Vec<(usize, u32, u64)>,
+    pub fused_matrix_maps: Vec<(usize, u32, u64)>,
+    /// Emitted source mask selectors and axes; diagnostic metadata only.
+    pub masked_matrix_maps: Vec<(usize, u32, u8)>,
+    /// Guarded full-scratch copies (site, source selector, bytes); not wire proof.
+    pub guarded_map_initializations: Vec<(usize, u32, u32)>,
+    /// Additional proved Cartesian domains (site, base, axis/bound/relation bits).
+    pub compound_matrix_maps: Vec<(usize, usize, Vec<(u8, u32, u8)>)>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
@@ -337,6 +346,7 @@ pub(in crate::native_artifact) fn emit_entry(
         b.ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, 16)
     };
+    let prefix_inputs = super::numeric_words::prefix_inputs(b, bank, proof, error)?;
     let packet = if matches!(outline, super::numeric_outlined::Entry::PacketBody { .. }) {
         Some(
             super::numeric_packet::Recipe::derive(code, region)?
@@ -382,6 +392,9 @@ pub(in crate::native_artifact) fn emit_entry(
                             return Ok(Some(b.ins().iconst(types::I64, 1)));
                         }
                     }
+                    if let Some(&value) = prefix_inputs.get(&relative) {
+                        return Ok(Some(value));
+                    }
                     if let Some(binding) = proof
                         .scalar_inputs
                         .iter()
@@ -402,6 +415,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     let metadata_input = proof.arrays.iter().enumerate().any(|(array, _)| {
                         (proof.view(array)..proof.view(array) + 4).contains(&relative)
                             || proof.capacity(array) == Some(relative)
+                            || proof.map_bank(array) == Some(relative)
                     });
                     if metadata_input {
                         Ok(Some(b.ins().load(
@@ -565,6 +579,12 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let cell_prefixes = if controls.enabled(OptimizationPass::CellExpressionPrefixes) {
+        super::numeric_cell_prefix::derive(&program.metadata().plan.facts(), proof)
+    } else {
+        Vec::new()
+    };
+
     let movable_captures = if outlined_body
         && controls.enabled(OptimizationPass::GuardedNumericLoads)
         && controls.enabled(OptimizationPass::MovableCaptureReads)
@@ -604,6 +624,7 @@ pub(in crate::native_artifact) fn emit_entry(
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
         capture_read_candidates: Vec::new(),
+        cell_expression_prefixes: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -629,6 +650,11 @@ pub(in crate::native_artifact) fn emit_entry(
             .map(|exit| (exit.from, exit.to))
             .collect(),
         length_sites: Vec::new(),
+        fused_reductions: Vec::new(),
+        fused_matrix_maps: Vec::new(),
+        masked_matrix_maps: Vec::new(),
+        guarded_map_initializations: Vec::new(),
+        compound_matrix_maps: Vec::new(),
         static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
@@ -739,8 +765,18 @@ pub(in crate::native_artifact) fn emit_entry(
         };
         let traversal = version.map_or(&traversal, |v| &v.facts);
         b.switch_to_block(target(site as u32));
-        if matches!(proof.action(site), Some(Operation::Fallback)) {
-            boundaries.insert(target(site as u32));
+        let reduction_miss = proof
+            .action(site)
+            .and_then(Operation::summary_after)
+            .is_some()
+            .then(|| b.create_block());
+        if matches!(proof.action(site), Some(Operation::Fallback)) || reduction_miss.is_some() {
+            let cold = reduction_miss.unwrap_or_else(|| target(site as u32));
+            if reduction_miss.is_some() {
+                b.switch_to_block(cold);
+            }
+            b.set_cold_block(cold);
+            boundaries.insert(cold);
             let continuation = proof
                 .exits
                 .iter()
@@ -783,7 +819,11 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ok_or_else(|| backend("cold numeric continuation is absent"))?,
                 &[],
             );
-            continue;
+            if reduction_miss.is_some() {
+                b.switch_to_block(target(site as u32));
+            } else {
+                continue;
+            }
         }
         let fail = b.create_block();
         b.append_block_param(fail, types::I64);
@@ -1004,6 +1044,40 @@ pub(in crate::native_artifact) fn emit_entry(
             let count = b.ins().iadd_imm(count, 1);
             words.write(b, shadow + debit.counter, count);
         }
+        if let Some(prefix) = cell_prefixes.iter().find(|prefix| {
+            prefix.first == site
+                && version.is_none_or(|v| {
+                    prefix
+                        .sites
+                        .iter()
+                        .all(|at| v.blocks.contains_key(&(*at as u32)))
+                })
+        }) {
+            let slow = b.create_block();
+            b.set_cold_block(slow);
+            for &at in &prefix.sites {
+                if at != site {
+                    b.set_cold_block(target(at as u32));
+                }
+            }
+            super::numeric_cell_prefix::emit(
+                b,
+                controls.options(),
+                &words,
+                shadow,
+                proof,
+                prefix,
+                slow,
+                target(prefix.next),
+            );
+            report.cell_expression_prefixes.push((
+                site,
+                *prefix.sites.last().unwrap(),
+                prefix.read_sites.len(),
+                prefix.exports.len(),
+            ));
+            b.switch_to_block(slow);
+        }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
             let address = version
                 .and_then(|v| v.addresses.iter().find(|address| address.site == site))
@@ -1035,8 +1109,81 @@ pub(in crate::native_artifact) fn emit_entry(
                 continue;
             }
         }
+        if proof
+            .action(site)
+            .is_some_and(|action| action.summary_budget().is_some())
+        {
+            super::numeric_phase_summary::debit(
+                b,
+                &words,
+                region.words,
+                shadow,
+                proof,
+                code,
+                region.tail.carrier().get(),
+                site,
+                reduction_miss.ok_or_else(|| backend("phase summary lacks its exact cold edge"))?,
+            )?;
+        }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
+            Some(Operation::Reduce { fold }) => {
+                super::numeric_phase_reductions::emit(
+                    b,
+                    &words,
+                    shadow,
+                    proof,
+                    fold,
+                    &program.metadata().plan,
+                    controls.enabled(OptimizationPass::TypedMapFolds),
+                    controls.enabled(OptimizationPass::OrderedMapDots),
+                    controls.enabled(OptimizationPass::AffineMapCells),
+                    reduction_miss
+                        .ok_or_else(|| backend("phase fold lost its original cold edge"))?,
+                )?;
+                report.fused_reductions.push((
+                    site,
+                    fold.source.region.header,
+                    fold.source.maximum,
+                ));
+            }
+            Some(Operation::Map { replacement }) => {
+                let mask = super::numeric_phase_maps::emit(
+                    b,
+                    &words,
+                    shadow,
+                    proof,
+                    replacement,
+                    &program.metadata().plan,
+                    controls.enabled(OptimizationPass::MaskedMatrixMaps),
+                    controls.enabled(OptimizationPass::SelectiveScratchInitialization),
+                    controls.enabled(OptimizationPass::CompoundMatrixMasks),
+                    controls.enabled(OptimizationPass::TypedMapFolds),
+                    controls.enabled(OptimizationPass::OrderedMapDots),
+                    controls.enabled(OptimizationPass::AffineMapCells),
+                    reduction_miss
+                        .ok_or_else(|| backend("phase map lost its original cold edge"))?,
+                )?;
+                if let Some((selector, axis)) = mask.mask {
+                    report.masked_matrix_maps.push((site, selector, axis));
+                }
+                if let Some(bytes) = mask.guarded_initialization_bytes {
+                    report
+                        .guarded_map_initializations
+                        .push((site, mask.source_selector, bytes));
+                }
+                if let Some((base, constraints)) = mask.compound {
+                    report.compound_matrix_maps.push((site, base, constraints));
+                }
+                report.fused_matrix_maps.push((
+                    site,
+                    replacement.source.region.header,
+                    replacement.source.count,
+                ));
+                report
+                    .typed_stores
+                    .push((site, replacement.source.region.output_width));
+            }
             Some(Operation::Aggregate) => {
                 let layout = &program.metadata().scalar_aggregates;
                 let action = layout
@@ -1056,7 +1203,15 @@ pub(in crate::native_artifact) fn emit_entry(
                 )?;
             }
             Some(Operation::Frame) => {
-                super::numeric_words::frame_words(b, &words, shadow, code, site, &proof.frames)?;
+                super::numeric_words::frame_words(
+                    b,
+                    &words,
+                    shadow,
+                    code,
+                    site,
+                    &proof.frames,
+                    proof.tagged.as_deref(),
+                )?;
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
@@ -1097,6 +1252,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     frame,
                     locals,
                     index,
+                    None,
                     incoming,
                     hooks,
                     error,
@@ -1178,6 +1334,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     frame,
                     locals,
                     count,
+                    None,
                     incoming,
                     hooks,
                     error,
@@ -1211,6 +1368,142 @@ pub(in crate::native_artifact) fn emit_entry(
                 if boundary::tree_owner_handoff(controls, region, proof) {
                     report.owned_handoff_boundaries.push(site);
                 }
+            }
+            Some(
+                operation @ (Operation::CellRead {
+                    array, row, column, ..
+                }
+                | Operation::CellWrite {
+                    array, row, column, ..
+                }),
+            ) => {
+                let view = shadow + proof.view(*array);
+                let row = words.read(b, *row as usize);
+                let column = words.read(b, *column as usize);
+                let rows = words.read(b, view + 2);
+                let columns = words.read(b, view + 3);
+                let base = words.read(b, view);
+                let width = proof.arrays[*array].width;
+                let bad = b.create_block();
+                let after = b.create_block();
+                b.set_cold_block(bad);
+                boundaries.insert(bad);
+                // These are independent source axes, never a linear access or
+                // a one-coordinate CSE/window certificate.
+                let (address, ty) = super::numeric_words::cell_address(
+                    b, row, column, rows, columns, width, base, bad,
+                )?;
+                match operation {
+                    Operation::CellRead { output, .. } => {
+                        let value = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            super::numeric_words::guarded_load_flags(controls.options()),
+                            address,
+                            0,
+                        );
+                        words.write(b, *output as usize, value);
+                        report.typed_loads.push((site, width));
+                    }
+                    Operation::CellWrite { incoming, .. } => {
+                        let incoming = words.read(b, *incoming as usize);
+                        super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
+                        let old = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            super::numeric_words::guarded_load_flags(controls.options()),
+                            address,
+                            0,
+                        );
+                        report.typed_loads.push((site, width));
+                        let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
+                        let update = b.create_block();
+                        let done = b.create_block();
+                        let store = b.create_block();
+                        let materialize = b.create_block();
+                        b.set_cold_block(materialize);
+                        boundaries.insert(materialize);
+                        b.ins().brif(changed, update, &[], done, &[]);
+                        b.switch_to_block(update);
+                        let private = words.read(b, shadow + proof.private_flag(*array));
+                        b.ins().brif(private, store, &[], materialize, &[]);
+                        b.switch_to_block(materialize);
+                        boundary::materialize(
+                            controls,
+                            b,
+                            &words,
+                            region,
+                            proof,
+                            *array,
+                            site,
+                            frame,
+                            locals,
+                            row,
+                            Some(column),
+                            incoming,
+                            hooks,
+                            error,
+                            fuel_debits.as_ref(),
+                            retirement.as_ref(),
+                        )?;
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(store);
+                        let value = if width < 8 {
+                            b.ins().ireduce(ty, incoming)
+                        } else {
+                            incoming
+                        };
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                        report.typed_stores.push((site, width));
+                        report.first_change_boundaries.push(site);
+                        if boundary::tree_owner_handoff(controls, region, proof) {
+                            report.owned_handoff_boundaries.push(site);
+                        }
+                    }
+                    _ => unreachable!("selected cell access"),
+                }
+                b.ins().jump(after, &[]);
+                b.switch_to_block(bad);
+                if region.numeric_tree.is_some() || proof.boundary_values.candidates.is_empty() {
+                    set_origin(b, frame, site as u64);
+                    super::numeric_fuel_debits::spill_live(
+                        fuel_debits.as_ref(),
+                        b,
+                        &words,
+                        locals,
+                        &live_at(site),
+                    )?;
+                    // Ordinary source sites retain their deepest independent leaf
+                    // proof for a declined outer tree. This generated path owns
+                    // the known root loan, so reconcile that exact region instead
+                    // of looking up the ordinary site's shadowed leaf region.
+                    let source_site = b.ins().iconst(types::I64, site as i64);
+                    tail::leave(
+                        controls.options(),
+                        b,
+                        locals,
+                        region,
+                        source_site,
+                        2,
+                        hooks,
+                        error,
+                    )?;
+                    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+                        return Err(backend("numeric read lost selected call"));
+                    };
+                    hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
+                    let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
+                    b.ins().jump(error, &[status.into()]);
+                } else {
+                    let spilled = boundary::source_failure(
+                        b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
+                    )?;
+                    report.bounds_error_spill_words.push((site, spilled));
+                }
+
+                b.switch_to_block(after);
             }
             Some(
                 operation @ (Operation::Read { array, index, .. }
@@ -1409,6 +1702,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     ),
                     Operation::Write { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
+                        super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
                         let done = b.create_block();
                         let store = b.create_block();
                         let materialize = b.create_block();
@@ -1465,6 +1759,7 @@ pub(in crate::native_artifact) fn emit_entry(
                             frame,
                             locals,
                             index,
+                            None,
                             incoming,
                             hooks,
                             error,
@@ -1562,6 +1857,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 false,
                 false,
             );
+        } else if let Some(after) = proof.action(site).and_then(Operation::summary_after) {
+            b.ins().jump(target(after), &[]);
         } else {
             terminators::emit_source_terminator(
                 b,
@@ -1595,7 +1892,23 @@ pub(in crate::native_artifact) fn emit_entry(
             .max(live_before - live.len());
         super::numeric_fuel_debits::spill_live(fuel_debits.as_ref(), b, &words, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
-        report.source_instructions(b.func.dfg.num_insts() - before)?;
+        let instructions = b.func.dfg.num_insts() - before;
+        if let Some(budget) = proof.action(site).and_then(Operation::summary_budget) {
+            // The summary contains an independently priced native scalar DAG,
+            // rather than a single source action's 512-unit template.
+            let bound = budget
+                .native_step
+                .checked_add(OVERHEAD)
+                .and_then(|n| n.checked_add(report.register_words as u64 * 2))
+                .ok_or_else(|| backend("phase fold instruction bound overflows"))?;
+            if instructions as u64 > bound {
+                return Err(backend("phase fold exceeds its checked native envelope"));
+            }
+            report.maximum_source_instructions =
+                report.maximum_source_instructions.max(instructions);
+        } else {
+            report.source_instructions(instructions)?;
+        }
     }
     let boundary = b.func.dfg.num_insts();
     for (&site, &bailout) in &bailouts {

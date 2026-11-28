@@ -1,0 +1,52 @@
+{
+  "schema": "mech.polybench.current-bound-rectangles-plan.v1",
+  "created_at": "2026-11-27T21:52:50.664382+00:00",
+  "source_parent": "704ccc93b871ab56cd51ff08fb0546d06dee5589",
+  "accepted_round": 44,
+  "accepted_source_commit": "9bb8ada636a494ae45aae80b7b6b4e83aad9fcf2",
+  "accepted_compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+  "accepted_driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "scope": "Only optimization15 diagnosis/implementation/selection; holdout aggregate acceptance gate only. All30 ports, inputs, C binaries/flags, MINI F64 CPU, limits, tolerances, split, metric, cache and timing boundaries fixed.",
+  "profiling_basis": {
+    "receipt": "training-experiments/accepted44-margin-profile.json",
+    "sha256": "0b86b39e5911e90afbad4bf688fac6de67047da7ba95f85b2430678df0b2c48e",
+    "gramschmidt_execution_self_jit": "317/349 (90.83%); do not retry earlier rejected identical fingerprints",
+    "correlation_source_fact": "The actual accepted44 Object contains the deviation map and inner correlation map plus transpose, with no rectangular map. Original outer/inner U64 inclusive ranges use [literal1,current input m]; current rectangle proof requires literal inner bounds."
+  },
+  "implementation": [
+    "Represent rectangular inner bounds explicitly as Fixed(start,end,rows) or Current(source operand IDs). Derive Current only when both U64 operands are immutable before the entire enclosing loop initialize; reject outer-element-dependent/ragged bounds. Do not invent placeholder constant rows.",
+    "For Current, generated entry snapshots the exact original source operand native words into NumericMapPrepare payload. This is the same scalar transport used by original range preparation, tied to the derived exact header/source IDs. No cached input bounds or child shapes.",
+    "Before caller/arena work, derive checked provisional endpoint arithmetic solely for conservative replay/admission sizing. An empty outer source declines before unused inner bounds are evaluated. Reversed/empty/overflow/unsupported bounds decline to the original path.",
+    "After full setup/scratch debit, certify exact current cardinality and all range/inner/transpose shapes through the actual selected source factories. Preserve the full original range/builder/transpose/publication/replay/coexistence and work/comparison envelopes.",
+    "Append private current rectangle start/row fields to the synchronous map Frame; seal and validate the full Frame at finish, use checked native row/column decomposition and current start in Cranelift, and publish only fully completed row-major output. Preserve existing constant emission for Fixed.",
+    "Fixed-size numeric phases explicitly decline Current rectangles. No unknown cardinality becomes a static scratch-bank fact. Bump typed IR409 to410 for derived proof/wire/codegen semantics; public entry/helper signatures remain ABI47."
+  ],
+  "invariants": [
+    "Cranelift sole Mech generator; reuse native scalar vocabulary/checks and rectangular numeric-map kernel. No new arithmetic kernel, per-cell helper, source-port edit, benchmark-name/dimension special case, or Rust Mech interpretation.",
+    "No weakened current owner/epoch/iteration/header/source provenance, physical cap, full original source debit/replay, comparison/visit/clone count, output atomicity, alias/cleanup/retry or cold finite ledger behavior.",
+    "Record and archive every attempted source/log/failure before correction. No Rust edits while any Cargo/profile/timing job is live. Never restart a live job on observation timeout."
+  ],
+  "prospective_route_gate": {
+    "case": "correlation optimization only",
+    "exactly_one_final_comprehension_rectangle": true,
+    "no_per_cell_helpers_within_rectangle": true,
+    "no_inner_transpose_or_row_permutation_for_completed_rectangle": true,
+    "current_finite_c_liveouts": true,
+    "performance_observations": 0
+  },
+  "qualification": [
+    "Original, decoded and restored differential exact-data/shape tests for fresh inclusive/exclusive/non1 inner endpoints, rectangular independent outer/inner sizes, all scalar kinds including floating bits, input aliases and cleanup.",
+    "Unused invalid inner bounds with empty outer source, empty/reversed/overflowed dynamic inner bounds, bounds misses/arithmetic errors, outer-dependent ragged ranges on original path; no candidate publication on failed preflight.",
+    "Current Frame start/rows tampering before and after native execution, epoch/current owner forgery, interleaving refusal/retry, metadata operand/bounds tampering and source-proof rederivation rejection.",
+    "Finite compute/temporary/output/clone/element/comparison/physical/shared/cold/replay tests and existing numeric phase/rectangular map regressions. Broad canonical/native/scalar/compression/image/ABI checks, all30 finite C liveouts under original/decoded/restored admission, both feature builds."
+  ],
+  "training_selection": "Exactly one prospective v2 probe per fully qualified fingerprint:7 fresh processes per accepted44/candidate actor and optimization case, alternating pair/case order, all210 observations and every regression retained. Select only raw GM accepted44/candidate >1 with equal visits and no lower source work/comparison bills. No retry/exclusion.",
+  "formal_acceptance": "Commit/push and freeze exact clean qualified compiler+driver before both formal sets. Retain900 observations and29482 finite liveouts. Promote only if BOTH primary kernel GM Mech/C scores strictly improve accepted44 (10.24618089248072 /38.46047945936111). Otherwise restore exact accepted44 source/driver; controls cannot override either score.",
+  "formal_history_entries": 45,
+  "accepted_scores": {
+    "optimization": 10.24618089248072,
+    "holdout": 38.46047945936111
+  },
+  "performance_observations": 0
+}

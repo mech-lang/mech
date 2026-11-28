@@ -1,0 +1,42 @@
+{
+  "selected_at": "2026-11-27T06:22:12.169655+00:00",
+  "prospective_rule": {
+    "created_at": "2026-11-27T06:18:07.139150+00:00",
+    "scope": "Prospective source selection before four-actor optimization-only probe",
+    "compare": "common-loan candidate vs qualified transpose-only driver in the same sequential seven-sample probe",
+    "keep_common_loan_if": "All15 correct, all execution counters exactly match transpose-only, and raw geometric-mean speedup vs transpose-only >1.0",
+    "otherwise": "Restore only shared-loan refactor from the saved transpose-only checkpoint; preserve every probe and qualification result",
+    "formal_prerequisites": "Selected source fully qualified and committed; source and driver frozen before either formal partition",
+    "holdout_use": "Aggregate strict acceptance only; no per-case diagnosis or tuning"
+  },
+  "four_actor_probe_sha256": "f50e6e2128e50e15bfe6d597302b67bbf364ecee140785a6efbd4b7af7db43b9",
+  "decision": "Restore qualified transpose-only checkpoint",
+  "selected_compiler_fingerprint": "3beaf42d17fb5e3d663aeef15b9da6b21e58bb42beed0062a84a0b5925b5f743",
+  "selected_driver_sha256": "28daeaa814e6ffef34800c9eeedb3165c40862ef1d879a4cbdc80f5ca4a32d59",
+  "selected_probe_actor": "transpose_only",
+  "selected_raw_geomean_speedup_vs_accepted27": 1.3283678057131703,
+  "probe_summary": {
+    "accepted27": {
+      "count": 15,
+      "geomean_raw_speedup": 1.311591068765279,
+      "regressions_over_five_percent": 3,
+      "sum_candidate_median_seconds": 0.001328583,
+      "sum_reference_median_seconds": 0.003351792
+    },
+    "round28": {
+      "count": 15,
+      "geomean_raw_speedup": 1.193009134931643,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.001328583,
+      "sum_reference_median_seconds": 0.001545624
+    },
+    "transpose_only": {
+      "count": 15,
+      "geomean_raw_speedup": 0.9873704128662738,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.001328583,
+      "sum_reference_median_seconds": 0.0013357080000000001
+    }
+  },
+  "scope": "Selection uses all15 optimization cases only. All regressions and raw controls retained. No holdout performance used."
+}

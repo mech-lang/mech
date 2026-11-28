@@ -1,0 +1,33 @@
+{
+  "schema": "mech.polybench.long-training-profile-plan.v1",
+  "created_at": "2026-11-27T23:07:57.111979+00:00",
+  "source_parent": "463cddff4d2836923a276c75ac5f64f68e7d94e8",
+  "workspace_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "accepted_round": 44,
+  "accepted_source_commit": "9bb8ada636a494ae45aae80b7b6b4e83aad9fcf2",
+  "accepted_compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "driver": "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+  "driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "cases": [
+    "durbin",
+    "mvt",
+    "bicg"
+  ],
+  "scope": "Optimization15 only. Three high-margin training kernels whose prior profiles had only52/43/42 canonical execution samples. Gram-Schmidt already has317 generated-function samples and Object sites; correlation has the qualified fusion/counter-policy checkpoint. No holdout source diagnosis, profiling or tuning.",
+  "method": "One fresh exact accepted44 driver process per case, sequential in descending frozen ratio. Same source/inputs/limits/cache flush/checked-call loop. Estimate240s residence from the same-case prior wall/call ratio, take one120s nominal1ms macOS sample after1s startup, and attribute only canonical execution stacks using a same-process JIT map. Preserve natural completion/errors and all data; never restart a live process on an observation timeout. Diagnostic times never enter performance scores.",
+  "sample_seconds": 120,
+  "target_residence_seconds": 240,
+  "prior_execution_samples": {
+    "durbin": 52,
+    "mvt": 43,
+    "bicg": 42
+  },
+  "invariants": [
+    "Frozen accepted44 compiler/driver unchanged even though the workspace now has the corrected untimed candidate. Record both fingerprints separately.",
+    "Exact finite C liveouts and execution reports must match accepted44. No source/C binary/flag/input/limit/tolerance/split/metric/timing boundary changes.",
+    "No Cargo/build/test/profile/timing overlap and no Rust edits while these profiles are live. No candidate performance probe or selection-policy adoption.",
+    "Preserve all raw samples, maps, diagnostic outputs, logs, commands, statuses, hashes and analysis. Formal history remains45."
+  ],
+  "formal_history_entries": 45,
+  "performance_score_observations": 0
+}

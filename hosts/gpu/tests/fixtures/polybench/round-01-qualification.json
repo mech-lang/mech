@@ -1,0 +1,305 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-01-native-matrix-frames",
+  "compiler_commit": "b791cd541ce2a39d46e3ea1236523fc111019b78",
+  "frozen_candidate_sha256": "f4eade2ab13ba388585781068df3b2e226c50688ee98cb474b9383d42b583385",
+  "driver_sha256": "3b1178315fcb4bc512e41cd30b807875265aa5183684e933a97a86b78f54b262",
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "machine": {
+    "cpu": "Apple M3",
+    "logical_cpus": 8,
+    "memory_bytes": 17179869184,
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "processor": "arm64"
+  },
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "core, engine and native route units",
+      "passed_by_target": [
+        8,
+        23,
+        1
+      ],
+      "command": "cargo test --release -p mech-core -p mech-engine -p mech-gpu --no-default-features --features mech-gpu/canonical-native-program --lib -- numeric_matrix::tests native_artifact::buffer_frames:: resident::numeric::packed_indexed_assign::tests prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore turn_matrix_capture_eligibility_does_not_widen_closed_values --test-threads=1",
+      "log_sha256": "7f7e9c4095cd7c2450728de837ace40714644f2b13915f825a722d2c454ab6e5"
+    },
+    {
+      "suite": "matrix and complete PolyBench integration",
+      "passed_by_target": [
+        22,
+        30
+      ],
+      "command": "cargo test --release -p mech-gpu --no-default-features --features canonical-native-program --test canonical_artifact_matrix --test canonical_artifact_polybench -- --test-threads=1",
+      "log_sha256": "4ab8866b51478afd4250ace3de952424bc9cffe913417c233c3c9e9b8b4601c2"
+    },
+    {
+      "suite": "selected scalar, buffer and compression regressions",
+      "passed_by_target": [
+        78
+      ],
+      "command": "cargo test --release -p mech-gpu --no-default-features --features canonical-native-program --test canonical_artifact_program -- buffer_frame_qualification nested_frame_qualification numeric_tail_qualification numeric_write_qualification scalar_state_qualification scalar_record_qualification word_read_qualification huffman_qualification sequence_writer_qualification --test-threads=1",
+      "log_sha256": "6f71665670569e43698dbadc80622f7a3181e2cce4b48eeecebdbff48f1abf7b"
+    },
+    {
+      "suite": "benchmark runner unit tests",
+      "passed_by_target": [
+        3
+      ],
+      "command": "python3 -m unittest discover -s scripts/tests -p test_benchmark_polybench.py -v",
+      "log_sha256": "bcd3c8dee22fb06684c0059005694bb6e43766ed02a071a8c03c3410e701a03d"
+    }
+  ],
+  "integration_coverage": [
+    "All 30 kernels in original and decoded artifacts",
+    "Object emission, immutable input aliases and managed-memory cleanup",
+    "Bool/I64 recursion and FSM updates, signed extrema, changing shapes, bounds and denial/recovery",
+    "Native scalar allocation slopes and bounded unsigned reads",
+    "Packed constructor ownership, exact scalar bits and all finite planning-work prefixes"
+  ],
+  "timing": {
+    "samples_per_actor_and_comparison": 5,
+    "actors": [
+      "candidate Mech",
+      "preserved baseline Mech",
+      "C"
+    ],
+    "comparisons": [
+      "C kernel-only",
+      "C fresh allocation and initialization copies"
+    ],
+    "observations": 900,
+    "validation_boundary": "Each process validates its untimed warm-up result against the full C live-outs; all timed checked calls must succeed. Original/decoded numerical equivalence is also covered by the independent maintained regressions.",
+    "frozen_before_holdout": true
+  },
+  "cases": {
+    "2mm": {
+      "expected_live_outs": 384,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "c_binary_sha256": "2b285d8fcd35c9330e9f373a4379a8a988613d8d96d721e8c07ee9d0d16eac8a"
+    },
+    "3mm": {
+      "expected_live_outs": 352,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 2.220446049250313e-16,
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "c_binary_sha256": "e865519b0804f54ee247884c748bd611c6735b71ca4f727d4c230c5aa94ff59d"
+    },
+    "adi": {
+      "expected_live_outs": 400,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "4eef6deb3462a70ad1a4f04bec4ed4420670091b3f4846e978b1af19c950e621",
+      "c_binary_sha256": "2cb99d1df6fc1a5875490651e63fc5eec8ff33b7a3acc3d6ebd90bdcd31dd004"
+    },
+    "atax": {
+      "expected_live_outs": 42,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "c_binary_sha256": "74b1d44b54b2ec8e31c7289c633d7b2b8db604fd96d9ce451a391a590f705092"
+    },
+    "bicg": {
+      "expected_live_outs": 80,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "c_binary_sha256": "bd4b0260113dae3f89ec5f3f9cd184afbb52116df96478f9f67f5feb25dbb8a0"
+    },
+    "cholesky": {
+      "expected_live_outs": 1600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 3.2751579226442118e-15,
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "c_binary_sha256": "6710d27fc9e410fa389d06eabf53552a816cbd4c8db3e1ec36958c165039d75f"
+    },
+    "correlation": {
+      "expected_live_outs": 784,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "c_binary_sha256": "181e29a47cef3212ec2e038cf8a0ad90c65d0d9701aeaecaefc8baad608ca72b"
+    },
+    "covariance": {
+      "expected_live_outs": 784,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "c_binary_sha256": "1cd6f6f031e11a5611e35f6e8449c98c33c029514b2c653f9f57eb9e9cd5055a"
+    },
+    "deriche": {
+      "expected_live_outs": 4096,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 4.85722573273506e-17,
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "c_binary_sha256": "a4440580179c951c2385f5e0218b353d725d3063e8559ca6dc75d7e0f020955a"
+    },
+    "doitgen": {
+      "expected_live_outs": 960,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "c_binary_sha256": "d9dde06c4d544037afe02330ceb98abf9bacaca3c5513150a4e876494572ba2e"
+    },
+    "durbin": {
+      "expected_live_outs": 40,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "c_binary_sha256": "185aa486affc8db90972752286d6cd693417b3a83cbde0332fae1b4e0155e748"
+    },
+    "fdtd-2d": {
+      "expected_live_outs": 1800,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.2434497875801753e-14,
+      "source_sha256": "8e46cb2addaf56d522e75b690735ef39f066e7768b06322100697a4e0da26491",
+      "c_binary_sha256": "3c55e67a42a3939c265dfa17ae9a1e9a0a2ddc9758d840b8ef335046cb528151"
+    },
+    "floyd-warshall": {
+      "expected_live_outs": 3600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "d46ae4cfd3e5bb6d6afdb6967dc7be317e3d71443b1cfe7b0be5a2950b376ec6",
+      "c_binary_sha256": "485f53dc282a4022595c61993d3de18a276a6f4b8ec319072cb94652191f8a20"
+    },
+    "gemm": {
+      "expected_live_outs": 500,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "c_binary_sha256": "bf857a20260a91b2be987f0966fa9c5709c11db21a281ea9ad536eb0aadb7019"
+    },
+    "gemver": {
+      "expected_live_outs": 40,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.3642420526593924e-12,
+      "source_sha256": "cadbb064acc0b2ba4399e64c12d518b5968e8ab010ce11bd1b48cfed346cebec",
+      "c_binary_sha256": "37ff7d7b8f8e5b20a469e7f80483b6c7296f80a2e4e59e53a01868a598c582e7"
+    },
+    "gesummv": {
+      "expected_live_outs": 30,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "c_binary_sha256": "e151f433035736b57a34cda2ce28b7333d71aeb2cafaf282da31b27792dd4db3"
+    },
+    "gramschmidt": {
+      "expected_live_outs": 2100,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "c_binary_sha256": "4491d8eb03edf17e230223f76630af4f9dbdf641dfd1524e0559d6ef589d3b53"
+    },
+    "heat-3d": {
+      "expected_live_outs": 1000,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "5c1df9f38726634ed9b0407320c7c84cbd212e54805996c36ec0a969ea2553e8",
+      "c_binary_sha256": "b5a4fe7de657ccfd79a986db121e27094261a4a243beb35f9ac6f7c58ce60821"
+    },
+    "jacobi-1d": {
+      "expected_live_outs": 30,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 3.3306690738754696e-16,
+      "source_sha256": "8323ac8a0b980045166aab68fda04fa74d3f800a366871bfc3f8d9e2423d71a9",
+      "c_binary_sha256": "37faea5e754f4d6cd39c60ab914df36c9ba00f46425084aa8ee4fa2c50192d63"
+    },
+    "jacobi-2d": {
+      "expected_live_outs": 900,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "07d9a1d89939fd28f7fb945b798de1b382108acdaeac368d121acb1a338050f2",
+      "c_binary_sha256": "9a7e086656a25f37b77a9b157f1a6a6f246395b7500d1cb208b0dec597c93ec7"
+    },
+    "lu": {
+      "expected_live_outs": 1600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 3.9968028886505635e-15,
+      "source_sha256": "7fb265c2d68670d34a1e6ff86f6e2440ae114b20768a19c78016e37e90a310d8",
+      "c_binary_sha256": "6ff3dfb2337b60de20055820e3d8fd332d8fda64a56e3fc18d3aa32880fa33d7"
+    },
+    "ludcmp": {
+      "expected_live_outs": 40,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 8.881784197001252e-16,
+      "source_sha256": "a652f9599cb42263da892b83aa1fbe9662e1b20df6cadfb058274a0abc0cfcf5",
+      "c_binary_sha256": "777200bf9eda48aba5c175cc890f81e62314bd0939216e49085c4fe84ca58034"
+    },
+    "mvt": {
+      "expected_live_outs": 80,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "c_binary_sha256": "bf57d186146c4930f000c722d693f1d516855510e68a67dceee57e170b4656f8"
+    },
+    "nussinov": {
+      "expected_live_outs": 3600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "c_binary_sha256": "e19004cdcabef6646bf08f7ef74e67132b36824b393c673224cbe77c445a0dd6"
+    },
+    "seidel-2d": {
+      "expected_live_outs": 1600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "c_binary_sha256": "b3a0bc6646ebb2a6d75b45334f4349bee5cb385fccaaed979336eebc381419b4"
+    },
+    "symm": {
+      "expected_live_outs": 600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 2.842170943040401e-14,
+      "source_sha256": "6d71a90011f9b57928b2184710f19e0491147d2d1eaddac79ee974e93a49fef7",
+      "c_binary_sha256": "a69ae6185b42e898ed754a774ca5fe9208984ee1157b6ea02e1424e0a0f3c537"
+    },
+    "syr2k": {
+      "expected_live_outs": 900,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "0aca0944ba571592754e6f8358b42d7a8fdb62147d37acf4f066a8debe3a6d14",
+      "c_binary_sha256": "acd1ecf30e61385124159b208405d27c3e4bcab42a094f9b7963d65ec0c71a87"
+    },
+    "syrk": {
+      "expected_live_outs": 900,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 5.329070518200751e-15,
+      "source_sha256": "8da7871082a91840b9fcc3cbee206cc86f2e85ae740fa9a38ca0f563569ab4b5",
+      "c_binary_sha256": "2559a74cac6957dcf7ffa9070a095130610b5e4453857874c527eaaeda2e242d"
+    },
+    "trisolv": {
+      "expected_live_outs": 40,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 6.63358257213531e-15,
+      "source_sha256": "be9fde0ca616e82d3a37a511a6a9cfba29026c42eae5d66d45956d8ca3aacb11",
+      "c_binary_sha256": "8441d7845a4a986f17497f7f28f92b878634b9730e3ddde40fd3c0575e26d638"
+    },
+    "trmm": {
+      "expected_live_outs": 600,
+      "validated_observations": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "14c42b4a82f8ac4302fa90b3cf32cac2e96f2bc41cf4a55b8882883f1a5179b5",
+      "c_binary_sha256": "50dae4618452c8d83110ad406844f4b56f5f1e8fc65e5075ffb994aa6d30fae3"
+    }
+  },
+  "receipts": {
+    "round-01-frozen.json": "f4eade2ab13ba388585781068df3b2e226c50688ee98cb474b9383d42b583385",
+    "round-01-optimization.json": "7d0cd9a9c52c2cd97f75e25b94ae3a86b23282a7b554b6d027f8932fa46a8ce1",
+    "round-01-holdout.json": "ed616e3de8c8bdb1567f10b6d980665ff70bce610ec8341afcd968e9577610a2",
+    "round-01-progress.json": "37ba67fad06cb453af297c264496dc77ea4081779a7aac2ce4d03c80531fbbe1"
+  },
+  "scope": [
+    "CPU native path, MINI F64; closed FSM payloads retain MINI dimensions.",
+    "78 selected Program tests passed; the other 439 Program tests were filtered out. This does not claim the complete compression application/AOT suite.",
+    "Larger datasets, GPU/SIMD selection and an independent application remain future qualification.",
+    "Holdout timings are exposed after this round; future rounds must disclose that exposure."
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "mech.polybench.training-selection-policy-proposal.v3",
+  "status": "Superseded by prospectively adopted training-selection-policy.v3. The earlier permission question was unnecessary under the existing general compiler-optimization authorization. No performance samples were collected before adoption.",
+  "superseded_initial_proposal": "https://github.com/mech-lang/mech/blob/dac34e7d96e81854752d003a515becd9cb16d2c1/hosts/gpu/tests/fixtures/polybench/training-experiments/current-bound-rectangles-selection-proposal.json",
+  "scope": "Permit independently source-proved reductions in actual physical control visits only. Retain the v2 nondecreasing original work/comparison-fee guard.",
+  "qualification_status": "Complete:712 broad checks,102 focused checks, all30 original/decoded C cases plus60 restored original/decoded forms and58964 finite C liveouts; Object emission and both features pass.",
+  "corrected_code_evidence": {
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+    "accepted44": {
+      "work": 99926852068,
+      "comparison_work": 5082102222,
+      "visits": 392
+    },
+    "candidate": {
+      "work": 107839595060,
+      "comparison_work": 5082102222,
+      "visits": 28
+    },
+    "finite_c_liveouts_for_census": 784,
+    "full_restored_corpus_liveouts": 58964,
+    "source_fees_preserved": true,
+    "actual_map_callbacks": {
+      "accepted44": {
+        "13": 2,
+        "47": 56
+      },
+      "candidate": {
+        "13": 2,
+        "38": 2
+      }
+    },
+    "actual_transpose_callbacks": {
+      "accepted44": {
+        "43": 28
+      },
+      "candidate": {}
+    },
+    "candidate_timing_samples": 0
+  },
+  "proposed_counter_gate": [
+    "Before timing, collect an untimed optimization15 C-liveout/counter census against accepted44 and preserve every actual counter/delta. No fabricated or padded visits.",
+    "Require unchanged visits for unchanged source paths. Permit fewer actual visits only when an independently rederived private descriptor and actual callback census prove complete source-derived fusion with unchanged ordered numeric body, reads, branches, checked errors and required effects.",
+    "Keep original source work and comparison fees nondecreasing. No exception for lower work/comparison counters. Preserve full original selected-factory, range/builder/transpose/publication, clone, finite/physical/coexistence and failed-attempt replay envelopes on the same current account.",
+    "Reject unexplained counter changes, missing fees, omitted checks/effects, changed liveouts/errors or weakened owner/publication/resource guarantees. All other execution/transport counters must match.",
+    "Require all30 finite C checks for original/decoded artifacts, Object emission and restored helper descriptors, plus the focused bit/shape/currentness/finite/cold/replay/alias/tamper/cleanup/retry checks and both feature builds."
+  ],
+  "unchanged_training_measurement": "Exactly one prospective optimization15 probe per qualified fingerprint:7 fresh processes per actor/case, interleaved accepted44/candidate with alternating order;210 observations, no retries/exclusions. Select only raw equal-weight GM accepted44/candidate median-runtime speedup >1 after the counter proof gate.",
+  "unchanged_formal_acceptance": "Commit/push and freeze exact clean selected source and driver before BOTH formal sets. All900 observations and29482 finite liveouts retained. Accept only if BOTH primary kernel GM Mech/C scores strictly improve accepted44:10.24618089248072 /38.46047945936111. Restore exact accepted44 on rejection. Controls cannot override either score.",
+  "unchanged_benchmark_protocol": "No change to all30 ports/inputs, C binaries/flags, MINI F64 CPU, finite limits/tolerances, fixed15/15 split, profiling/selection on optimization15 only, cache/timing boundaries, metric/goal or prior history. No prior rejected candidate is reclassified or remeasured.",
+  "requires_decision": "Whether the research probe guard may permit independently source-proved physical-visit reductions while the original billing and all benchmark/acceptance requirements stay fixed.",
+  "performance_observations": 0,
+  "created_at": "2026-11-27T23:02:45.480739+00:00",
+  "candidate_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "adopted_policy": "training-experiments/current-bound-rectangles-training-policy-v3.json"
+}

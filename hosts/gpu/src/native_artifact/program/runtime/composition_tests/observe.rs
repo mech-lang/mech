@@ -17,6 +17,7 @@ type TailBoundary = (
 );
 #[derive(Default, Debug)]
 pub(in crate::native_artifact::program::runtime) struct Counts {
+    pub product_epilogues: Vec<(usize, usize, usize, bool)>,
     pub tail_entries: Vec<(u64, usize, Option<(usize, u32)>)>,
     pub tail_funding: Vec<(usize, u64, bool, u64)>,
     pub tail_bailouts: Vec<(usize, bool, Option<(usize, u32)>)>,
@@ -43,6 +44,7 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub completed_parent_children: Vec<(u32, u32)>,
     prepaid_segment_entry_work: Option<u64>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
+    pub phase_summary_attempts: BTreeMap<usize, u64>,
     pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
@@ -326,6 +328,15 @@ unsafe extern "C" fn helper(
                 .as_ref()
                 .and_then(|p| p.phase.as_ref())
         {
+            for debit in &phase.summaries {
+                let count = ctx.read_borrowed_word(2 + debit.counter).unwrap();
+                COUNTS.with(|v| {
+                    *v.borrow_mut()
+                        .phase_summary_attempts
+                        .entry(debit.site)
+                        .or_default() += count
+                });
+            }
             let root = ctx.read_borrowed_word(2 + phase.loops[0].counter).unwrap();
             let children = phase
                 .loops
@@ -460,6 +471,7 @@ unsafe extern "C" fn helper(
         let proof = region.numeric.as_ref().unwrap();
         use crate::native_artifact::program::prepare::readonly_numeric::Operation;
         let (Operation::Write { array, .. }
+        | Operation::CellWrite { array, .. }
         | Operation::Append { array, .. }
         | Operation::AppendLeBytes { array, .. }) = proof.action(site as usize).unwrap()
         else {
@@ -731,11 +743,14 @@ unsafe extern "C" fn helper(
 fn address(view: mech_core::snapshot::SequenceView<'_>) -> usize {
     use mech_core::snapshot::SequenceView as S;
     match view {
+        S::Bool(v) => v.as_ptr() as usize,
+        S::I64(v) => v.as_ptr() as usize,
+        S::F64(v) => v.as_ptr() as usize,
         S::U8(v) => v.as_ptr() as usize,
         S::U16(v) => v.as_ptr() as usize,
         S::U32(v) => v.as_ptr() as usize,
         S::U64(v) => v.as_ptr() as usize,
-        _ => panic!("first-change observation requires unsigned packed words"),
+        _ => panic!("first-change observation requires exact packed scalar words"),
     }
 }
 pub(super) fn run(
@@ -872,4 +887,17 @@ pub(super) fn run_with_unused_exit_poison(
     };
     POISON_UNUSED_EXIT.with(|v| v.set(false));
     result
+}
+
+pub(in crate::native_artifact::program::runtime) fn product_epilogue(
+    site: usize,
+    nodes: usize,
+    cells: usize,
+    present: bool,
+) {
+    COUNTS.with(|c| {
+        c.borrow_mut()
+            .product_epilogues
+            .push((site, nodes, cells, present))
+    });
 }

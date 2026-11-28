@@ -17,7 +17,14 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 
 #[path = "numeric_matrix.rs"]
 mod numeric_matrix;
-pub use numeric_matrix::{UnsignedMatrixBuffer, UnsignedMatrixSnapshotConstructor};
+pub use numeric_matrix::{
+    NumericMatrixBuffer, NumericMatrixSnapshotConstructor, UnsignedMatrixBuffer,
+    UnsignedMatrixSnapshotConstructor,
+};
+
+#[path = "owned_numeric_matrix.rs"]
+mod owned_numeric_matrix;
+pub use owned_numeric_matrix::{NumericMatrixOwnershipTransfer, OwnedSnapshotNumericMatrix};
 
 #[path = "owned_unsigned_matrix.rs"]
 mod owned_unsigned_matrix;
@@ -26,7 +33,8 @@ pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwner
 #[path = "private_unsigned_matrix.rs"]
 mod private_unsigned_matrix;
 pub use private_unsigned_matrix::{
-    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, UnsignedMatrixViewMut,
+    NumericMatrixViewMut, PrivateNumericMatrix, PrivateUnsignedAppendPreparation,
+    PrivateUnsignedMatrix, UnsignedMatrixViewMut,
 };
 
 #[cfg(test)]
@@ -3178,6 +3186,10 @@ impl<'a> TableSnapshotBuilder<'a> {
     }
 }
 
+#[path = "prepared_composite.rs"]
+mod prepared_composite;
+pub use self::prepared_composite::CompositeSnapshotRecipe;
+
 /// A canonical aggregate constructor bound to one schema arena and exact
 /// child identities. Binding validates nominal kinds and resolved dimensions;
 /// construction rechecks those identities before cloning any child payload.
@@ -3237,6 +3249,11 @@ fn composite_schema_components(
 }
 
 impl CompositeSnapshotConstructor {
+    /// Current output shape witnessed by this constructor.
+    pub fn shape(&self) -> &ShapeInstance {
+        &self.shape
+    }
+
     /// Shape-independent allocation/work witness for current binding. Compute
     /// once during activation, then admit it before per-turn normalization.
     pub fn binding_cost(

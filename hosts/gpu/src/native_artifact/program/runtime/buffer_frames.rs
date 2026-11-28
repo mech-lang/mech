@@ -18,10 +18,57 @@ struct FrameLanes {
     nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
 }
+/// Preserve unsigned append authority while sharing fixed scalar publication.
+pub(super) enum PrivateNumericArray {
+    Unsigned(mech_core::snapshot::PrivateUnsignedMatrix),
+    Scalar(mech_core::snapshot::PrivateNumericMatrix),
+}
+impl PrivateNumericArray {
+    #[cfg(test)]
+    pub(super) fn elements(&self) -> mech_core::snapshot::SequenceView<'_> {
+        match self {
+            Self::Unsigned(v) => v.elements(),
+            Self::Scalar(v) => v.elements(),
+        }
+    }
+
+    pub(super) fn private_metadata_nodes(&self) -> u64 {
+        match self {
+            Self::Unsigned(v) => v.private_metadata_nodes(),
+            Self::Scalar(_) => 0,
+        }
+    }
+    pub(super) fn reserved_native_view(&mut self) -> Option<[u64; 3]> {
+        match self {
+            Self::Unsigned(v) => v.reserved_native_view(),
+            Self::Scalar(_) => None,
+        }
+    }
+    pub(super) fn elements_mut(&mut self) -> mech_core::snapshot::NumericMatrixViewMut<'_> {
+        use mech_core::snapshot::{NumericMatrixViewMut as N, UnsignedMatrixViewMut as U};
+        match self {
+            Self::Scalar(v) => v.elements_mut(),
+            Self::Unsigned(v) => match v.elements_mut() {
+                U::U8(v) => N::U8(v),
+                U::U16(v) => N::U16(v),
+                U::U32(v) => N::U32(v),
+                U::U64(v) => N::U64(v),
+            },
+        }
+    }
+    pub(super) fn finish(self) -> Value {
+        match self {
+            Self::Unsigned(v) => v.finish(),
+            Self::Scalar(v) => v.finish(),
+        }
+    }
+}
+
 struct PrivateNumeric {
     region: usize,
-    arrays: Vec<Option<mech_core::snapshot::PrivateUnsignedMatrix>>,
+    arrays: Vec<Option<PrivateNumericArray>>,
     append: Option<Vec<Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>>>,
+    locals: Option<Box<map_banks::Locals>>,
     publication: Option<PrivatePublication>,
     _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
@@ -68,6 +115,8 @@ pub(super) enum Field {
 }
 #[path = "buffer_frames_capture.rs"]
 mod capture;
+#[path = "buffer_frames_map_banks.rs"]
+mod map_banks;
 pub(super) use capture::CapturedFrame;
 impl BufferFrames {
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
@@ -146,6 +195,9 @@ impl BufferFrames {
             inner.nodes.nodes()
                 + inner.private.as_ref().map_or(0, |p| {
                     p._nodes.nodes()
+                        + p.locals
+                            .as_ref()
+                            .map_or(0, |locals| locals.metadata_nodes())
                         + match &p.publication {
                             Some(PrivatePublication::Cold(cold)) => cold._nodes.nodes(),
                             _ => 0,
@@ -319,14 +371,21 @@ impl BufferFrames {
         physical: usize,
         kind: mech_engine::native_artifact::NativeScalarKind,
     ) -> bool {
-        self.inner
-            .as_ref()
-            .and_then(|inner| {
-                let at = physical.checked_mul(2)?;
-                let words = inner.words.values().get(at..at.checked_add(2)?)?;
-                Some(words[1] == 1 && kind.accepts_bits(words[0]))
-            })
-            .unwrap_or(false)
+        self.current_scalar_bits(physical, kind).is_some()
+    }
+    pub(super) fn current_scalar_bits(
+        &self,
+        physical: usize,
+        kind: mech_engine::native_artifact::NativeScalarKind,
+    ) -> Option<u64> {
+        let at = physical.checked_mul(2)?;
+        let words = self
+            .inner
+            .as_ref()?
+            .words
+            .values()
+            .get(at..at.checked_add(2)?)?;
+        (words[1] == 1 && kind.accepts_bits(words[0])).then_some(words[0])
     }
     /// A virtual producer may acquire a physical home only if no earlier
     /// current definition occupies either its payload or validity word.
@@ -723,7 +782,7 @@ impl BufferFrames {
         };
         let bytes = amount(
             count,
-            (core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>()
+            (core::mem::size_of::<Option<PrivateNumericArray>>()
                 + if append {
                     core::mem::size_of::<
                         Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>,
@@ -758,6 +817,7 @@ impl BufferFrames {
             region,
             arrays,
             append,
+            locals: None,
             publication,
             _nodes: nodes,
             _reservation: reservation,
@@ -829,8 +889,7 @@ impl BufferFrames {
         &mut self,
         region: usize,
         array: usize,
-    ) -> Result<&mut Option<mech_core::snapshot::PrivateUnsignedMatrix>, NativeProgramExecutionError>
-    {
+    ) -> Result<&mut Option<PrivateNumericArray>, NativeProgramExecutionError> {
         self.inner
             .as_mut()
             .and_then(|i| i.private.as_mut())
@@ -863,18 +922,25 @@ impl BufferFrames {
             .inner
             .as_mut()
             .ok_or_else(|| invalid("private numeric lanes missing"))?;
-        let state = inner
+        let mut state = inner
             .private
             .take()
             .ok_or_else(|| invalid("private numeric owners missing"))?;
         if state.region != region || state.arrays.iter().any(Option::is_some) {
             return Err(invalid("private numeric owners not synchronized"));
         }
-        Ok(match state.publication {
+        let publication = match state.publication.take() {
             Some(PrivatePublication::Direct(ticket)) => Some(ticket),
             Some(PrivatePublication::Cold(cold)) => cold.direct,
             None => None,
-        })
+        };
+        // Frozen local results remain available only through this synchronous
+        // reconciliation. Exact cold aliases/frames acquire their own owners
+        // before clear_map_locals ends that short lifetime.
+        if state.locals.is_some() {
+            inner.private = Some(state);
+        }
+        Ok(publication)
     }
     pub(super) fn synchronize_managed(
         &mut self,

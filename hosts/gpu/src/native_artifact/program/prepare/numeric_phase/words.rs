@@ -25,6 +25,93 @@ impl Words<'_, '_> {
         self.field(value, field, &mut BTreeSet::new())
     }
 
+    /// Exact root copies retain the current enum identity. A payload projection
+    /// at offset zero does not, even when its first scalar has the same bits.
+    pub(super) fn same_carrier(&self, mut value: u32) -> bool {
+        let mut seen = BTreeSet::new();
+        while value != self.tail.carrier().get() {
+            if !seen.insert(value) {
+                return false;
+            }
+            let Some(site) = self.definition(value) else {
+                return false;
+            };
+            let source = match self.frames.action(site).map(|a| a.operation()) {
+                Some(Frame::Copy { source, output }) if output.get() == value => Some(*source),
+                _ => match self.plan.blocks()[site].action() {
+                    Action::Scalar(Scalar::Copy { source, output }) if output.get() == value => {
+                        Some(*source)
+                    }
+                    _ => None,
+                },
+            };
+            let Some(source) = source else { return false };
+            value = source.get();
+        }
+        true
+    }
+
+    /// Original structural coordinates, independent of normalized prefix homes.
+    pub(super) fn framed_carrier(&self, mut value: u32, tag: Option<u32>) -> Option<usize> {
+        use mech_engine::native_artifact::{
+            NativeStructuralObservation as Observation, NativeStructuralStep as Step,
+        };
+        let mut seen = BTreeSet::new();
+        loop {
+            if !seen.insert(value) {
+                return None;
+            }
+            let site = self.definition(value)?;
+            if let Some(action) = self.frames.action(site) {
+                match action.operation() {
+                    Frame::Observe {
+                        source,
+                        path,
+                        observation,
+                        output,
+                    } if output.get() == value
+                        && self.same_carrier(source.get())
+                        && matches!(
+                            observation,
+                            Observation::U64 | Observation::CanonicalValue
+                        ) =>
+                    {
+                        return match (tag, &path[..]) {
+                            (
+                                Some(tag),
+                                [
+                                    Step::EnumPayload { ordinal },
+                                    Step::TupleItem { ordinal: field },
+                                ],
+                            ) if tag == *ordinal => Some(*field as usize),
+                            (None, [Step::TupleItem { ordinal }]) => Some(*ordinal as usize),
+                            _ => None,
+                        };
+                    }
+                    Frame::Project {
+                        source,
+                        ordinal,
+                        output,
+                    } if tag.is_none()
+                        && output.get() == value
+                        && self.same_carrier(source.get()) =>
+                    {
+                        return Some(*ordinal);
+                    }
+                    _ => {}
+                }
+            }
+            if let Action::Scalar(Scalar::Copy { source, output }) =
+                self.plan.blocks()[site].action()
+                && output.get() == value
+            {
+                value = source.get();
+                continue;
+            }
+            return None;
+        }
+    }
+
     fn definition(&self, value: u32) -> Option<usize> {
         let [definition] = self.facts.definition_sites(value).ok()? else {
             return None;

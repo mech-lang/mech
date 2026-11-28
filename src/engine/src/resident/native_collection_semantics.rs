@@ -15,6 +15,14 @@ pub enum NativeCollectionPrimitive {
     CompositePack(usize),
     MatrixHorizontal(usize),
     MatrixVertical(usize),
+    MatrixTranspose,
+    MatrixMatmul,
+    MatrixAdd,
+    MatrixSubtract,
+    MatrixMultiply,
+    MatrixDivide,
+    MatrixSqrt,
+    F64Power,
     EnumPack,
     RangeExclusive,
     RangeInclusive,
@@ -24,11 +32,14 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "native-artifact")]
     MatrixScalarAccess,
     #[cfg(feature = "native-artifact")]
+    MatrixCellAccess,
+    #[cfg(feature = "native-artifact")]
     TupleScalarProjection,
     RecordFieldAccess,
     #[cfg(feature = "native-artifact")]
     MatrixRangeAccess,
     MatrixIndexedReplace,
+    MatrixCellReplace,
     #[cfg(feature = "native-artifact")]
     MapKeyAccess,
     SetContains,
@@ -459,7 +470,7 @@ struct FactoryWitness {
     linkage: &'static super::native_factory_linkage::NativeLinkedFactory,
 }
 
-fn make_entry(
+pub(in crate::resident) fn make_entry(
     module: &[&str],
     name: &str,
     memory: ImplementationMemoryClass,

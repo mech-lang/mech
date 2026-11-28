@@ -1,0 +1,84 @@
+{
+  "schema": "mech.polybench.ordered-product-four-rows-plan.v1",
+  "created_at": "2026-11-28T09:15:56.049625+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "28ddc9a30d6ed3b9ec10f3702c145607b577c52e",
+  "accepted_round": 52,
+  "accepted_scores": {
+    "optimization": 8.964570055711857,
+    "holdout": 24.520309780198453
+  },
+  "accepted_compiler_fingerprint": "3bc0dc1088d118108a81943224740ad1d37970f3122e8f4c054d191716b759a0",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-54/ordered-reduction-producers/ordered-reduction-producers-driver",
+  "accepted_driver_sha256": "809f4d26ba44ff5423c9481c2f5dea1a366d7e416f82f69ca617dece916afb93",
+  "formal_history_entries": 53,
+  "formal_history_next_index": 53,
+  "private_trial": 56,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_quartets.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": "67b245b168e00cd1e52ddfa6277c145646491a1b5ff934c950a0002d0025131f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "1d0d1b6d06bd52d2f0566b501dee22c4e76f32c3ef51a284be997d9410b9ea3d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "5889d88e326edf313d034ca5e6ba257839e19449bdf76e6716b8a450cccb3f3d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "4fcc58df6c619dfcf1995c0c278d7b3a5b7324d20f974278094ae38e9e0d1891",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "dadc212a0eba1a253ad4be26e544864874e5d36a4eb91b6855ab8a5d6c7ed05a",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "4e674ce71cdf0816811dfadae6136fb9861bae00a5ba5931189ecfc766884af1",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "9fc8c246b7d388925a5c749b199726f3d9940c183f87f373df0bf682fffd6355",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "793fc2a57f1ed262dd258b889145d0f088d39bc21a9be9e6f1d5e63fe1cb62bd",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_quartets.rs": null
+  },
+  "versions": {
+    "ir": 422,
+    "work": 157,
+    "abi": 48
+  },
+  "profiling_basis": [
+    "training-experiments/accepted52-correlation-profile.json: same sampled PID, all14620 code bytes identical to genuine Object, unchanged warmup/final C values and frozen counters; current two-row product k region11.9115% of complete sampled leaf PCs, new producer/sum1.1344%, ordinary broadcast5.1049%.",
+    "Shared native product inspection: one right scalar/vector load and k header/backedge currently serve two independent row accumulators; source-ranked optimization matrices/vectors reuse this kernel. No holdout diagnosis or tuning."
+  ],
+  "transformation": "Extend the shared Cranelift product register tile to four independent output rows when four remain. One reached right scalar/two-column SIMD load and k control serve four original ordered accumulators. Keep exact old two/one-row tails and scalar-column tail; product epilogues apply to every actual cell using its original row/column/index. Existing ordinary flat and two-row private ablations remain. No runtime/frame/helper/ownership/buffer change.",
+  "invariants": [
+    "No benchmark names/MINI dimensions in compiler rules, no source ports/inputs/C flags/binaries/tolerances/limits/cache/timing/split changes. Four is a bounded register tile, not a data-specific dimension.",
+    "Every cell starts at original +0 and traverses k in original order with separate F64 multiply/add. No FMA, reassociation, split partial sum or horizontal reduction. SIMD lanes remain independent columns.",
+    "Four-row access only when rows-at_row>=4, then2/1 tails; vector load/store only when columns-at_column>=2. Empty count finishes before division, either axis traversal or any address/load/store. Current geometry and full banks remain host validated.",
+    "Private product/cell epilogues use each actual cell coordinate. Consumed nonfinite intermediates cancel the entire issued loan and replay unchanged original source before publication. No cross-invocation/data cache or per-op allocation.",
+    "Logical source work/comparison, physical source visits and all other execution counters must exactly match accepted52; no resource accounting change. Current owners/schema/account, sealed frames/epoch/context, complete replay/physical envelopes, aliases, atomic errors, cleanup and retry remain.",
+    "Efficient direct Bool/U64/I64/F64 scalar paths and scalar/compression specialization remain. Cranelift is sole Mech native generator; Rust tests/diagnostic host are oracles/wrappers only. IR422/work157/ABI48."
+  ],
+  "qualification": "Focused runtime-shaped Cranelift SSA/actual machine-code witnesses that one RHS load feeds4 independent products/adds, exact per-cell scalar/old2-row oracles, both vector/scalar output widths, rows through multiple4+2+1 tails, odd/zero/huge-empty axes, sentinels, original/decoded/restored public JIT loans and epilogues, nonfinite replay, caps/mismatches/aliases/atomic cleanup/retry. Maintained numeric/matrix/scalar/compression/source/type/image/protocol suite, both features and all30 finite C cases before timing. Every source revision/failure retained.",
+  "untimed_gate": "All17002 optimization15 finite C liveouts; every execution counter exactly equals accepted52. Genuine Object/Clif/machine def-use witnesses certify actual one-RHS-to-four ordered product paths and no FMA. Preserve all instruction/code/stack growth; removal of RHS/control operations is not a speedup forecast.",
+  "training_probe": {
+    "actors": [
+      "accepted52",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "One fully qualified prospective fresh-process probe per materially changed fingerprint. Select only raw equal-weight GM accepted52/candidate median-runtime speedup>1, all210 samples/regressions retained, no retries/exclusions."
+  },
+  "formal_acceptance": "After selected probe and full qualification, commit/push/freeze exact clean source+driver before one900-observation formal run/29482 finite C liveouts and append immutable history at index53. Promote solely optimization15 kernel Mech/C strictly below8.964570055711857. Holdout independently reported and cannot veto/select/diagnose/tune/trigger rollback or retry.",
+  "prior_related_work": "Accepted51 groups2 independent product rows. This is a distinct physical reuse increase to4, with a new current52 profile; not an exact retry of any observed fingerprint. The initial expression-layout idea was not selected from the current profile.",
+  "performance_observations": 0,
+  "implementation": {
+    "transformation": "Extend the shared Cranelift product register tile to four independent output rows when four remain. One reached right scalar/two-column SIMD load and k control serve four original ordered accumulators. Keep exact old two/one-row tails and scalar-column tail; product epilogues apply to every actual cell using its original row/column/index. Existing ordinary flat and two-row private ablations remain. No runtime/frame/helper/ownership/buffer change.",
+    "invariants": [
+      "No benchmark names/MINI dimensions in compiler rules, no source ports/inputs/C flags/binaries/tolerances/limits/cache/timing/split changes. Four is a bounded register tile, not a data-specific dimension.",
+      "Every cell starts at original +0 and traverses k in original order with separate F64 multiply/add. No FMA, reassociation, split partial sum or horizontal reduction. SIMD lanes remain independent columns.",
+      "Four-row access only when rows-at_row>=4, then2/1 tails; vector load/store only when columns-at_column>=2. Empty count finishes before division, either axis traversal or any address/load/store. Current geometry and full banks remain host validated.",
+      "Private product/cell epilogues use each actual cell coordinate. Consumed nonfinite intermediates cancel the entire issued loan and replay unchanged original source before publication. No cross-invocation/data cache or per-op allocation.",
+      "Logical source work/comparison, physical source visits and all other execution counters must exactly match accepted52; no resource accounting change. Current owners/schema/account, sealed frames/epoch/context, complete replay/physical envelopes, aliases, atomic errors, cleanup and retry remain.",
+      "Efficient direct Bool/U64/I64/F64 scalar paths and scalar/compression specialization remain. Cranelift is sole Mech native generator; Rust tests/diagnostic host are oracles/wrappers only. IR422/work157/ABI48."
+    ]
+  }
+}

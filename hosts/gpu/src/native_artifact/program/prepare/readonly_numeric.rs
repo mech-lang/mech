@@ -5,14 +5,15 @@
 pub(in crate::native_artifact) use super::phase_numeric::{
     test_decline_nested_phase, test_without_nested_phase,
 };
-use mech_core::{IntegerWidth, SchemaBody};
+use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
     NativeIterationTerminator as Term, NativeMatchAction as Scalar,
-    NativeMatchTerminator as Branch, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
-    NativeProgramFacts, NativeScalarAggregateAction as Aggregate, NativeScalarAggregates,
-    NativeScalarKind, NativeTailLoop,
+    NativeMatchTerminator as Branch, NativeMatchValue as Value, NativePreparedLibraryCall,
+    NativeProgramArtifactPlan as Plan, NativeProgramFacts,
+    NativeScalarAggregateAction as Aggregate, NativeScalarAggregates, NativeScalarKind,
+    NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_append.rs"]
@@ -21,6 +22,8 @@ mod append;
 pub(super) mod numeric_fields;
 #[path = "numeric_results.rs"]
 mod results;
+#[path = "numeric_tagged.rs"]
+pub(in crate::native_artifact) mod tagged;
 #[path = "numeric_versions.rs"]
 mod versions;
 pub(in crate::native_artifact) use results::ResultRecipe;
@@ -29,9 +32,21 @@ pub(super) use results::scalar_aggregate;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum ArrayStorage {
+    /// A complete-map result created inside this phase. It has no entry Value
+    /// or view; must-current analysis requires its source producer first.
+    PhaseLocal {
+        value: u32,
+        extents: [u64; 2],
+    },
     Carrier {
         field: usize,
         physical: usize,
+    },
+    /// A common-prefix FSM root. Its current tag selects the exact managed
+    /// home in the original enum bank; the normalized view owns no Value.
+    TaggedCarrier {
+        value: u32,
+        field: usize,
     },
     /// Exact immutable ancestor value; never a mutable carrier or body result.
     Capture {
@@ -73,13 +88,19 @@ impl Array {
     pub fn physical(&self) -> Option<usize> {
         match self.storage {
             ArrayStorage::Carrier { physical, .. } => Some(physical),
-            ArrayStorage::Capture { .. } | ArrayStorage::FrameCapture { .. } => None,
+            ArrayStorage::PhaseLocal { .. } => None,
+            ArrayStorage::TaggedCarrier { .. }
+            | ArrayStorage::Capture { .. }
+            | ArrayStorage::FrameCapture { .. } => None,
         }
     }
     pub fn entry_key(&self, tail: &NativeTailLoop) -> (u32, Option<usize>) {
         match self.storage {
             ArrayStorage::Carrier { field, .. } => (tail.carrier().get(), Some(field)),
-            ArrayStorage::Capture { value } => (value, None),
+            ArrayStorage::TaggedCarrier { value, field } => (value, Some(field)),
+            ArrayStorage::Capture { value } | ArrayStorage::PhaseLocal { value, .. } => {
+                (value, None)
+            }
             ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
         }
     }
@@ -225,7 +246,9 @@ pub(in crate::native_artifact) struct ColdAlias {
 #[serde(deny_unknown_fields, rename = "mech.native.image.Proof")]
 pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     pub nested_managed: bool,
+    pub tagged: Option<Box<tagged::Variant>>,
     pub arrays: Vec<Array>,
+    pub map_banks: Vec<super::numeric_phase::map_banks::Bank>,
     pub frames: Vec<Frame>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,
@@ -261,7 +284,9 @@ impl<Frame: Into<FrameWords>> Proof<Frame> {
     pub(in crate::native_artifact) fn into_runtime(self) -> Proof {
         Proof {
             nested_managed: self.nested_managed,
+            tagged: self.tagged,
             arrays: self.arrays,
+            map_banks: self.map_banks,
             frames: self.frames.into_iter().map(Into::into).collect(),
             actions: self.actions,
             sites: self.sites,
@@ -303,12 +328,11 @@ impl Proof {
                 words.push(self.private_flag(array));
             }
             words.extend(self.capacity(array));
+            words.extend(self.map_bank(array));
         }
         if let Some(phase) = &self.phase {
-            for debit in &phase.loops {
-                words.push(debit.counter);
-                words.extend(debit.first_visit);
-            }
+            words.extend(phase.counters());
+            words.extend(phase.loops.iter().filter_map(|debit| debit.first_visit));
         }
         words.sort_unstable();
         words.dedup();
@@ -337,11 +361,33 @@ impl Proof {
     pub fn view(&self, array: usize) -> usize {
         self.scalar_words + array * 4
     }
+    /// First-change transport retains both independent selectors only for a
+    /// proof that actually contains a two-axis replacement.
+    pub fn write_argument_words(&self) -> usize {
+        self.words
+            + 4
+            + usize::from(
+                self.actions
+                    .iter()
+                    .any(|(_, a)| matches!(a, Operation::CellWrite { .. })),
+            )
+    }
     pub fn writes(&self) -> bool {
         self.arrays.iter().any(|array| array.writable)
     }
     pub fn private_flag(&self, array: usize) -> usize {
         self.scalar_words + self.arrays.len() * 4 + array
+    }
+    pub fn map_bank(&self, array: usize) -> Option<usize> {
+        self.map_banks
+            .iter()
+            .position(|bank| bank.array == array)
+            .map(|at| {
+                self.scalar_words
+                    + self.arrays.len() * 5
+                    + self.arrays.iter().filter(|a| a.appends).count()
+                    + at
+            })
     }
     pub fn capacity(&self, array: usize) -> Option<usize> {
         self.arrays[array].appends.then(|| {
@@ -373,12 +419,76 @@ pub(super) fn width(body: &SchemaBody) -> Option<u8> {
     if dimensions.len() != 2 {
         return None;
     }
-    Some(match element.as_ref() {
-        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
-        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
-        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
-        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
-        _ => return None,
+    Some(match NativeScalarKind::from_schema_body(element)? {
+        NativeScalarKind::Bool | NativeScalarKind::U8 => 1,
+        NativeScalarKind::U16 => 2,
+        NativeScalarKind::U32 => 4,
+        NativeScalarKind::U64 | NativeScalarKind::I64 | NativeScalarKind::F64 => 8,
+    })
+}
+
+/// Exact selected scalar accesses. Two-axis operations retain both indices;
+/// their dedicated emission cannot use a one-coordinate traversal proof.
+pub(super) fn scalar_read(call: &NativePreparedLibraryCall) -> bool {
+    call.scalar_matrix_element_kind().is_some()
+}
+pub(super) fn scalar_write(call: &NativePreparedLibraryCall) -> bool {
+    call.scalar_matrix_replace_kind().is_some()
+}
+
+pub(super) fn scalar_access(
+    plan: &Plan,
+    call: &NativePreparedLibraryCall,
+    operands: &[mech_engine::native_artifact::NativeMatchValue],
+    array: usize,
+    output: mech_engine::native_artifact::NativeMatchValue,
+) -> Result<Operation, &'static str> {
+    let selector = |value: Value| {
+        plan.values()[value.get() as usize].scalar_kind() == Some(NativeScalarKind::U64)
+    };
+    if let Some(kind) = call.scalar_matrix_replace_kind() {
+        if operands
+            .get(1)
+            .is_none_or(|v| plan.values()[v.get() as usize].scalar_kind() != Some(kind))
+        {
+            return Err("numeric replacement has a different scalar kind");
+        }
+        return Ok(match operands {
+            [_, incoming, index] if selector(*index) => Operation::Write {
+                array,
+                index: index.get(),
+                incoming: incoming.get(),
+            },
+            [_, incoming, row, column] if selector(*row) && selector(*column) => {
+                Operation::CellWrite {
+                    array,
+                    row: row.get(),
+                    column: column.get(),
+                    incoming: incoming.get(),
+                }
+            }
+            _ => return Err("numeric replacement lacks exact axis selectors"),
+        });
+    }
+    if call
+        .scalar_matrix_element_kind()
+        .is_none_or(|kind| plan.values()[output.get() as usize].scalar_kind() != Some(kind))
+    {
+        return Err("numeric read has a different scalar result kind");
+    }
+    Ok(match operands {
+        [_, index] if selector(*index) => Operation::Read {
+            array,
+            index: index.get(),
+            output: output.get(),
+        },
+        [_, row, column] if selector(*row) && selector(*column) => Operation::CellRead {
+            array,
+            row: row.get(),
+            column: column.get(),
+            output: output.get(),
+        },
+        _ => return Err("numeric read lacks exact axis selectors"),
     })
 }
 
@@ -549,8 +659,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(call.supports_unsigned_matrix_replace()
-                        || call.supports_unsigned_matrix_append())
+                    || !(scalar_write(call) || call.supports_unsigned_matrix_append())
                 {
                     return None;
                 }
@@ -611,6 +720,7 @@ pub(in crate::native_artifact) fn derive_with_facts(
     super::phase_numeric::derive(facts, tail, frames, aggregates, calls, visits)
         .and_then(|phase| from_phase(plan, tail, frames, aggregates, phase))
         .or_else(|_| derive_leaf(facts, tail, frames, aggregates, calls))
+        .or_else(|_| tagged::derive(facts, tail, frames, aggregates, calls, visits))
 }
 
 #[cfg(test)]
@@ -668,40 +778,14 @@ pub(in crate::native_artifact) fn derive_interval(
     )
 }
 
-fn from_phase(
+pub(super) fn from_phase(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     phase: super::numeric_plan::Plan,
 ) -> Result<Proof, &'static str> {
-    let carrier = frames
-        .fields(tail.carrier())
-        .ok_or("phase carrier lacks fields")?;
-    let arrays = phase
-        .arrays
-        .into_iter()
-        .map(|array| {
-            let field = *carrier
-                .get(array.field)
-                .ok_or("phase array leaves carrier")?;
-            let Lane::Managed { at: physical } = field.lane() else {
-                return Err("phase array is not managed");
-            };
-            Ok(Array {
-                root: array.field,
-                storage: ArrayStorage::Carrier {
-                    field: array.field,
-                    physical,
-                },
-                schema: field.schema(),
-                width: array.width,
-                witness: array.witness,
-                writable: array.writable,
-                appends: array.appends,
-            })
-        })
-        .collect::<Result<Vec<_>, &'static str>>()?;
+    let arrays = phase.arrays;
     let frame_words = phase
         .frames
         .into_iter()
@@ -752,8 +836,16 @@ fn from_phase(
         .frame()
         .map_or_else(|| Ok(Vec::new()), bindings)?;
     let sites = phase.sites.iter().copied().collect::<BTreeSet<_>>();
+    let reduction_words = phase
+        .actions
+        .iter()
+        .try_fold(0usize, |n, (_, action)| {
+            n.checked_add(action.summary_values().len())
+        })
+        .ok_or("phase reduction word inventory overflows")?;
     let boundary_words = register_bound(plan, aggregates, &sites)?
-        .checked_add(phase.words)
+        .checked_add(reduction_words)
+        .and_then(|n| n.checked_add(phase.words))
         .and_then(|n| n.checked_add(3))
         .ok_or("phase boundary words overflow")?;
     let boundary_work = phase
@@ -764,7 +856,9 @@ fn from_phase(
         });
     Ok(Proof {
         nested_managed: false,
+        tagged: None,
         arrays,
+        map_banks: phase.map_banks,
         frames: frame_words,
         actions: phase.actions,
         sites: phase.sites,
@@ -1108,8 +1202,8 @@ fn derive_inner(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = call.supports_unsigned_matrix_element();
-            let is_write = call.supports_unsigned_matrix_replace();
+            let is_read = scalar_read(call);
+            let is_write = scalar_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             if !(is_length || is_read || is_write || is_append) {
                 return Err("unsupported selected library effect or operation");
@@ -1163,34 +1257,8 @@ fn derive_inner(
                     array: at,
                     incoming: operands[1].get(),
                 }
-            } else if is_write {
-                if operands.len() != 3
-                    || plan.values()[operands[2].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize]
-                        .scalar_kind()
-                        .and_then(|k| k.unsigned_maximum())
-                        .is_none()
-                {
-                    return Err("unsupported write operands");
-                }
-                Operation::Write {
-                    array: at,
-                    incoming: operands[1].get(),
-                    index: operands[2].get(),
-                }
             } else {
-                if operands.len() != 2
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                {
-                    return Err("unsupported read selector");
-                }
-                Operation::Read {
-                    array: at,
-                    index: operands[1].get(),
-                    output: output.get(),
-                }
+                scalar_access(plan, call, operands, at, *output)?
             }
         } else {
             match action {
@@ -1221,7 +1289,7 @@ fn derive_inner(
         .fields(tail.carrier())
         .is_some_and(|fields| numeric_fields::has_nested_managed(frames, fields))
         && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Read { array, .. }
+            matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
         })
     {
@@ -1435,7 +1503,9 @@ fn derive_inner(
     });
     Ok(Proof {
         nested_managed,
+        tagged: None,
         arrays,
+        map_banks: Vec::new(),
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),

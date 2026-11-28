@@ -1,0 +1,294 @@
+{
+  "schema": "mech.polybench.training-stencil-review.v1",
+  "created_at": "2026-11-27T14:46:12.566585+00:00",
+  "scope": "Review of already-collected optimization-set Seidel evidence only. No new timing observations or per-case holdout diagnosis.",
+  "accepted_round": 31,
+  "source_commit": "f60baf055a39497400f9392e0294911becf1a697",
+  "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "case": "seidel-2d",
+  "execution_samples": 235,
+  "generated_native_self_samples": 226,
+  "generated_native_self_percent": 96.17021276595744,
+  "self_time_mechanisms": [
+    {
+      "name": "Generated code, resolved function",
+      "samples": 226,
+      "percent": 96.17021276595744
+    },
+    {
+      "name": "Byte copy and zeroing",
+      "samples": 3,
+      "percent": 1.2765957446808511
+    },
+    {
+      "name": "Other runtime self time",
+      "samples": 3,
+      "percent": 1.2765957446808511
+    },
+    {
+      "name": "Resource bookkeeping and locks",
+      "samples": 2,
+      "percent": 0.851063829787234
+    },
+    {
+      "name": "Memory planning, schema and snapshot validation",
+      "samples": 1,
+      "percent": 0.425531914893617
+    }
+  ],
+  "checked_c_validation": {
+    "count": 1600,
+    "finite": true,
+    "max_absolute_error": 0.0
+  },
+  "checked_counters_identical": true,
+  "verified_sampled_sites": [
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 3632,
+      "samples": 26,
+      "percent": 11.063829787234043,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "ldur\tx7, [sp, #8]",
+      "surrounding_instructions": [
+        {
+          "offset": 3624,
+          "instruction": "ldur\tx7, [sp, #8]"
+        },
+        {
+          "offset": 3628,
+          "instruction": "b\t0xecc <_mech_canonical_program_entry_v1_numeric_5+0xecc>"
+        },
+        {
+          "offset": 3632,
+          "instruction": "ldur\tx7, [sp, #8]"
+        },
+        {
+          "offset": 3636,
+          "instruction": "cbnz\tx7, 0xec8 <_mech_canonical_program_entry_v1_numeric_5+0xec8>"
+        },
+        {
+          "offset": 3640,
+          "instruction": "b\t0x1508 <_mech_canonical_program_entry_v1_numeric_5+0x1508>"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 444,
+      "samples": 19,
+      "percent": 8.085106382978724,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "mov\tx1, #0",
+      "surrounding_instructions": [
+        {
+          "offset": 436,
+          "instruction": "mov\tx21, #0"
+        },
+        {
+          "offset": 440,
+          "instruction": "stur\tx21, [sp, #8]"
+        },
+        {
+          "offset": 444,
+          "instruction": "mov\tx1, #0"
+        },
+        {
+          "offset": 448,
+          "instruction": "mov\tw7, #12472"
+        },
+        {
+          "offset": 452,
+          "instruction": "movk\tw7, #1, lsl #16"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 3616,
+      "samples": 19,
+      "percent": 8.085106382978724,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "cmp\tx20, x6",
+      "surrounding_instructions": [
+        {
+          "offset": 3608,
+          "instruction": "sub\tx4, x4, #1"
+        },
+        {
+          "offset": 3612,
+          "instruction": "add\tx21, x21, #1"
+        },
+        {
+          "offset": 3616,
+          "instruction": "cmp\tx20, x6"
+        },
+        {
+          "offset": 3620,
+          "instruction": "b.ne\t0xe30 <_mech_canonical_program_entry_v1_numeric_5+0xe30>"
+        },
+        {
+          "offset": 3624,
+          "instruction": "ldur\tx7, [sp, #8]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 3624,
+      "samples": 18,
+      "percent": 7.659574468085107,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "ldur\tx7, [sp, #8]",
+      "surrounding_instructions": [
+        {
+          "offset": 3616,
+          "instruction": "cmp\tx20, x6"
+        },
+        {
+          "offset": 3620,
+          "instruction": "b.ne\t0xe30 <_mech_canonical_program_entry_v1_numeric_5+0xe30>"
+        },
+        {
+          "offset": 3624,
+          "instruction": "ldur\tx7, [sp, #8]"
+        },
+        {
+          "offset": 3628,
+          "instruction": "b\t0xecc <_mech_canonical_program_entry_v1_numeric_5+0xecc>"
+        },
+        {
+          "offset": 3632,
+          "instruction": "ldur\tx7, [sp, #8]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 3564,
+      "samples": 16,
+      "percent": 6.808510638297872,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "fmov\td1, x13",
+      "surrounding_instructions": [
+        {
+          "offset": 3556,
+          "instruction": "fmov\td1, x11"
+        },
+        {
+          "offset": 3560,
+          "instruction": "fadd\td0, d0, d1"
+        },
+        {
+          "offset": 3564,
+          "instruction": "fmov\td1, x13"
+        },
+        {
+          "offset": 3568,
+          "instruction": "fadd\td0, d0, d1"
+        },
+        {
+          "offset": 3572,
+          "instruction": "fmov\td1, x15"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 752,
+      "samples": 13,
+      "percent": 5.531914893617022,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "stur\tx13, [sp, #16]",
+      "surrounding_instructions": [
+        {
+          "offset": 744,
+          "instruction": "cset\tx13, eq"
+        },
+        {
+          "offset": 748,
+          "instruction": "uxtb\tw13, w13"
+        },
+        {
+          "offset": 752,
+          "instruction": "stur\tx13, [sp, #16]"
+        },
+        {
+          "offset": 756,
+          "instruction": "cmp\tx0, #0"
+        },
+        {
+          "offset": 760,
+          "instruction": "b.eq\t0x360 <_mech_canonical_program_entry_v1_numeric_5+0x360>"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 3264,
+      "samples": 12,
+      "percent": 5.1063829787234045,
+      "instruction_identical": true,
+      "surrounding_68_bytes_identical": true,
+      "instruction": "ldr\tx15, [x5, x1, lsl #3]",
+      "surrounding_instructions": [
+        {
+          "offset": 3256,
+          "instruction": "b\t0x1534 <_mech_canonical_program_entry_v1_numeric_5+0x1534>"
+        },
+        {
+          "offset": 3260,
+          "instruction": "madd\tx1, x23, x26, x24"
+        },
+        {
+          "offset": 3264,
+          "instruction": "ldr\tx15, [x5, x1, lsl #3]"
+        },
+        {
+          "offset": 3268,
+          "instruction": "uxtb\tw1, w20"
+        },
+        {
+          "offset": 3272,
+          "instruction": "cbnz\tx1, 0xdb4 <_mech_canonical_program_entry_v1_numeric_5+0xdb4>"
+        }
+      ]
+    }
+  ],
+  "observations": [
+    "The sampled execution is predominantly the generated numeric function.",
+    "Several sampled sites are stack loads/stores and loop comparisons/branches; other sites include integer/F64 register moves and indexed loads.",
+    "The optimization workload performs an in-place row-major stencil sweep, with dependencies between neighboring writes.",
+    "The recent root-matrix region optimization handles straight-line matrix-expression DAGs and does not cross tail iterations."
+  ],
+  "limits": [
+    "Sampling locates recurring code but does not measure the exact cycle cost of individual instructions.",
+    "An in-place stencil is training evidence; it does not establish a hotspot for unseen alternating-buffer stencils."
+  ],
+  "next_training_investigation": [
+    "Trace repeated loop guard and address computation in the already-verified native function.",
+    "Prove which checks are invariant across an admitted sweep before hoisting them; preserve full source resource bills and checked fallback.",
+    "Evaluate any general compiler change on the unchanged optimization15 before the aggregate holdout gate."
+  ],
+  "archives": {
+    "qualification/experiments/stencil-native-loop-review/training-profile.json.gz": {
+      "sha256": "c5371593e6871b7875e0f2a3bdd3eb2b99fab4981b3264b0589cfb49cd6b4e62",
+      "content_sha256": "0919220afaf9e49ad051510c5253cea3f9f5a988919f193f4075e5f860209d95"
+    },
+    "qualification/experiments/stencil-native-loop-review/jit-object-byte-verification.json.gz": {
+      "sha256": "9d6552c21ebbc97bfb58a83c4783a9147a9a742fbbc5d33451c60da5450af67b",
+      "content_sha256": "f3b394db6f51e41e18117af39ff1f88881891e31237a894fc3c905d826930ae6"
+    },
+    "qualification/experiments/stencil-native-loop-review/seidel-2d.disasm.txt.gz": {
+      "sha256": "3504ed8967f456bc1159b0867c96e6521d52fad0edeec0dadb2527d8c45b4630",
+      "content_sha256": "a097597c001b6a5ad3ff5beadc553502089fe901b819a38bd1dffa784f90c32c"
+    }
+  }
+}

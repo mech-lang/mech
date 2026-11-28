@@ -1,0 +1,1834 @@
+{
+  "schema": "mech.polybench.training-matrix-region-stage.v1",
+  "created_at": "2026-11-27T12:23:17.414289+00:00",
+  "stage": "Source dependency, escape and storage-lifetime inventory implemented; native region execution remains unselected pending checked loan/admission integration.",
+  "source_parent": "8d2eb74629265c3aceae910828443c4bb74db6be",
+  "compiler_fingerprint": "306bdc0cc6bd65cfa28cbf1a6748ea017f1e7617bca05b7b4c76b8967a762594",
+  "driver_sha256": "de016f36b447b990129f2cf919fe9f0b577bcbcb90d4819eb65ecffac7679d41",
+  "focused_tests": {
+    "passed": 6,
+    "new_region_tests": 5,
+    "existing_numeric_shadow_test": 1,
+    "original_decoded_and_independent_image_reconstruction": true,
+    "actual_checked_original_restored_execution": true
+  },
+  "inventory": {
+    "schema": "mech.polybench.training-matrix-region-inventory.v1",
+    "created_at": "2026-11-27T12:20:28.386118+00:00",
+    "scope": "Optimization15 source-only candidate and lifetime census. No timing observations or native region execution; emitted function disassemblies must remain unchanged. No holdout inspection.",
+    "compiler_fingerprint": "306bdc0cc6bd65cfa28cbf1a6748ea017f1e7617bca05b7b4c76b8967a762594",
+    "driver_sha256": "de016f36b447b990129f2cf919fe9f0b577bcbcb90d4819eb65ecffac7679d41",
+    "cases": {
+      "2mm": {
+        "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+        "object_sha256": "fddfc0580fcf9b092f854510bd3e1df8dcca59fc34e1270dfec9d19f456c272c",
+        "metadata_sha256": "11a5e32f0386d6bc58111af75331a753ba8cb4d3a56b256d73d84e307a490b81",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": null,
+            "source_steps": 6,
+            "operators": 5,
+            "external_inputs": 6,
+            "escaping_values": 1,
+            "private_banks": 4,
+            "logical_banks": 5,
+            "storage_slots": 3,
+            "kinds": [
+              "Product",
+              {
+                "Elementwise": "F64Mul"
+              },
+              "Product",
+              {
+                "Elementwise": "F64Mul"
+              },
+              {
+                "Elementwise": "F64Add"
+              }
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                4,
+                2,
+                5,
+                3
+              ],
+              "last_reads": [
+                1,
+                2,
+                4,
+                4,
+                6
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 10
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 6,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 7,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 8,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "External": 4
+                      },
+                      {
+                        "External": 5
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 9,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 10,
+                    "site": 6
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 7
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "3mm": {
+        "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+        "object_sha256": "dc6d9d37c017ecf92177c1cc07eea51064d683567102c8150d52071c5d22fb76",
+        "metadata_sha256": "7b7a70663f967d2c5e515f82639ae6d03ae318e6810e9040c5b2dc00b75b58f7",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": null,
+            "source_steps": 4,
+            "operators": 3,
+            "external_inputs": 4,
+            "escaping_values": 1,
+            "private_banks": 2,
+            "logical_banks": 3,
+            "storage_slots": 3,
+            "kinds": [
+              "Product",
+              "Product",
+              "Product"
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "last_reads": [
+                2,
+                2,
+                4
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 6
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 6,
+                    "site": 4
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 5
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "atax": {
+        "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+        "object_sha256": "e4d1eebd0d13e28770867ea425b1802cebaaeb3b07038b804c81ffc952bd1b87",
+        "metadata_sha256": "4e3826e334f372cb6d99a9181fde6afddc2308596c951be1ad44d50686511b0d",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": null,
+            "source_steps": 4,
+            "operators": 3,
+            "external_inputs": 2,
+            "escaping_values": 1,
+            "private_banks": 2,
+            "logical_banks": 3,
+            "storage_slots": 3,
+            "kinds": [
+              {
+                "Transpose": {
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              "Product",
+              "Product"
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                2,
+                2,
+                4
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 4
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 2,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 3,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 4
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 5
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "bicg": {
+        "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+        "object_sha256": "d5edebfd9fb0050ac72b8881b773d487a478706448bc165aea3eeee4e9976827",
+        "metadata_sha256": "53e2236837ff1437861feb83006199348d84756af9aadf68fe1bca42ab7b51fb",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": 5,
+            "source_steps": 3,
+            "operators": 3,
+            "external_inputs": 3,
+            "escaping_values": 2,
+            "private_banks": 1,
+            "logical_banks": 3,
+            "storage_slots": 2,
+            "kinds": [
+              {
+                "Transpose": {
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              "Product",
+              "Product"
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 5,
+              "external": [
+                0,
+                1,
+                2
+              ],
+              "last_reads": [
+                1,
+                3,
+                3
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 1
+                  },
+                  "value": 4
+                },
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 5
+                }
+              ],
+              "private_banks": [
+                0
+              ],
+              "slots": 2,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 3,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 2
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 4
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "cholesky": {
+        "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+        "object_sha256": "72159cbf7c442a699df82f3b0eaa5bbe5863f89faaafa89e873bc19ae41c8a79",
+        "metadata_sha256": "77e67737681e3b5dfe9d4800bd288b6ed0efec48621e2a53d02698e6e55fe682",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "correlation": {
+        "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+        "object_sha256": "669db0b9a433143420c11ad2836291ce805dff5f80432677031988f5ba3ee247",
+        "metadata_sha256": "4e45d25e279835e54d620844df8ad35e953da0ce70b6d3db554b4044b2b4d106",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": 8,
+            "source_steps": 6,
+            "operators": 6,
+            "external_inputs": 2,
+            "escaping_values": 2,
+            "private_banks": 4,
+            "logical_banks": 6,
+            "storage_slots": 3,
+            "kinds": [
+              {
+                "Sum": {
+                  "axis": 0,
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              {
+                "Elementwise": "F64Div"
+              },
+              {
+                "Elementwise": "F64Sub"
+              },
+              {
+                "Elementwise": "F64Mul"
+              },
+              {
+                "Sum": {
+                  "axis": 0,
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              {
+                "Elementwise": "F64Div"
+              }
+            ]
+          },
+          {
+            "entry": 30,
+            "exit": 33,
+            "source_steps": 3,
+            "operators": 3,
+            "external_inputs": 2,
+            "escaping_values": 1,
+            "private_banks": 2,
+            "logical_banks": 3,
+            "storage_slots": 3,
+            "kinds": [
+              {
+                "Elementwise": "F64Div"
+              },
+              {
+                "Transpose": {
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              "Product"
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 8,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                1,
+                2,
+                6,
+                4,
+                5,
+                6
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 10
+                },
+                {
+                  "source": {
+                    "Bank": 5
+                  },
+                  "value": 13
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                3,
+                4
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 8,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 9,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Sub"
+                    },
+                    "output": 10,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 11,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 12,
+                    "site": 6
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 5,
+                    "inputs": [
+                      {
+                        "Bank": 4
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 13,
+                    "site": 7
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2,
+                1
+              ]
+            },
+            {
+              "entry": 30,
+              "exit": 33,
+              "external": [
+                10,
+                20
+              ],
+              "last_reads": [
+                2,
+                2,
+                3
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 23
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 21,
+                    "site": 30
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 22,
+                    "site": 31
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 23,
+                    "site": 32
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "covariance": {
+        "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+        "object_sha256": "463821f4bb9125095dfd95ce434ffdafcefe25585146c3a51d1fb25a8f7ee62e",
+        "metadata_sha256": "b99da7437f1e7bdff17b23deab71989395fe803b8f2e3f0f7b04cf87084c3e48",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": 7,
+            "source_steps": 5,
+            "operators": 5,
+            "external_inputs": 2,
+            "escaping_values": 1,
+            "private_banks": 4,
+            "logical_banks": 5,
+            "storage_slots": 3,
+            "kinds": [
+              {
+                "Sum": {
+                  "axis": 0,
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              {
+                "Elementwise": "F64Div"
+              },
+              {
+                "Elementwise": "F64Sub"
+              },
+              {
+                "Transpose": {
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              "Product"
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 7,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                1,
+                2,
+                4,
+                4,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 7
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 3,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 4,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Sub"
+                    },
+                    "output": 5,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 6,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 3
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 7,
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "deriche": {
+        "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+        "object_sha256": "7c2d469d6e83ab2f76b0b69569fd4edd0c79497753ce5aeb61fc40bfadee7ade",
+        "metadata_sha256": "595c80e262a24389fb947d767e72fe6bb8231b3b9d2dc6850e32917ba074ca28",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "doitgen": {
+        "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+        "object_sha256": "24b62305e9a85b104499a3b35d33d67cecc97934f2f31ce92d7c2cbb11598d97",
+        "metadata_sha256": "b28cc43c0288a59a72979bbb339e88a3706e18442c9d58e8dcf61801ce2e4500",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "durbin": {
+        "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+        "object_sha256": "c9f3209b5bf258b9d21bd52770467369ebf0a71fae0b871a152f0e5000d65584",
+        "metadata_sha256": "a06328b5dcb82bc04dd7e7bb910009cb4086dd77ff80d0c68653e1a3bcfc4380",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "gemm": {
+        "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+        "object_sha256": "515250826ffcf224e688892910e7dd8f988c0326c39543188969c2a86be250d3",
+        "metadata_sha256": "824f1c06d9cfe9298911c5e36b5465cc1c84900b5f307b5b5899e96bdad8a620",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": null,
+            "source_steps": 5,
+            "operators": 4,
+            "external_inputs": 5,
+            "escaping_values": 1,
+            "private_banks": 3,
+            "logical_banks": 4,
+            "storage_slots": 3,
+            "kinds": [
+              "Product",
+              {
+                "Elementwise": "F64Mul"
+              },
+              {
+                "Elementwise": "F64Mul"
+              },
+              {
+                "Elementwise": "F64Add"
+              }
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "last_reads": [
+                1,
+                3,
+                3,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 3
+                  },
+                  "value": 8
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 6,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 3
+                      },
+                      {
+                        "External": 4
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 7,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 8,
+                    "site": 5
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "gramschmidt": {
+        "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+        "object_sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d",
+        "metadata_sha256": "015fde48ccd9b83f78c2eae9ff74196f47e97c2b29b9adb3affadf0127945b71",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "mvt": {
+        "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+        "object_sha256": "159228d603d5fb5c0dbcbfc68e2e86dde21b39a5d58ff3372ba45fce05dc8b00",
+        "metadata_sha256": "613866cc0d476c184ca0b929ceb2ebfd8e624d95d8a60961726e4304c7aa992e",
+        "regions": [
+          {
+            "entry": 2,
+            "exit": 7,
+            "source_steps": 5,
+            "operators": 5,
+            "external_inputs": 5,
+            "escaping_values": 2,
+            "private_banks": 3,
+            "logical_banks": 5,
+            "storage_slots": 3,
+            "kinds": [
+              "Product",
+              {
+                "Elementwise": "F64Add"
+              },
+              {
+                "Transpose": {
+                  "input": [
+                    null,
+                    null
+                  ]
+                }
+              },
+              "Product",
+              {
+                "Elementwise": "F64Add"
+              }
+            ]
+          }
+        ],
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 7,
+              "external": [
+                0,
+                2,
+                1,
+                4,
+                3
+              ],
+              "last_reads": [
+                1,
+                5,
+                3,
+                4,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 1
+                  },
+                  "value": 6
+                },
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 9
+                }
+              ],
+              "private_banks": [
+                0,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 6,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 7,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 8,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "External": 4
+                      },
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 9,
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                2,
+                0
+              ]
+            }
+          ]
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "nussinov": {
+        "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+        "object_sha256": "2ca499738693b9844a57c858a032c758eaf76b0586f444d0e96f3af8e2fb9649",
+        "metadata_sha256": "665f279d166cc63b41a6bc9b19c23270be402c74bfd7d0cb7b893ad5535e7179",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      },
+      "seidel-2d": {
+        "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+        "object_sha256": "3baf11d400aeb6bc827cb01bd7a9f80df4215d44a83e1894543a89a29927dbd1",
+        "metadata_sha256": "37e552b986c3ac9f1cd6fe4849b828a83df87639a0e679b71f440022a68c03ee",
+        "regions": [],
+        "inventory": {
+          "candidates": []
+        },
+        "selected": false,
+        "generated_functions_unchanged": true
+      }
+    },
+    "complete": true,
+    "cases_with_candidates": [
+      "2mm",
+      "3mm",
+      "atax",
+      "bicg",
+      "correlation",
+      "covariance",
+      "gemm",
+      "mvt"
+    ],
+    "total_operators": 37,
+    "private_banks": 25,
+    "logical_banks": 37,
+    "storage_slots": 26
+  },
+  "archives": {
+    "attempt-01-invalid-tail-fixture/failure.json": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/failure.json.gz",
+      "sha256": "00c4f1eff868d34925a9a2e915c5e32f77f21d4e3dea3b8e9548b17f643d5c38",
+      "compressed_sha256": "6ce227388008397178e6b7fc135d895f2b38c93e246267ea369629da233a1a14"
+    },
+    "attempt-01-invalid-tail-fixture/focused-command.json": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/focused-command.json.gz",
+      "sha256": "be842086fae5f9299e7f17e9aacc8170adbd2b1be69482fe1186fe4c70644066",
+      "compressed_sha256": "e590ff5da37ca9f5e61cb5dca019a17eae650aaa8cdc1611363084f17b5644ca"
+    },
+    "attempt-01-invalid-tail-fixture/focused-result.json": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/focused-result.json.gz",
+      "sha256": "f05717e8641e989a44e0548779520e18161825f3b4a1dd71f4bebc99f30423df",
+      "compressed_sha256": "bcf2ff1855e2405661e9bc11aa21aec8093644ace06ae08fd05b4b4efae0ce8e"
+    },
+    "attempt-01-invalid-tail-fixture/focused.log": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/focused.log.gz",
+      "sha256": "bcd23c015272eb8752dbdb1a5f60cbde1ec3660bda0506f70c994e3322a55eca",
+      "compressed_sha256": "b1d35d5854d64007117afd31c4541ba152095449372fa7aea79625eeea1376e9"
+    },
+    "attempt-01-invalid-tail-fixture/source/hosts/gpu/src/native_artifact/program/prepare/numeric_regions.rs": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/source/hosts/gpu/src/native_artifact/program/prepare/numeric_regions.rs.gz",
+      "sha256": "7f24943fb4a131be7eea2c310cea4984f5817d90352a2bcafada763a0c872b84",
+      "compressed_sha256": "3b4200d8fc0755b4e432269185bf3b6796bae19c5b9ae80c9eae53940d5fc5c7"
+    },
+    "attempt-01-invalid-tail-fixture/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_regions.rs": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_regions.rs.gz",
+      "sha256": "faedfd847560ea69d09c64ad28a85be8576d9f1c6b7641a6b56ca6248b623064",
+      "compressed_sha256": "065689851d4596ffd57fef670b93d52daf3d65ea2da05474fe9df3fda54f0436"
+    },
+    "attempt-01-invalid-tail-fixture/source-checkpoint.json": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/source-checkpoint.json.gz",
+      "sha256": "ea7c5f75750bec28bf5b1aea4e11910691a221b7a87458c902f27ff82341e679",
+      "compressed_sha256": "1f5f128d74fa6ca769116f1ad9e3f014fc5749340b399fe2729ddf4810922b0a"
+    },
+    "attempt-01-invalid-tail-fixture/source.patch": {
+      "path": "qualification/experiments/matrix-region-inventory/attempt-01-invalid-tail-fixture/source.patch.gz",
+      "sha256": "ca5c7773ae78aac4b5001cabdedf102deeff579eff88642ee25cadaff388011d",
+      "compressed_sha256": "4ea0bbdd075ba88fafdf8af84433448a6beec62747236e5c49f5cf37fe6f88f3"
+    },
+    "driver-build.log": {
+      "path": "qualification/experiments/matrix-region-inventory/driver-build.log.gz",
+      "sha256": "e325e14a8daacff0edc16872e8f3b95dba516aa473109015e38a339f88a32758",
+      "compressed_sha256": "4f5436af86d5f547ef90c3dd021c9f0b7daf8eaa90903f2c55fdd1b3f824f3ea"
+    },
+    "focused-command.json": {
+      "path": "qualification/experiments/matrix-region-inventory/focused-command.json.gz",
+      "sha256": "15a73502d134c7ba65f6394b4782a7997d75becace2cd277dc26816d40f721ed",
+      "compressed_sha256": "4f346b9b163d541806db3bbda56d4dfaf7b3d1d77ed32a42b19d279ecc36aa94"
+    },
+    "focused-result.json": {
+      "path": "qualification/experiments/matrix-region-inventory/focused-result.json.gz",
+      "sha256": "65ccd458b69a3868c9a687075a02b2c709ec2530660bd56825b5b7c357e647e3",
+      "compressed_sha256": "687a64b75345d15b14417b43efcfd757d5e30b8c3e4ec7c2f2b444fe80fcbaba"
+    },
+    "focused.log": {
+      "path": "qualification/experiments/matrix-region-inventory/focused.log.gz",
+      "sha256": "925901430eeda6554f3f696f5be03e3e5f5a53f6e4e7eef3486648ed2593de66",
+      "compressed_sha256": "41b45f143aecbc2d8f1bc360009d3f116aab6e611b9b6cdce7c81e9cc246ff65"
+    },
+    "implementation-plan.json": {
+      "path": "qualification/experiments/matrix-region-inventory/implementation-plan.json.gz",
+      "sha256": "de794c1e47ccdda2ea849418424de4c203da2448761dec318f5a14309ebd2b64",
+      "compressed_sha256": "39c1adaf206daa2d42c43b466417f9323937857b3116b1b4c573aec4cd8d2bd8"
+    },
+    "inventory.log": {
+      "path": "qualification/experiments/matrix-region-inventory/inventory.log.gz",
+      "sha256": "42dff7987706f9460f217d32b85114b8073c8a83ba1bf426d92ff0c87d206fc3",
+      "compressed_sha256": "9e5fb9b2040f4e88bc0f106f2271aed9178946e4b07daf60e3b0575282a2ca48"
+    },
+    "inventory.py": {
+      "path": "qualification/experiments/matrix-region-inventory/inventory.py.gz",
+      "sha256": "0b473f928172ad74344a2268f6299d3192491856c4fb41cc5813f16c1ab9ee71",
+      "compressed_sha256": "bd7db9f5ac6207ecd49e863eec0bbef2d41dace34108a1c5588fc5f9f54c8653"
+    },
+    "objects/2mm.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/2mm.disasm.txt.gz",
+      "sha256": "9eb924750e6dc017f36fe33a63c7b7d2996061891dbf6c999b7e1318c4bd8729",
+      "compressed_sha256": "907e44feb1896cd9091567aad02779ff134874ec90215dc7ad43d682b1bf3113"
+    },
+    "objects/2mm.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/2mm.metadata.json.gz",
+      "sha256": "11a5e32f0386d6bc58111af75331a753ba8cb4d3a56b256d73d84e307a490b81",
+      "compressed_sha256": "ee8496f4811021c89732f82856125fa07fdd25c607cca82d1d523fb6f105425d"
+    },
+    "objects/2mm.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/2mm.o.gz",
+      "sha256": "fddfc0580fcf9b092f854510bd3e1df8dcca59fc34e1270dfec9d19f456c272c",
+      "compressed_sha256": "8526a9adef2aeb63e571a49074eee82f2c7ba0d311b4d6af0d29da30ae5388ca"
+    },
+    "objects/3mm.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/3mm.disasm.txt.gz",
+      "sha256": "694c71775179867cb14c2dc678dfe6a12e5a14ef09d46274a94adf8c264e618c",
+      "compressed_sha256": "a429c99e0e0d0aaf7f9e4ac3ba0990768667656c781fcdb567cae690444ed142"
+    },
+    "objects/3mm.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/3mm.metadata.json.gz",
+      "sha256": "7b7a70663f967d2c5e515f82639ae6d03ae318e6810e9040c5b2dc00b75b58f7",
+      "compressed_sha256": "d13a7f89817e0985926e8bab505388b8e0f9f2ca8d0a61ef12678b4b9b38bd05"
+    },
+    "objects/3mm.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/3mm.o.gz",
+      "sha256": "dc6d9d37c017ecf92177c1cc07eea51064d683567102c8150d52071c5d22fb76",
+      "compressed_sha256": "73e74577e24ba29df83a0d2164ce56f3d52dbab1f93e2103b39bfaaf409c467a"
+    },
+    "objects/atax.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/atax.disasm.txt.gz",
+      "sha256": "39f9aaa6d347fa7c220d5deb11bde2f8e7f2dbf57cc3051e6ff9472a424616a3",
+      "compressed_sha256": "3c92b4bc17e555265347e805069389a600a9a66716d59c82d6f4d18e10e10781"
+    },
+    "objects/atax.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/atax.metadata.json.gz",
+      "sha256": "4e3826e334f372cb6d99a9181fde6afddc2308596c951be1ad44d50686511b0d",
+      "compressed_sha256": "75ebbea016fd6372068ced721369c8f2e883b61596189e93227adabc16e2847c"
+    },
+    "objects/atax.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/atax.o.gz",
+      "sha256": "e4d1eebd0d13e28770867ea425b1802cebaaeb3b07038b804c81ffc952bd1b87",
+      "compressed_sha256": "8cdac695a3b1a1c5c2f5bc7bce95a2c2b31f8d8e06d528a294688f2fb8e53011"
+    },
+    "objects/bicg.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/bicg.disasm.txt.gz",
+      "sha256": "a15993b5721249e681e02b6598d035dd3f725687c0e458c0c18e03ba60cdf739",
+      "compressed_sha256": "917da3c610648998e587ffcc46e989846a100f5a908902ad36f4f1a6807bb0a8"
+    },
+    "objects/bicg.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/bicg.metadata.json.gz",
+      "sha256": "53e2236837ff1437861feb83006199348d84756af9aadf68fe1bca42ab7b51fb",
+      "compressed_sha256": "c6498d7c634d6573b5e7c56dbe9192b064f9a633f2b164c89580595deb7fa248"
+    },
+    "objects/bicg.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/bicg.o.gz",
+      "sha256": "d5edebfd9fb0050ac72b8881b773d487a478706448bc165aea3eeee4e9976827",
+      "compressed_sha256": "3615379ab16989bc2dd0328624674c815f59d3ee0cfc65cd2ce0d03b786d86d3"
+    },
+    "objects/cholesky.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/cholesky.disasm.txt.gz",
+      "sha256": "f8ec21110152f0de83c9d0b9c57f5bc9f423da34dd827e959564bad3f91c6370",
+      "compressed_sha256": "3968c4c11b86bfc4a2d2b1fbcad740d99729628254b10d6d9598b5b0e70e708d"
+    },
+    "objects/cholesky.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/cholesky.metadata.json.gz",
+      "sha256": "77e67737681e3b5dfe9d4800bd288b6ed0efec48621e2a53d02698e6e55fe682",
+      "compressed_sha256": "28c2e58a812d40bfcda0cf06a5f3b4abd77965e537e3ef0c1c9162360e689ea2"
+    },
+    "objects/cholesky.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/cholesky.o.gz",
+      "sha256": "72159cbf7c442a699df82f3b0eaa5bbe5863f89faaafa89e873bc19ae41c8a79",
+      "compressed_sha256": "95b0139429d0359657bd021743aeba3191ca0a72d50001e8f5a9d3709b78f4e2"
+    },
+    "objects/correlation.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/correlation.disasm.txt.gz",
+      "sha256": "b0b2cea26227ffe4d6890586ecacb4c669ef991bb4df64cd5964bd355919ae71",
+      "compressed_sha256": "ef87f608629d528cb035acc3bed21817b5a840b7a6cb9846a1101d082aa2b998"
+    },
+    "objects/correlation.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/correlation.metadata.json.gz",
+      "sha256": "4e45d25e279835e54d620844df8ad35e953da0ce70b6d3db554b4044b2b4d106",
+      "compressed_sha256": "90de08a9b3f5503d95171d25a7b32dc0ecec3ea4783e1e59fe56b42a047ef47c"
+    },
+    "objects/correlation.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/correlation.o.gz",
+      "sha256": "669db0b9a433143420c11ad2836291ce805dff5f80432677031988f5ba3ee247",
+      "compressed_sha256": "fb2553178d6413488d604d56750c98e83dc4d060d764da96c09c7b5ab8108236"
+    },
+    "objects/covariance.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/covariance.disasm.txt.gz",
+      "sha256": "acd70d093bf73a81c00c2a946ad2899551b27c84bac963477aa7d98afdb7ea6d",
+      "compressed_sha256": "45727e3897e0ff410353f9bb37ef7f4e0e0f07ac3dd43f0247aa091635f9c588"
+    },
+    "objects/covariance.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/covariance.metadata.json.gz",
+      "sha256": "b99da7437f1e7bdff17b23deab71989395fe803b8f2e3f0f7b04cf87084c3e48",
+      "compressed_sha256": "f1eed2b0dc836579a2780ee16aa2d918a021d0f58e30d15753a88265c65c561a"
+    },
+    "objects/covariance.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/covariance.o.gz",
+      "sha256": "463821f4bb9125095dfd95ce434ffdafcefe25585146c3a51d1fb25a8f7ee62e",
+      "compressed_sha256": "ec98af3d344b1e0582c2a3aa1842941a85b073be087c485b7a567b964f6611f9"
+    },
+    "objects/deriche.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/deriche.disasm.txt.gz",
+      "sha256": "6c12da2da9acd8244e5cf017890b999455745b62ac09774ab614ccb5eeae6542",
+      "compressed_sha256": "7cabff11f62e46b8c32aeddbb8361183a08750ccd43707663386248ac5ecbc46"
+    },
+    "objects/deriche.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/deriche.metadata.json.gz",
+      "sha256": "595c80e262a24389fb947d767e72fe6bb8231b3b9d2dc6850e32917ba074ca28",
+      "compressed_sha256": "5f3f2e6cd0e05bc53e39e199d9f434bbe88f8f0352026144a22b61941a1a2db4"
+    },
+    "objects/deriche.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/deriche.o.gz",
+      "sha256": "7c2d469d6e83ab2f76b0b69569fd4edd0c79497753ce5aeb61fc40bfadee7ade",
+      "compressed_sha256": "b81dd4ea5a4941504cd31dbf923a0115fbddae017ba8187e60164162c4801c36"
+    },
+    "objects/doitgen.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/doitgen.disasm.txt.gz",
+      "sha256": "388aa4743bc170816dbe00a23a83aff7a5136143f76dbf8dffc9edf3b812cd0d",
+      "compressed_sha256": "7ddba4d4d84697bcc00c6f4fcb847e4f6c044d306aee83ba82929f3a1b1ad391"
+    },
+    "objects/doitgen.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/doitgen.metadata.json.gz",
+      "sha256": "b28cc43c0288a59a72979bbb339e88a3706e18442c9d58e8dcf61801ce2e4500",
+      "compressed_sha256": "70a8f8d557fb9dc7083008bef7feb940f0b382044fcd7b3b95d90ecd363e159c"
+    },
+    "objects/doitgen.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/doitgen.o.gz",
+      "sha256": "24b62305e9a85b104499a3b35d33d67cecc97934f2f31ce92d7c2cbb11598d97",
+      "compressed_sha256": "aceaf1a71f65d0e17bd184a8b142e7ea11fad8b6a5222c7fb16ef829720e606b"
+    },
+    "objects/durbin.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/durbin.disasm.txt.gz",
+      "sha256": "93074892111da9f85e86794bb77af312c71290774cc0050b0f2cd967bff0d6a8",
+      "compressed_sha256": "ca2e63ae68f8a204586e596729f24cab455366d41024dcdcb95653c899937d4b"
+    },
+    "objects/durbin.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/durbin.metadata.json.gz",
+      "sha256": "a06328b5dcb82bc04dd7e7bb910009cb4086dd77ff80d0c68653e1a3bcfc4380",
+      "compressed_sha256": "5c38786f027eb8e317a45b14d8d1c64e46aedd4eb6099885f74f95a34fc8737b"
+    },
+    "objects/durbin.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/durbin.o.gz",
+      "sha256": "c9f3209b5bf258b9d21bd52770467369ebf0a71fae0b871a152f0e5000d65584",
+      "compressed_sha256": "e58c179384aeb9aedc72410cf3f6b34c723ed188a7b6d1d64fa4849981baef56"
+    },
+    "objects/gemm.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gemm.disasm.txt.gz",
+      "sha256": "cf09cee69abc0c026b8322615bbc2c453c75a23f604122daf241861851d4577d",
+      "compressed_sha256": "d0c07a014557e76547dd7d855c319b73280b9378a2f6574424b437bc5f734509"
+    },
+    "objects/gemm.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gemm.metadata.json.gz",
+      "sha256": "824f1c06d9cfe9298911c5e36b5465cc1c84900b5f307b5b5899e96bdad8a620",
+      "compressed_sha256": "ee08f276399f5385ed27774b94bf108b7264fdc486ef1f3f754cb3a38acf4695"
+    },
+    "objects/gemm.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gemm.o.gz",
+      "sha256": "515250826ffcf224e688892910e7dd8f988c0326c39543188969c2a86be250d3",
+      "compressed_sha256": "202b55aa2c6472d7281c1efe59fd8ee8e076bf5a6465fd65bdc1be369e9f18bf"
+    },
+    "objects/gramschmidt.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gramschmidt.disasm.txt.gz",
+      "sha256": "db1e877654d8e1f6cf1fd4d2b21a76a0f75fcc2d4536cba27a7abede60223887",
+      "compressed_sha256": "abf1e8ea49fd7c8ad95d89da98530990369868f5d5e81ebfa08e9961c5f78d57"
+    },
+    "objects/gramschmidt.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gramschmidt.metadata.json.gz",
+      "sha256": "015fde48ccd9b83f78c2eae9ff74196f47e97c2b29b9adb3affadf0127945b71",
+      "compressed_sha256": "c583e224aaec550843de2b5a25f5461fd049b471493de81e1aee27384a67b4ad"
+    },
+    "objects/gramschmidt.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/gramschmidt.o.gz",
+      "sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d",
+      "compressed_sha256": "7d80be94bcc84f126abaf7233160b00484c21db7f6cea0f3c549d927a83067b8"
+    },
+    "objects/mvt.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/mvt.disasm.txt.gz",
+      "sha256": "ef35a6388c1a6edb02fecdea28b608474488d1af1bc7d96e090f9fb95b28bcb6",
+      "compressed_sha256": "9ecbdd46e3fbc011187f8f5089dc07abb773330a77b3478548d6c3882ee6462e"
+    },
+    "objects/mvt.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/mvt.metadata.json.gz",
+      "sha256": "613866cc0d476c184ca0b929ceb2ebfd8e624d95d8a60961726e4304c7aa992e",
+      "compressed_sha256": "833c5eef5359cd8a74c90159f3abf08579b94148661607373b6f1d4b87fab471"
+    },
+    "objects/mvt.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/mvt.o.gz",
+      "sha256": "159228d603d5fb5c0dbcbfc68e2e86dde21b39a5d58ff3372ba45fce05dc8b00",
+      "compressed_sha256": "00f100861c2702019fc0dea4850ef69e59806483e88b20b74192d66c3fa717c5"
+    },
+    "objects/nussinov.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/nussinov.disasm.txt.gz",
+      "sha256": "f09918c426650e68d13e37489ed91b6822cf934677e6020fdda2add0aa53dfe5",
+      "compressed_sha256": "8ecc1e63cbe3bbbc8a4da3e9e9a3f97f732a6d943cb5d1fff69c12cfd851a342"
+    },
+    "objects/nussinov.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/nussinov.metadata.json.gz",
+      "sha256": "665f279d166cc63b41a6bc9b19c23270be402c74bfd7d0cb7b893ad5535e7179",
+      "compressed_sha256": "495ab7225b2e21775326f574bf14d6cc26bd0aef67c87160bde5ee6048deb2fb"
+    },
+    "objects/nussinov.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/nussinov.o.gz",
+      "sha256": "2ca499738693b9844a57c858a032c758eaf76b0586f444d0e96f3af8e2fb9649",
+      "compressed_sha256": "e718d3281fabc6fdaa9127f65daca018bf33d438aa46515e2b78960f71a7bdec"
+    },
+    "objects/seidel-2d.disasm.txt": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/seidel-2d.disasm.txt.gz",
+      "sha256": "03c9804e40c4121a7c225dd80b649460a70f799c0b69af04264ee71678d4e0fa",
+      "compressed_sha256": "7424bc0a18a6493456a840b2eadbf55c9ec524f9206e176ad51415f496ada75d"
+    },
+    "objects/seidel-2d.metadata.json": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/seidel-2d.metadata.json.gz",
+      "sha256": "37e552b986c3ac9f1cd6fe4849b828a83df87639a0e679b71f440022a68c03ee",
+      "compressed_sha256": "4b2f3b564d3e146c97579e081c5d580a19e6f8526d56032f6c3f339bac9a2681"
+    },
+    "objects/seidel-2d.o": {
+      "path": "qualification/experiments/matrix-region-inventory/objects/seidel-2d.o.gz",
+      "sha256": "3baf11d400aeb6bc827cb01bd7a9f80df4215d44a83e1894543a89a29927dbd1",
+      "compressed_sha256": "27b5f1163aabad605e78c98c73c65843b21ebc81dcc1657142924d9e1adb7ed2"
+    },
+    "source-checkpoint.json": {
+      "path": "qualification/experiments/matrix-region-inventory/source-checkpoint.json.gz",
+      "sha256": "e25d00f215de8be0f8f078b2651b5f75360bd2d7ce9afbb3a558d60e496a1f49",
+      "compressed_sha256": "464b165e2162e42ce49bfc94c4d91fee06195203b6401702ee726ef06739809b"
+    },
+    "source.patch": {
+      "path": "qualification/experiments/matrix-region-inventory/source.patch.gz",
+      "sha256": "ca5c7773ae78aac4b5001cabdedf102deeff579eff88642ee25cadaff388011d",
+      "compressed_sha256": "4ea0bbdd075ba88fafdf8af84433448a6beec62747236e5c49f5cf37fe6f88f3"
+    },
+    "stage-source/hosts/gpu/src/native_artifact/program/prepare/numeric_regions.rs": {
+      "path": "qualification/experiments/matrix-region-inventory/stage-source/hosts/gpu/src/native_artifact/program/prepare/numeric_regions.rs.gz",
+      "sha256": "7f24943fb4a131be7eea2c310cea4984f5817d90352a2bcafada763a0c872b84",
+      "compressed_sha256": "3b4200d8fc0755b4e432269185bf3b6796bae19c5b9ae80c9eae53940d5fc5c7"
+    },
+    "stage-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_regions.rs": {
+      "path": "qualification/experiments/matrix-region-inventory/stage-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_regions.rs.gz",
+      "sha256": "d21a05e44b4728714fd96e952a45972b0dd3e3f71621817ff46473ac2f210505",
+      "compressed_sha256": "c4ca1b61280950e5d04e916254d3b8c76ac148b6767294ff2b6da4e709b929f7"
+    },
+    "training-inventory.json": {
+      "path": "qualification/experiments/matrix-region-inventory/training-inventory.json.gz",
+      "sha256": "7cf0ecc1d632ec90471b460146da71680b08494f2c8ee1de5264ba5184b3d102",
+      "compressed_sha256": "82d2948c5e600077f9aa4db647efd6e5c659d99fa15b9c19800ae7a2618b888e"
+    }
+  },
+  "performance_measurements": false,
+  "formal_history_entries_unchanged": 35,
+  "accepted_round_unchanged": 31,
+  "source_invariants": [
+    "No names or fixed benchmark dimensions select a region. Root source CFGs, actual canonical numeric calls and genuine operand identities derive every candidate.",
+    "Every captured source is immutable and available before entry; regions exclude activation, branches, unknown calls, effects and iterations. Both conditional arms may independently contain a region.",
+    "All semantic read roles and aliases determine escapes and last reads. Escaping banks remain live to exit; a new result cannot reuse any current input storage.",
+    "Candidate inventories carry no owner, pointer, permit or budget credit and are absent from image wire formats. Independent image loads rederive them from the actual restored source plan.",
+    "All15 optimization Object function disassemblies match accepted31. The candidate diagnostic explicitly reports selected:false. No current execution or performance change is claimed."
+  ],
+  "development_failure": "The initial source-only checks passed5 and failed1 because a nested Tail test fixture did not parenthesize its full canonical match. The fixture was corrected; source selection and all failed logs/source remain.",
+  "next_action": "Add a Core prospective plain-F64 matrix ownership calculation shared with canonical admission, then integrate a complete current-value region loan using existing numeric kernels and source-control prepayment. Price all original source operations, copies, publication and retirement before eliminating intermediate Values. Qualify the executable feature before any performance probe."
+}

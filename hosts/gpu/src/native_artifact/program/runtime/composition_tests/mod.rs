@@ -13,6 +13,7 @@ mod borrowed_record_map;
 mod bounds_retry;
 mod bulk_bytes;
 mod captured_numeric;
+mod captured_numeric_phases;
 mod captured_read_addresses;
 mod captured_window_handoffs;
 mod captured_windows;
@@ -49,10 +50,27 @@ mod nested_phase_growing;
 mod nested_phase_handoff;
 mod nested_scalar_array;
 mod nullary_phases;
+mod numeric_binary;
 mod numeric_bindings;
 mod numeric_boolean_relations;
+mod numeric_call_cache;
+mod numeric_cell_phases;
+mod numeric_cell_write_ownership;
+mod numeric_composition_diagnostic;
+mod numeric_fsm_trips;
+mod numeric_generator_execution;
+mod numeric_generator_kernel;
+mod numeric_generators;
 mod numeric_induction;
+mod numeric_matrix_sums;
 mod numeric_outlining;
+mod numeric_product_epilogues;
+mod numeric_product_quartets;
+mod numeric_product_rows;
+mod numeric_product_views;
+mod numeric_reduction_producers;
+mod numeric_summary_branches;
+mod numeric_transpose;
 mod numeric_tree;
 mod numeric_tree_owner_handoff;
 pub(super) mod observe;
@@ -64,6 +82,7 @@ mod ordered_reduction_terminal;
 mod pack;
 mod phase_descendants;
 mod physical_exits;
+mod prefix_numeric_phases;
 mod producer_element_ranges;
 mod projection_elements;
 mod read_packs;
@@ -77,7 +96,9 @@ mod schema_key;
 mod state_read_packs;
 mod static_extents;
 mod tagged_map_carrier;
+mod tagged_numeric_phases;
 mod tuple_capture;
+mod typed_numeric_phases;
 mod utf8_reads;
 mod virtual_retirement;
 mod wide_scalar_array;
@@ -110,6 +131,19 @@ fn owner_layout_work(pthread: u64, futex: u64) -> u64 {
         (368, 208) => futex,
         layout => panic!("unqualified native work owner layout: {layout:?}"),
     }
+}
+
+// Policy149 adds one optional local-map owner pointer to PrivateNumeric,
+// embedded in the invocation's FrameLanes. The setup meter prices each admitted
+// metadata byte at eight units. Retain the historical source equations and
+// account for this actual allocation separately, even when the option is None.
+fn phase_map_local_metadata_work() -> u64 {
+    let bytes = core::mem::size_of::<Option<Box<()>>>() as u64;
+    assert_eq!(
+        bytes, 8,
+        "qualify a changed native pointer layout explicitly"
+    );
+    bytes * 8
 }
 
 #[test]
@@ -146,9 +180,17 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                127
+                157
             );
-            // Policy125 adds tree first-write alias checks; this fixture keeps exact work.
+            // Policy152 adds ordered product fees. This unsigned fixture has no
+            // selected products. Policy151 adds F64 matrix arithmetic fees. This unsigned fixture
+            // has no selected elementwise calls; its exact equations remain.
+            // Policy150 moves map/fold attempt charges to reached source sites.
+            // This unsigned fixture has no such summaries; retain its exact bill.
+            // Policy149 retains this unsigned fixture’s existing funding, the
+            // policy127 tree handoff and its exact source work bill, with the
+            // separately accounted local-owner metadata setup below.
+            // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
@@ -220,7 +262,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             );
             assert_eq!(
                 report.work,
-                owner_layout_work(88_531_834, 88_525_050) + setup + entries + ordinary + pieces
+                owner_layout_work(88_531_834, 88_525_050)
+                    + setup
+                    + entries
+                    + ordinary
+                    + pieces
+                    + phase_map_local_metadata_work()
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -609,7 +656,14 @@ fn composition_native_parent_resumes_after_an_ordinary_empty_child() {
 
 mod uniform_fill;
 
+mod numeric_map_nested;
+mod numeric_map_reductions;
+mod numeric_map_transposes;
 mod numeric_maps;
+mod numeric_phase_maps;
+mod numeric_phase_reductions;
+mod rectangular_numeric_maps;
+mod typed_map_folds;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
@@ -650,12 +704,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                127
+                157
             );
             assert_eq!(
                 report.work,
-                owner_layout_work(41_515_826, 41_513_202),
-                "policy124 retains policy115 child fallback banks (+296 setup work) and exact source prices"
+                owner_layout_work(41_515_826, 41_513_202) + phase_map_local_metadata_work(),
+                "policy150 retains this fixture’s exact source and local-owner metadata prices"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -853,3 +907,14 @@ pub(super) mod dictionary_seed_frames;
 pub(super) mod borrowed_dictionary_values;
 
 pub(super) mod fixed_key_loops;
+
+mod numeric_compound_maps;
+mod numeric_masked_maps;
+mod numeric_selected_initialization;
+
+mod ordered_map_dot_batches;
+mod ordered_map_dots;
+
+mod affine_map_cells;
+
+mod cell_prefix;

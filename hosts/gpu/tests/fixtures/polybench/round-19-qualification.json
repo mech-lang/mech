@@ -1,0 +1,654 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-19-inline-current-shape-leaves",
+  "compiler_commit": "3294d36340510bdbd0c7ec071ef78ce96468389f",
+  "compiler_fingerprint": "be26ab7ef61aeb8cb5a439210880ec6e316b795a363415eeaabb4dd70a102c6f",
+  "driver_sha256": "ca2afeebc733b113f4a3f1a19e934ce6faaa26aea8139969f8b0a02f2f8fc7ed",
+  "frozen_candidate_sha256": "96abf881f926211943b11d2a35e2bb0c05e6f3f7b33c2431b0af7591f6e85575",
+  "native_typed_ir_version": 378,
+  "native_work_policy_version": 147,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "Core dimension arithmetic, schema shape and dimension relation contracts",
+      "log": "core-shapes.log",
+      "passed_by_target": [
+        7,
+        15,
+        3
+      ],
+      "log_sha256": "c89cea5925f3a6e94ece10f656681f55fa45ece05ab58ce87cd4ef677c4cf38f"
+    },
+    {
+      "suite": "native numeric/phase, row blocks and both exact Huffman work equations",
+      "log": "numeric-regressions.log",
+      "passed_by_target": [
+        350
+      ],
+      "log_sha256": "986420a2add78a8a686d177670f12fdacc8cddb4047a60f423b4676cbabaac3e"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "log": "matrix-polybench.log",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "8ca383436855e34a1db827d45257d7258f12eb02f9a0ef6b783ad8758a5af694"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collection and range/cursor regressions",
+      "log": "program-regressions.log",
+      "passed_by_target": [
+        114
+      ],
+      "log_sha256": "a2fd1fcbea6b7cbb59c2bf8bc8ed3d96081821c173a77864edaf3d2658a7bb24"
+    },
+    {
+      "suite": "resident numeric, geometry, capacity, prefix projections and range cursor proofs",
+      "log": "engine-numeric.log",
+      "passed_by_target": [
+        206
+      ],
+      "log_sha256": "b16f47c9f773256fd9623a8bbca6e04d79b5cc10a8e0173864ff9478a2823164"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "log": "protocol.log",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "9aa501ab23452d8f64f1a5aff9b24c09d0804c574c977bcd5136a37643daff6b"
+    }
+  ],
+  "total_selected_checks": 750,
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 84.28176686288246,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.023708749
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 19.447819264027913,
+      "median_speedup": 1.5007871195196216,
+      "minimum_speedup": 1.0351826792963463,
+      "maximum_speedup": 19555.15502258351,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 39.05084826487183,
+      "geomean_mech_over_c_fresh": 24.61159532744371,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 191.66797510044816,
+      "sum_mech_median_seconds": 0.005530333,
+      "geomean_speedup_from_contemporaneous_baseline": 19.809039003651108,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0781116251855545
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 23.539471097707484,
+      "median_speedup": 22.722781052219492,
+      "minimum_speedup": 1.0591164309031555,
+      "maximum_speedup": 401.32047919096055,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 84.28176686288246,
+      "geomean_mech_over_c_fresh": 52.81591962475702,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 465.35127369178264,
+      "sum_mech_median_seconds": 0.023708749,
+      "geomean_speedup_from_contemporaneous_baseline": 23.543109954483068,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.070006528835691
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 21.39605990548316,
+      "median_speedup": 13.11006001414422,
+      "minimum_speedup": 1.0351826792963463,
+      "maximum_speedup": 19555.15502258351,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 57.369630374072734,
+      "geomean_mech_over_c_fresh": 36.05390465194183,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 465.35127369178264,
+      "sum_mech_median_seconds": 0.029239082,
+      "geomean_speedup_from_contemporaneous_baseline": 21.595517668155168,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.070006528835691
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000121792,
+      "c_median_seconds": 1.6670674085617065e-06,
+      "mech_over_c_kernel": 73.05763364726704,
+      "speedup_from_recorded_baseline": 1.2914805570152392,
+      "speedup_from_paired_original": 1.33698436678928,
+      "runtime_multiplier_from_round18": 1.013168731126621,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.2291e-05,
+      "c_median_seconds": 2.500135451555252e-06,
+      "mech_over_c_kernel": 36.91439995484597,
+      "speedup_from_recorded_baseline": 1.0496689818075435,
+      "speedup_from_paired_original": 1.0781116251855545,
+      "runtime_multiplier_from_round18": 1.0472737588652483,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.2375e-05,
+      "c_median_seconds": 1.5408731997013092e-06,
+      "mech_over_c_kernel": 59.94977394499848,
+      "speedup_from_recorded_baseline": 1.0351826792963463,
+      "speedup_from_paired_original": 1.160573748308525,
+      "runtime_multiplier_from_round18": 1.0862407544596135,
+      "runtime_regression_over_five_percent_from_round18": true,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000122292,
+      "c_median_seconds": 1.5832483768463135e-06,
+      "mech_over_c_kernel": 77.24119714153412,
+      "speedup_from_recorded_baseline": 1.0490628986360515,
+      "speedup_from_paired_original": 1.092328198083276,
+      "runtime_multiplier_from_round18": 1.0512236424746202,
+      "runtime_regression_over_five_percent_from_round18": true,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 6.1584e-05,
+      "c_median_seconds": 7.666181772947311e-06,
+      "mech_over_c_kernel": 8.033203728265322,
+      "speedup_from_recorded_baseline": 2577.516075604053,
+      "speedup_from_paired_original": 2572.6216712133023,
+      "runtime_multiplier_from_round18": 1.0299877908046362,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000342041,
+      "c_median_seconds": 4.332978278398514e-06,
+      "mech_over_c_kernel": 78.93900638856185,
+      "speedup_from_recorded_baseline": 4.115003756859557,
+      "speedup_from_paired_original": 4.102578345870817,
+      "runtime_multiplier_from_round18": 0.9913025081004632,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000164584,
+      "c_median_seconds": 4.58303838968277e-06,
+      "mech_over_c_kernel": 35.911547319897586,
+      "speedup_from_recorded_baseline": 1.3539165410975549,
+      "speedup_from_paired_original": 1.4334139406017596,
+      "runtime_multiplier_from_round18": 1.0893542665007545,
+      "runtime_regression_over_five_percent_from_round18": true,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002853125,
+      "c_median_seconds": 2.9957853257656097e-05,
+      "mech_over_c_kernel": 95.23796566667704,
+      "speedup_from_recorded_baseline": 441.49845940854317,
+      "speedup_from_paired_original": 440.3379480394304,
+      "runtime_multiplier_from_round18": 0.9915435776994835,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.8583e-05,
+      "c_median_seconds": 3.2498501241207123e-06,
+      "mech_over_c_kernel": 18.02636975939017,
+      "speedup_from_recorded_baseline": 1.2148063431370877,
+      "speedup_from_paired_original": 1.2190567229401021,
+      "runtime_multiplier_from_round18": 1.0188347826086956,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000255708,
+      "c_median_seconds": 1.334119588136673e-06,
+      "mech_over_c_kernel": 191.66797510044816,
+      "speedup_from_recorded_baseline": 20.33031817541884,
+      "speedup_from_paired_original": 20.30929810565176,
+      "runtime_multiplier_from_round18": 0.99272079290947,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000106083,
+      "c_median_seconds": 4.500150680541992e-06,
+      "mech_over_c_kernel": 23.573210661298013,
+      "speedup_from_recorded_baseline": 1.5007871195196216,
+      "speedup_from_paired_original": 1.5235711659738131,
+      "runtime_multiplier_from_round18": 1.0366450705051156,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000587167,
+      "c_median_seconds": 3.62517312169075e-06,
+      "mech_over_c_kernel": 161.96936816251971,
+      "speedup_from_recorded_baseline": 170.26317385002903,
+      "speedup_from_paired_original": 170.9125495812946,
+      "runtime_multiplier_from_round18": 0.9923943704820447,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000162834,
+      "c_median_seconds": 1.375097781419754e-06,
+      "mech_over_c_kernel": 118.41630624396613,
+      "speedup_from_recorded_baseline": 1.1015819791935346,
+      "speedup_from_paired_original": 1.0895574634290137,
+      "runtime_multiplier_from_round18": 1.023842758516618,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000183541,
+      "c_median_seconds": 3.0667055398225784e-05,
+      "mech_over_c_kernel": 5.984956743209803,
+      "speedup_from_recorded_baseline": 19555.15502258351,
+      "speedup_from_paired_original": 19618.761388463612,
+      "runtime_multiplier_from_round18": 0.9970556759722516,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000326333,
+      "c_median_seconds": 0.00011033378541469574,
+      "mech_over_c_kernel": 2.95768878746849,
+      "speedup_from_recorded_baseline": 16968.48426300742,
+      "speedup_from_paired_original": 16914.819371623464,
+      "runtime_multiplier_from_round18": 1.0001287194559458,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008971,
+      "c_median_seconds": 4.570791497826576e-05,
+      "mech_over_c_kernel": 196.2679768759029,
+      "speedup_from_recorded_baseline": 107.70285274774272,
+      "speedup_from_paired_original": 107.19073492364285,
+      "runtime_multiplier_from_round18": 0.9951100838450405,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000411208,
+      "c_median_seconds": 7.2498805820941925e-06,
+      "mech_over_c_kernel": 56.71927907552084,
+      "speedup_from_recorded_baseline": 176.60608013462772,
+      "speedup_from_paired_original": 175.76111116515244,
+      "runtime_multiplier_from_round18": 0.9899681011134517,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000790666,
+      "c_median_seconds": 6.716698408126831e-05,
+      "mech_over_c_kernel": 11.771646603089074,
+      "speedup_from_recorded_baseline": 401.32047919096055,
+      "speedup_from_paired_original": 404.2516587282114,
+      "runtime_multiplier_from_round18": 0.990499217037269,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000301958,
+      "c_median_seconds": 1.8747523427009583e-06,
+      "mech_over_c_kernel": 161.06554083029906,
+      "speedup_from_recorded_baseline": 1.5464336099722478,
+      "speedup_from_paired_original": 1.5313917829631936,
+      "runtime_multiplier_from_round18": 0.9799853955375253,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000114875,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 91.91214011326379,
+      "speedup_from_recorded_baseline": 1.0591164309031555,
+      "speedup_from_paired_original": 1.070006528835691,
+      "runtime_multiplier_from_round18": 0.9881720430107527,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000488458,
+      "c_median_seconds": 1.833401620388031e-05,
+      "mech_over_c_kernel": 26.642171282504926,
+      "speedup_from_recorded_baseline": 151.83811504776256,
+      "speedup_from_paired_original": 150.8680541622821,
+      "runtime_multiplier_from_round18": 0.9961740364730979,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000183916,
+      "c_median_seconds": 4.577450454235077e-07,
+      "mech_over_c_kernel": 401.78698128745475,
+      "speedup_from_recorded_baseline": 22.722781052219492,
+      "speedup_from_paired_original": 22.670224450292523,
+      "runtime_multiplier_from_round18": 0.9771902512632233,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003625542,
+      "c_median_seconds": 7.790978997945786e-06,
+      "mech_over_c_kernel": 465.35127369178264,
+      "speedup_from_recorded_baseline": 20.325983811523905,
+      "speedup_from_paired_original": 20.514760275842896,
+      "runtime_multiplier_from_round18": 0.976335811464212,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003777417,
+      "c_median_seconds": 1.2500211596488953e-05,
+      "mech_over_c_kernel": 302.18824464227447,
+      "speedup_from_recorded_baseline": 63.87418095486942,
+      "speedup_from_paired_original": 63.80597932396662,
+      "runtime_multiplier_from_round18": 0.9995149831315737,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.004181542,
+      "c_median_seconds": 1.2665987014770508e-05,
+      "mech_over_c_kernel": 330.1394510450447,
+      "speedup_from_recorded_baseline": 59.67553357110846,
+      "speedup_from_paired_original": 59.68778981533607,
+      "runtime_multiplier_from_round18": 1.0032391715916422,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000165708,
+      "c_median_seconds": 3.6656856536865234e-06,
+      "mech_over_c_kernel": 45.20518551102439,
+      "speedup_from_recorded_baseline": 4.93563980013035,
+      "speedup_from_paired_original": 4.910245733458855,
+      "runtime_multiplier_from_round18": 0.9824565564099675,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000311792,
+      "c_median_seconds": 6.832648068666458e-06,
+      "mech_over_c_kernel": 45.63267372570136,
+      "speedup_from_recorded_baseline": 4.830810283778929,
+      "speedup_from_paired_original": 4.835621183353004,
+      "runtime_multiplier_from_round18": 1.0017413654618474,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000228709,
+      "c_median_seconds": 5.541834980249405e-06,
+      "mech_over_c_kernel": 41.26954353839442,
+      "speedup_from_recorded_baseline": 5.894136216764535,
+      "speedup_from_paired_original": 5.905062765348106,
+      "runtime_multiplier_from_round18": 1.0162992521362775,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.6458e-05,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 23.51743475115232,
+      "speedup_from_recorded_baseline": 147.75459218383853,
+      "speedup_from_paired_original": 148.0538211505027,
+      "runtime_multiplier_from_round18": 1.0079238095238094,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.0001295,
+      "c_median_seconds": 3.2498501241207123e-06,
+      "mech_over_c_kernel": 39.847991462387164,
+      "speedup_from_recorded_baseline": 5.440154440154441,
+      "speedup_from_paired_original": 5.466216216216216,
+      "runtime_multiplier_from_round18": 0.9409627611262489,
+      "runtime_regression_over_five_percent_from_round18": false,
+      "observations": 30
+    }
+  },
+  "implementation": [
+    "Core shape validation and current shape resolution share a thin inlinable leaf evaluator for exact Constant and Parameter expressions. Constants keep all64 bits; parameters read the current slice with the original checked unknown-ID error.",
+    "The complete original compound evaluator remains. Add/multiply/min/max and holes keep their checked arithmetic, left-to-right recursion, empty-operator errors and original error precedence. Recursive children use the same current leaf evaluator; no source reassociation or mathematical shortcuts are added.",
+    "The shared Core path serves resident/JIT numeric kernels, shape instantiation, matrix access and compiler dimension checks. It retains no evaluated dimensions, source Values, pointers, ownership, permits or schema-validity authority.",
+    "IR378/work147 identify the changed execution path. ABI42, complete shape/source/construction prices, resource admission and both established exact Huffman work equations remain unchanged. Benchmark sources, inputs, pinned C binaries, tolerances and timing boundaries are unchanged."
+  ],
+  "development_checks": {
+    "shape_contracts": {
+      "passed": 25,
+      "log_sha256": "c89cea5925f3a6e94ece10f656681f55fa45ece05ab58ce87cd4ef677c4cf38f",
+      "scope": "Constant zero/one/u64MAX, changing current parameter slices, unknown parameters, checked compound arithmetic, no zero-multiply short circuit, overflow before later holes, empty min, shape counts/bounds/bytes/cardinality and dimension relations."
+    },
+    "development_logs_sha256": {
+      "core-focused.log": "d88497dc054981f5b8f0810a3b5ec514667b6bb1f3fe388f743a4ebe6f3c69cc",
+      "core-shapes.log": "c89cea5925f3a6e94ece10f656681f55fa45ece05ab58ce87cd4ef677c4cf38f"
+    },
+    "selection": "All fifteen optimization programs received an initial seven-sample replay against frozen round18, then one predeclared fixed six-pair/31-sample alternating follow-up across all fifteen after the small aggregate gain and Doitgen flag. No source/executable changed; all initial observations and flags remain. The preceding callback experiment was neutral and fully reverted. No current holdout timing or profile selected/refined either experiment."
+  },
+  "unpromoted_callback_experiment": {
+    "receipt_sha256": "cc9a0b0cc28d7321ea967cfce47fc05bd5a6fbe37947b38adc376e3250c6ded7",
+    "source_commit": "bee76d25650bb7b5eefeb3d739e83b6dc28ab2fc",
+    "compiler_fingerprint": "591608f76993a67ab5099b651e7551442e0a8c61b1269c4550373952816b3847",
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_18_replay": 1.0002353810436744,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.005117918,
+      "sum_reference_median_seconds": 0.005079832
+    },
+    "disposition": {
+      "status": "reverted before final candidate selection",
+      "revert_commit": "e557e91ed6",
+      "reason": "The optimization-only aggregate was effectively flat; no holdout was measured for this experiment.",
+      "validation_checks": 734,
+      "validation_log_sha256": "4176fb3ded292889825dc01dc5a55db8f468ce8ad31531048f470c5954b23dfd",
+      "focused_tests": 6,
+      "focused_log_sha256": "3e550d8c2b607d1145d0fa6b2159b98473d2b92c364cdcb330a67944d63fd8c9"
+    }
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round18": 1.0236286154685925,
+      "reference_new_over_round18": 1.036143281636668,
+      "c_new_over_round18": 1.0425217265354683,
+      "mech_over_c_score_new_over_round18": 0.9818774893740951,
+      "mech_new_over_round18_regressions_over_five_percent": 3
+    },
+    "holdout": {
+      "mech_new_over_round18": 0.989554640116671,
+      "reference_new_over_round18": 1.005446880496718,
+      "c_new_over_round18": 1.0530432812942059,
+      "mech_over_c_score_new_over_round18": 0.9397093715848922,
+      "mech_new_over_round18_regressions_over_five_percent": 0
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "atax",
+      "reference": "frozen round18 Mech",
+      "runtime_multiplier": 1.0862407544596135
+    },
+    {
+      "partition": "optimization",
+      "case": "bicg",
+      "reference": "frozen round18 Mech",
+      "runtime_multiplier": 1.0512236424746202
+    },
+    {
+      "partition": "optimization",
+      "case": "covariance",
+      "reference": "frozen round18 Mech",
+      "runtime_multiplier": 1.0893542665007545
+    }
+  ],
+  "training_probe": {
+    "receipt_sha256": "81d24684087a9e1c2a0e0a149423ec89a5e8fdaa53268e7e8e9405186dfb78b1",
+    "reference": "frozen round18 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_18_replay": 1.0225803153913064,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.005540374,
+      "sum_reference_median_seconds": 0.005667627
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": [
+      {
+        "case": "doitgen",
+        "runtime_multiplier": 1.258339816582974
+      }
+    ]
+  },
+  "training_followup": {
+    "receipt_sha256": "4e3ffe08f9bd5acd44a8371abfaaff6a3e22c59b4d1f6600e0b63fa7a2e7d633",
+    "cases": 15,
+    "pairs_per_case": 6,
+    "samples_per_actor_per_pair": 31,
+    "source_or_binary_changes": false,
+    "initial_flags_retained": true,
+    "summary": {
+      "cases": 15,
+      "geomean_speedup_from_round_18_replay": 1.0108641044163234,
+      "regressions_over_five_percent": 0,
+      "regressions": []
+    }
+  },
+  "profiling": {
+    "receipt_sha256": "ae4dadf6d0929a772d90eec7f4d5b68df22972c5d0341225fd3553e8f5d99ef6",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d",
+      "durbin"
+    ],
+    "canonical_execution_samples": 3487,
+    "coverage_of_training_sum": 0.7891702000584775,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.29928383585789725,
+        "estimated_seconds_in_training_sum": 0.0013061865918384745
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.18109143571478054,
+        "estimated_seconds_in_training_sum": 0.0007903507536562596
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.15534666176135514,
+        "estimated_seconds_in_training_sum": 0.0006779909315780526
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.11820403513935897,
+        "estimated_seconds_in_training_sum": 0.0005158866176573047
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.11787974990630933,
+        "estimated_seconds_in_training_sum": 0.0005144713156175989
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.11686922553838412,
+        "estimated_seconds_in_training_sum": 0.0005100610093398596
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.008786867812970106,
+        "estimated_seconds_in_training_sum": 3.8349177424363594e-05
+      },
+      {
+        "name": "Typed matrix scalar reads",
+        "fraction_of_profiled_time": 0.0016921255126297063,
+        "estimated_seconds_in_training_sum": 7.385068592057762e-06
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0006345470672361399,
+        "estimated_seconds_in_training_sum": 2.7694007220216607e-06
+      },
+      {
+        "name": "Selected matrix updates",
+        "fraction_of_profiled_time": 0.0002115156890787133,
+        "estimated_seconds_in_training_sum": 9.231335740072202e-07
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "The split and prior holdout results were already exposed. No current holdout profile or timing selected/refined the candidate.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Each process validates complete finite untimed warm-up live-outs; timed checked calls must succeed but their outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only the PR1001 branch is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-19-frozen.json": "96abf881f926211943b11d2a35e2bb0c05e6f3f7b33c2431b0af7591f6e85575",
+    "round-19-optimization.json": "e9bf628ded33fd623b72d6801fd39687ba330bfe164430c72f3fca6991ab3c7e",
+    "round-19-holdout.json": "c0ba0b3ee3538ecda1f88e4e67dea8d6e41cabc71b97ad7d39cb2b91dda2488a",
+    "round-19-progress.json": "90b54e50b7d9c713482bdb0aadef43a1d253d430e05064ab55edd5f62a3691f5",
+    "round-19-training-probe.json": "81d24684087a9e1c2a0e0a149423ec89a5e8fdaa53268e7e8e9405186dfb78b1",
+    "round-19-training-profile.json": "ae4dadf6d0929a772d90eec7f4d5b68df22972c5d0341225fd3553e8f5d99ef6",
+    "round-19-callback-experiment.json": "cc9a0b0cc28d7321ea967cfce47fc05bd5a6fbe37947b38adc376e3250c6ded7",
+    "round-19-training-followup.json": "4e3ffe08f9bd5acd44a8371abfaaff6a3e22c59b4d1f6600e0b63fa7a2e7d633"
+  }
+}

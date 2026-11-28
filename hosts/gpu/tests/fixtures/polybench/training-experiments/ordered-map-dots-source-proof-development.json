@@ -1,0 +1,143 @@
+{
+  "schema": "mech.polybench.ordered-map-dots-source-proof-development.v1",
+  "created_at": "2026-11-28T11:36:48.871613+00:00",
+  "accepted_round": 54,
+  "performance_observations": 0,
+  "status": "Proof-only test module; emission integration pending, not selected or measured.",
+  "compiler_fingerprint": "79648f96400804e6d2c12f409441b924143ecca3c0941e079d08ff050b024545",
+  "attempts": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "ordered_map_dot_proofs",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 15.30569254187867,
+      "compiler_fingerprint": "67ff7e722a5ad99b506c5f0aaf797fd567ee73253808735ea696f72530b45fee",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "performance_observations": 0
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "ordered_map_dot_proofs",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 100.71984524978325,
+      "compiler_fingerprint": "79648f96400804e6d2c12f409441b924143ecca3c0941e079d08ff050b024545",
+      "source_unchanged": true,
+      "passed_tests": [
+        2
+      ],
+      "performance_observations": 0
+    }
+  ],
+  "coverage": [
+    "Original and decoded source reconstruct all five closed ordered F64 multiply reductions, and independent projection parent.",
+    "Affine scaled/reversed streams; nonlinear indices, division, extra FP arithmetic, conditional terms and forged widths/read indices/result decline."
+  ],
+  "failure_preserved": "First build rejected unused public proof reexports; tests now inspect exported Index, Expr and Predicate. No semantics or proof admitted on failed build.",
+  "archives": {
+    "stage-b-attempt-01/proof-tests-result.json": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/proof-tests-result.json.gz",
+      "sha256": "cc235bcac16b5cb3afcd72d665d70a70aaf5f75d9840fb40d81073156ff4afb6",
+      "compressed_sha256": "6f7db8a2809c6b8a03ee095e2b223ca98ba98b8f2e259d4554868322925d23ee"
+    },
+    "stage-b-attempt-01/proof-tests.log": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/proof-tests.log.gz",
+      "sha256": "ef4eb204add791c1247bf98d608566029e8bfb5bb558de2ca266c18e9b84da23",
+      "compressed_sha256": "7ea44134072b26db4bb06f632ef1d95fc3ca6360a84051ef86b55570ff943897"
+    },
+    "stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs.gz",
+      "sha256": "9b79ff9e129d3cc3f79bd107f026ce1ac72715a99123eb225cff317cbec8abba",
+      "compressed_sha256": "0f86cf1fe5e42dd4d911ebf7b11f83d68477f5b82d0a4099ca16c9f6d20220ff"
+    },
+    "stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs.gz",
+      "sha256": "18de96a3c61324d54c130d523229882518973e40985d65c66a39a66ce414aa40",
+      "compressed_sha256": "ae72a86ddcc65a8b64e704b7279fd539e8cbddde91cdbb6498ccf761d2ce7493"
+    },
+    "stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs.gz",
+      "sha256": "7b175c9152eb986193c40489c2fa99abcf034d519e257e939cd670af60f13c5e",
+      "compressed_sha256": "1c0441c1baec3d7c9d14339e621ba2069d14584950acb871c8f39d861eb664a9"
+    },
+    "stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs.gz",
+      "sha256": "f40dd5319f4a9bf6754d26a75eccc188fefd3414e742c5ebc4613471765e66f5",
+      "compressed_sha256": "cb9e2cf9c62eaad67aeef4f70ff02a301ce52052cc8eeba58a8416997010994a"
+    },
+    "stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs.gz",
+      "sha256": "6db30e252c45743855b629721a82a144e43b317b1149312bac3e859f1d26cb51",
+      "compressed_sha256": "35bb5ebaea790ad0300315014998b927918cb24e4b461306fda712a965823b24"
+    },
+    "stage-b-attempt-01/source-manifest.json": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-01/source-manifest.json.gz",
+      "sha256": "58b4fbc0c11767b2f9d756e2bca248c92ec6f4a51c993a51f2621fc7d3c173c5",
+      "compressed_sha256": "d4cb9871b1bba10228a21a6647f333665345c154a24b5b8097d9566e869cf0e5"
+    },
+    "stage-b-attempt-02/proof-tests-result.json": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/proof-tests-result.json.gz",
+      "sha256": "79435d4aa4dee8f09afb87009d02019ca414b4ff895bc22e0c72a13aed202c63",
+      "compressed_sha256": "03401b43d18467c086b77868bb6774513bddd2ca2cf11e40060afb6201ba2020"
+    },
+    "stage-b-attempt-02/proof-tests.log": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/proof-tests.log.gz",
+      "sha256": "41fe744da32c241802f4ff0bce368de204b5c5fc3a35477d391b02acc66fc79f",
+      "compressed_sha256": "c83a5354602eb5074bcbfe91e32db4171fe600db5577870680a0ed90e84d3dae"
+    },
+    "stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs.gz",
+      "sha256": "9b79ff9e129d3cc3f79bd107f026ce1ac72715a99123eb225cff317cbec8abba",
+      "compressed_sha256": "0f86cf1fe5e42dd4d911ebf7b11f83d68477f5b82d0a4099ca16c9f6d20220ff"
+    },
+    "stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs.gz",
+      "sha256": "18de96a3c61324d54c130d523229882518973e40985d65c66a39a66ce414aa40",
+      "compressed_sha256": "ae72a86ddcc65a8b64e704b7279fd539e8cbddde91cdbb6498ccf761d2ce7493"
+    },
+    "stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs.gz",
+      "sha256": "7b175c9152eb986193c40489c2fa99abcf034d519e257e939cd670af60f13c5e",
+      "compressed_sha256": "1c0441c1baec3d7c9d14339e621ba2069d14584950acb871c8f39d861eb664a9"
+    },
+    "stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs.gz",
+      "sha256": "ffe2a1f47a249378c141435635e5126b165d3ec588128baa7746bd3ba381bc25",
+      "compressed_sha256": "551bccd4d54e1ff8b46932c011521d1a6c9b3e2cdf2731fc8348da8c3dced362"
+    },
+    "stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source/hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs.gz",
+      "sha256": "6db30e252c45743855b629721a82a144e43b317b1149312bac3e859f1d26cb51",
+      "compressed_sha256": "35bb5ebaea790ad0300315014998b927918cb24e4b461306fda712a965823b24"
+    },
+    "stage-b-attempt-02/source-manifest.json": {
+      "path": "qualification/round-62-ordered-map-dots/source-proof-development/stage-b-attempt-02/source-manifest.json.gz",
+      "sha256": "89ca5e5e51bd4e4a929686e37229659f85e0efef1510dcc09e5d84b3a62023ad",
+      "compressed_sha256": "84aa8848e097701134115671f3a1f241a5137793c65935cb14f1563c7b87820c"
+    }
+  }
+}

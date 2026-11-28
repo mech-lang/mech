@@ -442,6 +442,8 @@ mod map_owner_constructors;
 mod map_seed;
 #[cfg(feature = "sequence_buffers")]
 pub use map_seed::{NativeMapSeedChoice, NativeMapSeedFrame};
+#[path = "native_collection_numeric_binary.rs"]
+mod numeric_binary;
 #[cfg(feature = "sequence_buffers")]
 #[path = "native_collection_record_selector.rs"]
 mod record_selector;
@@ -538,6 +540,12 @@ pub struct NativePreparedLibraryCallCache {
     binding: Option<Box<CachedBinding>>,
 }
 
+#[path = "native_collection_shape_history.rs"]
+mod shape_history;
+#[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
+#[path = "native_collection_shape_history_tests.rs"]
+mod shape_history_tests;
+
 #[derive(Debug)]
 struct CachedBinding {
     // Retire all bound metadata before releasing its admitted capacity.
@@ -549,6 +557,10 @@ struct CachedBinding {
     projection_count: Option<u64>,
     binding_nodes: u64,
     projection_index: crate::resident::text_index::snapshot::Slot,
+    // Only the root's count is read; promotion refreshes that count. Every
+    // child remains an independently prepaid binding/plan owner.
+    previous: Option<Box<CachedBinding>>,
+    history_len: usize,
     _reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
 }
@@ -562,46 +574,7 @@ impl NativePreparedLibraryCallCache {
         &self,
         work: &NativeLibraryWorkBudget,
     ) -> Result<ResourceDemand, InvokeError> {
-        let Some(binding) = self.binding.as_ref() else {
-            work.charge(256, 0)?;
-            return Ok(ResourceDemand::default());
-        };
-        if !binding.work.shares_account(work)
-            || binding._reservation.budget() != work.memory_budget()
-        {
-            return Err(InvokeError::InvalidInput);
-        }
-        work.charge(256, 0)?;
-        // Fixed binding metadata is one retained owner, rather than one node
-        // per reserved byte. Recursive conversion plans retain their prepared
-        // staging-node witness; dynamic indexes have their own witness below.
-        let metadata = binding._reservation.capacity_bytes();
-        let mut demand = ResourceDemand {
-            turn_peak_bytes: metadata
-                .checked_add(binding.projection_index.bytes())
-                .ok_or(InvokeError::InvalidInput)?,
-            retained_nodes: 1u64
-                .checked_add(if binding.call.is_some() {
-                    binding.binding_nodes
-                } else {
-                    0
-                })
-                .and_then(|n| n.checked_add(binding.projection_index.nodes()))
-                .ok_or(InvokeError::InvalidInput)?,
-            ..ResourceDemand::default()
-        };
-        if let NativePlanCacheState::Cached(plans) = &binding.plans {
-            let plans = plans.retained_metadata_demand(work)?;
-            demand.turn_peak_bytes = demand
-                .turn_peak_bytes
-                .checked_add(plans.turn_peak_bytes)
-                .ok_or(InvokeError::InvalidInput)?;
-            demand.retained_nodes = demand
-                .retained_nodes
-                .checked_add(plans.retained_nodes)
-                .ok_or(InvokeError::InvalidInput)?;
-        }
-        Ok(demand)
+        self.all_metadata_demand(work)
     }
 }
 
@@ -754,9 +727,9 @@ pub fn prepare_native_program_library_call_with_descriptors(
     } else {
         (0, 0)
     };
+    let schemas = Arc::new(artifact.schemas().clone());
     #[cfg(feature = "sequence_buffers")]
-    let frame_geometry =
-        buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
+    let frame_geometry = buffer_frames::FrameGeometry::derive(&template, &schemas, binding_bytes);
     #[cfg(feature = "sequence_buffers")]
     let record_selector = record_selector::RecordSelector::derive(&template);
     let descriptor_templates = descriptors.for_template(&template);
@@ -764,7 +737,7 @@ pub fn prepare_native_program_library_call_with_descriptors(
         map_owner_constructors::normalization(&template, artifact.schemas());
     Ok(NativePreparedLibraryCall {
         template,
-        schemas: Arc::new(artifact.schemas().clone()),
+        schemas,
         factory,
         descriptor_templates,
         constructor_normalization,
@@ -801,6 +774,12 @@ impl NativePreparedLibraryCall {
     }
     pub const fn binding_work(&self) -> u64 {
         self.binding_work
+    }
+
+    /// Fixed ownership envelope of the same sealed schema arena used by this
+    /// resident factory. This contains no live input, pointer or call permit.
+    pub fn schema_context_allocation_bound_bytes(&self) -> Option<u64> {
+        self.schemas.clone_allocation_bound_bytes()
     }
 
     /// Pure fixed metadata-work envelope for a sealed read-only String/U64
@@ -1276,13 +1255,20 @@ impl NativePreparedLibraryCall {
                     }
                 }
                 self.validate_values(inputs, output, &memory)?;
+                let numeric_history = super::headroom::supports_numeric_template(&self.template);
+                if numeric_history {
+                    cache.promote_geometry(self, inputs, output, limits, work)?;
+                }
                 let bounded = super::headroom::supports_template(&self.template);
                 if bounded {
                     let scope = crate::resident::budget::payload::native_scope_metadata_bytes();
                     let owner = core::mem::size_of::<CachedBinding>() as u64;
+                    let has_history = cache.binding.as_ref().is_some_and(|b| b.history_len != 0);
+                    // A history must coexist with an ordinary binder AND its
+                    // invocation workspace, in addition to the current binding.
                     let fixed = self
                         .binding_bytes
-                        .checked_mul(2)
+                        .checked_mul(if has_history { 3 } else { 2 })
                         .and_then(|n| n.checked_add(owner))
                         .and_then(|n| n.checked_add(scope));
                     // The prepared binding envelope bounds the ordinary
@@ -1301,6 +1287,24 @@ impl NativePreparedLibraryCall {
                     let additional = fixed.and_then(|n| n.checked_sub(held_bytes));
                     let nodes = self.binding_nodes.checked_add(1);
                     let additional_nodes = nodes.and_then(|n| n.checked_sub(held_nodes));
+                    let history = if has_history {
+                        let all = cache.all_metadata_demand(work)?;
+                        ResourceDemand {
+                            turn_peak_bytes: all
+                                .turn_peak_bytes
+                                .checked_sub(held_bytes)
+                                .ok_or(InvokeError::InvalidInput)?,
+                            retained_nodes: all
+                                .retained_nodes
+                                .checked_sub(held_nodes)
+                                .ok_or(InvokeError::InvalidInput)?,
+                            ..ResourceDemand::default()
+                        }
+                    } else {
+                        ResourceDemand::default()
+                    };
+                    let fixed = fixed.and_then(|n| n.checked_add(history.turn_peak_bytes));
+                    let nodes = nodes.and_then(|n| n.checked_add(history.retained_nodes));
                     let fits = match (fixed, additional, nodes, additional_nodes) {
                         (Some(fixed), Some(additional), Some(nodes), Some(additional_nodes)) => {
                             super::cache_capacity::admits(
@@ -1319,6 +1323,9 @@ impl NativePreparedLibraryCall {
                         _ => false,
                     };
                     if !fits {
+                        // A history miss under pressure retires all optional
+                        // slots before the maintained ordinary route proceeds.
+                        // Their construction already prepaid their retirement.
                         // No kernel has run. Retire the optional metadata
                         // before the ordinary binder needs current capacity;
                         // keep every already spent unit on the SAME ledger.
@@ -1359,6 +1366,11 @@ impl NativePreparedLibraryCall {
                         return self.invoke_validated_current(inputs, output, limits, work);
                     }
                 }
+                let previous = if !hit && numeric_history {
+                    cache.retain_for_new_geometry(self, inputs, output, limits, work)?
+                } else {
+                    None
+                };
                 if !hit {
                     let owner_bytes = core::mem::size_of::<CachedBinding>() as u64;
                     let bytes = self
@@ -1413,6 +1425,8 @@ impl NativePreparedLibraryCall {
                         // replacement work/temporary checks already succeeded.
                         // Retire the old prepaid call BEFORE any new allocation.
                         // Keep a funded guard if replacement admission fails.
+                        binding.previous = None;
+                        binding.history_len = 0;
                         binding.plans = NativePlanCacheState::default();
                         drop(binding.call.take());
                         binding._nodes.resize(1)?;
@@ -1445,6 +1459,8 @@ impl NativePreparedLibraryCall {
                             projection_count: None,
                             binding_nodes: self.binding_nodes,
                             projection_index: Default::default(),
+                            history_len: previous.as_ref().map_or(0, |p| p.history_len + 1),
+                            previous,
                             _reservation: reservation,
                             _nodes: nodes,
                         }));

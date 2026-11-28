@@ -8,6 +8,12 @@ use mech_engine::native_artifact::NativeMatchValue;
 thread_local! {
     static FORCE_GENERIC_PAYLOAD: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
     static PACKED_PAYLOADS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+    static BLOCK_ORDERS: core::cell::Cell<(u64, u64)> = const { core::cell::Cell::new((0, 0)) };
+}
+
+#[cfg(test)]
+pub(super) fn test_take_block_orders() -> (u64, u64) {
+    BLOCK_ORDERS.with(|counts| counts.replace((0, 0)))
 }
 
 /// Only canonical packed banks whose scalar payload width is fixed qualify.
@@ -48,6 +54,103 @@ fn payload_bytes(value: &Value, additions: u64) -> Result<u64, Error> {
 mod tests;
 
 impl State {
+    pub(super) fn initial_block_rows(
+        &self,
+        ctx: &mut CollectionExecution<'_, '_, '_, '_>,
+        id: u32,
+    ) -> Result<Option<u64>, Error> {
+        use mech_engine::{ComprehensionKind as K, MatrixBlockRows as R};
+        let descriptor = ctx.descriptor();
+        Ok(
+            match descriptor.metadata().plan.collections()[id as usize].kind() {
+                K::MatrixHorizontalBlocks {
+                    rows: R::Fixed(rows),
+                } => Some(rows),
+                K::MatrixHorizontalBlocks {
+                    rows: R::InputMatrixElements { input },
+                } => {
+                    let source = descriptor
+                        .metadata()
+                        .plan
+                        .inputs()
+                        .get(input as usize)
+                        .ok_or_else(|| invalid("block row input is absent"))?
+                        .value();
+                    Some(data::count(&ctx.arena_copy_current(source.get())?)?)
+                }
+                _ => None,
+            },
+        )
+    }
+
+    pub(super) fn finish_block_order(
+        &mut self,
+        ctx: &mut CollectionExecution<'_, '_, '_, '_>,
+        id: u32,
+    ) -> Result<Option<[u64; 2]>, Error> {
+        let descriptor = ctx.descriptor();
+        let definition = &descriptor.metadata().plan.collections()[id as usize];
+        if !matches!(
+            definition.kind(),
+            mech_engine::ComprehensionKind::MatrixHorizontalBlocks { .. }
+        ) {
+            return Ok(None);
+        }
+        let builder = self.builder(id)?;
+        let rows = builder.block_rows.rows().unwrap_or(0);
+        let columns = builder.block_columns;
+        let row_major = builder.block_rows.is_row_major();
+        let count = builder.values.len() as u64;
+        if mul(rows, columns)? != count {
+            return Err(invalid("collected matrix block geometry differs"));
+        }
+        if rows > 1 && columns > 1 {
+            // Retain the original source work, temporary and node admission,
+            // including physical coexistence, even when the native emitter has
+            // already stored the complete bank in final row-major order.
+            self.account(ctx, id, 0, add(mul(count, 64)?, 256)?)?;
+            check(
+                definition.origin(),
+                Dimension::TemporaryBytes,
+                add(self.live_bytes, count)?,
+                ctx.limits().max_temporary_bytes,
+            )?;
+            check(
+                definition.origin(),
+                Dimension::RetainedNodes,
+                add(self.retained_nodes()?, 1)?,
+                ctx.limits().max_retained_nodes,
+            )?;
+            let memory = ctx.library().memory_budget();
+            let _nodes = memory.reserve_nodes(1)?;
+            let _marks = memory.reserve_capacity(count)?;
+            if row_major {
+                #[cfg(test)]
+                BLOCK_ORDERS.with(|counts| {
+                    let (permutations, direct) = counts.get();
+                    counts.set((permutations, direct + 1));
+                });
+                return Ok(Some([rows, columns]));
+            }
+            #[cfg(test)]
+            BLOCK_ORDERS.with(|counts| {
+                let (permutations, direct) = counts.get();
+                counts.set((permutations + 1, direct));
+            });
+            let count = usize::try_from(count).map_err(|_| invalid("block permutation count"))?;
+            let mut visited = Vec::<u8>::new();
+            visited
+                .try_reserve_exact(count)
+                .map_err(|_| invalid("matrix block permutation allocation"))?;
+            let mut visited = admitted_capacity(visited, count, "matrix block permutation")?;
+            visited.resize(count, 0);
+            self.builder(id)?
+                .values
+                .row_major_order(rows as usize, columns as usize, &mut visited);
+        }
+        Ok(Some([rows, columns]))
+    }
+
     pub(super) fn push_row_block(
         &mut self,
         ctx: &mut CollectionExecution<'_, '_, '_, '_>,
@@ -76,14 +179,19 @@ impl State {
         let mech_core::SchemaBody::Matrix { dimensions, .. } = ty.definition().body() else {
             return Err(invalid("row block has a non-matrix schema"));
         };
-        if dimensions.len() != 2
-            || value
-                .shape()
-                .resolve_dimension(&dimensions[0])
-                .map_err(|_| invalid("row block rows"))?
-                != 1
-        {
-            return Err(invalid("native row block must have exactly one row"));
+        if dimensions.len() != 2 {
+            return Err(invalid("native matrix block must have rank two"));
+        }
+        let rows = value
+            .shape()
+            .resolve_dimension(&dimensions[0])
+            .map_err(|_| invalid("matrix block rows"))?;
+        let columns = value
+            .shape()
+            .resolve_dimension(&dimensions[1])
+            .map_err(|_| invalid("matrix block columns"))?;
+        if mul(rows, columns)? != additions {
+            return Err(invalid("matrix block element count differs"));
         }
         let payload = payload_bytes(&value, additions)?;
         self.account(
@@ -98,6 +206,19 @@ impl State {
         let origin = collection.origin();
         let output = &descriptor.metadata().plan.values()[collection.output().get() as usize];
         let builder = self.builder(id)?;
+        if builder.block_rows.is_row_major() {
+            return Err(invalid(
+                "native row-major rectangle cannot accept another block",
+            ));
+        }
+        if builder
+            .block_rows
+            .rows()
+            .is_some_and(|expected| rows != expected)
+        {
+            return Err(invalid("native matrix block row counts differ"));
+        }
+        let next_columns = add(builder.block_columns, columns)?;
         let additions =
             usize::try_from(additions).map_err(|_| invalid("row block count exceeds usize"))?;
         let count = builder
@@ -179,7 +300,9 @@ impl State {
         if growing {
             builder.values.reserve(capacity)?;
         }
-        builder.values.append_row(&value)?;
+        builder.values.append_row(&value, rows)?;
+        builder.block_rows = BlockRows::ColumnMajor(rows);
+        builder.block_columns = next_columns;
         builder.nodes.merge(pending_nodes)?;
         builder.payload_bytes = payload_bytes;
         self.live_bytes = add(old_live, extra)?;
@@ -188,7 +311,7 @@ impl State {
 }
 
 impl data::CollectedValues {
-    fn append_row(&mut self, value: &Value) -> Result<(), Error> {
+    fn append_row(&mut self, value: &Value, rows: u64) -> Result<(), Error> {
         let ValueData::Matrix(matrix) = value.data() else {
             return Err(invalid("row-block payload is not a matrix"));
         };
@@ -200,14 +323,23 @@ impl data::CollectedValues {
             return Err(invalid("row-block copy exceeds admitted capacity"));
         }
         // Exact-width numeric banks copy directly, without drafts or callbacks
-        // per element. Other maintained scalar banks use admitted draft slots.
+        // per element. Non-numeric banks use admitted draft slots.
         match (&mut *self, matrix.elements()) {
-            (Self::U8(to), SequenceView::U8(from)) => to.extend_from_slice(from),
-            (Self::U16(to), SequenceView::U16(from)) => to.extend_from_slice(from),
-            (Self::U32(to), SequenceView::U32(from)) => to.extend_from_slice(from),
-            (Self::U64(to), SequenceView::U64(from)) => to.extend_from_slice(from),
+            (Self::U8(to), SequenceView::U8(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::U16(to), SequenceView::U16(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::U32(to), SequenceView::U32(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::U64(to), SequenceView::U64(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::Bool(to), SequenceView::Bool(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::I64(to), SequenceView::I64(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::F64(to), SequenceView::F64(from)) if rows <= 1 => to.extend_from_slice(from),
             _ => {
                 for ordinal in 0..matrix.elements().len() as u64 {
+                    let ordinal = if rows > 1 {
+                        let columns = matrix.elements().len() as u64 / rows;
+                        (ordinal % rows) * columns + ordinal / rows
+                    } else {
+                        ordinal
+                    };
                     let data = match data::element(value, ordinal, 0)?.0 {
                         data::Element::Scalar(NativeScalarKind::Bool, x) => {
                             ValueDataDraft::Bool(x != 0)
@@ -236,5 +368,26 @@ impl data::CollectedValues {
             }
         }
         Ok(())
+    }
+
+    fn row_major_order(&mut self, rows: usize, columns: usize, visited: &mut [u8]) {
+        for start in 0..visited.len() {
+            let mut cursor = start;
+            while visited[cursor] == 0 {
+                visited[cursor] = 1;
+                let next = (cursor % rows) * columns + cursor / rows;
+                match self {
+                    Self::U8(values) => values.swap(start, next),
+                    Self::U16(values) => values.swap(start, next),
+                    Self::U32(values) => values.swap(start, next),
+                    Self::U64(values) => values.swap(start, next),
+                    Self::Bool(values) => values.swap(start, next),
+                    Self::I64(values) => values.swap(start, next),
+                    Self::F64(values) => values.swap(start, next),
+                    Self::Draft(values) => values.swap(start, next),
+                }
+                cursor = next;
+            }
+        }
     }
 }

@@ -779,3 +779,80 @@ fn schema_table_ids_follow_canonical_bytes_not_insertion_order() {
         Err(SemanticModelError::InvalidSchemaHandleV1)
     ));
 }
+
+#[test]
+fn current_shape_resolution_keeps_leaf_values_checked_compounds_and_error_order() {
+    use DimensionExpr as D;
+    let id = DimensionParameterId::new;
+    let empty = schema(SchemaBody::Bool)
+        .instantiate_shape(Box::new([]))
+        .unwrap();
+    for n in [0, 1, u64::MAX] {
+        assert_eq!(empty.resolve_dimension(&D::Constant(n)).unwrap(), n);
+    }
+    assert!(matches!(empty.resolve_dimension(&D::Parameter(id(0))),
+        Err(SemanticModelError::UnknownDimensionParameterV1{id:actual}) if actual==id(0)));
+    let schema = SchemaDraft {
+        dimension_parameters: (0..2)
+            .map(|i| DimensionParameterDeclaration {
+                id: id(i),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: D::Constant(0),
+                upper_bound: None,
+            })
+            .collect(),
+        body: SchemaBody::Matrix {
+            element: Box::new(SchemaBody::Bool),
+            dimensions: Box::new([D::Parameter(id(0)), D::Parameter(id(1))]),
+        },
+    }
+    .finalize()
+    .unwrap();
+    for values in [[5, 7], [0, 1], [17, 3]] {
+        let shape = schema.instantiate_shape(values.into()).unwrap();
+        for i in 0..2 {
+            assert_eq!(
+                shape.resolve_dimension(&D::Parameter(id(i))).unwrap(),
+                values[i as usize]
+            );
+        }
+        assert_eq!(
+            shape
+                .resolve_dimension(&D::Add(Box::new([D::Parameter(id(0)), D::Constant(1)])))
+                .unwrap(),
+            values[0] + 1
+        );
+        assert_eq!(
+            shape
+                .resolve_dimension(&D::Multiply(Box::new([
+                    D::Parameter(id(1)),
+                    D::Constant(2)
+                ])))
+                .unwrap(),
+            values[1] * 2
+        );
+        assert!(matches!(
+            shape.resolve_dimension(&D::Hole),
+            Err(SemanticModelError::UnresolvedDimensionHole)
+        ));
+        assert!(matches!(
+            shape.resolve_dimension(&D::Min(Box::new([]))),
+            Err(SemanticModelError::EmptyMinMaxV1 {
+                operator: DimensionOperator::Min
+            })
+        ));
+        assert!(
+            matches!(shape.resolve_dimension(&D::Multiply(Box::new([D::Constant(0),D::Parameter(id(2))]))),
+            Err(SemanticModelError::UnknownDimensionParameterV1{id:actual}) if actual==id(2))
+        );
+        assert!(matches!(
+            shape.resolve_dimension(&D::Add(Box::new([
+                D::Constant(u64::MAX),
+                D::Constant(1),
+                D::Hole
+            ]))),
+            Err(SemanticModelError::DimensionOverflowV1)
+        ));
+    }
+}

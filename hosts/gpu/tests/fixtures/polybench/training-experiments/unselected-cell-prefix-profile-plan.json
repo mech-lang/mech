@@ -1,0 +1,51 @@
+{
+  "schema": "mech.polybench.optimization-profile-plan.v1",
+  "created_at": "2026-11-28T16:04:01.703210+00:00",
+  "accepted_round": 59,
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_source_parent": "e8a3ab00943edaea3554e4daecdc0e9869481acc",
+  "profiled_status": "Fully qualified but unpromoted formal60 point-prefix compiler. No new benchmark timing or retry of its fingerprint.",
+  "qualified_source_commit": "fe6b8eae76fa7cdb6169970bf0ab7137622e8bfe",
+  "compiler_fingerprint": "93b8edecfb6233360716f132e51903d59c6b5f7dbaab5663b85f20b4e6548560",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "d9d9d9373278cd94e6c8e7baa1211d7827abb1996b884a2756d2a0e1198db303",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "2fda5de3fde3422c7375905b03c509675b70e7d2e8cab323c5ff9df38aeda1bb",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "6f101db7d742754357227ca07805f2d61077a177a5d5e565ff36c68c1d33ac61",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf"
+  },
+  "introduced_source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs"
+  ],
+  "existing_source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs"
+  ],
+  "cases": [
+    "seidel-2d"
+  ],
+  "selection": "Only the active closest-parity optimization case. Its single probe1.151534x did not generalize to formal1.030220x target speedup; formal optimization aggregate8.27949 failed accepted59 threshold7.85251. All formal results retained; no holdout diagnosis.",
+  "method": "Temporarily restore exact qualified compiler source, use unchanged public-API host with Cranelift sole Mech generator, sample one owned warm process3s at1ms, capture only named executable JIT ranges from that same PID after sampling, resume child to real terminal0, validate finite warm/final C outputs and exact frozen counters, bind every code byte/local BL to genuine frozen Objects, then restore exact accepted59 source. No source edits during build/profile and no timing observations.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-60-static-telemetry.json",
+  "counter_gate": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/training-experiments/source-closed-cell-prefix-route-census.json",
+  "profiled_driver": "/private/tmp/mech-polybench-optimization/round-71/source-closed-cell-prefix/source-closed-cell-prefix-complete-driver",
+  "profiled_driver_sha256": "a9cd9704db8623ba65f0756d629f274c76a0c7decfa1b4e888bdcbee2c5ace19",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "hypothesis_to_check": "Locate remaining scalar-prefix admission/address/F64 chain and old-cell/private-write costs in actual point-prefix code. Compare fixed C kernel instructions statically. Inspect source-static shape facts already certified by current loan and repeated center reads without changing ownership/no-op order. Do not repeat rejected private-first or global F64 SSA changes.",
+  "holdout_profiling": false,
+  "official_performance_observations": 0,
+  "history_entries_unchanged": 61,
+  "scope_limit": "Warm residence includes output reset/drop and is not an official cache-flushed timing sample. PC samples are locations in dependency chains, not exclusive instruction cost, hardware retirement/IPC/cache/traffic/RSS or speedup forecasts."
+}

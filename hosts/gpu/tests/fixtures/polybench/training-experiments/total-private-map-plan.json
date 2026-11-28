@@ -1,0 +1,49 @@
+{
+  "schema": "mech.polybench.total-private-map-plan.v1",
+  "created_at": "2026-11-27T19:34:51.097300+00:00",
+  "source_parent": "35c8788f84736b555c40acafcbe067b0c100394f",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "accepted_driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "scope": "Optimization15 diagnosis and selection only. No holdout source diagnosis, profiling or per-case tuning. Fixed all30 ports, C binaries/flags/inputs, F64 MINI CPU, finite tolerances, limits, split, objective and timing/cache boundaries.",
+  "profiling_basis": {
+    "receipt": "training-experiments/native-map-memory-profile.json",
+    "receipt_sha256": "b7b00cffd3009f1ca1b3bba3d23f72ff509a5f2922b34c532d39ef17490aa5d1",
+    "target": "gramschmidt",
+    "mech_over_c": 54.480156773281955,
+    "execution_samples": 225,
+    "jit_self_samples": 174,
+    "copy_samples": 31,
+    "main_map_samples": 110,
+    "native_function": "mech_canonical_program_entry_v1_numeric_5",
+    "caution": "The retained samples are coarse. Round41 static adapter reductions did not deliver an accepted timing gain; this experiment changes hot whole-map copying and identity paths."
+  },
+  "implementation": "Derive totality from the sealed acyclic map CFG, literal guarded range/capture facts and fixed checked matrix geometry. Before writing, guard that every non-target source view is disjoint from the fresh owned bank. Target reads must be the same output cell. Only such maps may initialize/update the fresh private bank directly. On an identity tail containing only the same-cell read, scalar copies, empty visits and the final push, retain the existing cell when its current view is already that bank. Every other map retains complete private scratch evaluation and copy.",
+  "critical_safety": "A map miss resumes at its exact pre-map source boundary and may retain earlier completed maps. Thus no speculative partial in-place update may reach a miss. Totality, safe same-cell dependence and all preflight pointer/geometry/capture checks are required before the first bank store; uncertain cases keep the old emitter.",
+  "invariants": [
+    "Cranelift is the sole Mech native code generator. Reuse the maintained checked scalar/map emitter and the existing Core private map banks; no benchmark-name checks or port changes.",
+    "Do not alter the public runtime Frame adapter, scalar Bool/U64/I64/F64 emission, runtime ABI, serialized carriers or helper allocation paths.",
+    "Prove every reachable path total; preserve all FP arithmetic, order and bits. Unknown scalar arithmetic, raw noncanonical Bool paths, captured/out-of-bounds selectors, nonpointwise target reads and nested folds retain scratch evaluation.",
+    "Guard current fixed source range and literal capture words before relying on them. Preserve full checked matrix shapes, pointer overflow and complete output backing.",
+    "Direct writes target only fresh admitted private map banks, never a borrowed original input. Exact current-view equality and the private flag authorize identity retention. Non-target views must have disjoint complete spans.",
+    "Retain every original source visit, full work/comparison bill, finite/physical admission, alias, cold exit, replay, publication, cleanup and retry invariant. No work credits for skipped identity loads/stores."
+  ],
+  "prospective_emission_gate": {
+    "target": "mech_canonical_program_entry_v1_numeric_5",
+    "must_change_profiled_function": true,
+    "combined_native_stack_bytes_strictly_below": 22944,
+    "profiled_function_stack_bytes_strictly_below": 22080,
+    "tight_large_payload_copy_loops_before": 3,
+    "tight_large_payload_copy_loops_after": 0,
+    "large_payload_bytes": [
+      4800,
+      7200
+    ],
+    "no_new_fma_on_optimization15": true,
+    "no_Object_execution_or_timing": true
+  },
+  "qualification": "Source-proof positive/negative tests, native exact-bit and multi-iteration identity updates, retained aliases and cold failures after completed direct maps, original/decoded/restored artifacts, finite resource denial/cleanup/retry, all30 finite C-liveout cases and both feature configurations. No Rust edits while a build/test is live.",
+  "training_selection": "Exactly one v2 probe per exact qualified fingerprint: optimization15, seven fresh processes per actor/case, accepted31/candidate interleaved with alternating order. Retain all210 observations and regressions. Select raw geometric mean speedup >1, equal visits and no reduced work/comparison bills. No retries or exclusions.",
+  "formal_acceptance": "Commit and push/freeze exact clean qualified source and driver before both formal sets. Retain all900 observations/29482 finite liveouts. Promote only if both primary kernel geomean Mech/C scores strictly improve on accepted31 (11.43635797708715 /39.31569548924827); otherwise restore exact accepted31.",
+  "performance_observations": 0
+}

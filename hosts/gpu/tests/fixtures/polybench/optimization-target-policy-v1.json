@@ -1,0 +1,31 @@
+{
+  "schema": "mech.polybench.optimization-target-policy.v1",
+  "status": "active",
+  "user_directive": "When you\u2019re done this round we are going to change our optimization procedure: closest parity first. Target the optimization benchmark which has the closest parity to C and optimize that one until it\u2019s 1x C, then continue on from there making sure to maintain those wins.",
+  "supersedes": "Largest remaining optimization-set margin as target-selection priority; no retrospective decision changes.",
+  "policy": {
+    "selection_partition": "optimization",
+    "selection_metric": "kernel median Mech runtime / C runtime using unchanged frozen evaluation",
+    "choose_target": "Among optimization benchmarks above1.0x in the latest accepted run, choose the smallest Mech/C ratio. Stable protocol order breaks exact ties.",
+    "target_lock": "Profile and optimize that active target until an accepted complete formal evaluation records it at<=1.0x C; do not switch merely because another unfinished case becomes closer.",
+    "advance": "After active target reaches<=1.0x C, add all newly attained optimization parity cases to maintained wins and choose the closest remaining unfinished case using that accepted run.",
+    "maintain_wins": "Retain every attained optimization-set<=1.0x C result as a future promotion requirement. Record the attaining round/source/driver/ratio and check all previously attained cases in every later complete formal run.",
+    "compiler_scope": "General shared compiler/native optimizations from source semantics; unchanged idiomatic ports and inputs; no benchmark-name or MINI-shape rules.",
+    "selection_and_qualification": "Keep the existing optimization-only aggregate strict-improvement gate and complete correctness/source/resource qualification. A prospective candidate must target this active case; gains elsewhere do not justify changing the active target.",
+    "holdout_use": "Report the complete holdout aggregate independently. Never choose, diagnose, tune, select, veto, roll back or retry from holdout results.",
+    "reporting": "Continue both optimization15 and holdout15 equal-weight geometric-mean Mech/C, target ratio and raw Mech speedup, attained parity wins, controls and all regressions.",
+    "measurement_discipline": "Keep the single prospective qualified-fingerprint probe, one frozen formal evaluation, no retiming/exclusions, immutable history, exact source bills or independently proved physical reductions, no Rust edits while build/profile/timing live."
+  },
+  "new_performance_observations": 0,
+  "adopted_at": "2026-11-28T15:12:22.997224+00:00",
+  "effective_after_history_index": 59,
+  "effective_from_history_index": 60,
+  "adopted_workspace_commit": "ea428645fabc89de76546b319250aea6d1dd6f44",
+  "baseline_accepted_history_index": 59,
+  "baseline_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "baseline_optimization_receipt_sha256": "aa81c0d49649912206d04b9d436c0aa2929387fd59e08fcfd971ffa737046ed5",
+  "aggregate_promotion_policy": "performance-selection-policy-v4.json",
+  "aggregate_promotion_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "measurement_changes": false,
+  "historical_decision_changes": false
+}

@@ -1,0 +1,255 @@
+{
+  "schema": "mech.polybench.optimization-generator-route-evidence.v1",
+  "created_at": "2026-11-28T20:29:51.906825+00:00",
+  "compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "driver_sha256": "edcb8744748276146a73856970af8aa247c303c10652c273e58d9c7feeeb4df1",
+  "runtime": {
+    "schema": "mech.polybench.owned-native-route-diagnostic.v1",
+    "complete": true,
+    "hits": {
+      "1": {
+        "name": "mech_canonical_program_entry_v1_numeric_67",
+        "address": 43158536192,
+        "size": 3012,
+        "hit": false
+      },
+      "2": {
+        "name": "mech_canonical_program_entry_v1_numeric_142",
+        "address": 43158539264,
+        "size": 2744,
+        "hit": false
+      },
+      "3": {
+        "name": "mech_canonical_program_entry_v1_numeric_232",
+        "address": 43158542080,
+        "size": 3012,
+        "hit": false
+      },
+      "4": {
+        "name": "mech_canonical_program_entry_v1_numeric_307",
+        "address": 43158545152,
+        "size": 2744,
+        "hit": false
+      },
+      "5": {
+        "name": "mech_canonical_program_entry_v1",
+        "address": 43159453696,
+        "size": 53056,
+        "hit": true,
+        "pc": 43159453696,
+        "frame": null
+      },
+      "6": {
+        "name": "prepare_numeric_generator",
+        "locations": 1,
+        "hit": true,
+        "pc": 4399893880,
+        "frame": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_generator"
+      },
+      "7": {
+        "name": "finish_numeric_generator",
+        "locations": 1,
+        "hit": true,
+        "pc": 4399889548,
+        "frame": "<mech_gpu::native_artifact::program::runtime::collections::State>::finish_numeric_generator"
+      },
+      "8": {
+        "name": "numeric_array_owner",
+        "locations": 2,
+        "hit": false
+      },
+      "9": {
+        "name": "begin_numeric_views",
+        "locations": 1,
+        "hit": false
+      },
+      "10": {
+        "name": "begin_closed_region",
+        "locations": 1,
+        "hit": false
+      }
+    },
+    "preflight_trace": [],
+    "performance_observations": 0,
+    "pid": 12912,
+    "driver": "/private/tmp/mech-polybench-optimization/round-84/round62-regression-profile/residence-driver",
+    "driver_sha256": "edcb8744748276146a73856970af8aa247c303c10652c273e58d9c7feeeb4df1",
+    "driver_exit_code": 0,
+    "warmup_validation": {
+      "count": 4096,
+      "finite": true,
+      "max_absolute_error": 4.85722573273506e-17
+    },
+    "final_validation": {
+      "count": 4096,
+      "finite": true,
+      "max_absolute_error": 4.85722573273506e-17
+    },
+    "residence_calls": 25600,
+    "source_unchanged": true,
+    "frozen_counters_match": true
+  },
+  "conclusion": "Deriche main execution uses the selected enclosing numeric generator and its inline child FSM emission. Standalone numeric functions are not called in the monitored window; their absence is explained by the larger existing optimization, not a demonstrated fallback/admission gap. The interrupted conditional helper trace did not verify its predicate and is excluded from source selection. Source inspection shows generator primitive emits strict IEEE F64 arithmetic without per-op finite guards, so transplanting the standalone finite-prefix guard would add work. Profiled inline read/write bounds/control is the next target.",
+  "diagnostic_limits": "Total residence includes an uncounted prefix before one-shot breakpoint installation. No exact monitored-call count/rate or latency inferred. Named Rust host functions may inline. Selected enclosing prepare+finish, source inventory and sampled main instructions are the evidence.",
+  "performance_observations": 0,
+  "holdout_observations": 0,
+  "accepted_round_unchanged": 59,
+  "history_entries_unchanged": 63,
+  "archives": {
+    "closed-region/debugger-exit.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/debugger-exit.json.gz",
+      "sha256": "6122deacf099737d8aba2e0c9a26f8450c1b0c44fe11fdc79c12d2cd0cbf8e2d",
+      "compressed_sha256": "875ffbdef9e3babcd5a10d81224c947523604e26933b41d06e5c4b9129539525"
+    },
+    "closed-region/debugger.log": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/debugger.log.gz",
+      "sha256": "58fe6576547b5897abc61b37f2dabdc05eeadf9c8db3a4cd650c7bc6a5ddeec1",
+      "compressed_sha256": "a50a57ea1ed4c3f685834e6fb00ea55281abb4402e664db8b9f66c5c839a7e0a"
+    },
+    "closed-region/deriche-inputs.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "closed-region/deriche.perf.map": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/deriche.perf.map.gz",
+      "sha256": "bd3aa3813c1ba78e2bbba9891e0803cc9ce6db733f149e6e5334197b25ce42c7",
+      "compressed_sha256": "a0b8237386f5cf506a6acbc626736d5bd1bc59b28647a1e8e286d9b272140d7d"
+    },
+    "closed-region/driver.stderr": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "closed-region/driver.stdout": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/driver.stdout.gz",
+      "sha256": "1a531966acdf1dea2f1585491d65a7789492d26f0f964ac085bfe63583f77f61",
+      "compressed_sha256": "bb49b635f41ecb565864cd87369ea29b4b0fae99898f2386894b32aaa4984b77"
+    },
+    "closed-region/plan.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/plan.json.gz",
+      "sha256": "9af08c1a35b0ef14c465cb4684c8c6845d9889386b145dca76f8de608eac29a7",
+      "compressed_sha256": "784e970f47a87e3832cec6ffc9f0f1ffbc2a55f7a9dc45efd71b3bd814a9c67f"
+    },
+    "closed-region/route-trace.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/route-trace.json.gz",
+      "sha256": "20b1e556f0334f472f4fa7c844dc5931f9c4725199dd55d73fe17245689435eb",
+      "compressed_sha256": "291189f53752eb284ca84953f29c9ff10325ebe378cf592670300f2b4cbdfc1b"
+    },
+    "closed-region/run-diagnostic.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "closed-region/trace_route.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/closed-region/trace_route.py.gz",
+      "sha256": "307780464d51497f86b6244cd6b51bbf2d5cbd8671f1ae6908d2c7f0d2c94096",
+      "compressed_sha256": "37fa5edfb93f7d337123b9ca64dd2f54e37f756dc8820a3ae01c2e904ececa96"
+    },
+    "dispatch/debugger-exit.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/debugger-exit.json.gz",
+      "sha256": "887eb65c459c14f9e04bbdd840de294d249346751643b51bb4d4f3c2b1f1a17f",
+      "compressed_sha256": "5b8cfd9611d161b5363d7389e6262429f696d3d2b3be654089f550b2ef81d1cf"
+    },
+    "dispatch/debugger.log": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/debugger.log.gz",
+      "sha256": "5566aa924aa506475eafa28c112cd39649147c4585b5436ce4bcf817ec1aa24f",
+      "compressed_sha256": "895c7a0bb17b186e65b5c64ce75e6a60647a587e9bff65d921ad4d53420e1bde"
+    },
+    "dispatch/deriche-inputs.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "dispatch/deriche.perf.map": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/deriche.perf.map.gz",
+      "sha256": "5c8a5d47d984b285eeaf5e0aff625a335a20bb7f4a69ecc5d1f5f1584815e493",
+      "compressed_sha256": "0ccd4fba5ab51525ff7a12b24604b72614063ad166c883d11c9ac42159326414"
+    },
+    "dispatch/driver.stderr": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "dispatch/driver.stdout": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/driver.stdout.gz",
+      "sha256": "5a6bf373c5aef85bbfe1ddf5b44e739a8af2e7f07dc062c8a1623c46d2eb88ca",
+      "compressed_sha256": "04df625688bf891b52a1b495739c7dc4a11b577d22b4b71a4074667d9f349ac3"
+    },
+    "dispatch/plan.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/plan.json.gz",
+      "sha256": "e6dfe22264ea4e567ebb05b60f8e8bcc64eef7ccd61bcb43ab546b0e08e0e137",
+      "compressed_sha256": "d8142122d8f8854154ac1bb08c760b32678a8c4e94a22c01132a2700b3478a2a"
+    },
+    "dispatch/route-trace-before-interpretation.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/route-trace-before-interpretation.json.gz",
+      "sha256": "3a7384ed7f04335344f8ebc9c4ebddbe80c12c65f8550669d98fd446eb0ddd09",
+      "compressed_sha256": "97f7efe23d1226fe62d3d20686a9458576a577e7fd94d3f15b064e7b2f0f1cf8"
+    },
+    "dispatch/route-trace.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/route-trace.json.gz",
+      "sha256": "66dda70a7d0f624a9bf51e4d65ea2a8ac3f01aa687ae8923a573def85b4dde90",
+      "compressed_sha256": "ac7e43d74c296d79fd3aef3ac91b331d7f6979a817d727466a6c93f6fc756364"
+    },
+    "dispatch/run-diagnostic.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "dispatch/trace_route.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/dispatch/trace_route.py.gz",
+      "sha256": "c0f80a412824d85dc5f9003a006e6e4a81f1fa276eaf8cef41f1e05ed7910b3f",
+      "compressed_sha256": "d4805994b37dde481d6eb8627e4b27826e6a5f5a2c6c12f9ce63d6cfe577509d"
+    },
+    "generator/debugger-exit.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/debugger-exit.json.gz",
+      "sha256": "6e861047112df608ef392394b9c4354ca9d3f527c52dd2ba84d35957a60fac47",
+      "compressed_sha256": "7b064605edbe6dc2a9506b5954e46401eefa52ec0b943134aac593e03f358e0f"
+    },
+    "generator/debugger.log": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/debugger.log.gz",
+      "sha256": "28cdcc6c923ffcbf7d6af98fbddc916ed01138967be37ffde4879e9f0f36c4dc",
+      "compressed_sha256": "61ead5bd19f8bf5de708f9b033d88205b0cdaf8bc815713313d4e4b2deeda12f"
+    },
+    "generator/deriche-inputs.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "generator/deriche.perf.map": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/deriche.perf.map.gz",
+      "sha256": "6e98217091b92dbdaf0d587106297c094e535bd498e8c50587b556a6e8c1810e",
+      "compressed_sha256": "fc3012ee38e3b2deeba8b033847fc275b576824614249bf37aaee5ef0d90a8c1"
+    },
+    "generator/driver.stderr": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "generator/driver.stdout": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/driver.stdout.gz",
+      "sha256": "075cfdabe8e8f1a582eeac2848333d44642f5e548b1ee2d1126c133df60964c9",
+      "compressed_sha256": "c4f77d5563bd5c1fcb7806385fed6b49b084c5e484902dfc1f8ea5ebedbf898d"
+    },
+    "generator/plan.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/plan.json.gz",
+      "sha256": "04005ed7a5aeb1044aa5b315aeef97a6977195dcf9b67b7f63cf511967588776",
+      "compressed_sha256": "3c4a4d77506f9e9be6dab235bbe4618c653b8153babdab21f7eabbebc2fc4452"
+    },
+    "generator/route-trace.json": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/route-trace.json.gz",
+      "sha256": "5c37adea0d61a89ae0aa2e046c3f4502ccff2ae0d745ec1319aa7250e6ccd2cc",
+      "compressed_sha256": "06ff6b980eb26d1100c3b9c10c392848331d5c1f5b492a3d93c07bc51998159b"
+    },
+    "generator/run-diagnostic.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "generator/trace_route.py": {
+      "path": "qualification/round-86-enclosing-generator-evidence/generator/trace_route.py.gz",
+      "sha256": "ada25ed1e9783958ab4e9d7bd09e248cda6aa9ce3944e09ea995c57b1065127e",
+      "compressed_sha256": "e7ea3b4c6aa539cdbc5c5c6ccece96a53ef6431740efcd5469a7daff6bc432ea"
+    }
+  }
+}

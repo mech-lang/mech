@@ -528,10 +528,7 @@ pub(in crate::native_artifact) fn primitive(
             _ => {
                 let right = b.ins().bitcast(types::F64, MemFlags::new(), args[1]);
                 match op {
-                    F64Add => b.ins().fadd(left, right),
-                    F64Sub => b.ins().fsub(left, right),
-                    F64Mul => b.ins().fmul(left, right),
-                    F64Div => b.ins().fdiv(left, right),
+                    F64Add | F64Sub | F64Mul | F64Div => f64_arithmetic(b, op, left, right),
                     _ => {
                         let cc = match op {
                             F64Eq => FloatCC::Equal,
@@ -1040,3 +1037,21 @@ pub(in crate::native_artifact) fn compiled_stack_bytes(
 
 #[cfg(test)]
 mod tests;
+
+/// Shared scalar vocabulary for scalar words and independent packed F64 lanes.
+/// Only the four genuine selected arithmetic operations reach this emitter.
+pub(in crate::native_artifact) fn f64_arithmetic(
+    b: &mut FunctionBuilder<'_>,
+    op: NativeScalarOp,
+    left: Value,
+    right: Value,
+) -> Value {
+    use mech_engine::native_artifact::NativeScalarOp::*;
+    match op {
+        F64Add => b.ins().fadd(left, right),
+        F64Sub => b.ins().fsub(left, right),
+        F64Mul => b.ins().fmul(left, right),
+        F64Div => b.ins().fdiv(left, right),
+        _ => unreachable!("source-selected F64 arithmetic"),
+    }
+}

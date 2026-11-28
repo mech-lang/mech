@@ -1,0 +1,21 @@
++> stats
+-- The recurrence advances one coefficient; each prefix reflection is simultaneous.
+#Durbin(r<[f64]:40,1>, initial<[f64]:40,1>, size<u64>) => <[f64]:40,1>
+  | :Start(y<[f64]:40,1>)
+  | :Coefficient(y<[f64]:40,1>, alpha<f64>, beta<f64>, k<u64>)
+  | :Done(y<[f64]:40,1>).
+#Durbin(r, initial, size) -> :Start(initial)
+  :Start(initial) -> {
+    ~first := initial
+    first[1u64] = 0.0 - r[1u64]
+  } -> :Coefficient(first, 0.0 - r[1u64], 1.0, 2u64)
+  :Coefficient(y, alpha, beta, k)
+    | k <= size -> {
+        next-beta := (1.0 - alpha * alpha) * beta
+        total := stats/sum/column([r[k - i] * y[i] | i <- 1u64..k])[1u64]
+        next-alpha := (0.0 - (r[k] + total)) / next-beta
+        next := [((i < k)? | true => y[i] + next-alpha * y[k - i] | false => ((i == k)? | true => next-alpha | false => y[i])) | i <- 1u64..=40u64]'
+      } -> :Coefficient(next, next-alpha, next-beta, k + 1u64)
+    | * -> :Done(y)
+  :Done(y) => y.
+#Durbin(r<[f64]:40,1>, y<[f64]:40,1>, n<u64>)

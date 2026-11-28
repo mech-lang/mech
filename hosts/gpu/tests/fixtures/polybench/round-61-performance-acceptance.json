@@ -1,0 +1,40 @@
+{
+  "schema": "mech.polybench.round-performance-acceptance.v1",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "selection_partition": "optimization",
+    "promotion": "Optimization score must be strictly below the last accepted optimization score. Holdout never vetoes, selects or retunes a candidate.",
+    "failed_run": "Optimization score fails to strictly improve the last accepted optimization score.",
+    "comparison_threshold": "Strict optimization improvement; no post-hoc tolerance or observation exclusions.",
+    "scope": "Performance selection only; correctness and frozen-source qualification remain prerequisites. Both complete aggregate sets are reported.",
+    "holdout_use": "Report aggregate generalization and the below1.0x C goal separately; no promotion/rollback decision, per-case diagnosis, tuning or candidate retry based on holdout.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; selection uses the fixed optimization Mech/C score.",
+    "historical_decisions": "Retain the original two-set decisions through history46. An explicit user-directed amendment accepts round47 and applies optimization-only promotion from47 onward."
+  },
+  "decision": {
+    "history_index": 61,
+    "label": "round-61-ordered-dot-regression-recovery",
+    "source_commit": "dbc84c2e495fed3e488882cd16b63a4792cc1fd5",
+    "history_entry_sha256": "d54861d1b03c935af7d52c3f62aad5ecfc2dc3123962049564ecb47d7c0e4504",
+    "scores": {
+      "optimization": 10.252962229540335,
+      "holdout": 27.458741210792507
+    },
+    "previous_measured_index": 60,
+    "run_outcome": "failed_both_regressed",
+    "compared_to_accepted_index": 59,
+    "multipliers_vs_accepted": {
+      "optimization": 1.3056918091206153,
+      "holdout": 1.1446311350242018
+    },
+    "performance_gate": "not_promoted",
+    "selection_partition": "optimization",
+    "selection_outcome": "optimization_not_improved",
+    "holdout_use": "reported_only",
+    "selection_policy": "optimization-only-v4",
+    "accepted_index_after_run": 59
+  },
+  "performance_history_sha256": "8403830b555476fd31620863a0520d747cab27cee9ab38157e9864fefe8efa29",
+  "interpretation": "Promote solely optimization15 kernel Mech/C<7.852513248471486, the accepted59 score. Holdout independently reported, never selection/tuning/veto/retry. All observations retained. Productive source-closed prefixes retain original lexical replay and exact Seidel lowering; shared ordered-dot stream pointers and paired terms retain original accumulators/order/rounding, current loans, every counter/fee and source failure/publication behavior."
+}

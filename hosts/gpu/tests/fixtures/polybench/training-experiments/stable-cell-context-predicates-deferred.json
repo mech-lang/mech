@@ -1,0 +1,515 @@
+{
+  "schema": "mech.polybench.deferred-compiler-prototype.v1",
+  "created_at": "2026-11-28T18:23:50.430368+00:00",
+  "compiler_fingerprint": "fe772dcce342d033edf49fdd1b0a250b37ffcf27cece3d1516ae1c1489b19392",
+  "reason": "User explicitly redirected work to recover round60 Seidel1.66x and fix optimization regressions. Current stable-guard prototype is incomplete and not selected. Both focused attempts15/16 passed: required unchanged scalar guards were not actually inherited; second attempt retained only four enum observations. Do not claim qualification or speedup.",
+  "attempts": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "cell_prefix",
+        "--test-threads=1"
+      ],
+      "compiler_fingerprint": "4d3cf8cb68ca972cc78b8c3c222af566b26291e0677cb1cb54b76a4014a702a3",
+      "exit_code": 101,
+      "source_unchanged": true,
+      "wall_seconds": 130.76089554233477,
+      "passed_tests": []
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "cell_prefix",
+        "--test-threads=1"
+      ],
+      "compiler_fingerprint": "fe772dcce342d033edf49fdd1b0a250b37ffcf27cece3d1516ae1c1489b19392",
+      "exit_code": 101,
+      "source_unchanged": true,
+      "wall_seconds": 136.3277332498692,
+      "passed_tests": []
+    }
+  ],
+  "performance_observations": 0,
+  "holdout_observations": 0,
+  "next": "Recover exact round60 source as a diagnostic foundation; identify and fix regressed optimization cases while preserving Seidel lowering. Strict optimization-only qualification/one-probe/formal gates remain.",
+  "effective_plan": {
+    "schema": "mech.polybench.prospective-compiler-experiment.v1",
+    "created_at": "2026-11-28T18:09:05.664901+00:00",
+    "name": "stable-cell-context-predicates",
+    "source_parent": "f6bc711f3bb2bd3317f538be1841ebcafa3f9f51",
+    "accepted_round": 59,
+    "accepted_scores": {
+      "optimization": 7.852513248471486,
+      "holdout": 23.989161547848273
+    },
+    "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+    "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+    "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+    "formal_history_index": 61,
+    "versions": {
+      "ir": 435,
+      "work": 157,
+      "abi": 48
+    },
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs"
+    ],
+    "active_target": {
+      "case": "seidel-2d",
+      "mech_over_c": 1.7111946615974802,
+      "mech_median_seconds": 0.000184667,
+      "c_median_seconds": 0.00010791700333356857
+    },
+    "foundation": "Exact fully qualified but unselected CFG compiler c256/eaf448fb3a87a25cb2822f9ee4fe55730b9ee874. Its sole210 probe returned1.001094 target/0.985216 aggregate and is not repeated. Material new source proof propagates unchanged scalar guard outcomes and exact same-nominal enum-constructor observations across the proven successful point continuation, pruning only reusable CFG.",
+    "profiling_basis": "Accepted and rejected same-PID profiles plus the qualified c256 Object/probe. CFG cache removes vector and credit spills but leaves source dispatch/guards whose fields are unchanged by the exact source tail. Targeted source work removal is mandatory; no assumption that fewer instructions guarantees a timing gain.",
+    "transformation": "For the private reusable context only, prove guard inputs unchanged from actual post-store frame/copy recipes. Constants and unique immutable U64 scalar captures are stable; carrier projections are stable only if the exact next-carrier path resolves to the same actual source scalar UID. Pure U64 scalar copies/arithmetic may propagate stability; in-loop library reads and advancing column/mutated matrix decline. A comparison outcome is inherited only if its Bool branch was mandatory before the prior successful point and exactly one Boolean successor can reach that point before latch/exit. Exact EnumOrdinal observations may be constant only when the post-transition actual EnumPack has the same exact Enum schema and observed source path. Fold outputs/branch successors and prune unreachable reusable blocks. All fresh/fallback/reset/error/COW paths keep original computation. Preserve existing source fees, comparisons/visits/counters, F64 order and boundaries.",
+    "invariants": [
+      "Unchanged30 idiomatic ports,inputs,C binaries/flags,arithmetic/tolerance,finite caps,split,cache/timing/protocol/objective. Compiler admission uses source operations,types,CFG,current loans; no benchmark names,MINI dimensions or input-value assumptions.",
+      "Cranelift sole Mech generator. Reuse native scalar/F64 emission, same-plan facts and exact frame recipes, current numeric loan/provenance, original word bank and COW/no-op/error machinery. Cache is bounded compiler SSA within one synchronous loan, with no serialized authority, pointer persistence, new helper/frame/ABI/mode/cache across invocations or per-operation runtime allocation. Efficient scalar/compression paths remain.",
+      "Rolling eligibility requires source-proved same-row checked column+1 post-store continuation of this exact updated matrix, single tracked matrix mutation, fixed affine offsets in both source axes, bounded source steps/keys and a single source-observed F64 result. Every other latch entry invalidates; any cold numeric reentry starts empty. Read reuse cannot cross an unproved mutation, phase/owner boundary or reshape. Only the last successfully completed store result can replace the overwritten center.",
+      "A fresh point retains complete checked U64 intermediate/row/column admission before any load. Consecutive-point reuse proves unchanged row expressions and shifted-by-one column expressions; retain upper/overflow guards for all source checked subexpressions, including unused ones. Current full geometry/epoch/span/capacity/schema/owner admission stays. Static axes only from the existing exact source witness and never appending views. No global readonly/alias/alignment claims.",
+      "Original separate scalar F64 operands/tree/term order/rounding remain; no reassociation,FMA,reciprocal substitution or independent SIMD of dependent outputs. Nonfinite final results invalidate and replay the exact original prefix at current state before exports/store. Prior completed in-place updates cannot be rewound. Preserve source first failures, no-op/COW order, aliases, atomic previous external output, finite denials and cleanup/retry.",
+      "All execution counters exactly match accepted59; no source work/comparison/visit/bill reduction or padding. Actual compiled stack/code envelopes remain checked; cache auxiliary initialization/emission counts remain within existing independently priced bounds. No Rust edits while build/test/profile/timing live.",
+      "Closest-parity-first target stays Seidel until accepted<=1.0x C. Maintain attained optimization parity wins; current set empty. Optimization only diagnoses/selects/promotes. Holdout independently reports and cannot tune/veto/rollback/retry.",
+      "Cache is an optional derived representation. Discarding its full SSA state at a cold COW/state edge cannot change source values or completed writes; every later reuse requires a newly staged finite point and completed original store/no-op. Preserve current source word outputs/address/input before discarding private fields. No cache float must survive the original first-change helper solely to populate an invalid cache.",
+      "Induction for private token: entry/invalidation is0. Fresh staged token is the exact maximum admitted one-based read column in1..columns. A reused point has prior token<columns, so exact source unit-column continuation stages previous+1 in1..columns. No observer can reenter prefix between staging and the sole store; source errors exit the native loan, and COW clears token before its original call. Thus early private staging cannot authorize an uncompleted source write. Source source/read/CFG witnesses remain private and rederived; no new external authority.",
+      "Control-flow context is compiler-private and rederived from same-plan facts. Reusable entries are reachable only from successful finite producer plus completed original private/no-op write along the exact same-bank/same-row/checked unit-column source tail. COW, original lexical evaluation, every other latch, loan entry/reentry and source errors cannot enter reusable context. Fresh source still runs complete original preflight. Reusable bounds inherit prior complete row/lower validity and guard every advancing column checked intermediate against overflow plus current maximum read column against current columns before any load. F64 cache values are defined on each finite producer and never needed across COW/fresh edges. No integer cache word is read or updated in the CFG path.",
+      "Descriptive Boolean/definition/CFG inventories are not permission. Inheritance additionally proves previous mandatory execution, unique successful outcome, exact scalar stability through the actual next-carrier recipes, and exclusive reusable entry after completed source write. No source ordinal is cast into a NativeMatchValue. Enum facts require actual same-nominal source schema and actual constructor ordinal. Mutable reads/changed fields cannot be stable. Every failure remains at original source origin; constant folding does not reduce logical fees or pad counters."
+    ],
+    "qualification": "Retain14 focused groups and add source proof/negative and original-decoded-restored comparisons against the unrefined CFG. Check fixed row/remaining/gain/capture guards, reject changing-column and matrix-derived predicates, and source nominal enum identity; all row/time/reset/empty/late/overflow/nonfinite/COW/noop/denial/aliases/previous-output/cold-reentry/cap/retry tests remain. Prototype genuine Object must retain CFG9-to3 reuse, zero vector stack accesses, register-held work credit, and emit at least two source-proved retained scalar guards while pruning reusable sites versus62. Then full broad all30/restored/both features, exactO15 counters/17002 C outputs, commit/push and exactly one210-observation probe. All attempts retained, no Rust edits during owned build/profile/timing.",
+    "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts, zero samples.",
+    "training_probe": {
+      "actors": [
+        "accepted59",
+        "candidate"
+      ],
+      "samples_per_actor_case": 7,
+      "observations": 210,
+      "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+    },
+    "formal_acceptance": "If selected commit/push clean exact source and driver, one frozen900-observation formal run/29482 finite C liveouts and append immutable history61. Strict optimization-only Mech/C<7.852513248471486; holdout report-only. Report raw Mech and C/reference drift separately; restore exact accepted59 if gate fails. No attained parity wins yet.",
+    "performance_observations": 0,
+    "static_gate": "Genuine Object: actual inherited scalar predicates and successors, smaller reusable source domain than62sites,9-to3 reuse, no vector stack accesses and register work credit. All source proof/refusal tests before timing. No hardware/latency forecast.",
+    "proof_refinement": {
+      "created_at": "2026-11-28T18:20:49.183795+00:00",
+      "basis": "Attempt01 focused15/16: duplicate pattern projections of the same source carrier field were conservatively declined by exact SSA UID equality. No performance observations.",
+      "proof": "Retained source field may be the exact same UID or a distinct pure U64/canonical observation/copy of the identical actual carrier structural path. Both complete projection chains must have unique same-plan definitions available in this visit before their consumer (the retained source before the successful point). Exact enum variant/tuple path equality is required; changed columns/matrix/library values still decline. This normalizes source provenance; it does not assume that equal integer IDs, shapes or runtime values identify fields."
+    }
+  },
+  "archives": {
+    "adapt-workflow.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/adapt-workflow.py.gz",
+      "sha256": "4e41081d753d770b23c9ec20e4fa359732e6796a99e5ed87166e321ff6076679",
+      "compressed_sha256": "32d3b4be56514531bd29fd58da679b73bc4a43c0e0143d7f7d923a8403505715"
+    },
+    "attempt-01/focused-result.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/focused-result.json.gz",
+      "sha256": "48727c21c28db19a6825c7fe4421f3eae5f45f301abae5e70d298261583a42d6",
+      "compressed_sha256": "c9e73c2d418097fa065eedf519c5d220e3904d0da675776a2a39e35373f2da59"
+    },
+    "attempt-01/focused.log": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/focused.log.gz",
+      "sha256": "2db2ce92c353cb639592dcd3df3885833a6d7a52c1be00ae12cb42c3de9fb2ba",
+      "compressed_sha256": "d7ffa5517f424926f5c53c53bc5d6d5245837193aa51e01954536ab34cd5eabe"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "a57fd5667ebaef7f8f4ea94e590c2bf1ff42a1bbb73c59a7168617a17b12f167",
+      "compressed_sha256": "b7722e4fa72b77b8e28b1e46aa7aae8edd1acb3b70cfd4ac642958db4115fa4e"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs.gz",
+      "sha256": "8cafb5af96beb6228a5e4bd43bdbf1606a859d027e147b47f5c532668c0930bc",
+      "compressed_sha256": "9541bdcd2200ae69983ef73e14f128c7eb1bd19a6621e8a190597b9f7c25b9b5"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "cda38197db8be3ddc78bc5431b846774bb32a8fa4038d1146a952b1cdf558b86",
+      "compressed_sha256": "0b6122d6a0e94309f6192b6a81ed41f7511bd55b055faf2846212f3b001043e0"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+      "compressed_sha256": "4a1354fa5e4fcfa1dbd30d7ae25dbb1c4a458d211e61895bd1caec0c935556fc"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs.gz",
+      "sha256": "f79d001a9501c979f609d0b1d7586e9eebaa7c6f76279309bfc12dce7c60ee5a",
+      "compressed_sha256": "81dba84d9954de34c44f1ab0b323977890a726b7ea3de7e06d05bacf599e5288"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs.gz",
+      "sha256": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+      "compressed_sha256": "57523e503f51128f09928c3766b1d572ce32f5d2582bdf3876e666e4074af091"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs.gz",
+      "sha256": "c2625e589daa44d462ea00a0759fbb906ae86c299030205622c8ccfba7f9ec9d",
+      "compressed_sha256": "7525bc24ff0caa931bb3a6febcf2143f6546f3d2fc3d204262a716a00cd57b03"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d",
+      "compressed_sha256": "a6049e3ad3955899b7d7ffdf45b30ce407015be9c6f01298183e4ae4a9c53c90"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "d1dae2765b910bd4942a1bcd2fe6229e12d356698028fa0d946d7e2798e2a60d",
+      "compressed_sha256": "b274d3e509629fd38a00e6895ff572d0e038a99262835cfe297d98987726cde6"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "79c20525d322c2ed9850dd2cd9f7b0f51d1a29d8671090bbec64d19db3a0a378",
+      "compressed_sha256": "fc2f2ccd1021bee04e0d459de2f1af08596c9294ea0e3b9afdbae5d5678c8247"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "6f21e922d48af5c78c7d13aff6e24e5588d9139e1c47a4885d64ea22ab3659ab",
+      "compressed_sha256": "48e227a44b6e73073dcb95d4be6e944e4aab9340c740f8cb29570f739df5acbb"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "attempt-02/focused-result.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/focused-result.json.gz",
+      "sha256": "8699aa0d761b0587e09b3b8bb91130ac27e62099edb09e86db24b57f3abacf5d",
+      "compressed_sha256": "9f578c68ad70b49dd7fc6570e0a988d608d911d62d29e75d22ec2446383b876c"
+    },
+    "attempt-02/focused.log": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/focused.log.gz",
+      "sha256": "7fe11a7266771441dfe2308f7c77e5fc87a5226508a8af62e55efd725cbdcd99",
+      "compressed_sha256": "abfc905356f3a0064aceb7c98e7fef09f6fc92d18125fdb8fa12d04273b04aa0"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "a57fd5667ebaef7f8f4ea94e590c2bf1ff42a1bbb73c59a7168617a17b12f167",
+      "compressed_sha256": "b7722e4fa72b77b8e28b1e46aa7aae8edd1acb3b70cfd4ac642958db4115fa4e"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs.gz",
+      "sha256": "8cafb5af96beb6228a5e4bd43bdbf1606a859d027e147b47f5c532668c0930bc",
+      "compressed_sha256": "9541bdcd2200ae69983ef73e14f128c7eb1bd19a6621e8a190597b9f7c25b9b5"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "cda38197db8be3ddc78bc5431b846774bb32a8fa4038d1146a952b1cdf558b86",
+      "compressed_sha256": "0b6122d6a0e94309f6192b6a81ed41f7511bd55b055faf2846212f3b001043e0"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+      "compressed_sha256": "4a1354fa5e4fcfa1dbd30d7ae25dbb1c4a458d211e61895bd1caec0c935556fc"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs.gz",
+      "sha256": "f79d001a9501c979f609d0b1d7586e9eebaa7c6f76279309bfc12dce7c60ee5a",
+      "compressed_sha256": "81dba84d9954de34c44f1ab0b323977890a726b7ea3de7e06d05bacf599e5288"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs.gz",
+      "sha256": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+      "compressed_sha256": "57523e503f51128f09928c3766b1d572ce32f5d2582bdf3876e666e4074af091"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs.gz",
+      "sha256": "7ce2e5cd232ed7da8277cb3520004a67040c0ce2d37a290d5a9eb06b4f39f26c",
+      "compressed_sha256": "8dba0fa2ac66c844f688bab1f63fbb59e03892c35f97752db07d15360cf45916"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d",
+      "compressed_sha256": "a6049e3ad3955899b7d7ffdf45b30ce407015be9c6f01298183e4ae4a9c53c90"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "d1dae2765b910bd4942a1bcd2fe6229e12d356698028fa0d946d7e2798e2a60d",
+      "compressed_sha256": "b274d3e509629fd38a00e6895ff572d0e038a99262835cfe297d98987726cde6"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "79c20525d322c2ed9850dd2cd9f7b0f51d1a29d8671090bbec64d19db3a0a378",
+      "compressed_sha256": "fc2f2ccd1021bee04e0d459de2f1af08596c9294ea0e3b9afdbae5d5678c8247"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "9df380e6ffef34692df233d66b0090d59d4ca2a2ec2a1e8492f59a085c555171",
+      "compressed_sha256": "1224ea59f8aacf585c545ca46bd61b04b649afb44f8493e725b1dc3b59a38153"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/audit-results.py.gz",
+      "sha256": "192edb2d8f7e97f3de79149f52d32596ef9edc629e8d4381b8c7e4cbb84105a3",
+      "compressed_sha256": "d5e067bdfe17aaf3e473d36736d19178ee5619222df62bcb0d853a05a5fe7e86"
+    },
+    "current-work.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/current-work.json.gz",
+      "sha256": "83e2435c7938a0dbf69864f4f36a79cd3961c5f0e3624ef276de696da3b0cb53",
+      "compressed_sha256": "e8253777f38f1af5edd522fa5d36b3c0147c3f97de3eb9a7b9cb865958b46cb2"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "a57fd5667ebaef7f8f4ea94e590c2bf1ff42a1bbb73c59a7168617a17b12f167",
+      "compressed_sha256": "b7722e4fa72b77b8e28b1e46aa7aae8edd1acb3b70cfd4ac642958db4115fa4e"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs.gz",
+      "sha256": "8cafb5af96beb6228a5e4bd43bdbf1606a859d027e147b47f5c532668c0930bc",
+      "compressed_sha256": "9541bdcd2200ae69983ef73e14f128c7eb1bd19a6621e8a190597b9f7c25b9b5"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "cda38197db8be3ddc78bc5431b846774bb32a8fa4038d1146a952b1cdf558b86",
+      "compressed_sha256": "0b6122d6a0e94309f6192b6a81ed41f7511bd55b055faf2846212f3b001043e0"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+      "compressed_sha256": "4a1354fa5e4fcfa1dbd30d7ae25dbb1c4a458d211e61895bd1caec0c935556fc"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs.gz",
+      "sha256": "f79d001a9501c979f609d0b1d7586e9eebaa7c6f76279309bfc12dce7c60ee5a",
+      "compressed_sha256": "81dba84d9954de34c44f1ab0b323977890a726b7ea3de7e06d05bacf599e5288"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs.gz",
+      "sha256": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+      "compressed_sha256": "57523e503f51128f09928c3766b1d572ce32f5d2582bdf3876e666e4074af091"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs.gz",
+      "sha256": "7ce2e5cd232ed7da8277cb3520004a67040c0ce2d37a290d5a9eb06b4f39f26c",
+      "compressed_sha256": "8dba0fa2ac66c844f688bab1f63fbb59e03892c35f97752db07d15360cf45916"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d",
+      "compressed_sha256": "a6049e3ad3955899b7d7ffdf45b30ce407015be9c6f01298183e4ae4a9c53c90"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "d1dae2765b910bd4942a1bcd2fe6229e12d356698028fa0d946d7e2798e2a60d",
+      "compressed_sha256": "b274d3e509629fd38a00e6895ff572d0e038a99262835cfe297d98987726cde6"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "79c20525d322c2ed9850dd2cd9f7b0f51d1a29d8671090bbec64d19db3a0a378",
+      "compressed_sha256": "fc2f2ccd1021bee04e0d459de2f1af08596c9294ea0e3b9afdbae5d5678c8247"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "9df380e6ffef34692df233d66b0090d59d4ca2a2ec2a1e8492f59a085c555171",
+      "compressed_sha256": "1224ea59f8aacf585c545ca46bd61b04b649afb44f8493e725b1dc3b59a38153"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "deferred.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/deferred.json.gz",
+      "sha256": "1bdff8ea4f2c18a7a27c6bd0e206bb1fafaf9c4d459228b40123d50444e2974a",
+      "compressed_sha256": "7cf617016d79cc5fe83f657412222f946258a40c845167a687205b6c60375f92"
+    },
+    "emission-census.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/emission-census.py.gz",
+      "sha256": "19288c3b3b59da67cc020a4cf72abda0203ace7bc015035f03738d93d463edb3",
+      "compressed_sha256": "a813e0f6c981a990a621a122449947e97b438e57b1db92c1a440769f56ba80aa"
+    },
+    "finalize-formal.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/finalize-formal.py.gz",
+      "sha256": "600c69f4f529f9ce019d14d24b0ae4a889e9995394b7487c5e39bed920fb88dc",
+      "compressed_sha256": "4348c77d9d72464f99f27df5b3c456223ef5b36f02669ddccf1747a50633f410"
+    },
+    "focused-result.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/focused-result.json.gz",
+      "sha256": "8699aa0d761b0587e09b3b8bb91130ac27e62099edb09e86db24b57f3abacf5d",
+      "compressed_sha256": "9f578c68ad70b49dd7fc6570e0a988d608d911d62d29e75d22ec2446383b876c"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/measure-candidate.py.gz",
+      "sha256": "9c502d51f9c519a8624550fe9dcc6a2f6fd4770d42ee037f4a65da5f82697f75",
+      "compressed_sha256": "8f02ac742b108de71b85b54fd94ec629fb3d4c0a3c93f724675e40c8c6b3c198"
+    },
+    "plan.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/plan.json.gz",
+      "sha256": "e9572ac8ebe5958a44647add0f9c66437b0d15e593085c5f46035ba0d5413982",
+      "compressed_sha256": "a551dca44344ff165f2eaa368551ea540f10f497a372a3e46c85e445448ad7d8"
+    },
+    "prepare-qualification-manifest.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/prepare-qualification-manifest.py.gz",
+      "sha256": "05fc0e58ee5256c037412fb79d1ac3058f66898d36f5d0d32b96cee9e948b69a",
+      "compressed_sha256": "d0654493839150134d3c40e0002b82d69b9413bf1fd2e64874a71d0a928f0847"
+    },
+    "preserve-deferred.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/preserve-deferred.py.gz",
+      "sha256": "1cee352eb736c8854fe626d41dd30cad4759aa1e8296dd1a02166e603d127d27",
+      "compressed_sha256": "0c3e117411f04ce07419bbf97308dead9dc7d730a64e2b06682be33fcd66dab1"
+    },
+    "preserve-qualification.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/preserve-qualification.py.gz",
+      "sha256": "10c6d7b087fd82bb582cedd18f6532d6a60a3ee56d294971ba36bb226acc285c",
+      "compressed_sha256": "b9a99ce6ecf818600f919044f8b4429c66faddd1d0399127beb5942484a17b04"
+    },
+    "preserve-training.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/preserve-training.py.gz",
+      "sha256": "9225f6192c399bd40f72b500692a15854f8c3b3299dfef2579c3fe2e2b573c54",
+      "compressed_sha256": "dbdc95c69a518a42d41ab219a1e072a510f80f45e8396a47e5c2fd2ff2296dbe"
+    },
+    "preserve-unselected.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/preserve-unselected.py.gz",
+      "sha256": "14243b41aebf605c705247d7aba1fb5d016a5a7d9d218865eb3e54ab5860eae9",
+      "compressed_sha256": "35bf12de92153068f21fff3cf26f227b532f95bf2e40d467588d8223fdf90260"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/run-focused.py.gz",
+      "sha256": "2a4344227d71c87a44a774c47f7af3db4ecf2046e95808d3968afd8147e322df",
+      "compressed_sha256": "aeb3b0cfcee3f01ebeb15c7ea588348f7f8bfc55235e8163b57af33aa0dd7634"
+    },
+    "run-formal.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/run-formal.py.gz",
+      "sha256": "7fc0d95f6927b7b89e0c631211c768b9d0b2d04a871ef91ec7c34c394c341520",
+      "compressed_sha256": "339638bb703ad15aa100119afaf0ee9206cbc4b6675ea4d31ac3760a028a530a"
+    },
+    "run-prototype.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/run-prototype.py.gz",
+      "sha256": "503fe9d1c4d37b6907c87ae16c82ff4e3ff50a3328d68d8f8df66bd19c11b357",
+      "compressed_sha256": "9c732dc39207988cbfa862a00a1110e4bf36f0ab8dd01a0cfd4282ac51509fc2"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/run-qualification.py.gz",
+      "sha256": "f7615e527982cc68c919c390ccf23c90532cc5fe43c22f84e18c51b9a43ddcf7",
+      "compressed_sha256": "950952d517efa49431d85b5ee2cb80125ab1e50755d34895887553cb2ba91dd2"
+    },
+    "run-training-probe.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/run-training-probe.py.gz",
+      "sha256": "bf180ed3dc8bacdc66df0660c88c59b58c44a56d633918a02a7caea9afcac59d",
+      "compressed_sha256": "abb85639cc9168589762b1223fc6aebe5bf8424156d67c6f8c7dc38d9e81db04"
+    },
+    "source-before/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "182b2b843cc66efaa34e6cc61736e4729b8e4f5a3f28b8f54484e176d7d7036c",
+      "compressed_sha256": "1fc77819fd0881104c87307533ca48119fad5ebb8a9201cdefde29a9984a5f27"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "23a8955f75903c76b2d4261b7d88ea47208f216ce7b7457f393e1bd95fa5ca46",
+      "compressed_sha256": "f942c20f3a7ad2f67895cddd36bb7524bf2dd60df96daf7c23a00f6c9416e93a"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "7ce2426f1b3831ba651696b6d01acce06ec5acc49ef0e3bb38290b313de27b58",
+      "compressed_sha256": "937c8fb713808adcf71839368c5a72a2b57ff97f2b0b2ba8fbbaeb27ccdd3806"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "f69a83a0642ac83bacc8e7ff172adcf076c1c2189a0cb80257baace214640408",
+      "compressed_sha256": "31caf4c787ae5158b6e710e6a2e2edaafb0ea92de8712abba18ba63ef38dbcbb"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "7d9e750a0ba536b053977dc6d4274d388e73d4f9260f27649d51858ed70fa7fc",
+      "compressed_sha256": "c1025d62f7c2ec242d91b4b27044631f1e31c3ef6e5dc1bac0ffab41b9f14ed0"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "c077ee308643aebf0029ff16945ec4201516ecc126623c9962904f459c2b8b3f",
+      "compressed_sha256": "5f4e7ca64276be1cd8036fd828c76fc2ef9c371bfe5a4f645b5ae263fb427d4c"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "12fd4e90d0385ac0dfb5b067785f5b22290c78dc21486d665ea16af45f899850",
+      "compressed_sha256": "c78673b05e28b94f43a61202a0f0c1e15b368442bed7ed6f45daf52f97d96bea"
+    },
+    "training-probe-plan.json": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/training-probe-plan.json.gz",
+      "sha256": "7ecfb0ee245faf02b0eb769c59d227ccac0396652d203ea6f1f72edf5c26f967",
+      "compressed_sha256": "b26ee993795297d18f677ea1e45499ac88a240ee4f9d1d767079d16c07a64db0"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/training-probe.py.gz",
+      "sha256": "5b6b60b6b34ef2ccda190762a046bf4ae55ab6c8bd3917576fa9f2759f6a5122",
+      "compressed_sha256": "0452ea341d6d99efd9d7cd7219df834091fbe2d5d87accb356bcd5ead86598c8"
+    },
+    "untimed-counter-gate.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/untimed-counter-gate.py.gz",
+      "sha256": "ed9639978a76dcf6e1eb53ebc553cc3387b4130e9093442798e46ba358c68986",
+      "compressed_sha256": "66fa9cd8dd916cebcec72587f401b0780272634168d111957c9f48f359073a0e"
+    },
+    "wire-stability.py": {
+      "path": "qualification/round-79-stable-cell-context-predicates-deferred/wire-stability.py.gz",
+      "sha256": "9a3f2216d23543bd0b8ab04c06f4ed67412b0db97bea411b51d68c654a0d6e19",
+      "compressed_sha256": "104f38f08bbf4e0fa5fe84833369f3d8700efd4649eb5a2e08619b3f6ce19314"
+    }
+  },
+  "restored_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_round_unchanged": 59,
+  "formal_history_entries_unchanged": 61
+}

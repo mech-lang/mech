@@ -2,16 +2,9 @@
 //! Source membership, ownership authority and prices are independently derived;
 //! these records describe operations and word homes, never a second program.
 use super::readonly_numeric::ResultRecipe;
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields, rename = "mech.native.image.Array")]
-pub(in crate::native_artifact) struct Array {
-    pub field: usize,
-    pub width: u8,
-    /// Exact selected site whose original factory validates the entry view.
-    pub witness: usize,
-    pub writable: bool,
-    pub appends: bool,
-}
+// Phases and leaves use the same checked carrier/capture storage description.
+// The descriptor still rederives provenance and current-version eligibility.
+pub(in crate::native_artifact) use super::readonly_numeric::Array;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.FrameWords")]
 pub(in crate::native_artifact) struct FrameWords {
@@ -25,6 +18,12 @@ pub(in crate::native_artifact) struct FrameWords {
 pub(in crate::native_artifact) enum Operation {
     /// The summary edge is descriptive only; execute the original child here.
     Fallback,
+    Reduce {
+        fold: Box<super::numeric_phase::Fold>,
+    },
+    Map {
+        replacement: Box<super::numeric_phase::matrix_maps::Replacement>,
+    },
     Frame,
     Aggregate,
     ArrayCopy,
@@ -42,6 +41,18 @@ pub(in crate::native_artifact) enum Operation {
         index: u32,
         incoming: u32,
     },
+    CellRead {
+        array: usize,
+        row: u32,
+        column: u32,
+        output: u32,
+    },
+    CellWrite {
+        array: usize,
+        row: u32,
+        column: u32,
+        incoming: u32,
+    },
     Append {
         array: usize,
         incoming: u32,
@@ -53,6 +64,49 @@ pub(in crate::native_artifact) enum Operation {
     },
 }
 impl Operation {
+    pub fn replaces(&self) -> bool {
+        matches!(
+            self,
+            Self::Write { .. } | Self::CellWrite { .. } | Self::Map { .. }
+        )
+    }
+    pub fn summary_after(&self) -> Option<u32> {
+        match self {
+            Self::Reduce { fold } => Some(fold.source.after),
+            Self::Map { replacement } => Some(replacement.source.after),
+            _ => None,
+        }
+    }
+    /// The exact final canonical visit completed by this summary. Native CFG
+    /// predecessors use its entry; ordinary replay resumes after this exit.
+    pub fn summary_source_exit(&self) -> Option<u32> {
+        match self {
+            Self::Reduce { fold } => fold.source.region.reduction.as_ref().map(|r| r.select),
+            Self::Map { replacement } => replacement.source.completion.last().copied(),
+            _ => None,
+        }
+    }
+    pub fn summary_budget(&self) -> Option<&super::numeric_phase::FoldBudget> {
+        match self {
+            Self::Reduce { fold } => Some(&fold.budget),
+            Self::Map { replacement } => Some(&replacement.budget),
+            _ => None,
+        }
+    }
+    pub fn summary_values(&self) -> Vec<u32> {
+        match self {
+            Self::Reduce { fold } => fold.source.scalar_values().collect(),
+            Self::Map { replacement } => replacement.source.scalar_values().collect(),
+            _ => Vec::new(),
+        }
+    }
+    pub fn replacement_array(&self) -> Option<usize> {
+        match self {
+            Self::Write { array, .. } | Self::CellWrite { array, .. } => Some(*array),
+            Self::Map { replacement } => Some(replacement.target),
+            _ => None,
+        }
+    }
     pub fn grows(&self) -> bool {
         matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })
     }
@@ -85,6 +139,17 @@ pub(in crate::native_artifact) struct Exit {
     pub retire_carrier: bool,
     pub kind: ExitKind,
 }
+impl Exit {
+    pub fn source_predecessor(&self, actions: &[(usize, Operation)]) -> usize {
+        actions
+            .iter()
+            .find(|(site, action)| {
+                *site == self.from && action.summary_after() == Some(self.to as u32)
+            })
+            .and_then(|(_, action)| action.summary_source_exit())
+            .map_or(self.from, |site| site as usize)
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.BoundaryValues")]
 pub(in crate::native_artifact) struct BoundaryValues {
@@ -97,6 +162,7 @@ pub(in crate::native_artifact) struct BoundaryValues {
 #[serde(deny_unknown_fields, rename = "mech.native.image.Plan")]
 pub(in crate::native_artifact) struct Plan {
     pub arrays: Vec<Array>,
+    pub map_banks: Vec<super::numeric_phase::map_banks::Bank>,
     pub frames: Vec<FrameWords>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,

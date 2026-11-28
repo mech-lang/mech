@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-27T23:53:30.945467+00:00",
+  "compiler_fingerprint": "fa83ef6fd00f6721012266e33897f9ba5b4d4fa37147cb8f99764a38f91ac4f2",
+  "driver_sha256": "072f18b238979a0bb5e2f8953dd626459214274f7e8cb05814009994595986f6",
+  "source_parent": "d4a2bfab0b61f59ffdc30031139bf3faf7188b9c",
+  "policy_sha256": "b85c7e3a0c57ae27c29a4d4fe280c7b303c77086d51d5f08eb1e58e2cc5fdad6",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted45": 1.0712213440187792,
+    "regressions_over_five_percent": 0,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted45/candidate medians on optimization15; one prospective fresh-process probe, all samples/regressions retained.",
+  "formal_gate": "After selection, commit/push and freeze exact clean source and driver before both formal sets. Retain all900 observations/29482 finite liveouts and append-only history. Promote only BOTH primary scores strictly improve accepted45. Otherwise restore every listed Rust path from source_parent; preserve all evidence. Controls never override the gate."
+}

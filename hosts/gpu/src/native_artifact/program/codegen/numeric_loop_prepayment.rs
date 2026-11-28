@@ -80,6 +80,12 @@ pub(super) fn candidate(
 impl Prepayment {
     pub fn new(proof: &Proof, header: usize, completion: Completed) -> Option<Self> {
         let phase = proof.phase.as_ref()?;
+        // These windows price base traversals once at their entry. Reached
+        // summary debits can change that balance before later window headers;
+        // retain ordinary checked funding for such phases.
+        if !phase.summaries.is_empty() {
+            return None;
+        }
         if phase.checked_children {
             return None;
         }

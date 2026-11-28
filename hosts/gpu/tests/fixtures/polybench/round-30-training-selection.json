@@ -1,0 +1,23 @@
+{
+  "selected_at": "2026-11-27T06:52:58.946538+00:00",
+  "prospective_rule": {
+    "created_at": "2026-11-27T06:45:37.246814+00:00",
+    "scope": "Prospective optimization-only source selection before timing",
+    "select_for_formal_if": "All15 programs correct, unrelated counters unchanged, complete source/error/resource qualification passes, and raw geometric-mean speedup vs accepted29 >1.0",
+    "retain_all": "Every case, regression, counter delta and raw sample remains. No tolerance or exclusion.",
+    "formal_prerequisites": "Commit selected source on PR1001; freeze source+driver before both full sets; both formal scores must strictly improve vs accepted29 for promotion.",
+    "profile_basis": "Accepted29 optimization-only profiles in ../profile/training-profile.json; no holdout diagnosis"
+  },
+  "probe_sha256": "08db3b98bad610608105b4c46645f518789c68c73bb32628e9ba4a53a2449a5b",
+  "selected_compiler_fingerprint": "b35d385dbe179e195cd6bff383c7f565670b523b01c15d7c515b56ad0defd835",
+  "selected_driver_sha256": "c5c82e45891f9362f84be4b745e94ab38841209ff2d6c05944db3de396e5aee6",
+  "decision": "Select unchanged qualified ordered-sum candidate for frozen formal both-set evaluation",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted29": 1.102498747624439,
+    "regressions_over_five_percent": 0,
+    "sum_candidate_median_seconds": 0.001192082,
+    "sum_reference_median_seconds": 0.001261292
+  },
+  "holdout_performance_used": false
+}

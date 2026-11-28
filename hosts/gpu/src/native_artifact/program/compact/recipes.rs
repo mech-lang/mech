@@ -10,7 +10,7 @@ use mech_engine::native_artifact::{
     NativeStructuralObservation as Observation, NativeStructuralStep as Step,
 };
 
-pub(super) enum Recipe {
+pub(in crate::native_artifact) enum Recipe {
     StringEqual {
         source: Value,
         offset: usize,
@@ -54,7 +54,7 @@ fn check_width(layout: &Layout, output: Value, count: usize) -> Result<(), Nativ
     }
     Ok(())
 }
-pub(super) fn derive(
+pub(in crate::native_artifact) fn derive(
     plan: &Plan,
     layout: &Layout,
     site: usize,

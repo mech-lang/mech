@@ -36,7 +36,8 @@ fn plan_results(
 }
 
 fn plans(source: &str) -> [Plan; 2] {
-    plan_results(source).map(Result::unwrap)
+    plan_results(source)
+        .map(|result| result.unwrap_or_else(|error| panic!("native lowering: {error:?}\n{source}")))
 }
 
 fn scalar_span(frames: &NativeBufferFrames, field: NativeBufferFrameField) -> bool {
@@ -84,6 +85,70 @@ fn standalone_scalar_aggregate_keeps_its_scalar_owner() {
     for plan in plans("state := (seed<u8>, 7u64)\nscore<u64> := state.1\nscore + state.2\n") {
         assert_eq!(plan.facts().buffer_frames().elements(), 0);
         assert!(plan.scalar_aggregates().value_count() > 0);
+    }
+}
+
+#[test]
+fn numeric_matrix_frames_keep_managed_owners_and_exact_scalar_lanes() {
+    for kind in ["f64", "i64", "bool", "u8", "u16", "u32", "u64"] {
+        let source = format!(
+            "frame := (input<[{kind}]>, (score<f64>, 7u64))\n\
+             (buffer, state) := frame\n\
+             (buffer[1u64], state.1 + 1.0, state.2)\n"
+        );
+        for plan in plans(&source) {
+            let frames = plan.facts().buffer_frames();
+            assert!(
+                (0..plan.values().len()).any(|value| {
+                    frames.fields_at(value).is_some_and(|fields| {
+                        fields.iter().any(|field| {
+                            matches!(field.lane(), NativeBufferFrameLane::Managed { .. })
+                        }) && fields.iter().any(|field| {
+                            matches!(field.lane(), NativeBufferFrameLane::Composite { .. })
+                                && scalar_span(&frames, *field)
+                        })
+                    })
+                }),
+                "missing numeric matrix owner or scalar span: {source}"
+            );
+        }
+        for plan in plans(&format!("frame := (input<[{kind}]>, score<f64>)\nframe\n")) {
+            assert_eq!(plan.facts().buffer_frames().elements(), 0);
+        }
+    }
+}
+
+#[test]
+fn closed_numeric_matrix_fsm_variants_use_private_tagged_frames() {
+    let source = "#Carry(initial<[f64]:2,3>) => <f64>\n\
+      | :Next(values<[f64]:2,3>, count<u64>, total<f64>)\n\
+      | :Done(values<[f64]:2,3>, total<f64>).\n\
+    #Carry(initial) -> :Next(initial, 0u64, 0.0)\n\
+      :Next(values, count, total)\n\
+        | count < 3u64 -> :Next(values, count + 1u64, total + values[2u64,3u64])\n\
+        | * -> :Done(values, total)\n\
+      :Done(values, total) => total + values[1u64,2u64].\n\
+    #Carry(input<[f64]:2,3>)\n";
+    for plan in plans(source) {
+        let frames = plan.facts().buffer_frames();
+        assert!(frames.actions.iter().flatten().any(|action| matches!(
+            action.operation(),
+            NativeBufferFrameOperation::EnumPack { .. }
+        )));
+        assert!(frames.actions.iter().flatten().any(|action| matches!(
+            action.operation(),
+            NativeBufferFrameOperation::Observe {
+                observation: Observation::CanonicalValue,
+                ..
+            }
+        )));
+        assert!(frames.fields.iter().any(|field| matches!(
+            field.lane(),
+            NativeBufferFrameLane::Scalar {
+                kind: super::super::NativeScalarKind::F64,
+                ..
+            }
+        )));
     }
 }
 
@@ -525,5 +590,74 @@ r0 := {leaf: seed<u64>}
         ));
         assert!(plan.map_owner_words().unwrap().regions().is_empty());
         assert!(plan.facts().buffer_frame_owner_layouts().is_ok());
+    }
+}
+
+#[test]
+fn numeric_prefix_projection_keeps_disjoint_original_homes_and_direct_matrix_payloads() {
+    let text = r#"#Scan(initial<[f64]:2,3>) => <[f64]:2,3>
+  | :Read(values<[f64]:2,3>, at<u64>)
+  | :Write(values<[f64]:2,3>, at<u64>, old<f64>)
+  | :Done(values<[f64]:2,3>).
+#Scan(initial) -> :Read(initial,1u64)
+  :Read(values,at)
+    | at < 4u64 -> :Write(values,at,values[1u64,at])
+    | * -> :Done(values)
+  :Write(values,at,old) -> :Read(values,at + 1u64)
+  :Done(values) => values.
+#Scan(input<[f64]:2,3>)
+"#;
+    for plan in plans(text) {
+        let frames = plan.facts().buffer_frames();
+        let tail = plan
+            .iterations()
+            .iter()
+            .find_map(|control| match control {
+                Loop::Tail(tail) => Some(tail),
+                _ => None,
+            })
+            .unwrap();
+        let [original] = frames.fields(tail.carrier()).unwrap() else {
+            panic!("one enum root")
+        };
+        assert!(matches!(
+            original.lane(),
+            NativeBufferFrameLane::Tagged { count: 3, .. }
+        ));
+        let mut homes = std::collections::BTreeSet::new();
+        for ordinal in 0..3 {
+            let variant = frames.tagged_variant(*original, ordinal).unwrap();
+            let first = frames
+                .children(variant)
+                .and_then(|fields| fields.first())
+                .copied()
+                .unwrap_or(variant);
+            let NativeBufferFrameLane::Managed { at } = first.lane() else {
+                panic!("every variant has its exact matrix owner")
+            };
+            assert!(
+                homes.insert(at),
+                "original variants remain physically disjoint"
+            );
+        }
+        let (projected, longest) = frames
+            .numeric_prefix_projection(&plan, tail.carrier())
+            .unwrap();
+        assert_eq!(longest, 1);
+        assert_eq!(projected.fields(tail.carrier()).unwrap().len(), 3);
+        assert!(
+            matches!(
+                frames.fields(tail.carrier()).unwrap()[0].lane(),
+                NativeBufferFrameLane::Tagged { count: 3, .. }
+            ),
+            "projection never replaces the runtime bank"
+        );
+        assert!(projected.actions.iter().flatten().any(|action|matches!(action.operation(),NativeBufferFrameOperation::Copy{source,output}
+            if plan.values()[output.get() as usize].schema()==plan.values()[tail.carrier().get() as usize].schema()
+                && matches!(plan.values()[source.get() as usize].definition().body(),SchemaBody::Matrix{..})
+                && projected.fields(*source).is_none())),"direct matrix constructors retain exact provenance inputs");
+        assert!(projected.actions.iter().flatten().any(|action|matches!(action.operation(),NativeBufferFrameOperation::Project{source,ordinal:0,output}
+            if plan.values()[source.get() as usize].schema()==plan.values()[tail.carrier().get() as usize].schema()
+                && matches!(plan.values()[output.get() as usize].definition().body(),SchemaBody::Matrix{..}))),"direct matrix observations retain field zero identity");
     }
 }

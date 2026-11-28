@@ -1,0 +1,2 @@
+-- Two matrix-vector products, combined with the original coefficients.
+alpha<f64> * (A<[f64]> ** x<[f64]>) + beta<f64> * (B<[f64]> ** x)

@@ -1,7 +1,10 @@
 //! Current traversal reachability. Nested children are single synchronous edges;
 //! the only omitted cycle is the source loop's declared backedge.
 use super::*;
-use mech_engine::native_artifact::{NativeMatchValue, NativeScalarAggregateAction as Aggregate};
+use mech_engine::native_artifact::{
+    NativeBufferFrameOperation as Frame, NativeMatchValue,
+    NativeScalarAggregateAction as Aggregate, NativeStructuralObservation as Observation,
+};
 
 pub(super) struct Flow<'a, 'p> {
     pub plan: &'p Plan,
@@ -68,9 +71,10 @@ impl Flow<'_, '_> {
             };
             let successors = known.map_or_else(
                 || {
-                    NativeProgramFacts::control_successors(term)
+                    self.forest
+                        .successors(self.plan, site)
                         .into_iter()
-                        .flatten()
+                        .map(|s| s as u32)
                         .collect()
                 },
                 |s| vec![s],
@@ -116,6 +120,28 @@ impl Flow<'_, '_> {
             let site = d.site()? as usize;
             if self.plan.blocks()[site].iteration() != Some(self.loop_.iteration) {
                 return None;
+            }
+            if let Some(action) = self.frames.action(site)
+                && let Frame::Observe {
+                    source,
+                    path,
+                    observation: Observation::EnumOrdinal { ordinal },
+                    output,
+                } = action.operation()
+                && *output == value
+                && path.is_empty()
+            {
+                let resolver = words::Words {
+                    plan: self.plan,
+                    facts,
+                    frames: self.frames,
+                    aggregates: self.aggregates,
+                    tail: self.tail(),
+                    iteration: self.loop_.iteration,
+                };
+                if resolver.same_carrier(source.get()) {
+                    return tag.map(|tag| tag == u64::from(*ordinal));
+                }
             }
             if let Some(Aggregate::Observe {
                 source,

@@ -1,0 +1,649 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-20-phase-maps",
+  "compiler_commit": "9f6ed6c5e789f363a5194b604f95db4ad4fe6ad8",
+  "compiler_fingerprint": "714791524ac2119865ba4ab72f22d7e6886db9082d017903b87f88ded4509f94",
+  "driver_sha256": "a108da7bcf12caf550cc0ff5bcd402e5fba7c2bbae00020141b834d530c0586c",
+  "frozen_candidate_sha256": "00e747fa2f08e897a817d90593a9f61b7dde2acc762d5d1e9c2e0e33d57d57b6",
+  "native_typed_ir_version": 379,
+  "native_work_policy_version": 148,
+  "native_abi_version": 42,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric, phase maps, row blocks and exact Huffman work equations",
+      "passed_by_target": [
+        361
+      ],
+      "runs": [
+        {
+          "log": "numeric-regressions.log",
+          "log_sha256": "e4f04409fdf26ea0f70f6f263026f24ef98229dbd7e6b8040a31f22887fb4ecd",
+          "passed": 360,
+          "failed": 1
+        },
+        {
+          "log": "map-and-training-oracle-checks.log",
+          "log_sha256": "d2caaca48cb945c30171da81eea709095a598a0f2b74e70b090f9ca75db9a5e3",
+          "passed": 12,
+          "failed": 0
+        }
+      ],
+      "counting": "361 unique checks: 360 passed in the broad run; the route-only failure and eleven overlapping map checks passed in the focused rerun. Original failure retained.",
+      "corrected_assertion": "Accept an emitted native transposed phase map and require no per-map prepare, per-element, or transpose host calls; complete C live-out comparison retained."
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "matrix-polybench.log",
+      "log_sha256": "8589c8010db80aa404af08e5608801a63d4dc49cb0c2cf75742cac2505ede299"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collection and range/cursor regressions",
+      "passed_by_target": [
+        114
+      ],
+      "log": "program-regressions.log",
+      "log_sha256": "961604e95490192980ecfc5435b262c9cb941ae86cd715e5cdc20fd76203b4f5"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "passed_by_target": [
+        1
+      ],
+      "log": "protocol.log",
+      "log_sha256": "35ad8412a21bb406d5e7b53bdb3a00c337d7380d7f0bbade46201c8f6e81e48d"
+    }
+  ],
+  "total_selected_checks": 530,
+  "feature_checks": [
+    {
+      "feature": "canonical-native-program-runtime",
+      "status": "passed",
+      "log": "runtime-feature-3.log",
+      "log_sha256": "d3c32a8aa8d344679ce47de995824c584764d01ec64c6655e5956d0609d0050f"
+    },
+    {
+      "feature": "canonical-native-program",
+      "status": "passed",
+      "log": "production-feature-2.log",
+      "log_sha256": "ef740cff457a7fd673207ede90050793c5bafeecbc08e12b2ed469d775f7404c"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 86.62116166287066,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.023762666
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 23.561205086564417,
+      "median_speedup": 1.6321994627955139,
+      "minimum_speedup": 1.0708955223880596,
+      "maximum_speedup": 19635.28331655652,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 33.21157075463987,
+      "geomean_mech_over_c_fresh": 20.440288429820647,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 153.38010200087152,
+      "sum_mech_median_seconds": 0.005186502,
+      "geomean_speedup_from_contemporaneous_baseline": 23.103261835952647,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.058111830406434
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 23.87400466455572,
+      "median_speedup": 22.85212850307587,
+      "minimum_speedup": 1.1514205136940927,
+      "maximum_speedup": 402.8699673067767,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 86.62116166287066,
+      "geomean_mech_over_c_fresh": 50.743330370717345,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 465.3136570981511,
+      "sum_mech_median_seconds": 0.023762666,
+      "geomean_speedup_from_contemporaneous_baseline": 23.505592371407534,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0701928718793179
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 23.71708920038867,
+      "median_speedup": 13.313974792349164,
+      "minimum_speedup": 1.0708955223880596,
+      "maximum_speedup": 19635.28331655652,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 53.636040489726,
+      "geomean_mech_over_c_fresh": 32.205718570886454,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 465.3136570981511,
+      "sum_mech_median_seconds": 0.028949168,
+      "geomean_speedup_from_contemporaneous_baseline": 23.303558851939318,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.058111830406434
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000115917,
+      "c_median_seconds": 1.8328428268432617e-06,
+      "mech_over_c_kernel": 63.244375514536586,
+      "starting_mech_over_c_kernel": 77.03124240848712,
+      "speedup_from_recorded_baseline": 1.3569364286515353,
+      "speedup_from_paired_original": 1.3403987335766108,
+      "runtime_multiplier_from_round19": 0.9517620204939569,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.6041e-05,
+      "c_median_seconds": 2.5420449674129486e-06,
+      "mech_over_c_kernel": 33.84715892243415,
+      "starting_mech_over_c_kernel": 38.12304900128275,
+      "speedup_from_recorded_baseline": 1.1259167141246615,
+      "speedup_from_paired_original": 1.058111830406434,
+      "runtime_multiplier_from_round19": 0.9322794205285455,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.2125e-05,
+      "c_median_seconds": 1.375097781419754e-06,
+      "mech_over_c_kernel": 59.723025598374534,
+      "starting_mech_over_c_kernel": 79.13415176878613,
+      "speedup_from_recorded_baseline": 1.1643835616438354,
+      "speedup_from_paired_original": 1.1664170471841704,
+      "runtime_multiplier_from_round19": 0.8890392422192153,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000114459,
+      "c_median_seconds": 1.5408731997013092e-06,
+      "mech_over_c_kernel": 74.28190718236083,
+      "starting_mech_over_c_kernel": 87.93647372142229,
+      "speedup_from_recorded_baseline": 1.1208555028438132,
+      "speedup_from_paired_original": 1.1416052909775554,
+      "runtime_multiplier_from_round19": 0.9359483858306349,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.7167e-05,
+      "c_median_seconds": 6.834045052528381e-06,
+      "mech_over_c_kernel": 8.365031187327336,
+      "starting_mech_over_c_kernel": 23662.233271603498,
+      "speedup_from_recorded_baseline": 2776.6674829884378,
+      "speedup_from_paired_original": 2773.706858852135,
+      "runtime_multiplier_from_round19": 0.9282768251493895,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000321625,
+      "c_median_seconds": 4.292000085115433e-06,
+      "mech_over_c_kernel": 74.93592582054899,
+      "starting_mech_over_c_kernel": 327.9356878116524,
+      "speedup_from_recorded_baseline": 4.3762145355616004,
+      "speedup_from_paired_original": 4.036144578313253,
+      "runtime_multiplier_from_round19": 0.9403112492362027,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00015225,
+      "c_median_seconds": 4.458706825971603e-06,
+      "mech_over_c_kernel": 34.14667210527415,
+      "starting_mech_over_c_kernel": 50.45658200493294,
+      "speedup_from_recorded_baseline": 1.4635993431855503,
+      "speedup_from_paired_original": 1.4679802955665027,
+      "runtime_multiplier_from_round19": 0.9250595440626062,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00284375,
+      "c_median_seconds": 2.8792303055524826e-05,
+      "mech_over_c_kernel": 98.76771561190988,
+      "starting_mech_over_c_kernel": 43560.74017727218,
+      "speedup_from_recorded_baseline": 442.9539488351648,
+      "speedup_from_paired_original": 440.33580940659346,
+      "runtime_multiplier_from_round19": 0.9967141292442496,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.5417e-05,
+      "c_median_seconds": 3.291293978691101e-06,
+      "mech_over_c_kernel": 16.83745066797057,
+      "starting_mech_over_c_kernel": 22.47169074801,
+      "speedup_from_recorded_baseline": 1.284208816789072,
+      "speedup_from_paired_original": 1.1293105003879675,
+      "runtime_multiplier_from_round19": 0.9459570182476146,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 2.8792e-05,
+      "c_median_seconds": 1.2922100722789764e-06,
+      "mech_over_c_kernel": 22.281206916474236,
+      "starting_mech_over_c_kernel": 3899.393007189661,
+      "speedup_from_recorded_baseline": 180.5579674909697,
+      "speedup_from_paired_original": 177.5493192553487,
+      "runtime_multiplier_from_round19": 0.11259718115976036,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.7542e-05,
+      "c_median_seconds": 4.124827682971954e-06,
+      "mech_over_c_kernel": 23.647533302462858,
+      "starting_mech_over_c_kernel": 36.05363035229189,
+      "speedup_from_recorded_baseline": 1.6321994627955139,
+      "speedup_from_paired_original": 1.5164441983965882,
+      "runtime_multiplier_from_round19": 0.9194875710528548,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000555958,
+      "c_median_seconds": 3.6247074604034424e-06,
+      "mech_over_c_kernel": 153.38010200087152,
+      "starting_mech_over_c_kernel": 27896.336343602026,
+      "speedup_from_recorded_baseline": 179.8209882760928,
+      "speedup_from_paired_original": 179.6122638760482,
+      "runtime_multiplier_from_round19": 0.9468481709632863,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.0001675,
+      "c_median_seconds": 1.3746321201324463e-06,
+      "mech_over_c_kernel": 121.85078287262873,
+      "starting_mech_over_c_kernel": 138.9627991919192,
+      "speedup_from_recorded_baseline": 1.0708955223880596,
+      "speedup_from_paired_original": 1.1402985074626866,
+      "runtime_multiplier_from_round19": 1.0286549492120811,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000182792,
+      "c_median_seconds": 2.7792062610387802e-05,
+      "mech_over_c_kernel": 6.577129684922273,
+      "starting_mech_over_c_kernel": 119638.17928254372,
+      "speedup_from_recorded_baseline": 19635.28331655652,
+      "speedup_from_paired_original": 19690.28025296512,
+      "runtime_multiplier_from_round19": 0.995919167924333,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000325167,
+      "c_median_seconds": 0.00010791700333356857,
+      "mech_over_c_kernel": 3.0131211019167896,
+      "starting_mech_over_c_kernel": 50168.862826898156,
+      "speedup_from_recorded_baseline": 17029.330697764533,
+      "speedup_from_paired_original": 17016.38619540113,
+      "runtime_multiplier_from_round19": 0.9964269626424542,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008983166,
+      "c_median_seconds": 4.3999869376420975e-05,
+      "mech_over_c_kernel": 204.163469740071,
+      "starting_mech_over_c_kernel": 21631.38022675036,
+      "speedup_from_recorded_baseline": 107.55698959587298,
+      "speedup_from_paired_original": 106.66914838265261,
+      "runtime_multiplier_from_round19": 1.0013561475866684,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000409666,
+      "c_median_seconds": 6.916932761669159e-06,
+      "mech_over_c_kernel": 59.22654073930039,
+      "starting_mech_over_c_kernel": 10500.55203711869,
+      "speedup_from_recorded_baseline": 177.27083282478898,
+      "speedup_from_paired_original": 175.9257346228391,
+      "runtime_multiplier_from_round19": 0.996250072955779,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000787625,
+      "c_median_seconds": 6.49578869342804e-05,
+      "mech_over_c_kernel": 12.125163504731319,
+      "starting_mech_over_c_kernel": 4841.308551231542,
+      "speedup_from_recorded_baseline": 402.8699673067767,
+      "speedup_from_paired_original": 399.15341437867005,
+      "runtime_multiplier_from_round19": 0.9961538753405358,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000296959,
+      "c_median_seconds": 1.7923302948474884e-06,
+      "mech_over_c_kernel": 165.683189562596,
+      "starting_mech_over_c_kernel": 260.7344433964597,
+      "speedup_from_recorded_baseline": 1.5724662327122598,
+      "speedup_from_paired_original": 1.5484730215282243,
+      "runtime_multiplier_from_round19": 0.983444717477265,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000105666,
+      "c_median_seconds": 9.173527359962463e-07,
+      "mech_over_c_kernel": 115.1857904312528,
+      "starting_mech_over_c_kernel": 112.37666473873892,
+      "speedup_from_recorded_baseline": 1.1514205136940927,
+      "speedup_from_paired_original": 1.0701928718793179,
+      "runtime_multiplier_from_round19": 0.9198346028291622,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000487667,
+      "c_median_seconds": 1.77919864654541e-05,
+      "mech_over_c_kernel": 27.409362127544387,
+      "starting_mech_over_c_kernel": 4178.378618335307,
+      "speedup_from_recorded_baseline": 152.08439775502546,
+      "speedup_from_paired_original": 149.97486194472867,
+      "runtime_multiplier_from_round19": 0.998380618190305,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000182875,
+      "c_median_seconds": 4.172325134277344e-07,
+      "mech_over_c_kernel": 438.304768,
+      "starting_mech_over_c_kernel": 7168.140899468677,
+      "speedup_from_recorded_baseline": 22.85212850307587,
+      "speedup_from_paired_original": 22.834132604237865,
+      "runtime_multiplier_from_round19": 0.9943398073033342,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00364475,
+      "c_median_seconds": 7.832888513803482e-06,
+      "mech_over_c_kernel": 465.3136570981511,
+      "starting_mech_over_c_kernel": 9612.11646057087,
+      "speedup_from_recorded_baseline": 20.218864942725837,
+      "speedup_from_paired_original": 20.266627615062763,
+      "runtime_multiplier_from_round19": 1.0052979664833561,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003828292,
+      "c_median_seconds": 1.1167023330926895e-05,
+      "mech_over_c_kernel": 342.8211696663699,
+      "starting_mech_over_c_kernel": 20830.730988440668,
+      "speedup_from_recorded_baseline": 63.025343155642254,
+      "speedup_from_paired_original": 62.71572936442674,
+      "runtime_multiplier_from_round19": 1.0134681979776128,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.004205334,
+      "c_median_seconds": 1.2292061001062393e-05,
+      "mech_over_c_kernel": 342.117892161171,
+      "starting_mech_over_c_kernel": 20723.719650259725,
+      "speedup_from_recorded_baseline": 59.33791465790827,
+      "speedup_from_paired_original": 59.24706765265256,
+      "runtime_multiplier_from_round19": 1.005689767076356,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000166375,
+      "c_median_seconds": 3.7499703466892242e-06,
+      "mech_over_c_kernel": 44.36701750105551,
+      "starting_mech_over_c_kernel": 218.1017246501925,
+      "speedup_from_recorded_baseline": 4.915852742299023,
+      "speedup_from_paired_original": 4.870521412471826,
+      "runtime_multiplier_from_round19": 1.004025152678205,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000304209,
+      "c_median_seconds": 6.7497603595256805e-06,
+      "mech_over_c_kernel": 45.06960007412432,
+      "starting_mech_over_c_kernel": 224.54405071064102,
+      "speedup_from_recorded_baseline": 4.9512276099655175,
+      "speedup_from_paired_original": 4.956983521197597,
+      "runtime_multiplier_from_round19": 0.9756792990198593,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000210333,
+      "c_median_seconds": 5.583278834819794e-06,
+      "mech_over_c_kernel": 37.671949802734275,
+      "starting_mech_over_c_kernel": 245.10186705759173,
+      "speedup_from_recorded_baseline": 6.409084641972491,
+      "speedup_from_paired_original": 6.2397056096760855,
+      "runtime_multiplier_from_round19": 0.9196533586347716,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.7541e-05,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 22.03571056243219,
+      "starting_mech_over_c_kernel": 3606.1591485281647,
+      "speedup_from_recorded_baseline": 141.9444101521368,
+      "speedup_from_paired_original": 141.43309974220256,
+      "runtime_multiplier_from_round19": 1.0409327991533752,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000122208,
+      "c_median_seconds": 3.2088719308376312e-06,
+      "mech_over_c_kernel": 38.08441179143579,
+      "starting_mech_over_c_kernel": 219.61129772332706,
+      "speedup_from_recorded_baseline": 5.764761717727154,
+      "speedup_from_paired_original": 5.416993977481016,
+      "runtime_multiplier_from_round19": 0.9436911196911197,
+      "runtime_regression_over_five_percent_from_round19": false,
+      "observations": 30
+    }
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round19": 0.8254170019137888,
+      "reference_new_over_round19": 0.9626830012069959,
+      "c_new_over_round19": 0.9705422948861158,
+      "mech_over_c_score_new_over_round19": 0.850469893237001,
+      "mech_new_over_round19_regressions_over_five_percent": 0,
+      "reference_adjusted_mech_speedup_from_round19": 1.1662989724889916
+    },
+    "holdout": {
+      "mech_new_over_round19": 0.9859875386828211,
+      "reference_new_over_round19": 0.984416298967019,
+      "c_new_over_round19": 0.959358778728931,
+      "mech_over_c_score_new_over_round19": 1.0277568314840158,
+      "mech_new_over_round19_regressions_over_five_percent": 0,
+      "reference_adjusted_mech_speedup_from_round19": 0.9984064304525582
+    }
+  },
+  "inter_round_regressions_over_five_percent": [],
+  "implementation": [
+    "Add a separate MatrixMap summary to complete numeric phases while preserving the existing Reduction representation and checked fold path. Reuse the existing resident/JIT scalar map DAG emitter; no per-element runtime callback, interpreter, or generic allocation path is introduced.",
+    "Prove exact fixed scalar vector ranges, row/optional transpose layouts and canonical destination state fields. Reject swaps, conflicting destinations, unknown producers, dynamic source counts, holes and oversized scratch. Shapes and kinds must match exactly.",
+    "Require current functional versions for every map read. Invalidate older destination aliases after success; only the map result becomes current. Retained scalar snapshots remain valid and observable older arrays force the ordinary route.",
+    "Require the destination already has an exclusive private bank and a scalar write producer in the phase. Emit into bounded admitted stack scratch, then commit typed copies only after full success. Reverse and overlapping reads observe the old vector. No fallible operation follows the first destination store. Otherwise resume before original range preparation.",
+    "Fund original range, row construction, optional transpose, nodes, elements, comparison, clone/schema planning, replay and native scratch/copy through existing finite admission. Source arithmetic order, lazy reads and F64 bits remain unchanged.",
+    "Reconstruct source summaries, root destinations, version/view proofs and all funding independently from the canonical plan during image loading. IR379/work148 identify the path; ABI42 remains.",
+    "Keep the existing runtime Frame layout visible to runtime-only preparation for exact sizeof accounting; gate its codegen-only adapter at its existing feature boundary. Both runtime-only and codegen feature builds pass.",
+    "No benchmark source, input, pinned C executable, arithmetic tolerance, objective, split or timing boundary changed."
+  ],
+  "correctness_plan": {
+    "user_approval": "The user explicitly approved compiler integration and requested a staged correctness plan after automatic approval review rejected a broad rename and activation.",
+    "architecture": "Additive integration; existing fold machinery retained.",
+    "gates": [
+      "Exact source, destination, current-version and exclusive-bank proofs before selection.",
+      "Scratch first, typed commit only after full success; cold continuation preserves original source execution.",
+      "Original, decoded and restored execution; Object emission and metadata; independent image proof reconstruction.",
+      "Reverse/overlapping reads, state swaps, conflicting destinations, retained aliases, stale arrays, scalar snapshots, lazy errors, arithmetic failure, finite budgets, post-map errors, cleanup and retry.",
+      "All fifteen optimization programs select the candidate; freeze source and binary before current holdout timings."
+    ],
+    "plan_log_sha256": "401be9eb3e9eccd8c680cf4bb51b93c0c5b1d43df53850ab34a286f9de951197"
+  },
+  "development_checks": {
+    "map_checks": 11,
+    "new_map_scope": "All seven word kinds and both vector orientations, including F64 NaN payloads, infinities and signed zero. Original/decoded/restored execution and Object emission; nine finite budget dimensions, low-stack denial, forged image summaries and exact errors/retry.",
+    "logs_sha256": {
+      "source-proof-checks-2.log": "d9a323c90cfd77a967ba1f1fdebdc2ee59f3134933bf3ff86a5fad10df541fed",
+      "source-and-fold-checks-3.log": "0486305e968790140d46b71feb3626416286d7ac78222df293876f277aed0533",
+      "native-phase-gates.log": "e188778fd2379ca35195e9c37b72ce692b3ad30fa46b9b99e690259dd3a8678b",
+      "integrated-training-inventory.log": "e93f0208bff4c85358bc6e089d84eee775d5448fbe9d4a4d8683fde565364be7",
+      "runtime-feature.log": "57d741db87078bae047d30f7960552cdc7dc831c8a10cbd777171aa6b89f053e",
+      "runtime-feature-2.log": "6b87816aa785f9d0b13afe5fad4b630437c3bf17a01e765b7ac77fb978513938",
+      "runtime-feature-3.log": "d3c32a8aa8d344679ce47de995824c584764d01ec64c6655e5956d0609d0050f",
+      "production-feature-2.log": "ef740cff457a7fd673207ede90050793c5bafeecbc08e12b2ed469d775f7404c"
+    },
+    "earlier_feature_failures": "Runtime-only preparation exposed an existing gated Frame alias and a codegen-only adapter. Both feature boundaries were corrected; original failure logs retained.",
+    "removed_development_fixture": "An ignored source-inventory diagnostic was removed before the source commit; all eleven maintained map checks remain."
+  },
+  "training_probe": {
+    "receipt_sha256": "9658ef44cc163b31f9b74c626f104e564cd20425a70522ad70ce1d14210198d2",
+    "reference": "frozen round19 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_19_replay": 1.2096820730333993,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.004679291,
+      "sum_reference_median_seconds": 0.004864792
+    },
+    "frozen_aggregate_qualification": false,
+    "completed_at_from_private_receipt_mtime": "2026-11-26T19:39:13.617491+00:00",
+    "selection": "A single seven-sample replay over all fifteen optimization programs. No compiler/source/driver changes after this selection; no new holdout timing selected or refined the candidate."
+  },
+  "profiling": {
+    "receipt_sha256": "a23fe8454e30bd3333c043bda26d643ebf4a244b4128cd551ddd075db1cc0013",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "seidel-2d",
+      "correlation",
+      "nussinov"
+    ],
+    "canonical_execution_samples": 3548,
+    "coverage_of_training_sum": 0.8154420840867312,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.2768860558851386,
+        "estimated_seconds_in_training_sum": 0.0011710319810665695
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.19441311227293062,
+        "estimated_seconds_in_training_sum": 0.0008222298204310073
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.18389110069427506,
+        "estimated_seconds_in_training_sum": 0.0007777291610374919
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.11353242915363888,
+        "estimated_seconds_in_training_sum": 0.0004801617943600517
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.11151804179237966,
+        "estimated_seconds_in_training_sum": 0.00047164236200817694
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.10841820566538872,
+        "estimated_seconds_in_training_sum": 0.00045853224987498317
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.010281610419027037,
+        "estimated_seconds_in_training_sum": 4.3483932692307695e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0010594441172214555,
+        "estimated_seconds_in_training_sum": 4.480698529411764e-06
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regression checks are qualified. Larger datasets, GPU/SIMD selection, linked Object execution, full compression/AOT and an external application remain unqualified.",
+    "Map summaries currently cover complete fixed scalar vectors, optionally transposed, targeting an already exclusive private bank produced by scalar writes in the phase. Rectangles, nested map composition, dynamic counts and first-map bank construction retain the ordinary path.",
+    "The split and prior holdout results were already exposed. No current holdout timing or profile selected or refined this candidate.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Every process validates all finite untimed warm-up live-outs; timed checked calls must succeed but timed outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only PR1001 is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-20-frozen.json": "00e747fa2f08e897a817d90593a9f61b7dde2acc762d5d1e9c2e0e33d57d57b6",
+    "round-20-optimization.json": "c19f29e8cddb8b44490407bfed5ef926d11da3a198d38d8ab6add2cca31597ca",
+    "round-20-holdout.json": "53897aa528a3167862d30d44fde38f31ee6334f1a43f2694a3c98839d5090d08",
+    "round-20-progress.json": "2e5cd07e04d32e41d22caeb7930c53e505109a305efaef3e22bf0b8b77984e57",
+    "round-20-training-probe.json": "9658ef44cc163b31f9b74c626f104e564cd20425a70522ad70ce1d14210198d2",
+    "round-20-training-profile.json": "a23fe8454e30bd3333c043bda26d643ebf4a244b4128cd551ddd075db1cc0013"
+  },
+  "interpretation": "The optimization aggregate improves, chiefly from the newly composed full-vector phase map. Holdout raw runtime is essentially flat after comparison with the original Mech replay; this round does not establish a meaningful holdout benefit. The higher holdout Mech/C score includes faster C measurements. Primary metrics and every observation remain unchanged."
+}

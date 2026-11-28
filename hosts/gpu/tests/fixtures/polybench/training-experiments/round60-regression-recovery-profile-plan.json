@@ -1,0 +1,181 @@
+{
+  "schema": "mech.polybench.optimization-regression-profile-plan.v1",
+  "created_at": "2026-11-28T18:25:44.474617+00:00",
+  "user_direction": "Take round60 Seidel1.66x implementation and fix other optimization cases that regressed; preserve its win.",
+  "accepted_round": 59,
+  "source_parent": "066c70448134f5cb89cc1f722c5f2367f6c802c4",
+  "foundation_source_commit": "5014983b6b0a54529f296c8991e31bc4996596ef",
+  "compiler_fingerprint": "93b8edecfb6233360716f132e51903d59c6b5f7dbaab5663b85f20b4e6548560",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "d9d9d9373278cd94e6c8e7baa1211d7827abb1996b884a2756d2a0e1198db303",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "2fda5de3fde3422c7375905b03c509675b70e7d2e8cab323c5ff9df38aeda1bb",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "6f101db7d742754357227ca07805f2d61077a177a5d5e565ff36c68c1d33ac61",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf"
+  },
+  "cases": [
+    "3mm",
+    "mvt",
+    "durbin",
+    "atax",
+    "bicg",
+    "nussinov",
+    "cholesky"
+  ],
+  "selection": "Optimization-only: all five raw runtime regressions above5percent plus both other programs whose native functions changed and regressed. No holdout diagnosis.",
+  "regression_rows": [
+    {
+      "case": "3mm",
+      "raw_mech_runtime_multiplier": 1.088596692696371,
+      "accepted59_mech_us": 17.416,
+      "round60_mech_us": 18.959,
+      "accepted59_over_c": 5.573025661386977,
+      "round60_over_c": 6.893691581854385,
+      "native_functions_changed": false
+    },
+    {
+      "case": "mvt",
+      "raw_mech_runtime_multiplier": 1.0710933333333335,
+      "accepted59_mech_us": 18.75,
+      "round60_mech_us": 20.083000000000002,
+      "accepted59_over_c": 12.860210284254231,
+      "round60_over_c": 16.606820986824797,
+      "native_functions_changed": false
+    },
+    {
+      "case": "durbin",
+      "raw_mech_runtime_multiplier": 1.0666666666666667,
+      "accepted59_mech_us": 26.25,
+      "round60_mech_us": 28.0,
+      "accepted59_over_c": 20.321357519826964,
+      "round60_over_c": 21.676114687815428,
+      "native_functions_changed": false
+    },
+    {
+      "case": "atax",
+      "raw_mech_runtime_multiplier": 1.059256510175048,
+      "accepted59_mech_us": 16.166999999999998,
+      "round60_mech_us": 17.125,
+      "accepted59_over_c": 13.384104910260602,
+      "round60_over_c": 14.66918925887515,
+      "native_functions_changed": false
+    },
+    {
+      "case": "bicg",
+      "raw_mech_runtime_multiplier": 1.0564524867266227,
+      "accepted59_mech_us": 18.458,
+      "round60_mech_us": 19.5,
+      "accepted59_over_c": 12.659933942760778,
+      "round60_over_c": 13.000910008072028,
+      "native_functions_changed": false
+    },
+    {
+      "case": "doitgen",
+      "raw_mech_runtime_multiplier": 1.0430512479692806,
+      "accepted59_mech_us": 13.542,
+      "round60_mech_us": 14.125,
+      "accepted59_over_c": 4.166961392923914,
+      "round60_over_c": 4.5199234880047685,
+      "native_functions_changed": false
+    },
+    {
+      "case": "nussinov",
+      "raw_mech_runtime_multiplier": 1.0377487989018532,
+      "accepted59_mech_us": 182.125,
+      "round60_mech_us": 189.0,
+      "accepted59_over_c": 5.914713941655955,
+      "round60_over_c": 6.388805261722993,
+      "native_functions_changed": true
+    },
+    {
+      "case": "cholesky",
+      "raw_mech_runtime_multiplier": 1.0244746544821188,
+      "accepted59_mech_us": 44.209,
+      "round60_mech_us": 45.291,
+      "accepted59_over_c": 6.097893544507162,
+      "round60_over_c": 6.43137485297679,
+      "native_functions_changed": true
+    },
+    {
+      "case": "gramschmidt",
+      "raw_mech_runtime_multiplier": 1.0241364038972542,
+      "accepted59_mech_us": 58.708,
+      "round60_mech_us": 60.125,
+      "accepted59_over_c": 16.383946719530083,
+      "round60_over_c": 17.380193072553507,
+      "native_functions_changed": false
+    },
+    {
+      "case": "deriche",
+      "raw_mech_runtime_multiplier": 1.0016135265700483,
+      "accepted59_mech_us": 207.0,
+      "round60_mech_us": 207.334,
+      "accepted59_over_c": 7.067010828526914,
+      "round60_over_c": 7.098614139541029,
+      "native_functions_changed": false
+    },
+    {
+      "case": "correlation",
+      "raw_mech_runtime_multiplier": 0.9988505428761357,
+      "accepted59_mech_us": 72.208,
+      "round60_mech_us": 72.125,
+      "accepted59_over_c": 16.66475005424868,
+      "round60_over_c": 17.141130822487828,
+      "native_functions_changed": false
+    },
+    {
+      "case": "gemm",
+      "raw_mech_runtime_multiplier": 0.9850371079722289,
+      "accepted59_mech_us": 16.708,
+      "round60_mech_us": 16.458000000000002,
+      "accepted59_over_c": 3.892823781141803,
+      "round60_over_c": 3.834575879221439,
+      "native_functions_changed": false
+    },
+    {
+      "case": "2mm",
+      "raw_mech_runtime_multiplier": 0.9799604007919841,
+      "accepted59_mech_us": 16.667,
+      "round60_mech_us": 16.333000000000002,
+      "accepted59_over_c": 9.524244268551358,
+      "round60_over_c": 8.906767501976638,
+      "native_functions_changed": false
+    },
+    {
+      "case": "seidel-2d",
+      "raw_mech_runtime_multiplier": 0.970666117931195,
+      "accepted59_mech_us": 184.667,
+      "round60_mech_us": 179.25,
+      "accepted59_over_c": 1.7111946615974802,
+      "round60_over_c": 1.6610058464286792,
+      "native_functions_changed": true
+    },
+    {
+      "case": "covariance",
+      "raw_mech_runtime_multiplier": 0.9702535211267607,
+      "accepted59_mech_us": 26.625,
+      "round60_mech_us": 25.833000000000002,
+      "accepted59_over_c": 5.8618773967603035,
+      "round60_over_c": 5.585014102364241,
+      "native_functions_changed": false
+    }
+  ],
+  "method": "Reconstitute exact previously qualified round60 source, freeze and push it as an unpromoted diagnostic foundation, use unchanged public-API warm residence host with Cranelift sole source generator, sample each owned process3seconds at1ms, capture only named executable JIT ranges after sampling in that same PID, resume to actual terminal0, validate finite C liveouts and exact frozen counters, bind instructions to exact genuine round60 Objects. No timing score or new sample of an observed fingerprint.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-60-static-telemetry.json",
+  "census_actor": "candidate",
+  "counter_gate": "/private/tmp/mech-polybench-optimization/round-71/source-closed-cell-prefix/untimed-counter-gate.json",
+  "profiled_driver": "/private/tmp/mech-polybench-optimization/round-71/source-closed-cell-prefix/source-closed-cell-prefix-complete-driver",
+  "profiled_driver_sha256": "a9cd9704db8623ba65f0756d629f274c76a0c7decfa1b4e888bdcbee2c5ace19",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "history_entries_unchanged": 61,
+  "hypothesis_to_check": "Bind actual time in generated kernels, checks, schema/planning, allocations and ownership on regressed O programs. Nussinov/Cholesky received short2-read point prefixes; Nussinov grew1428B and16B stack, with two escaping raw loads in each prefix. Establish whether those prefixes remove meaningful work and inspect matrix/reduction preparation on unchanged-code regressors. Select material general compiler changes from source and profiles only, preserving Seidel lowering and all accounting/numerics.",
+  "scope_limit": "Warm residence includes output drop/reset and differs from official cache-flushed samples. Samples are dependency-chain locations, not exclusive instruction cost, hardware traffic/IPC/RSS or speedup forecasts. All logs/failures preserved; no Rust edits during any owned build/test/profile/timing. Accepted ledger remains59 until a new qualified fingerprint passes existing optimization-only probe and formal gates."
+}

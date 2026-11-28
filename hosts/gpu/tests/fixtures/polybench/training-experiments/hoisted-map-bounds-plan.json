@@ -1,0 +1,123 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "scope": "Optimization-only: general one-time bounds guards for readonly numeric maps; no holdout source diagnosis or profiling.",
+  "source_parent": "c7d5c1fc209e08ef8cb3d8c83ecd47ce1f5ebe84",
+  "accepted_round": 31,
+  "accepted_scores": {
+    "optimization": 11.43635797708715,
+    "holdout": 39.31569548924827
+  },
+  "rejected_round37": {
+    "source_commit": "19d478691e6eb5f62d6938a434ab3c4a1b6b0484",
+    "compiler_fingerprint": "3ffecc8492875f3ae0994a5b14d3462d47c0071a17bf94642928d20249997d37",
+    "optimization": 12.107292771679115,
+    "holdout": 39.45198365884885,
+    "restored": true,
+    "retiming_forbidden": true
+  },
+  "evidence": {
+    "profile_receipt": "training-experiments/optimization-margin-profile.json",
+    "largest_margin_case": "gramschmidt",
+    "mech_over_c": 54.48016,
+    "hot_native_samples": 174,
+    "execution_samples": 225,
+    "accepted_native_function": "mech_canonical_program_entry_v1_numeric_5",
+    "finding": "Every direct map read selector in the accepted Gram-Schmidt image is the current outer range element, fixed inner range element, or an immutable current scalar capture. Repeated per-cell axis bounds checks remain in the hot code.",
+    "diagnostic_image": "Read-only decode of accepted checked Object data; no serialized proof grants execution authority."
+  },
+  "candidate_plan": [
+    "Start from exact accepted31 source, excluding the rejected coordinate transform.",
+    "At native-map entry retain all existing current frame, geometry, pointer-span and source-range overflow guards. For each fully understood readonly matrix read, prove the entire current selector interval against its current logical dimension once. Empty maps perform no source reads.",
+    "A failed entry guard declines to the original source path before settlement/publication. Unknown or data-dependent selectors retain their exact per-read checks. All source actions, arithmetic, FP order, counters and accounting remain.",
+    "Use shared native address lowering after proved bounds, shared by standalone maps, phase maps and nested reductions; explicit test ablation retains per-read guards.",
+    "Qualify original/decoded/restored artifacts, error/fallback order, finite limits, exact words, memory release, scalar/compression regressions, all30 finite C live-outs and both feature configurations.",
+    "Before timing verify actual hot-loop comparison/branch work falls in optimization-only checked Object inspection. One prospective v2 fresh-process optimization15 probe per changed qualified fingerprint; preserve every observation/regression.",
+    "Commit/freeze selected exact source/driver before both formal sets; promote only if BOTH primary scores strictly improve against accepted31."
+  ],
+  "new_performance_observations": 210,
+  "versions_planned": {
+    "ir": 401,
+    "work": 156,
+    "abi": 47
+  },
+  "correctness_amendment": {
+    "before_any_performance_sample": true,
+    "failed_fingerprint": "fc0f03a72b50d3a4bb3f4a72e430f46e8dac69523cb686d439df9d4ef9a5257d",
+    "reason": "Entry decline changes native admission and source bills for lazy reads.",
+    "new_design": "Compute pure bounds predicates once, then select a proved body or the unchanged checked body inside the same native map loop. Invalid hypotheses never force earlier source replay; source bounds/errors run at their original reached read. Full original native body, output bank, loop cursor and accounting remain.",
+    "versions": {
+      "ir": 402,
+      "work": 156,
+      "abi": 47
+    },
+    "emission_gate": "Real optimization-only Object inspection must show the bounds-proved path skips per-read axis checks and preserves the checked path; whole static loop counts include both paths and are not an execution-time metric.",
+    "training_and_formal_sampling_unchanged": true
+  },
+  "codegen_amendment": {
+    "before_any_performance_sample": true,
+    "failed_qualified_fingerprint": "5b8440b6edc4c854ce92aed6cf3ec58d84f91c7dacd42437aa1ac8eb9b6c2bf8",
+    "failure_receipt": "training-experiments/hoisted-map-bounds-codegen-failure.json",
+    "finding": "Backend rematerializes pure invariant comparisons at the native loop use; static comparison gate fails25 to38 despite686 correctness checks.",
+    "new_design": "Use one bounded private byte home per emitted map predicate, compute/store before the loop and read the actual snapshot in the loop. Preserve both native bodies, all source accounting and normal measured native stack-limit admission.",
+    "versions": {
+      "ir": 403,
+      "work": 156,
+      "abi": 47
+    },
+    "current_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs"
+    ],
+    "sampling_policy_unchanged": true
+  },
+  "qualified_candidate": {
+    "compiler_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+    "driver_sha256": "1b6b22da3ae7cdbefbce83caf4e971da2c88f66aad5c62f06b105c80b6d6df58",
+    "versions": {
+      "ir": 403,
+      "work": 156,
+      "abi": 47
+    },
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs"
+    ],
+    "focused_checks": 110,
+    "broad_checks": 686,
+    "both_features": true,
+    "training_probe_receipt": "round-38-training-probe.json",
+    "probe_summary": {
+      "count": 15,
+      "geomean_raw_speedup_vs_accepted31": 1.011908583539466,
+      "regressions_over_five_percent": 0,
+      "all_visits_match": true,
+      "all_work_not_reduced": true,
+      "selected": true
+    },
+    "performance_observations": 210,
+    "formal_observations": 0
+  }
+}

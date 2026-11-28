@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-27T23:27:34.524467+00:00",
+  "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "source_parent": "c45f0876a5231685e03edc1fbc774cf00c520dc0",
+  "policy_sha256": "1ef6095941b99d094b0773c67ede92a86b41aab4c5b049db9cc4ca98ad9f5899",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted44": 1.0333759411355852,
+    "regressions_over_five_percent": 1,
+    "all_visits_match": false,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted44/candidate medians on optimization15; one prospective fresh-process probe, all samples/regressions retained.",
+  "formal_gate": "BOTH primary Mech/C scores must strictly improve accepted44 (10.24618089248072 /38.46047945936111). No controls override either score."
+}

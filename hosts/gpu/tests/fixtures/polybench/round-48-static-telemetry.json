@@ -1,0 +1,781 @@
+{
+  "schema": "mech.polybench.static-telemetry.v1",
+  "created_at": "2026-11-28T04:06:41.008810+00:00",
+  "scope": "Optimization15 only; existing qualified Objects and untimed reports, no new execution or timing. Candidate is selected/frozen for formal evaluation, not yet promoted.",
+  "source_commit": "cc89f77879dfadb22a7643dc0400522d7ff537b8",
+  "compiler_fingerprint": "ecc417a8e887b1bac94af3a6b70e447b989edbc1d620668208c25f4cd6847021",
+  "actors": {
+    "accepted47": {
+      "file_bytes": 272036992,
+      "segments": [
+        {
+          "name": "__PAGEZERO",
+          "file_bytes": 0,
+          "virtual_bytes": 4294967296,
+          "sections": []
+        },
+        {
+          "name": "__TEXT",
+          "file_bytes": 150110208,
+          "virtual_bytes": 150110208,
+          "sections": [
+            {
+              "name": "__text",
+              "size_bytes": 123183048
+            },
+            {
+              "name": "__stubs",
+              "size_bytes": 1200
+            },
+            {
+              "name": "__stub_helper",
+              "size_bytes": 1224
+            },
+            {
+              "name": "__gcc_except_tab",
+              "size_bytes": 5295632
+            },
+            {
+              "name": "__const",
+              "size_bytes": 4052200
+            },
+            {
+              "name": "__cstring",
+              "size_bytes": 124433
+            },
+            {
+              "name": "__unwind_info",
+              "size_bytes": 2423624
+            },
+            {
+              "name": "__eh_frame",
+              "size_bytes": 15021636
+            }
+          ]
+        },
+        {
+          "name": "__DATA_CONST",
+          "file_bytes": 5292032,
+          "virtual_bytes": 5292032,
+          "sections": [
+            {
+              "name": "__got",
+              "size_bytes": 16
+            },
+            {
+              "name": "__const",
+              "size_bytes": 5286752
+            }
+          ]
+        },
+        {
+          "name": "__DATA",
+          "file_bytes": 16384,
+          "virtual_bytes": 16384,
+          "sections": [
+            {
+              "name": "__la_symbol_ptr",
+              "size_bytes": 800
+            },
+            {
+              "name": "__data",
+              "size_bytes": 8456
+            },
+            {
+              "name": "__thread_vars",
+              "size_bytes": 456
+            },
+            {
+              "name": "__thread_data",
+              "size_bytes": 72
+            },
+            {
+              "name": "__thread_bss",
+              "size_bytes": 1329
+            },
+            {
+              "name": "__bss",
+              "size_bytes": 160
+            },
+            {
+              "name": "__common",
+              "size_bytes": 136
+            }
+          ]
+        },
+        {
+          "name": "__LINKEDIT",
+          "file_bytes": 116618368,
+          "virtual_bytes": 116621312,
+          "sections": []
+        }
+      ]
+    },
+    "candidate": {
+      "file_bytes": 272153568,
+      "segments": [
+        {
+          "name": "__PAGEZERO",
+          "file_bytes": 0,
+          "virtual_bytes": 4294967296,
+          "sections": []
+        },
+        {
+          "name": "__TEXT",
+          "file_bytes": 150192128,
+          "virtual_bytes": 150192128,
+          "sections": [
+            {
+              "name": "__text",
+              "size_bytes": 123250076
+            },
+            {
+              "name": "__stubs",
+              "size_bytes": 1200
+            },
+            {
+              "name": "__stub_helper",
+              "size_bytes": 1224
+            },
+            {
+              "name": "__gcc_except_tab",
+              "size_bytes": 5300172
+            },
+            {
+              "name": "__const",
+              "size_bytes": 4053096
+            },
+            {
+              "name": "__cstring",
+              "size_bytes": 124557
+            },
+            {
+              "name": "__unwind_info",
+              "size_bytes": 2425304
+            },
+            {
+              "name": "__eh_frame",
+              "size_bytes": 15032180
+            }
+          ]
+        },
+        {
+          "name": "__DATA_CONST",
+          "file_bytes": 5292032,
+          "virtual_bytes": 5292032,
+          "sections": [
+            {
+              "name": "__got",
+              "size_bytes": 16
+            },
+            {
+              "name": "__const",
+              "size_bytes": 5288560
+            }
+          ]
+        },
+        {
+          "name": "__DATA",
+          "file_bytes": 16384,
+          "virtual_bytes": 16384,
+          "sections": [
+            {
+              "name": "__la_symbol_ptr",
+              "size_bytes": 800
+            },
+            {
+              "name": "__data",
+              "size_bytes": 8456
+            },
+            {
+              "name": "__thread_vars",
+              "size_bytes": 456
+            },
+            {
+              "name": "__thread_data",
+              "size_bytes": 72
+            },
+            {
+              "name": "__thread_bss",
+              "size_bytes": 1329
+            },
+            {
+              "name": "__common",
+              "size_bytes": 144
+            },
+            {
+              "name": "__bss",
+              "size_bytes": 152
+            }
+          ]
+        },
+        {
+          "name": "__LINKEDIT",
+          "file_bytes": 116653024,
+          "virtual_bytes": 116654080,
+          "sections": []
+        }
+      ]
+    }
+  },
+  "cases": {
+    "2mm": {
+      "accepted47": {
+        "code_bytes": 3876,
+        "stack_bytes": 96,
+        "object_bytes": 25512,
+        "native_metadata_bytes": 20026,
+        "static_instructions": 969,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 969,
+            "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb"
+          }
+        },
+        "physical_visits": 8,
+        "metadata_sha256": "642ce7b73dce599bc175de8dd92d3a3d89ef017bede6de147af27a25224b5c1e"
+      },
+      "candidate": {
+        "code_bytes": 5140,
+        "stack_bytes": 112,
+        "object_bytes": 26776,
+        "native_metadata_bytes": 20026,
+        "static_instructions": 1285,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 1285,
+            "disassembly_sha256": "8feb376e92fc4fe0c8f83990398b3255aa91e729cdf62e5d22e4fa03a8bd4702"
+          }
+        },
+        "physical_visits": 5,
+        "metadata_sha256": "dd876d58993a68436dee1158403eda89a70412b22885421882ba128ec4244aa8"
+      }
+    },
+    "3mm": {
+      "accepted47": {
+        "code_bytes": 2040,
+        "stack_bytes": 96,
+        "object_bytes": 16952,
+        "native_metadata_bytes": 13310,
+        "static_instructions": 510,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 510,
+            "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "df8596457b44503acec8469338e24697f2e69acdb392094ab9aa2149bc48e187"
+      },
+      "candidate": {
+        "code_bytes": 2040,
+        "stack_bytes": 96,
+        "object_bytes": 16952,
+        "native_metadata_bytes": 13310,
+        "static_instructions": 510,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 510,
+            "disassembly_sha256": "2678a1c32f7ec9c7fa98b89ed285799a08895b77d84ae01740c2d0213e2dd046"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "87941d6aa657bc2b683d80c71886ec1017ef4769879b507599a85bd8461b8c10"
+      }
+    },
+    "atax": {
+      "accepted47": {
+        "code_bytes": 2256,
+        "stack_bytes": 96,
+        "object_bytes": 17112,
+        "native_metadata_bytes": 13253,
+        "static_instructions": 564,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 564,
+            "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "4742d7afc9a8490b3b1dd9a34ba5ac3a212794934802f1865b9245314d5793d7"
+      },
+      "candidate": {
+        "code_bytes": 2256,
+        "stack_bytes": 96,
+        "object_bytes": 17112,
+        "native_metadata_bytes": 13253,
+        "static_instructions": 564,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 564,
+            "disassembly_sha256": "6e4c09c7e72d6eeb8f46876ddb0b2c4a209a97280e6b9e845a3d58dcee7db776"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "8606e1127f7a05029f81908826923196134611446f2746c15a7261f34485f635"
+      }
+    },
+    "bicg": {
+      "accepted47": {
+        "code_bytes": 2224,
+        "stack_bytes": 96,
+        "object_bytes": 24168,
+        "native_metadata_bytes": 20339,
+        "static_instructions": 556,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 556,
+            "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "476f61f42bdcd78c018e5da4c97a26f486da27bd1aa6a4da8cfee718219e9952"
+      },
+      "candidate": {
+        "code_bytes": 2224,
+        "stack_bytes": 96,
+        "object_bytes": 24168,
+        "native_metadata_bytes": 20339,
+        "static_instructions": 556,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 556,
+            "disassembly_sha256": "38c5ff1e1ce23fc846ae36fee07ef097085511de29d905a2f5de556f1515d718"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "50f4222446b5fe163bc0670daeb2ea40106a589f68db335356ad5444f501ce3b"
+      }
+    },
+    "cholesky": {
+      "accepted47": {
+        "code_bytes": 19944,
+        "stack_bytes": 1600,
+        "object_bytes": 134416,
+        "native_metadata_bytes": 112746,
+        "static_instructions": 4986,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 1650,
+            "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3336,
+            "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "8f63167b999f28bdee129aa88adcc82ca46c321cadb127981b958ef43dd731a5"
+      },
+      "candidate": {
+        "code_bytes": 19944,
+        "stack_bytes": 1600,
+        "object_bytes": 134416,
+        "native_metadata_bytes": 112746,
+        "static_instructions": 4986,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 1650,
+            "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3336,
+            "disassembly_sha256": "ea3a0429ebef21e8421e5cf5688a8b4a9004a69c05b0b0f162c36451b54883f1"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "769d290487e639afe9d159060ce459c6efcd550d4249f1de23deeb46d0d9008f"
+      }
+    },
+    "correlation": {
+      "accepted47": {
+        "code_bytes": 13820,
+        "stack_bytes": 128,
+        "object_bytes": 82688,
+        "native_metadata_bytes": 67263,
+        "static_instructions": 3455,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3455,
+            "disassembly_sha256": "64569a1f71d5b69440a5d005abf5bad611c61b73223d04e73e057d7d461b4a36"
+          }
+        },
+        "physical_visits": 28,
+        "metadata_sha256": "c27f3b0e184ed79c212ce7226bc4f90f188ccac87960003d77ed5f3465b6ab87"
+      },
+      "candidate": {
+        "code_bytes": 13820,
+        "stack_bytes": 128,
+        "object_bytes": 82688,
+        "native_metadata_bytes": 67263,
+        "static_instructions": 3455,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3455,
+            "disassembly_sha256": "52854334fbe1487222663e5a4a9e4f46d6bc07e55911d7234c350cb50d71b967"
+          }
+        },
+        "physical_visits": 28,
+        "metadata_sha256": "1472129176049932020334af8ceb56c1efdd48b9d731814c0f94f45827520df9"
+      }
+    },
+    "covariance": {
+      "accepted47": {
+        "code_bytes": 4884,
+        "stack_bytes": 112,
+        "object_bytes": 30376,
+        "native_metadata_bytes": 23888,
+        "static_instructions": 1221,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 1221,
+            "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0"
+          }
+        },
+        "physical_visits": 10,
+        "metadata_sha256": "749edbee80074e20152eb96317c98d70e8e6ec15dd4febb223784064f58b1659"
+      },
+      "candidate": {
+        "code_bytes": 4884,
+        "stack_bytes": 112,
+        "object_bytes": 30376,
+        "native_metadata_bytes": 23888,
+        "static_instructions": 1221,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 1221,
+            "disassembly_sha256": "d75d147423ef113575c65c57a3d6c093dcac648ea088c281b6316d69edd580b9"
+          }
+        },
+        "physical_visits": 10,
+        "metadata_sha256": "0851037371df8d5076f745123a1bd3ed117dce41f5cad4c70d46919528db1a6f"
+      }
+    },
+    "deriche": {
+      "accepted47": {
+        "code_bytes": 62308,
+        "stack_bytes": 496,
+        "object_bytes": 404840,
+        "native_metadata_bytes": 340388,
+        "static_instructions": 15577,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_67": {
+            "instructions": 753,
+            "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+          },
+          "mech_canonical_program_entry_v1_numeric_142": {
+            "instructions": 686,
+            "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+          },
+          "mech_canonical_program_entry_v1_numeric_232": {
+            "instructions": 753,
+            "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+          },
+          "mech_canonical_program_entry_v1_numeric_307": {
+            "instructions": 686,
+            "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 12699,
+            "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288"
+          }
+        },
+        "physical_visits": 32,
+        "metadata_sha256": "6dfc3ee2021bb82d31119152291f8f538b98c1bc9ea75c2b736492322857fe29"
+      },
+      "candidate": {
+        "code_bytes": 62308,
+        "stack_bytes": 496,
+        "object_bytes": 404840,
+        "native_metadata_bytes": 340388,
+        "static_instructions": 15577,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_67": {
+            "instructions": 753,
+            "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+          },
+          "mech_canonical_program_entry_v1_numeric_142": {
+            "instructions": 686,
+            "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+          },
+          "mech_canonical_program_entry_v1_numeric_232": {
+            "instructions": 753,
+            "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+          },
+          "mech_canonical_program_entry_v1_numeric_307": {
+            "instructions": 686,
+            "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 12699,
+            "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+          }
+        },
+        "physical_visits": 32,
+        "metadata_sha256": "fefc6c63ff3630ddaba11928a9e8b66ccfc69269a34204f760cad7556e3da84d"
+      }
+    },
+    "doitgen": {
+      "accepted47": {
+        "code_bytes": 1200,
+        "stack_bytes": 96,
+        "object_bytes": 12736,
+        "native_metadata_bytes": 9934,
+        "static_instructions": 300,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 300,
+            "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649"
+          }
+        },
+        "physical_visits": 4,
+        "metadata_sha256": "f90e679d8ff6ccca785c4b47667019f74ceb9adb6cdabe2b4099db1ca1c359e9"
+      },
+      "candidate": {
+        "code_bytes": 1200,
+        "stack_bytes": 96,
+        "object_bytes": 12736,
+        "native_metadata_bytes": 9934,
+        "static_instructions": 300,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 300,
+            "disassembly_sha256": "dd0ec457ea600988155da50e6da8a9c4721efdee61f5e0c549fbe2cd94d42b25"
+          }
+        },
+        "physical_visits": 4,
+        "metadata_sha256": "6a0f43da4c7b93f2bf8f2071780a1cb28ddd5a9a73b677f25dd85a4edc87b189"
+      }
+    },
+    "durbin": {
+      "accepted47": {
+        "code_bytes": 20016,
+        "stack_bytes": 1968,
+        "object_bytes": 143776,
+        "native_metadata_bytes": 122089,
+        "static_instructions": 5004,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_4": {
+            "instructions": 1664,
+            "disassembly_sha256": "b221500353f307856fe4ba2d42fe33e7fefd7c130339347af9bd8ef2f94b176a"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3340,
+            "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "353362cb3e6c3ed79015bc94a922d7c14f453885e1658a192b8f27abc22bc9e4"
+      },
+      "candidate": {
+        "code_bytes": 20016,
+        "stack_bytes": 1968,
+        "object_bytes": 143776,
+        "native_metadata_bytes": 122089,
+        "static_instructions": 5004,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_4": {
+            "instructions": 1664,
+            "disassembly_sha256": "b221500353f307856fe4ba2d42fe33e7fefd7c130339347af9bd8ef2f94b176a"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3340,
+            "disassembly_sha256": "25482955ae582cb4c45db0c2f5cbd249c5aeab33b0feaafc163ebdae4a64a3ed"
+          }
+        },
+        "physical_visits": 6,
+        "metadata_sha256": "cf3de77a5826416852d2ea690ec3bf358b9ce36ad878c0c6bf1aeb93264189f7"
+      }
+    },
+    "gemm": {
+      "accepted47": {
+        "code_bytes": 3424,
+        "stack_bytes": 96,
+        "object_bytes": 23368,
+        "native_metadata_bytes": 18337,
+        "static_instructions": 856,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 856,
+            "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "7e04c5c754ca8154e7fec14c5bb48c48f2ed5465072ec8c7ee2d34332c9c6a8b"
+      },
+      "candidate": {
+        "code_bytes": 4216,
+        "stack_bytes": 112,
+        "object_bytes": 24160,
+        "native_metadata_bytes": 18337,
+        "static_instructions": 1054,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 1054,
+            "disassembly_sha256": "30dffd8a56330aedb25cc648b16fe6f7334207dff2ee466d7755ac1be5e8cfe6"
+          }
+        },
+        "physical_visits": 4,
+        "metadata_sha256": "a33c432b4a17db9eb9c98f988c54579e796cd628eaed7a4efc6fc1aa98558889"
+      }
+    },
+    "gramschmidt": {
+      "accepted47": {
+        "code_bytes": 51620,
+        "stack_bytes": 23072,
+        "object_bytes": 268496,
+        "native_metadata_bytes": 215124,
+        "static_instructions": 12905,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 4523,
+            "disassembly_sha256": "5208e1ae5287fd61181e344cb03f6635446f93a5f30aed7cb78e361ec0062db0"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 8382,
+            "disassembly_sha256": "4725d36f4419ab65383906bfa07da5b95fdb74f9487394209e16498ed4ded8d9"
+          }
+        },
+        "physical_visits": 10,
+        "metadata_sha256": "612e32c3b8a38fdaa0c7774669646452c2c06368343c8459782b8675a8d47df8"
+      },
+      "candidate": {
+        "code_bytes": 51620,
+        "stack_bytes": 23072,
+        "object_bytes": 268496,
+        "native_metadata_bytes": 215124,
+        "static_instructions": 12905,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 4523,
+            "disassembly_sha256": "5208e1ae5287fd61181e344cb03f6635446f93a5f30aed7cb78e361ec0062db0"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 8382,
+            "disassembly_sha256": "fe51d67979b927f7ba4f87fb9084e205e72259b9746d0b03905f2e01e5e9f707"
+          }
+        },
+        "physical_visits": 10,
+        "metadata_sha256": "4d839490065619aaffc9ae8452e7a41e16824a01a891b5427b117c76eabf2f26"
+      }
+    },
+    "mvt": {
+      "accepted47": {
+        "code_bytes": 3812,
+        "stack_bytes": 96,
+        "object_bytes": 31120,
+        "native_metadata_bytes": 25699,
+        "static_instructions": 953,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 953,
+            "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27"
+          }
+        },
+        "physical_visits": 9,
+        "metadata_sha256": "bad0440bb33baa9b890de13ae2befe008d1d2bdb85521fa28c7dcb618240a87d"
+      },
+      "candidate": {
+        "code_bytes": 5112,
+        "stack_bytes": 112,
+        "object_bytes": 32416,
+        "native_metadata_bytes": 25699,
+        "static_instructions": 1278,
+        "functions": {
+          "mech_canonical_program_entry_v1": {
+            "instructions": 1278,
+            "disassembly_sha256": "ce953050cf152bd9a4ba0e679244a386c8523fb93b349ead49640bd2d003905e"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "5921b7350af67dcf583b28ba02578072044f2297fc7f96b2a9101ce3b7d0e2b7"
+      }
+    },
+    "nussinov": {
+      "accepted47": {
+        "code_bytes": 19360,
+        "stack_bytes": 320,
+        "object_bytes": 168504,
+        "native_metadata_bytes": 147460,
+        "static_instructions": 4840,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_6": {
+            "instructions": 1404,
+            "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3436,
+            "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd"
+          }
+        },
+        "physical_visits": 8,
+        "metadata_sha256": "aa9abd1ac486f8b34a5ebab3bee5a924aed264b8f874da85c2a922957f9fecad"
+      },
+      "candidate": {
+        "code_bytes": 19360,
+        "stack_bytes": 320,
+        "object_bytes": 168504,
+        "native_metadata_bytes": 147460,
+        "static_instructions": 4840,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_6": {
+            "instructions": 1404,
+            "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 3436,
+            "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+          }
+        },
+        "physical_visits": 8,
+        "metadata_sha256": "921ea567f7e6123d49cffa79617ffeacd8739cad720d9f307d2c2f1800b286f0"
+      }
+    },
+    "seidel-2d": {
+      "accepted47": {
+        "code_bytes": 16104,
+        "stack_bytes": 288,
+        "object_bytes": 127208,
+        "native_metadata_bytes": 109395,
+        "static_instructions": 4026,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 1367,
+            "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 2659,
+            "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "9cd8d6b6f011e273eb8ef53adcb05887b88a770cd84966242bbc5ae7b6522bc5"
+      },
+      "candidate": {
+        "code_bytes": 16104,
+        "stack_bytes": 288,
+        "object_bytes": 127208,
+        "native_metadata_bytes": 109395,
+        "static_instructions": 4026,
+        "functions": {
+          "mech_canonical_program_entry_v1_numeric_5": {
+            "instructions": 1367,
+            "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+          },
+          "mech_canonical_program_entry_v1": {
+            "instructions": 2659,
+            "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+          }
+        },
+        "physical_visits": 7,
+        "metadata_sha256": "373371ab41d8e663d0d723bc7bf3362aa690fef2b1785686cbf03a264b4b6ea5"
+      }
+    }
+  },
+  "limits": [
+    "Generated module sizes and static instructions include retained cold fallbacks and exclude Rust helper machine code. They are not retired instruction counts.",
+    "Reported native stack is compiler metadata, not measured process RSS or a complete dynamic call-stack high-water mark.",
+    "Whole executable file size includes compiler/runtime, metadata and debug/linker sections; it is not per-program generated code size.",
+    "Source work/comparison counters are logical resource obligations, not physical CPU instructions. Actual heap peaks and allocation traffic remain to be instrumented after the formal run."
+  ]
+}

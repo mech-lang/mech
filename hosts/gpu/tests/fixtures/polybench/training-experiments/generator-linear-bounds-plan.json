@@ -1,0 +1,78 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T20:30:58.686205+00:00",
+  "name": "generator-linear-bounds",
+  "source_parent": "c38c4b1dc561290409509b3f3c3ba9fc604f239f",
+  "foundation_commit": "4ee57953f7d800197f2b1d7ffcef33b3e858fbad",
+  "foundation_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 63,
+  "versions": {
+    "ir": 440,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "user_direction": "Keep exact round62 Seidel1.62x foundation and fix other optimization regressors; ignore unrelated pasted library brief.",
+  "profiling_basis": "R84 exact round62 O-only profiles plus R86 selected enclosing-generator evidence. Actual hot Deriche main function contains inline generator children; standalone R85 prefix changes failed the sole O probe and are not retained. Current source linear Read80,Write88,Read90 share actual selector59 and fixed equal bank lengths; each emits its own bound. Production rule uses source recipes/types/CFG, never names/extents/data.",
+  "transformation": "Omit a later linear selector guard inside the current fixed-bank generator only when an earlier successful selected F64 linear read/write in its current unique-predecessor Jump-only source chain has the identical actual U64 selector and equal positive fixed source length. Walk at most128 source edges, same iteration, reject cycles, header/latch/initialize/frame/structural/opaque/control boundaries and selector redefinition; validate exact selected recipes/operands/types and fixed F64 matrix schemas through the current selected generator inventory. No whole-graph dominance permission or facts from prior visits. Keep address conversion/loads/stores/F64 arithmetic/order/source fees/counters exactly. Use shared numeric_words::linear_address for column-major indexing. Earlier guard and unsupported paths remain. No read-value reuse, alias/global memory claims, new runtime storage/helper/frame/ABI or source-work reduction.",
+  "invariants": [
+    "Unchanged30 idiomatic source ports,inputs,C flags/binaries,tolerance/caps,split,timers/cache and objective. O15 only selects/tunes/promotes; H report-only. No benchmark names,fixed MINI extents or data assumptions in compiler rules.",
+    "Cranelift sole Mech generator. Reuse current source facts, selected generator inventory, admitted current private banks, canonical typed layout, shared scalar and linear-address emitters, original loan/fee/replay/publication machinery. No runtime allocation/cache/helper/frame/ABI/mode/serialized authority or weaker accounting. Efficient scalar/compression code remains.",
+    "All generator banks have fixed exact source extents validated by current entry and bank construction. Earlier successful1..length bound proves identical unchanged actual selector valid in an equal-length bank, even when contents differ. No read-value or alias reuse. Preserve every first guard and current geometry/pointer/span/owner/epoch check.",
+    "Every backward chain edge has one actual predecessor and exact Jump successor in the same iteration. Stop before source headers/latches/initializers, structural/frame/opaque/other library actions, branch/join/cycle or redefinition of the actual selector. Bound128 and require same-plan unique scalar definition. Descriptive facts alone are not permission; no previous-iteration or whole-graph dominance shortcut.",
+    "Source strict IEEE F64 tree/operation order/rounding stays; no extra finite guard,FMA,reassociation or SIMD of dependent outputs. Current generator private writes,whole-source miss replay, exact original first errors/payloads, old external output atomicity, finite cap refusal, no-op/alias and cleanup/retry remain.",
+    "Retain exact round62 point-prefix,host matrix-preflight and original dot source. Do not carry failed R85 single-read prefix changes. Seidel native functions/code/stack must exactly match1.62 foundation. All O counters exactly match accepted59; no visit/source bill reduction or padding.",
+    "No Rust edits during any owned build/test/profile/timing; preserve failed scripts/logs/snapshots and every observation. One210 probe per fully qualified materially changed FP; one900 formal63 if selected. No retries/exclusions."
+  ],
+  "qualification": "Focused private positive/negative source-proof checks and actual generator kernels; original-decoded-restored ablation of only this rule with rectangular/row/column shapes,distinct cells,NaN/Infinity/signedzero/subnormal,late source bounds,prior private writes,first errors,no body callbacks,finite denials,atomic output,retry/cleanup,canary/null bank and exact traversal tallies. Full all30/restored/both features and17002 finite O C outputs/all counters. Actual hot main code loses proved checks while standalone helpers and Seidel match exact round62. One210 probe then frozen formal63 if selected.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts; zero timing samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push exact clean source/driver, one frozen900-observation formal63/29482 finite C values. Promote iff O15 Mech/C<7.852513248471486; H report-only. Preserve all sources/attempts/observations; accepted59 until strict gate passes.",
+  "performance_observations": 0,
+  "static_gate": "Prove actual repeated linear read/write guards in Deriche and inspect emitted hot main code; floating arithmetic/nativehelper/Seidel code unchanged. Record all collateral O changes and exact counters; no latency forecast.",
+  "scope_correction": {
+    "created_at": "2026-11-28T19:08:52.004892+00:00",
+    "basis": "Verified SchemaTable::clone_allocation_bound_bytes returns an already cached bound. The duplicate resource methods read that cached scalar; they do not walk schemas.",
+    "work_removed": "The second pure checked-arithmetic/template-classification pass and duplicate geometry reconstruction disappear. The exact final output ShapeInstance also moves into the loan instead of being constructed again. No claim of schema-traversal removal or speedup forecast.",
+    "source": "src/core/src/schema/table.rs:1046 and src/engine/src/resident/general/native_collection_numeric_binary.rs:297"
+  }
+}

@@ -1,0 +1,4491 @@
+{
+  "schema": "mech.polybench.rectangular-shared-comparison-audit.v1",
+  "created_at": "2026-11-27T23:02:45.481873+00:00",
+  "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "versions": {
+    "ir": 410,
+    "work": 157,
+    "abi": 47
+  },
+  "findings": [
+    "A pre-fix native rectangle succeeded after the genuine shared comparison account was fully spent while the original path rejected. This real defect was reproduced before production edits.",
+    "The ordinary transpose funding formulas are now shared. Rectangles retain the original row compute/clone/comparison/temporary/output/node/replay prices for every row; the actual current shared comparison ledger admits both preflight and fallback and pays the fee before factory/shape work. No fabricated visits.",
+    "The initial broad fee-counter waiver proposal is superseded and remains unadopted. Corrected comparison fees exactly match accepted44 and charged work increases; only actual visits decrease.",
+    "All30 original/decoded C cases and Object emission pass. Restored helper images now also run all30 original/decoded forms:60 forms,58964 finite C liveouts, exact aliases and complete cleanup, with no timers.",
+    "Failed stages remain: the intentional spent-ledger regression,2 old work-policy stamp assertions, a restored-corpus expected-count error, and stale-manifest overwrite/mismatch guard rejections. No observation or case was excluded."
+  ],
+  "qualification": {
+    "broad": 712,
+    "focused": 102,
+    "restored_programs": 30,
+    "restored_forms": 60,
+    "restored_finite_liveouts": 58964,
+    "both_features": true
+  },
+  "counter_gate": {
+    "v2_visits_match": false,
+    "work_not_reduced": true,
+    "comparison_fees_identical": true,
+    "source_fusion_proved": true
+  },
+  "performance_observations": 0,
+  "formal_history_entries": 45,
+  "accepted_performance_round": 44,
+  "goal_achieved": false,
+  "scope": "General compiler correctness/funding audit and optimization-only callback census. No holdout source diagnosis/profiling/tuning and no performance timing samples.",
+  "source_parent": "d90e0bc44d39693d5ebe835aef4caf41688ddf19",
+  "qualification_manifest": {
+    "scope": "Shared original transpose funding and rectangular comparison account: original/decoded/restored spent-prefix refusal, source row fees, current endpoints, finite admission/replay, loan/proof tampering, scalar/compression regressions, all30 C liveouts and both feature builds; no performance measurements",
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "checks": [
+      {
+        "name": "shared-constructor-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-core",
+          "--no-default-features",
+          "--features",
+          "baselib,compiler,serde",
+          "--lib",
+          "--",
+          "composite_constructor",
+          "prepared_composite",
+          "closed_constructor",
+          "frame_recipe",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.3136136247776449,
+        "passed_tests": [
+          11
+        ]
+      },
+      {
+        "name": "semantic-catalog-solver.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-core",
+          "--no-default-features",
+          "--features",
+          "functions",
+          "--test",
+          "type_system_catalog",
+          "--test",
+          "type_system_solver",
+          "--",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.2324486249126494,
+        "passed_tests": [
+          27,
+          34
+        ]
+      },
+      {
+        "name": "source-broadcast-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-engine",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "mech-gpu/canonical-native-program",
+          "--test",
+          "canonical_source_semantics",
+          "--test",
+          "canonical_source_review",
+          "--",
+          "broadcast",
+          "arithmetic",
+          "matrix",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.3025917080231011,
+        "passed_tests": [
+          6,
+          9
+        ]
+      },
+      {
+        "name": "type-image-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-engine",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "mech-gpu/canonical-native-program",
+          "--lib",
+          "--",
+          "program_image_read",
+          "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+          "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+          "closed_constructor",
+          "frame_recipe",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.3165516252629459,
+        "passed_tests": [
+          31,
+          0
+        ]
+      },
+      {
+        "name": "numeric-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "numeric",
+          "rectangular_map",
+          "phase",
+          "row_block",
+          "huffman",
+          "private_publication",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 104.44629766605794,
+        "passed_tests": [
+          423
+        ]
+      },
+      {
+        "name": "matrix-polybench.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--test",
+          "canonical_artifact_matrix",
+          "--test",
+          "canonical_artifact_polybench",
+          "--",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 4.0737184579484165,
+        "passed_tests": [
+          24,
+          30
+        ]
+      },
+      {
+        "name": "program-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--test",
+          "canonical_artifact_program",
+          "--",
+          "buffer_frame_qualification",
+          "nested_frame_qualification",
+          "numeric_tail_qualification",
+          "numeric_write_qualification",
+          "scalar_state_qualification",
+          "scalar_record_qualification",
+          "word_read_qualification",
+          "huffman_qualification",
+          "sequence_writer_qualification",
+          "collection_qualification",
+          "packed_update_qualification",
+          "range_cursor_qualification",
+          "range_qualification",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 7.709853500127792,
+        "passed_tests": [
+          114
+        ]
+      },
+      {
+        "name": "protocol.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+          "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.17694208305329084,
+        "passed_tests": [
+          2
+        ]
+      },
+      {
+        "name": "abi-layout.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.17370204208418727,
+        "passed_tests": [
+          1
+        ]
+      },
+      {
+        "name": "runtime-feature.log",
+        "command": [
+          "cargo",
+          "check",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program-runtime",
+          "--lib"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.13596312515437603,
+        "passed_tests": []
+      },
+      {
+        "name": "production-feature.log",
+        "command": [
+          "cargo",
+          "check",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 0.14940729225054383,
+        "passed_tests": []
+      }
+    ],
+    "complete": true,
+    "tests": 712,
+    "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+    "driver": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+    "driver_build_complete": true,
+    "versions": {
+      "ir": 410,
+      "work": 157,
+      "abi": 47
+    },
+    "source_parent": "d90e0bc44d39693d5ebe835aef4caf41688ddf19",
+    "source_uncommitted": true,
+    "dataset": "MINI",
+    "numeric_profile": "F64",
+    "new_performance_samples": 0,
+    "source_sha256": {
+      "hosts/gpu/src/native_artifact/program/image/identity.rs": "e14a48bd76587bbc55d097fb66f2f4a1c4095f15b0ecc8b401d9ed25bfd522e9",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs": "2f3c9b51377ff15cb0a9403faabf6671e052873038a37dc74a136803e3d4f0a2",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs": "a17cbc5fb1c0b9e3d3448d3346fb062b5e5eddcc67aafcd38a72b9e151391cee",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs": "6190d0ad1bb95f8a8faa1a92b44b0b1ffc13b4c815ce76f882bc45f1e1fb65ef",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs": "fff9a7bde644b52e0e8c78b4ea0098f77182801524aad3ce5209f4ba16c93203",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs": "8fe704826f77ff9cf5df3f13f18d741350753e5da9024a2924b6e3a8a95ea046",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f051cd94d4fd364b49f3993fbda5c64f58d1496251d69a180be86249027ad934",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs": "fb16e1c54a6d400b5647f8a9cde54e7ee461681ab07f4fc971e0a178da94bb0f",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs": "2336ff0ca510e3e8df6d4be1f1212350ba7ef5daa9c8a5d6db7ba46adff73d70"
+    },
+    "driver_build": {
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--example",
+        "polybench_qualification"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.14878820907324553,
+      "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+      "source_unchanged": true
+    },
+    "focused_checks": {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "rectangular_numeric_maps",
+        "numeric_maps",
+        "numeric_phase",
+        "native_numeric_map",
+        "numeric_map_transposes",
+        "huffman_parent_cleanup_selects_funded_retirement_batches",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 112.22148175025359,
+      "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+      "source_unchanged": true,
+      "passed_tests": [
+        102
+      ],
+      "complete": true
+    }
+  },
+  "execution_route_census": {
+    "scope": "Correlation optimization-only accepted44/candidate callback census; zero kernel timing samples. Actual current JIT entry, numeric maps, inner transpose and collection callbacks.",
+    "drivers": {
+      "accepted44": {
+        "path": "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+        "sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+        "compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa"
+      },
+      "candidate": {
+        "path": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+        "sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+        "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae"
+      }
+    },
+    "cases": {
+      "accepted44": {
+        "breakpoint_locations": {
+          "map": 1,
+          "transpose": 1,
+          "collection": 1,
+          "generic": 1
+        },
+        "hits": [
+          {
+            "kind": "generic",
+            "site": 8,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call"
+          },
+          {
+            "kind": "collection",
+            "site": 9,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 12,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 13,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 13,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 10,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 33,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 36,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 37,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 39,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 42,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 45,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 46,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 47,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "transpose",
+            "site": 43,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::finish_numeric_transpose"
+          },
+          {
+            "kind": "collection",
+            "site": 64,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 34,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          }
+        ],
+        "launch_error": null,
+        "state": 10,
+        "exit_code": 0,
+        "driver_values": [
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999997,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000004,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999997,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999997,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000004,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999997,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0
+        ],
+        "execution_report": "NativeProgramExecutionReport { work: 99926852068, comparison_work: 5082102222, visits: 392, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+        "timing_samples": 0,
+        "counts_by_site": {
+          "map": {
+            "13": 2,
+            "47": 56
+          },
+          "transpose": {
+            "43": 28
+          },
+          "collection": {
+            "9": 1,
+            "12": 1,
+            "10": 1,
+            "33": 1,
+            "36": 1,
+            "37": 1,
+            "39": 28,
+            "42": 28,
+            "45": 28,
+            "46": 28,
+            "64": 28,
+            "34": 1
+          },
+          "generic": {
+            "8": 1
+          }
+        },
+        "validation": {
+          "count": 784,
+          "finite": true,
+          "max_absolute_error": 0.0
+        },
+        "execution_counters": {
+          "work": 99926852068,
+          "comparison_work": 5082102222,
+          "visits": 392,
+          "transport_bytes": 8256,
+          "hash_table_regions": 0,
+          "hash_table_updates": 0,
+          "packed_map_regions": 0,
+          "direct_lookup_regions": 0,
+          "packed_map_updates": 0,
+          "packed_ssa_regions": 0,
+          "guarded_loop_regions": 0,
+          "guarded_call_regions": 0,
+          "frozen_map_regions": 0,
+          "frozen_map_reads": 0,
+          "worker_credit_claims": 0,
+          "worker_credit_batches": 0,
+          "worker_credit_reclaims": 0,
+          "fused_string_map_bytes": 0,
+          "parallel_regions": 0,
+          "parallel_batches": 0,
+          "parallel_tasks": 0,
+          "parallel_peak_workers": 0,
+          "parallel_numeric_regions": 0,
+          "parallel_numeric_work": 0
+        }
+      },
+      "candidate": {
+        "breakpoint_locations": {
+          "map": 1,
+          "transpose": 1,
+          "collection": 1,
+          "generic": 1
+        },
+        "hits": [
+          {
+            "kind": "generic",
+            "site": 8,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call"
+          },
+          {
+            "kind": "collection",
+            "site": 9,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 12,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 13,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 13,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 10,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 33,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 36,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 37,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          },
+          {
+            "kind": "map",
+            "site": 38,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "map",
+            "site": 38,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper"
+          },
+          {
+            "kind": "collection",
+            "site": 34,
+            "site_register": "x2",
+            "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper"
+          }
+        ],
+        "launch_error": null,
+        "state": 10,
+        "exit_code": 0,
+        "driver_values": [
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999997,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999997,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000004,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999999,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999997,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999998,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999997,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999997,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000004,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999997,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          0.9999999999999998,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0000000000000002,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          1.0000000000000002,
+          1.0,
+          0.9999999999999998,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.9999999999999999,
+          0.9999999999999999,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0000000000000002,
+          1.0,
+          1.0
+        ],
+        "execution_report": "NativeProgramExecutionReport { work: 107839595060, comparison_work: 5082102222, visits: 28, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+        "timing_samples": 0,
+        "counts_by_site": {
+          "map": {
+            "13": 2,
+            "38": 2
+          },
+          "transpose": {},
+          "collection": {
+            "9": 1,
+            "12": 1,
+            "10": 1,
+            "33": 1,
+            "36": 1,
+            "37": 1,
+            "34": 1
+          },
+          "generic": {
+            "8": 1
+          }
+        },
+        "validation": {
+          "count": 784,
+          "finite": true,
+          "max_absolute_error": 0.0
+        },
+        "execution_counters": {
+          "work": 107839595060,
+          "comparison_work": 5082102222,
+          "visits": 28,
+          "transport_bytes": 8256,
+          "hash_table_regions": 0,
+          "hash_table_updates": 0,
+          "packed_map_regions": 0,
+          "direct_lookup_regions": 0,
+          "packed_map_updates": 0,
+          "packed_ssa_regions": 0,
+          "guarded_loop_regions": 0,
+          "guarded_call_regions": 0,
+          "frozen_map_regions": 0,
+          "frozen_map_reads": 0,
+          "worker_credit_claims": 0,
+          "worker_credit_batches": 0,
+          "worker_credit_reclaims": 0,
+          "fused_string_map_bytes": 0,
+          "parallel_regions": 0,
+          "parallel_batches": 0,
+          "parallel_tasks": 0,
+          "parallel_peak_workers": 0,
+          "parallel_numeric_regions": 0,
+          "parallel_numeric_work": 0
+        }
+      }
+    },
+    "complete": true,
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+    "finite_c_liveouts": 784,
+    "selected_rectangle": {
+      "nested": [],
+      "rectangle": {
+        "inner_collection": 2,
+        "inner_iteration": 2,
+        "inner_element": 29,
+        "range_prepare": 45,
+        "transpose": 63,
+        "bounds": {
+          "Current": {
+            "operands": [
+              3,
+              2
+            ]
+          }
+        },
+        "elided_values": [
+          27,
+          33,
+          28
+        ]
+      },
+      "reduction": null,
+      "transpose": null,
+      "collection": 1,
+      "iteration": 1,
+      "header": 38,
+      "exit": 65,
+      "source": 25,
+      "range": true,
+      "element": 26,
+      "result": 31,
+      "output": 24,
+      "input_width": 8,
+      "output_width": 8,
+      "steps": [
+        51,
+        56,
+        59,
+        60
+      ],
+      "body": [
+        48,
+        50,
+        51,
+        52,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        53,
+        61
+      ],
+      "sites": [
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "captures": [
+        4,
+        6,
+        7
+      ],
+      "matrices": [
+        {
+          "value": 23,
+          "witness": 59,
+          "width": 8
+        }
+      ],
+      "reads": [
+        {
+          "site": 59,
+          "matrix": 0,
+          "indices": [
+            29,
+            26
+          ],
+          "output": 32
+        }
+      ]
+    },
+    "execution_counter_deltas": {
+      "work": 7912742992,
+      "comparison_work": 0,
+      "visits": -364,
+      "transport_bytes": 0,
+      "hash_table_regions": 0,
+      "hash_table_updates": 0,
+      "packed_map_regions": 0,
+      "direct_lookup_regions": 0,
+      "packed_map_updates": 0,
+      "packed_ssa_regions": 0,
+      "guarded_loop_regions": 0,
+      "guarded_call_regions": 0,
+      "frozen_map_regions": 0,
+      "frozen_map_reads": 0,
+      "worker_credit_claims": 0,
+      "worker_credit_batches": 0,
+      "worker_credit_reclaims": 0,
+      "fused_string_map_bytes": 0,
+      "parallel_regions": 0,
+      "parallel_batches": 0,
+      "parallel_tasks": 0,
+      "parallel_peak_workers": 0,
+      "parallel_numeric_regions": 0,
+      "parallel_numeric_work": 0
+    },
+    "prospective_route_gate_passed": true,
+    "v2_counter_guard_passed": false,
+    "performance_observations": 0,
+    "interpretation": "Physical visits count the actual executed control path. Corrected rectangular funding retains every original row transpose fee on the same comparison account, with full source compute/clone/coexistence and replay envelopes. Check all actual deltas before any policy adoption or timing. No timing sample has been collected."
+  },
+  "archives": {
+    "abi-layout.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/abi-layout.log.gz",
+      "sha256": "f9fa4584d44887ef3bd6f5692adb792d9a3bc4aee34b51bf46c32581855afc6b",
+      "compressed_sha256": "ced93c519a9b2ca95eebc64c7f6bea45bd14ccd8e760194676bd4f43f68c238b"
+    },
+    "accepted44-driver.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/accepted44-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "accepted44-driver.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/accepted44-driver.stdout.gz",
+      "sha256": "cfcfe125354e09cf089eec69a4fda50127a23d215c81de286c45fba1169d14ac",
+      "compressed_sha256": "3a4b6d9c081d593542a9032ecc46b099b514e6584aa26f3e1e4854d6d115d6fe"
+    },
+    "admission-census.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/admission-census.json.gz",
+      "sha256": "10569f09f097c6136519d50904ecfd2e88a1e11de2bfadc15014c1a7cf7b0c48",
+      "compressed_sha256": "dba883ac1001477a809200ef4891c93d724fe998cdd5cdfaae7792b30035891d"
+    },
+    "attempt-01/failure-analysis.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/failure-analysis.json.gz",
+      "sha256": "0807170919d605436ff9ad9e9f47920a99acb26a7e8a5f3e00c2fb7a9e938bec",
+      "compressed_sha256": "bdaad24092d8d11d7eaa138bc6ec9eb6d4c3794c2ec716e497902e34a99f5547"
+    },
+    "attempt-01/focused-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/focused-result.json.gz",
+      "sha256": "180af5a0f375e5f448a33448add674104e50725dbb46fb02271a9577b3585712",
+      "compressed_sha256": "0bc13dd430887f4cf69dfdf181f51d4cfe5ade1f920425b1e085f73c016560f9"
+    },
+    "attempt-01/focused.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/focused.log.gz",
+      "sha256": "e4ac0c3f97d4ea0e828d8e5d4bf278d042aa7140393ed11e7ee808b8b7735330",
+      "compressed_sha256": "8789e702061f2db66529dadf4483362c366341a4f8bcfd4cfbcbc00087b14175"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz.gz",
+      "sha256": "1c87ad922ad18e75c3e745346324b9e74beb2121faeb1da5ee2110e50d27871b",
+      "compressed_sha256": "6c0f93f419742daac563401ac582c7e51a0871a5c532a8b463a10e3f24008684"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz.gz",
+      "sha256": "b3ccab54b38cf5111b3a3c9fa04aef52cecb6186673bf0cdd21ce30d3fbf0dd7",
+      "compressed_sha256": "ed39a98542c022ba0ab8a7a5c539f4f4be8197efb6c96bac53a2cfb3afa0685e"
+    },
+    "attempt-01/source-checkpoint.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/source-checkpoint.json.gz",
+      "sha256": "fffa1822619d00761110abf949cc9bbc3e70f379916be1105d3e13a5f2832a9e",
+      "compressed_sha256": "72290adbc7eb7d1b186f577e9197095cbde019925da8650a54d14b710b94bdde"
+    },
+    "attempt-01/source.patch.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-01/source.patch.gz.gz",
+      "sha256": "c7457cbee8ae99e82c787473623f3e49f24df38b2a526711ddd5d3ccd5242a8c",
+      "compressed_sha256": "a278a0e18ba377995861672a660648d1c3da5603e95598e17e93c491dedf3c77"
+    },
+    "attempt-02/focused-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/focused-result.json.gz",
+      "sha256": "a7dd957d1595dd9713131db4b1a2209219faf94fa26637629145a8b22a25b4ab",
+      "compressed_sha256": "a898fb68016bfd46f075ea51928ec25cd1d7a0f856c473b4b8a57606ed49d505"
+    },
+    "attempt-02/focused.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/focused.log.gz",
+      "sha256": "a716caf20548f463a655c25a00de7a3783b759d088227884b175dac34c991f43",
+      "compressed_sha256": "ede879cebea2f13999506d979d6f1e5999f0ecc15a9b1b194d4364363cec3b39"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "3550d2189981820f9fae992c02c67f093480adaf986b7e15e5890b90dc848f1d",
+      "compressed_sha256": "4aae0e7c39b5cf53955741e02fbd34c7f41fc73ccea654571e245a9760b07d1b"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz.gz",
+      "sha256": "8fa24dd956f4da496f2cfcde7c315ec31446e0821dd5bc1ab294105faba8a8d8",
+      "compressed_sha256": "15321c38aca96efeb27d9b7d917584ba455aedc6f42e04b85916f74e51b598a6"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz.gz",
+      "sha256": "c406a783bfec02d0525e626589499699c887c4fccfb3cac490025a24335c2888",
+      "compressed_sha256": "2ed64408a3f6dbc278996e2b9d53df457b69393d948bc50afe0216df037ea085"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz.gz",
+      "sha256": "ebc411de50a0431b1f66e4e259254086100398feef363671631c7999ec4da357",
+      "compressed_sha256": "e01150a2791a4881cdc252d1184a13c1edcc87b15d1f29028b1c53ee3c7225e4"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz.gz",
+      "sha256": "59aa6caecf0c6d86c338cd56a341d917e9408fd84bade2b91f008f7541666f4a",
+      "compressed_sha256": "4b77024791fc2c56e2cea5f07bdec26699e6a5862890ba8a959698abd9aab1e6"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz.gz",
+      "sha256": "148cd697b83148370cef5fc7fbc372843677e883b5b74977f5844b8b853d0607",
+      "compressed_sha256": "16b608b75b62dea90335cded3a9712ac6e7c218e71ce1d33c209a727b716157d"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz.gz",
+      "sha256": "fe9ff04f9bc58b5ad157281b3e05c889bb9ef82d947fc42c84f613b909ac7157",
+      "compressed_sha256": "53ee7916682f6617061225ab0275fbbaa777bfc60a14e8ff44ecfd833db5d36b"
+    },
+    "attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz.gz",
+      "sha256": "8fc603545f7e2ba49da349a4d4f0bdaf6e1cd9e88625fa072099228ca4ff39c6",
+      "compressed_sha256": "94e749a09ae23e24ab5cb16899146122062877d77a9dcb72bd35c4926613fe57"
+    },
+    "attempt-02/source-checkpoint.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source-checkpoint.json.gz",
+      "sha256": "c25466c899c50fa0df8404f6fb56a721a082fd99ab73b34ffe50d4a27c7151e6",
+      "compressed_sha256": "c2975cafa37e8fbec45d197c6799e95af16bdd66355d7e8c4074b73bc9e0bd0f"
+    },
+    "attempt-02/source.patch.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-02/source.patch.gz.gz",
+      "sha256": "dd2c29105a7e06b5ce03b6d0388c0b6a50fd33b0a5042f100566546b74289058",
+      "compressed_sha256": "10cfb842326ee5b89fb14782e48b6be40915044f77dddf6c3c31a67707cbf4b0"
+    },
+    "attempt-03/focused-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/focused-result.json.gz",
+      "sha256": "2bd86854f4221ca311200cbb840ab6c96a5633e28e3dae90b48a96cad0b8bf03",
+      "compressed_sha256": "42db49deb8241c65d387b51d1e7f9a82f7d54c72dce2a95b992286d4daac7cb8"
+    },
+    "attempt-03/focused.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/focused.log.gz",
+      "sha256": "1cfd6c26213c3f671519f30bc78b5c64981e502f6ae50a3e34ca3c722bb27961",
+      "compressed_sha256": "a57fa84a604cbf62d00db152b978d97070913fa965644b50834e2e48ed03889e"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "3550d2189981820f9fae992c02c67f093480adaf986b7e15e5890b90dc848f1d",
+      "compressed_sha256": "4aae0e7c39b5cf53955741e02fbd34c7f41fc73ccea654571e245a9760b07d1b"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz.gz",
+      "sha256": "8fa24dd956f4da496f2cfcde7c315ec31446e0821dd5bc1ab294105faba8a8d8",
+      "compressed_sha256": "15321c38aca96efeb27d9b7d917584ba455aedc6f42e04b85916f74e51b598a6"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz.gz",
+      "sha256": "c406a783bfec02d0525e626589499699c887c4fccfb3cac490025a24335c2888",
+      "compressed_sha256": "2ed64408a3f6dbc278996e2b9d53df457b69393d948bc50afe0216df037ea085"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz.gz",
+      "sha256": "ebc411de50a0431b1f66e4e259254086100398feef363671631c7999ec4da357",
+      "compressed_sha256": "e01150a2791a4881cdc252d1184a13c1edcc87b15d1f29028b1c53ee3c7225e4"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz.gz",
+      "sha256": "59aa6caecf0c6d86c338cd56a341d917e9408fd84bade2b91f008f7541666f4a",
+      "compressed_sha256": "4b77024791fc2c56e2cea5f07bdec26699e6a5862890ba8a959698abd9aab1e6"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz.gz",
+      "sha256": "148cd697b83148370cef5fc7fbc372843677e883b5b74977f5844b8b853d0607",
+      "compressed_sha256": "16b608b75b62dea90335cded3a9712ac6e7c218e71ce1d33c209a727b716157d"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "0db45a097473772e2cb205d5dc99ed5e9f2ba9fe3b35dabce1b8faf257f07f9b",
+      "compressed_sha256": "ae0ae2bf4b70271805a61a5239640006f642a11773d86dc8e3c98b574ed9d714"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz.gz",
+      "sha256": "fe9ff04f9bc58b5ad157281b3e05c889bb9ef82d947fc42c84f613b909ac7157",
+      "compressed_sha256": "53ee7916682f6617061225ab0275fbbaa777bfc60a14e8ff44ecfd833db5d36b"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz.gz",
+      "sha256": "8fc603545f7e2ba49da349a4d4f0bdaf6e1cd9e88625fa072099228ca4ff39c6",
+      "compressed_sha256": "94e749a09ae23e24ab5cb16899146122062877d77a9dcb72bd35c4926613fe57"
+    },
+    "attempt-03/source-checkpoint.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source-checkpoint.json.gz",
+      "sha256": "13adad91798885dbbd903e8b9d895627073a9842a4c3c4881c52c1f18e50d650",
+      "compressed_sha256": "5f39c874504a1b8c5b45e3be707dc4891a19e188bc67136239638dcddde12a7c"
+    },
+    "attempt-03/source.patch.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-03/source.patch.gz.gz",
+      "sha256": "f644b6baca0320ee4c9c3a63df8c9add914e4a5c43dbae8c5b2a3dd5ddc1aa3a",
+      "compressed_sha256": "50f730627feb494f30ef22cdd70862f13aac250d65cefc16e83d2fbad7ddf530"
+    },
+    "attempt-04/failure-analysis.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/failure-analysis.json.gz",
+      "sha256": "6fd9c9b637fe9478dfe104b71095b9e2d8c6a71230bb51f621540a109a518b4b",
+      "compressed_sha256": "3a9941237f2bbf1d9e64decd3b77ddef80cb55b0f262336b5333579c514cf541"
+    },
+    "attempt-04/focused-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/focused-result.json.gz",
+      "sha256": "5f0b53b6a2fae950ee4b6f744636b6e32df1458100ab4bcec4625d1d39a73edc",
+      "compressed_sha256": "41ba96f8ef5b2e07d77e6546163f357caac8d3bd701ead1b76f5a1a7e77f2d29"
+    },
+    "attempt-04/focused.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/focused.log.gz",
+      "sha256": "7bb9c7d2d387e2785897e5f152f1db1c0d645b87ec27b5670c8f5d6a30b05321",
+      "compressed_sha256": "34a492ff0bd5862c7e25c0e662b1870cd48ff788813cdc724b667e57e7d1de16"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "3550d2189981820f9fae992c02c67f093480adaf986b7e15e5890b90dc848f1d",
+      "compressed_sha256": "4aae0e7c39b5cf53955741e02fbd34c7f41fc73ccea654571e245a9760b07d1b"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz.gz",
+      "sha256": "8fa24dd956f4da496f2cfcde7c315ec31446e0821dd5bc1ab294105faba8a8d8",
+      "compressed_sha256": "15321c38aca96efeb27d9b7d917584ba455aedc6f42e04b85916f74e51b598a6"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz.gz",
+      "sha256": "c406a783bfec02d0525e626589499699c887c4fccfb3cac490025a24335c2888",
+      "compressed_sha256": "2ed64408a3f6dbc278996e2b9d53df457b69393d948bc50afe0216df037ea085"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz.gz",
+      "sha256": "ebc411de50a0431b1f66e4e259254086100398feef363671631c7999ec4da357",
+      "compressed_sha256": "e01150a2791a4881cdc252d1184a13c1edcc87b15d1f29028b1c53ee3c7225e4"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz.gz",
+      "sha256": "59aa6caecf0c6d86c338cd56a341d917e9408fd84bade2b91f008f7541666f4a",
+      "compressed_sha256": "4b77024791fc2c56e2cea5f07bdec26699e6a5862890ba8a959698abd9aab1e6"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz.gz",
+      "sha256": "148cd697b83148370cef5fc7fbc372843677e883b5b74977f5844b8b853d0607",
+      "compressed_sha256": "16b608b75b62dea90335cded3a9712ac6e7c218e71ce1d33c209a727b716157d"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "0db45a097473772e2cb205d5dc99ed5e9f2ba9fe3b35dabce1b8faf257f07f9b",
+      "compressed_sha256": "ae0ae2bf4b70271805a61a5239640006f642a11773d86dc8e3c98b574ed9d714"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz.gz",
+      "sha256": "cda13536a4f625c4db2af493ffcbbbd130c3246c70ed8d21b1e4cf1b1bb82614",
+      "compressed_sha256": "b3b94d438a7515431d67fcb53fe9be0b3ef04c06205746e88495102122dabea3"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz.gz",
+      "sha256": "8fc603545f7e2ba49da349a4d4f0bdaf6e1cd9e88625fa072099228ca4ff39c6",
+      "compressed_sha256": "94e749a09ae23e24ab5cb16899146122062877d77a9dcb72bd35c4926613fe57"
+    },
+    "attempt-04/source-checkpoint.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source-checkpoint.json.gz",
+      "sha256": "6678213567f271f6f74a0e898d2334f34904913612d92e0670d3f7458d514e78",
+      "compressed_sha256": "ec3562f0b9f07727e68670c88ccececf232d9a501cb8e1fc18514fafedb3d68c"
+    },
+    "attempt-04/source.patch.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-04/source.patch.gz.gz",
+      "sha256": "b4e0d8af1b6c55a0372279897aea4e334e3c8d0786f3a497d7eb6ed877e8a56e",
+      "compressed_sha256": "3e986d872759d4218a6ee50be83f10fcc9f999b4097d6a70439db226e00a7643"
+    },
+    "attempt-05/focused-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/focused-result.json.gz",
+      "sha256": "f6bdb0adcb9df31f2a6bbf03e2ae8d323d3990459dcd8addbb03919275d11e0e",
+      "compressed_sha256": "844d96b1fbc0bccbc0a04360865d72e18a3f52bc195b5cd56de818473098f667"
+    },
+    "attempt-05/focused.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/focused.log.gz",
+      "sha256": "2ca1212cb5d3a79515bacba3a11b76dbbc22ce1d5a0c4898594fc520be68986d",
+      "compressed_sha256": "06741153c717c5372fb5593866f9a4e81e8b714f2a61a45013f16d245d4afdec"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "3550d2189981820f9fae992c02c67f093480adaf986b7e15e5890b90dc848f1d",
+      "compressed_sha256": "4aae0e7c39b5cf53955741e02fbd34c7f41fc73ccea654571e245a9760b07d1b"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz.gz",
+      "sha256": "8fa24dd956f4da496f2cfcde7c315ec31446e0821dd5bc1ab294105faba8a8d8",
+      "compressed_sha256": "15321c38aca96efeb27d9b7d917584ba455aedc6f42e04b85916f74e51b598a6"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz.gz",
+      "sha256": "c406a783bfec02d0525e626589499699c887c4fccfb3cac490025a24335c2888",
+      "compressed_sha256": "2ed64408a3f6dbc278996e2b9d53df457b69393d948bc50afe0216df037ea085"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_rectangles.rs.gz.gz",
+      "sha256": "ebc411de50a0431b1f66e4e259254086100398feef363671631c7999ec4da357",
+      "compressed_sha256": "e01150a2791a4881cdc252d1184a13c1edcc87b15d1f29028b1c53ee3c7225e4"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transpose_budget.rs.gz.gz",
+      "sha256": "59aa6caecf0c6d86c338cd56a341d917e9408fd84bade2b91f008f7541666f4a",
+      "compressed_sha256": "4b77024791fc2c56e2cea5f07bdec26699e6a5862890ba8a959698abd9aab1e6"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz.gz",
+      "sha256": "148cd697b83148370cef5fc7fbc372843677e883b5b74977f5844b8b853d0607",
+      "compressed_sha256": "16b608b75b62dea90335cded3a9712ac6e7c218e71ce1d33c209a727b716157d"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "0db45a097473772e2cb205d5dc99ed5e9f2ba9fe3b35dabce1b8faf257f07f9b",
+      "compressed_sha256": "ae0ae2bf4b70271805a61a5239640006f642a11773d86dc8e3c98b574ed9d714"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs.gz.gz",
+      "sha256": "726c686b05d73638903fba73dd1af3305f71e577762ff9ead89299164536c764",
+      "compressed_sha256": "d2176e70462797288279cc5218a4fb768cdaddf8455d3e9236e1e18ecff3d4d5"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_numeric_maps.rs.gz.gz",
+      "sha256": "8fc603545f7e2ba49da349a4d4f0bdaf6e1cd9e88625fa072099228ca4ff39c6",
+      "compressed_sha256": "94e749a09ae23e24ab5cb16899146122062877d77a9dcb72bd35c4926613fe57"
+    },
+    "attempt-05/source-checkpoint.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source-checkpoint.json.gz",
+      "sha256": "ebd4d9fa467321b95b0a0207ffc27ebf59efde2107f90efd1d29c72643538bab",
+      "compressed_sha256": "b909500d74496629b513fd0f5f338659ad483f71e5c4fffb0745cd759d31ce0c"
+    },
+    "attempt-05/source.patch.gz": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/attempt-05/source.patch.gz.gz",
+      "sha256": "8b5c3923d4229c30937c5851c3f6cb4b96541544a55a25132fd564c8721bfc8b",
+      "compressed_sha256": "b979ba920d4b1a40b22d21796daf8f830359a4c10c0a70d86bacc02b2f0e084f"
+    },
+    "candidate-driver.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/candidate-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "candidate-driver.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/candidate-driver.stdout.gz",
+      "sha256": "9a33a978d2f0feee836fcfe1bd0b4d8881c59e868672f2d0494de41de5080dfd",
+      "compressed_sha256": "e9ab61210065cb95790ab4f13cfc3485f000896c7da3396001e1940d5588325e"
+    },
+    "census-config.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/census-config.json.gz",
+      "sha256": "04f981fd170bb3105a116ca7083e0201f0bd75e1ca4e7b3f6a73f1d6b05f5be6",
+      "compressed_sha256": "d71c514b542904b508acf2a5e2ef347be542baa9f8b3d36b75378d5090e17da1"
+    },
+    "correlation-image.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/correlation-image.json.gz",
+      "sha256": "5d19d047b4aa14293641a345bf38646ce20a35c2b8d463d19ba88a23a9fc7e9e",
+      "compressed_sha256": "6cad56c48f38349579fe1a74727747c19f51cc884f0bb275737af8beeeb05f42"
+    },
+    "correlation-inputs.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/correlation-inputs.json.gz",
+      "sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "compressed_sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62"
+    },
+    "correlation.metadata.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/correlation.metadata.json.gz",
+      "sha256": "66310e1ca57bc8343b76ce066fcdb96cc9c5e524ad295413fbfdcad275f881cc",
+      "compressed_sha256": "d737defb4459207f5d5c9fc2118a6e5ab8ff4f71915589501f325f6aa6c06abd"
+    },
+    "correlation.o": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/correlation.o.gz",
+      "sha256": "0e1e393661da58abccebc9d1cafa64bcd365953bc62033a7d6b65096caef513e",
+      "compressed_sha256": "106f7d7abf5c516e38df2e0b524b4143243d17430a12dc51bd8c9fcdb39990c5"
+    },
+    "current-work.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/current-work.json.gz",
+      "sha256": "8e3ab4edaa2cb39bc607b2756e3fd427b15baffa852618b47dda28f7b609c7e3",
+      "compressed_sha256": "ac35dfa4a4acaa4155f713416cbc0c73f70339b87f397826f63e29041d0d44c2"
+    },
+    "debugger-census.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/debugger-census.log.gz",
+      "sha256": "8f4ee94583c3b9fb737e655ef64b7ca1bb0acbebdc66446cd0cb421703b45237",
+      "compressed_sha256": "d9604f8b5f1cfa8270821b831eb9880f965d314bef9e12d9074b2303f5f91365"
+    },
+    "driver-build-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/driver-build-result.json.gz",
+      "sha256": "0e38a6ff0babbb407f0451f9adcb7b268f735780e0bc82bc0151cdae8b07e825",
+      "compressed_sha256": "add31f63d201fc6c3e4116a5f0348a1935cebd321bc40fc49351b960e16f6c88"
+    },
+    "driver-build.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/driver-build.log.gz",
+      "sha256": "2d5694fb348541fae3d68a033b004800c9c79f8f6edb468d5763b1d8f389597a",
+      "compressed_sha256": "2609abc3ea5da244babf98776e33a2584f4d559b546108dd6cc6d33434ea7d56"
+    },
+    "execution-route-census.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/execution-route-census.json.gz",
+      "sha256": "09043ebf2c539fe0c7210bbc734ffc87086ce0fc94f885ddb44eda1bb7d82324",
+      "compressed_sha256": "d359293533dd99daa0bd90747f7b04ae956c8202b48d6a94700c7ca0908dbbab"
+    },
+    "final-audit.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/final-audit.json.gz",
+      "sha256": "7e0dd6f122b4b51f14cce3b583eebe3be033b8152318e1162673cf36364c58a6",
+      "compressed_sha256": "02a9e66f982bb873fddabaccf29d5ae1ddd4309b29c88041db9ea2a1cc02e99f"
+    },
+    "final-manifest-guard-rejection.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/final-manifest-guard-rejection.json.gz",
+      "sha256": "e38b7195e38a3618f6509fa4d478fb6db906b07180d895e040de80cbd86f5aba",
+      "compressed_sha256": "cba819fce6fc7d0d110f9eff9a2b3c18c28cf44bc1ce47dffdf1bd90e82cabd6"
+    },
+    "implement.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/implement.py.gz",
+      "sha256": "63d649fb0f74695eba53282a13bf794a88d6e9d5e6b6dc5688862e83af860662",
+      "compressed_sha256": "5c8355354d4ca8507b5093ef517c435126966e7bdcfefb235b3a890cf261c6fc"
+    },
+    "matrix-polybench.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/matrix-polybench.log.gz",
+      "sha256": "8c5cfeab7a6758c4e5efc564bbafc10a2e8185226cd70c0cf17b2d02287e029e",
+      "compressed_sha256": "29fd7116343c2f2b68a25d325b29af470aaac6419b16d177bb1d9c4926a768b8"
+    },
+    "numeric-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/numeric-regressions.log.gz",
+      "sha256": "57e116405fc9a3b2b9b7e496b20eb86bc41ea8f37b3e7c4eb7297c910391423f",
+      "compressed_sha256": "be526c7c07df77d1f6d0002ae3c04c55bf749b8450d29a61d143b78e5354bb79"
+    },
+    "object-export-receipt.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/object-export-receipt.json.gz",
+      "sha256": "7714e5b94f2874e92517f5eb3c7296b1f36927a77bb5c756fecb1bf9f42f8cd9",
+      "compressed_sha256": "bb600ecce27d0ebd2d966fe907b4561b5d737416e05ad2fce62f47b2edd83d42"
+    },
+    "object-export.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/object-export.log.gz",
+      "sha256": "35f02500623b7b7bb56181920d902f672c96a6796ad577ab58e184a7eeda1ace",
+      "compressed_sha256": "3679a39c7c101db298d0073835a35bf8b869635bd650100f31cd9a20a252f932"
+    },
+    "object-read.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/object-read.log.gz",
+      "sha256": "6506bbc48130940a70561abf087b79e5ff365eb37cdef92518b4f0ef2e267254",
+      "compressed_sha256": "4d2bb8dfb0e2c61b7d81e9c67b227a4367dacfcbe2b68a4446113d7ce5ef8468"
+    },
+    "plan.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/plan.json.gz",
+      "sha256": "386b2a8ea26412401fc4179ce1397ece0d71ac6f6800f109567f5eb16d9e784f",
+      "compressed_sha256": "4d748f70be7313fddf16a084d777ed72f62d0d4fe8b22c980ef7a9aea65f52fd"
+    },
+    "prepare-qualification-manifest.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/prepare-qualification-manifest.py.gz",
+      "sha256": "a62e38203c40e02e03948e540aac190efc8397981741668251d2533e2b1885a1",
+      "compressed_sha256": "461e63b71a6daa07e3b09fb2d9c7d38aa8ee03b4e94c21f9aa8ddf1b93b6caf4"
+    },
+    "preserve.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/preserve.py.gz",
+      "sha256": "e56431157ac1a57fdc5d69a17639744b0fab405d70f198093c2ac2355e2426a7",
+      "compressed_sha256": "5de7bc7b9c6a0e6a3fa5b08809e74a1bc9e482504b9d1f38f08487f273a99c2a"
+    },
+    "production-feature.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/production-feature.log.gz",
+      "sha256": "85c8dbac64ed6a362d668bf3988686e26e947620bb15cfdbe2e999a0ff8261b2",
+      "compressed_sha256": "3c2b5fa50f1f2d4455dd9c779d1ea2be2c997f8989135507b5bddffc5986c8c2"
+    },
+    "program-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/program-regressions.log.gz",
+      "sha256": "303c63d2aa610168ec5f29eb6866dfe3d9c2a661bc3f465cbffc58bed701e362",
+      "compressed_sha256": "9177f0b111e59d672b920e537efef3e2c529d26535d958dea849b4619e036203"
+    },
+    "protocol.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/protocol.log.gz",
+      "sha256": "f07e5b603d0a02346ecedfb9d071fd0baaf2d64b763c62be1f72c0140fcbf8bc",
+      "compressed_sha256": "4fccd7eb9f889c1e707d74714bf29318d83f9829721f62f4e5332b80d7b1d7ca"
+    },
+    "qualification-attempt-01/current-work.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/current-work.json.gz",
+      "sha256": "55127c5eab8725ad58c0bade8b258129a123334f62c33285f46ecdaba5ea5628",
+      "compressed_sha256": "dad29d85ced47a3de0a83cf25d3a21820eb47371e68fb4db0f8fc55a322ff54a"
+    },
+    "qualification-attempt-01/failure-analysis.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/failure-analysis.json.gz",
+      "sha256": "411d507120a2f8d119475eaa0d39286832706ed00440e2df9deec52dd08a5783",
+      "compressed_sha256": "d752694f1131601d4072a81e421bd236275a0e8ff0a01d8fbb9c35b519f70a60"
+    },
+    "qualification-attempt-01/numeric-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/numeric-regressions.log.gz",
+      "sha256": "f8abf731a28b1173746acf94f58ccccebb429a2b77a1348301bff58ca67d07d6",
+      "compressed_sha256": "2b2a232d9993d6e0be7efbde0fc8db68d88f45e6dba96b617bafd59d2e9464fa"
+    },
+    "qualification-attempt-01/qualification-checks.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/qualification-checks.json.gz",
+      "sha256": "1422beed74d5b34634f5a5aaf2bc1343d43aeba60c5253b0938ebc567cbd17f5",
+      "compressed_sha256": "81ffe6881724c3ca5446a9f03c5ef18126958b6337614014889f0004c2172f3f"
+    },
+    "qualification-attempt-01/run-qualification.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/run-qualification.py.gz",
+      "sha256": "e8703f141623032bca833849cc4d252452ac737a26143c54a053508e5632780a",
+      "compressed_sha256": "6676d5edcd658ca3d6a8e9b615d7a27f4b51231887b5995aa1f8448a64ebaf48"
+    },
+    "qualification-attempt-01/semantic-catalog-solver.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/semantic-catalog-solver.log.gz",
+      "sha256": "ef517f9c3cdd2188932f53e04c286a5f5b7481316d13ba5d3ef75dd33ed3c09f",
+      "compressed_sha256": "3ae5623935d74d2420d678ffa1ca70fb07babd60a16951b5c979fc7025266d65"
+    },
+    "qualification-attempt-01/shared-constructor-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/shared-constructor-regressions.log.gz",
+      "sha256": "2c717fdc0f6bcf1d6f0d16c3b869504582e256969d3f2127c356cec31c05e776",
+      "compressed_sha256": "71de94b111659271907e118422f5d86df5aea4c3ec855a03c8f4d8a3b4c8a977"
+    },
+    "qualification-attempt-01/source-broadcast-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/source-broadcast-regressions.log.gz",
+      "sha256": "e7d479c1674dae4a812f2f275f87c0cf5bc6c23d9f3c7ed8dd6f5d044a0bc145",
+      "compressed_sha256": "75c1581e31293fc18c9f7846f1f4941c3b431878ef367e5104e02f82e36751e2"
+    },
+    "qualification-attempt-01/type-image-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-attempt-01/type-image-regressions.log.gz",
+      "sha256": "9a6249f4560939fa0e284ea459a3f02a1c5465af291c8739f720732edc7e5b55",
+      "compressed_sha256": "021ff2108faf12f7938197ae771fe6ff5f2262be2612877f42503bf7b622b575"
+    },
+    "qualification-before-restored-corpus/abi-layout.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/abi-layout.log.gz",
+      "sha256": "38ea3e26394e84555a331c60a309e3f0afc58d5fb826d080fbe1ebda1e777fb1",
+      "compressed_sha256": "8fdc5f1e01e13b42a9ccea91d00b63c6113b8137cfd394308886bdb7b3515484"
+    },
+    "qualification-before-restored-corpus/accepted44-driver.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/accepted44-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "qualification-before-restored-corpus/accepted44-driver.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/accepted44-driver.stdout.gz",
+      "sha256": "04ad1603cf143cb2358668c11d60a10757b5514f45ae600fc2f6f69dda779b9a",
+      "compressed_sha256": "d6a9ab44c51458d8710f5db16c7c78c4b3c93d0ff28ddf411de163ad94bd285e"
+    },
+    "qualification-before-restored-corpus/admission-census.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/admission-census.json.gz",
+      "sha256": "e806cf9def5d9c5ea9e3a12c740a8de3ab65e306560ed1676c5785336421dc2e",
+      "compressed_sha256": "f5ca0702ef36cbb384411bd1b7eb96d00e5d351f50768ce05f1e1de9561f939f"
+    },
+    "qualification-before-restored-corpus/candidate-driver.stderr": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/candidate-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "qualification-before-restored-corpus/candidate-driver.stdout": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/candidate-driver.stdout.gz",
+      "sha256": "f35a92c841cb021ee22caffbc20398763f949d0235fc284bbb1cd310152b7260",
+      "compressed_sha256": "f51ad044ffc702c7dd63634cf14e1cc2c9640939e9a7720aa81955f1d16e1eb8"
+    },
+    "qualification-before-restored-corpus/census-config.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/census-config.json.gz",
+      "sha256": "402afde32c4ed334072661816446483ad6d28e2b0d1be40e5f394ae0cb030f82",
+      "compressed_sha256": "395a3f6f1ccbe5ff384c2b261e048f238a2806c87a6dafd185b27235ec5b35fc"
+    },
+    "qualification-before-restored-corpus/correlation-image.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/correlation-image.json.gz",
+      "sha256": "5d19d047b4aa14293641a345bf38646ce20a35c2b8d463d19ba88a23a9fc7e9e",
+      "compressed_sha256": "6cad56c48f38349579fe1a74727747c19f51cc884f0bb275737af8beeeb05f42"
+    },
+    "qualification-before-restored-corpus/correlation.metadata.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/correlation.metadata.json.gz",
+      "sha256": "66310e1ca57bc8343b76ce066fcdb96cc9c5e524ad295413fbfdcad275f881cc",
+      "compressed_sha256": "d737defb4459207f5d5c9fc2118a6e5ab8ff4f71915589501f325f6aa6c06abd"
+    },
+    "qualification-before-restored-corpus/correlation.o": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/correlation.o.gz",
+      "sha256": "0e1e393661da58abccebc9d1cafa64bcd365953bc62033a7d6b65096caef513e",
+      "compressed_sha256": "106f7d7abf5c516e38df2e0b524b4143243d17430a12dc51bd8c9fcdb39990c5"
+    },
+    "qualification-before-restored-corpus/coverage-audit.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/coverage-audit.json.gz",
+      "sha256": "715da48d9ac1333cb3ecb505e7513580fee80273a19cf7adbb101f83e16b47ef",
+      "compressed_sha256": "5dc37776c3b7cf362058237a86c26bcf3bee4ea355438528960425282f54e1df"
+    },
+    "qualification-before-restored-corpus/current-work.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/current-work.json.gz",
+      "sha256": "daf3aeef8e024071b8278a1349286169b9ae8b9d311e2751da145ab6a8b22a67",
+      "compressed_sha256": "8d810e81237111f4449410876e89154ac8d80d2e0b82c4073c3a1d35a51f3311"
+    },
+    "qualification-before-restored-corpus/debugger-census.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/debugger-census.log.gz",
+      "sha256": "8f4ee94583c3b9fb737e655ef64b7ca1bb0acbebdc66446cd0cb421703b45237",
+      "compressed_sha256": "d9604f8b5f1cfa8270821b831eb9880f965d314bef9e12d9074b2303f5f91365"
+    },
+    "qualification-before-restored-corpus/driver-build-result.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/driver-build-result.json.gz",
+      "sha256": "60f52d93334e09f4da663062e6679a5fe02a31639b9ea63e44089e9a5ec95c38",
+      "compressed_sha256": "bb5756d7ea1f37ba3a52b2da2f4e9d91b70c21f2fa26dd597c678f008c5a5e14"
+    },
+    "qualification-before-restored-corpus/driver-build.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/driver-build.log.gz",
+      "sha256": "e8152de7d7b920e2ced05f049467b0809a0b262c298b665b59f589a3e4d4d9f4",
+      "compressed_sha256": "0a45b375106088094762346cb5dcdcd682500105f1e172d75f6447752435eae7"
+    },
+    "qualification-before-restored-corpus/execution-route-census.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/execution-route-census.json.gz",
+      "sha256": "bb56e3facd2f3cee3124933c11cf2b12e8fa34b57921b0bb340ffb14c341dc9f",
+      "compressed_sha256": "d6265925017755a97bde7d3ab016d4b5b676d76dbcf4ca8c2c8205e1d559aa2d"
+    },
+    "qualification-before-restored-corpus/matrix-polybench.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/matrix-polybench.log.gz",
+      "sha256": "cf000303efb1d91ec846fed137551d59178fe2d2d10b57737ec155729ac42a47",
+      "compressed_sha256": "2a64d049c62b386ccc750beed899f999a0513300422f831bc0336e5269e5fb41"
+    },
+    "qualification-before-restored-corpus/numeric-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/numeric-regressions.log.gz",
+      "sha256": "9b6487461dd3a3abaf8676501c7019aec8dd2c68025162c607173579220fd009",
+      "compressed_sha256": "934bb1085b833333f586751c09957637a37d923eb9d8bc25bd01831c362357ea"
+    },
+    "qualification-before-restored-corpus/object-export-receipt.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/object-export-receipt.json.gz",
+      "sha256": "f08a1c2e3d221d3981568efcbcd5b2bc3f6b38ab6bc27a4e307d9eab8ac10015",
+      "compressed_sha256": "704df7dccea434c52aa3987950a8d2f9b805471e5680af784672172a23947997"
+    },
+    "qualification-before-restored-corpus/object-export.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/object-export.log.gz",
+      "sha256": "35f02500623b7b7bb56181920d902f672c96a6796ad577ab58e184a7eeda1ace",
+      "compressed_sha256": "3679a39c7c101db298d0073835a35bf8b869635bd650100f31cd9a20a252f932"
+    },
+    "qualification-before-restored-corpus/object-read.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/object-read.log.gz",
+      "sha256": "6506bbc48130940a70561abf087b79e5ff365eb37cdef92518b4f0ef2e267254",
+      "compressed_sha256": "4d2bb8dfb0e2c61b7d81e9c67b227a4367dacfcbe2b68a4446113d7ce5ef8468"
+    },
+    "qualification-before-restored-corpus/prepare-qualification-manifest.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/prepare-qualification-manifest.py.gz",
+      "sha256": "096e4be8f8487a76684a04509033135a463e512c4fe8ba87fc1c91523d6d64a9",
+      "compressed_sha256": "8b3fbdc5e62c6494da6c22d3694dba088ee52ef63e71848d9a71c6aad829ba66"
+    },
+    "qualification-before-restored-corpus/production-feature.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/production-feature.log.gz",
+      "sha256": "a65d2b6f4273f9c4deb45d2bfe48d0dd2bafe932ffea66d5f4f8acd4f2c25b3e",
+      "compressed_sha256": "4f0118c5b27d28b3ae7720f9ef50ec38588d6e41ca51d02c1d0f6729d51de490"
+    },
+    "qualification-before-restored-corpus/program-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/program-regressions.log.gz",
+      "sha256": "98551f4738d8eca4482310736881ac0bbf264fdf1b134cdbe5d07fe12c7fb483",
+      "compressed_sha256": "61aa9612b599708298df818d7ee96af0f6aaf076caca6b078e8832668b35ef9f"
+    },
+    "qualification-before-restored-corpus/protocol.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/protocol.log.gz",
+      "sha256": "796f53994527f9f95017f9962b2dcf703ce4ed06b68a6aafa3c78a9663c4fa82",
+      "compressed_sha256": "e4299a38fd348c4a616820cd5f5b2ee44335cbf57b1b4c6ab63ca9f50b98ff91"
+    },
+    "qualification-before-restored-corpus/qualification-checks.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/qualification-checks.json.gz",
+      "sha256": "743d863894772ed431688b6d2a1d25cb742a170df7441ed2a19067d976a18fe8",
+      "compressed_sha256": "a11d19aa2896e0ec701e77ca6e9a5bbee9042173e8929914a0f6c15eafdc6bb5"
+    },
+    "qualification-before-restored-corpus/qualification-original-root.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/qualification-original-root.json.gz",
+      "sha256": "970f32a981b079007dc260dd3aaa9147c120305045f3e61a13f02d5fc1b3a71b",
+      "compressed_sha256": "9c631012ec1244ee99c3d9bc0e1bf50964026ab0e0372f552b505bfa24f8d136"
+    },
+    "qualification-before-restored-corpus/qualification.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/qualification.json.gz",
+      "sha256": "970f32a981b079007dc260dd3aaa9147c120305045f3e61a13f02d5fc1b3a71b",
+      "compressed_sha256": "9c631012ec1244ee99c3d9bc0e1bf50964026ab0e0372f552b505bfa24f8d136"
+    },
+    "qualification-before-restored-corpus/run-qualification.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/run-qualification.py.gz",
+      "sha256": "db101343088bdf60525f508583bd52e1a741b1aeba7ff6cf526cbdf5f2951058",
+      "compressed_sha256": "581ba53a29605a5ae49aae62ad9ecdab0ab3117310fd161161f2455ec4861043"
+    },
+    "qualification-before-restored-corpus/runtime-feature.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/runtime-feature.log.gz",
+      "sha256": "de125494b37f2b36f67d39781231ffb9fb758bc5ae6944b9357798a17f9583a3",
+      "compressed_sha256": "9d8cdcf1925851e0681f07b8da6ee1a1817e7960c88407d4352c3b528e389648"
+    },
+    "qualification-before-restored-corpus/semantic-catalog-solver.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/semantic-catalog-solver.log.gz",
+      "sha256": "ef517f9c3cdd2188932f53e04c286a5f5b7481316d13ba5d3ef75dd33ed3c09f",
+      "compressed_sha256": "3ae5623935d74d2420d678ffa1ca70fb07babd60a16951b5c979fc7025266d65"
+    },
+    "qualification-before-restored-corpus/shared-constructor-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/shared-constructor-regressions.log.gz",
+      "sha256": "2c717fdc0f6bcf1d6f0d16c3b869504582e256969d3f2127c356cec31c05e776",
+      "compressed_sha256": "71de94b111659271907e118422f5d86df5aea4c3ec855a03c8f4d8a3b4c8a977"
+    },
+    "qualification-before-restored-corpus/source-broadcast-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/source-broadcast-regressions.log.gz",
+      "sha256": "e7d479c1674dae4a812f2f275f87c0cf5bc6c23d9f3c7ed8dd6f5d044a0bc145",
+      "compressed_sha256": "75c1581e31293fc18c9f7846f1f4941c3b431878ef367e5104e02f82e36751e2"
+    },
+    "qualification-before-restored-corpus/type-image-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-before-restored-corpus/type-image-regressions.log.gz",
+      "sha256": "744527f14ce7368a0ef0385797a7141273a1be12158678606a6d27521174d561",
+      "compressed_sha256": "9f2bf5218933c492434db44dd915957e740fd145527bc364178b2f497a5defd3"
+    },
+    "qualification-checks.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification-checks.json.gz",
+      "sha256": "d8317158a842f60775d54fe251e08f035be27b997b720f9cd27a58f799c7c044",
+      "compressed_sha256": "d15132237c64ebe96854868c00171425aa4dbb9341d67bfc4ab2b1ec679c5485"
+    },
+    "qualification.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/qualification.json.gz",
+      "sha256": "b93fc04604e0adc108874ba73a944674eb03fe481e4d1ffba9fcdc058c17f27b",
+      "compressed_sha256": "52be24929768e948a6d2346da8b7b25951676378707b4dae16feeb3f5e4c5367"
+    },
+    "read-correlation-image.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/read-correlation-image.py.gz",
+      "sha256": "d7c529d1c41b31add133f612098db11991081d34eaf5ea5a0a85e7fdcf575a15",
+      "compressed_sha256": "c7a5301c01cc17b827c28b0183ce9f6293ee1ddd1234189044261b37f649ec75"
+    },
+    "rectangle_census.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/rectangle_census.py.gz",
+      "sha256": "b685df7ba1fe79b36f373fcbba227413df2eefaa86dc4c836c8ed8ac3fe9198b",
+      "compressed_sha256": "ab18d6b2386cfbe2a226a8664571f7affe36461b2d5788c45303c2890b11964e"
+    },
+    "run-focused-01.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-focused-01.py.gz",
+      "sha256": "63f85f0e237d72f6ffc20e588a18f03f3696d2c021bef240b6d4a4ae6317cd16",
+      "compressed_sha256": "4dbad03a8456dd0486bf584cfdeddcb41f465f917760668a987c6280d8808d50"
+    },
+    "run-focused-02.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-focused-02.py.gz",
+      "sha256": "9b4b05c31c9fc67991af8fc03370455094a234ad33c62b9912cf624517e0e31f",
+      "compressed_sha256": "667414f7b4e1ff6f34713fad812b176f7704efa035903bc7de4045a273422102"
+    },
+    "run-focused-03.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-focused-03.py.gz",
+      "sha256": "56a781bcdb2cd8c6e517269245a7c07d286d487e8a4bd4b99b37b608ce21a7bb",
+      "compressed_sha256": "588f1901ad598cd272854ca9f3dbfbe698b481701b21dd7eb2d1a72f47b568a2"
+    },
+    "run-focused-04.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-focused-04.py.gz",
+      "sha256": "dec1919bfbd2d86fe75fefd148c6db50fb54d9df632fb9601b7f8f8f2d4faac9",
+      "compressed_sha256": "518dd0359579f8f45e07931d39313e9dd63866641cb44ea43021ef31c96c6edd"
+    },
+    "run-focused-05.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-focused-05.py.gz",
+      "sha256": "b9f93bd85dc62be07ef4b8bae0b6a11ec7c4028bf114713d3609d6e8a4e99cca",
+      "compressed_sha256": "bdf607c850429bffb41662c6222d1eb533b3758a7141cff6a9fc50c9c6c3d824"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-qualification.py.gz",
+      "sha256": "7deab75b04b46cb3b836ce4bd081d8bd828de96589b587d45c587170f48944c1",
+      "compressed_sha256": "cf7eac8ff494cceda21e072e592b035abaed30f1fbfbe2b2c757e973ad025e9c"
+    },
+    "run-route-census.py": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/run-route-census.py.gz",
+      "sha256": "fb07bd33691e4c8baf4564e406afafd44479abc7b0b6ee6d91378c5341047d0a",
+      "compressed_sha256": "3196d16d805579a66683e00ff257a5d4f64b4dc282829430ec6911ab37bef3c3"
+    },
+    "runtime-feature.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/runtime-feature.log.gz",
+      "sha256": "85c8dbac64ed6a362d668bf3988686e26e947620bb15cfdbe2e999a0ff8261b2",
+      "compressed_sha256": "3c2b5fa50f1f2d4455dd9c779d1ea2be2c997f8989135507b5bddffc5986c8c2"
+    },
+    "selection-policy-proposal.json": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/selection-policy-proposal.json.gz",
+      "sha256": "0bdf70ebfc194c95e6865b53dc2d579ec16caf9f8debf9178191d9de6ec59213",
+      "compressed_sha256": "83918a33fde2c61af909bd766f7a982053d995c76a9b42c1327118950e3c7673"
+    },
+    "semantic-catalog-solver.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/semantic-catalog-solver.log.gz",
+      "sha256": "700cb9ae6aea30b1f2b6bdef14f02cb93baa3f31fb2e0c745c7869e95125ec1b",
+      "compressed_sha256": "9f6c86cec3ed37285cd59c3726081c646bfd8368ec1963dfd50bae6d829cb908"
+    },
+    "shared-constructor-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/shared-constructor-regressions.log.gz",
+      "sha256": "61358eb281909c639986fc6436e86d6b451fb84ede353ecbe3a892e983814e53",
+      "compressed_sha256": "83d5b1a5181f2aeaea8e010b20895cae8353eb820fb68077349e0bdb7b2fec68"
+    },
+    "source-broadcast-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/source-broadcast-regressions.log.gz",
+      "sha256": "d706518949ca08a9194f84630981f6dffd7b4ff3f71e5bae28323b24ec23e05f",
+      "compressed_sha256": "6967477a4373fb8c0dd81871534bcbe83ebb5cfe1cdb1833e3afc9ec1074f725"
+    },
+    "type-image-regressions.log": {
+      "path": "qualification/round-45-current-bound-rectangles/shared-comparison-audit/type-image-regressions.log.gz",
+      "sha256": "dbd83545c24f07ecdaa552864490a57ec1f6ee43e3dd05d81417904d5d2eaa18",
+      "compressed_sha256": "3098a2aa57ce17b656620e2698c7a6d25753e61e41ace8a1baaa096f08d3c13c"
+    }
+  },
+  "supersedes_unfixed_source_evidence": "training-experiments/current-bound-rectangles-development.json",
+  "selection_status": "Not performance-selected: original billing guards pass; the precommitted v2 identical-visit guard fails. The narrower physical-visit proposal remains unadopted.",
+  "accepted_scores": {
+    "optimization": 10.24618089248072,
+    "holdout": 38.46047945936111
+  }
+}

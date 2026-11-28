@@ -521,7 +521,49 @@ fn selected_template(
 // Compose selected increment proofs with lazy successful Map diagnostic paths.
 // IR353 certifies and natively emits all five checked U16 scalar arithmetic operations.
 // Compose checked U16 arithmetic with exact-capacity histogram key copies.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 355;
+// IR356 transports numeric matrix payloads through existing private frame
+// lanes, admits Bool/I64 matrix composition, and returns exact typed scalar
+// reads through the maintained word boundary with canonical leaf admission.
+// IR357 collects Bool/I64/F64 directly in typed banks, admitting any boxed
+// finalization copy while preserving unsigned-only raw sink authority.
+// IR358 shares exact scalar matrix replacement across all native kinds and
+// linear/cell selectors, with the existing exclusive handoff and finite checks.
+// IR359 emits exact typed scalar comprehension maps over immutable matrices
+// or prepared U64 cursors, including checked immutable matrix reads.
+// IR360 shares checked source branches and phi words inside native scalar maps.
+// IR361 reuses typed scalar storage in closed numeric array phases.
+// IR362 preserves independent row/column selectors in native numeric phases.
+// IR363 adds checked monomorphic tagged numeric state phases.
+// IR364 admits numeric prepared-call caches with current shallow bounds.
+// IR365 shares immutable ancestor numeric captures with guarded phases.
+// IR366 reuses exact typed snapshot publication in maintained numeric leaves.
+// IR367 retains bounded exact numeric geometry binding histories.
+// IR368 emits rectangular numeric comprehensions into one private bank.
+// IR369 carries exact tags through complete common-prefix numeric FSMs.
+// IR370 composes sole-consumer F64 map/sum/extraction with checked completion.
+// IR371 publishes a sole-consumer scalar map directly in transposed shape.
+// IR372 emits rectangular numeric banks directly in final row-major order.
+// Old Objects initialize column-major payloads and require the old finish pass.
+// IR373 composes checked ordered range folds inside a numeric phase loan.
+// IR374 selects existing U64 cursors for matrix block comprehensions.
+// IR375 borrows exact Core typed numeric operands for complete admitted calls.
+// IR376 composes exact ordered scalar folds inside native scalar maps.
+// IR377 executes exact F64 broadcast arithmetic without per-cell generic drafts.
+// IR378 inlines exact current leaf shape resolution for selected kernels.
+// IR380 binds finite rectangular/nested maps and phase-local banks to exact
+// source destinations, current versions and independently rederived owners.
+// IR381 shares guarded fixed geometry and linear addressing with map DAGs.
+// IR382 reconciles exact source-site summary attempts at every phase boundary.
+// IR383 shares combined map/cell-axis guards at the original source positions,
+// retaining checked addresses, scalar bits, source errors and first changes.
+// IR384 emits source-selected typed F64 matrix arithmetic with current loans.
+// IR385 emits ordered F64 matrix products over exact current typed banks.
+// IR386 retains complete fixed-array numeric FSM results through native return.
+// IR387 emits source-closed fixed matrix generators with bounded numeric FSM children.
+// IR390 cancels lossless scalar bitcast round trips before allocation.
+// IR409 selects canonical numeric tuple/record construction from the same sealed factory.
+// IR412 evaluates source-proved nonidentity matrix regions in full private scratch.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 437;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -768,7 +810,40 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 355;
 // Work125 funds the same source-site alias checks and ordered matching
 // retirements at numeric-tree first writes; existing leaves keep their prices.
 // Work127 funds the additional native prediction at its original exit visit.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 127;
+// Policy128 funds typed-map loans, selected reads and complete ordinary replay.
+// Policy129 prepays the complete acyclic conditional map body.
+// Policy130 funds the typed private owner bank and scalar store guards.
+// Policy131 funds two-axis guards and first-change coordinate transport.
+// Policy132 funds guarded-tag entry and exact cold payload exports.
+// Policy133 funds current numeric cache coexistence probes and cache hits.
+// Policy134 admits captured phase views through existing finite setup/funding.
+// Policy135 retains numeric admission bounds while eliding draft staging.
+// Policy136 prepays geometry-history lookup, ownership and retirement.
+// Policy137 funds the complete rectangle and selected intermediate proofs.
+// Policy138 funds current-variant imports, discriminator homes and boundaries.
+// Policy139 funds ordered fold work and all elided logical constructors.
+// Policy140 funds exact transpose projection finish and constructor bounds.
+// Work141 retains the full source permutation work and physical reservations
+// for a native rectangle whose output cells are already in final order.
+// Work142 prepays composed folds, elided constructors and unspent source replay.
+// Work143 applies the existing selected-range source prices to block builders.
+// Work144 retains the original full staging, clone and publication envelope.
+// Work145 prepays nested source work, physical attempts and complete replay.
+// Work146 retains the complete existing numeric source and constructor prices.
+// Work147 retains complete shape/source/construction work prices.
+// Work149 funds complete map sources and same-account private output banks,
+// publication, physical coexistence, initialized scratch and cold replay.
+// Work150 charges complete map/fold bounds only on reached source branches,
+// preserving all original visits, physical admission and full replay bounds.
+// Work151 retains full source binding/staging/publication and replay bounds
+// for each admitted native matrix arithmetic loan. Existing prices remain.
+// Work152 funds full ordered product terms, source construction and replay.
+// Work153 binds the existing complete-prefix source and boundary prices
+// when closing fixed-array numeric results. Source prices are unchanged.
+// Policy154 funds whole-generator source work, coexistence and ordinary replay.
+// Policy157 retains complete rectangular row-transpose fees on the same shared
+// comparison account, including current admission and failed-attempt replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 157;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

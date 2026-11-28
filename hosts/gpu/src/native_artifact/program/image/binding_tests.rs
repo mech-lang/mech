@@ -1708,3 +1708,92 @@ fn compact_visit_work_rejects_wrong_lengths_shapes_versions_duplicates_and_bound
         }
     }
 }
+
+#[test]
+fn native_rectangular_numeric_maps_current_bounds_are_rederived_and_reject_changed_images() {
+    use serde::Deserialize;
+    let source = "first := first<u64>\nlast := last<u64>\ndata := values<[u64]:1,4>\n[[data[i] + j | i <- first..=last]' | j <- items<[u64]>]\n";
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in artifacts(source) {
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let expected = &object.descriptor().metadata().numeric_maps;
+        let at = expected
+            .regions
+            .iter()
+            .position(|r| r.rectangle.is_some())
+            .unwrap();
+        assert!(
+            expected.regions[at]
+                .rectangle
+                .as_ref()
+                .unwrap()
+                .fixed()
+                .is_none()
+        );
+        let mut reader = mech_engine::native_artifact::BuildOwnedImageReader::from_image(
+            object.native_metadata(),
+        )
+        .unwrap();
+        let image = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        for bound in [false, true] {
+            // SAFETY: genuine metadata and binding from this exact checked
+            // Object; these reader tests do not invoke any native entry.
+            let restored = unsafe {
+                if bound {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        object.native_metadata(),
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                } else {
+                    NativeProgramDescriptor::decode_build_owned_image(
+                        object.native_metadata(),
+                        &catalog,
+                    )
+                }
+            }
+            .unwrap();
+            assert_eq!(&restored.metadata().numeric_maps, expected);
+        }
+        for mutation in 0..8 {
+            let mut changed = image.clone();
+            let rectangle = &mut changed["descriptor"]["numeric_maps"]["regions"][at]["rectangle"];
+            match mutation {
+                0 => rectangle["bounds"]["Current"]["operands"][0] = 999.into(),
+                1 => rectangle["bounds"]["Current"]["operands"][1] = 999.into(),
+                2 => {
+                    rectangle["bounds"] = serde_json::json!({"Fixed":{"start":1,"end":4,"rows":4}})
+                }
+                3 => rectangle["range_prepare"] = 999.into(),
+                4 => rectangle["inner_iteration"] = 999.into(),
+                5 => rectangle["bounds"]["Current"]["rows"] = 4.into(),
+                6 => rectangle["bounds"]["Current"]["operands"] = serde_json::json!([]),
+                7 => rectangle["elided_values"] = serde_json::json!([]),
+                _ => unreachable!(),
+            }
+            let encoded = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&changed).unwrap(),
+            )
+            .unwrap();
+            for bound in [false, true] {
+                // SAFETY: confined negative reader fixture. Forged proof bytes
+                // never reach an entry pointer, execution or publication.
+                let result = unsafe {
+                    if bound {
+                        NativeProgramDescriptor::decode_object_bound_image(
+                            &encoded,
+                            &catalog,
+                            object.identity().bytes(),
+                            object.native_metadata_binding().bytes(),
+                        )
+                    } else {
+                        NativeProgramDescriptor::decode_build_owned_image(&encoded, &catalog)
+                    }
+                };
+                assert!(result.is_err(), "bound={bound}, mutation={mutation}");
+            }
+        }
+    }
+}

@@ -49,12 +49,18 @@ pub(super) fn emit(
     let enough = b.ins().icmp_imm(
         IntCC::UnsignedGreaterThanOrEqual,
         compute,
-        debit.compute as i64,
+        debit
+            .compute
+            .checked_add(phase.replay_credit)
+            .ok_or_else(|| backend("child reduction replay credit overflows"))? as i64,
     );
     let enough_comparison = b.ins().icmp_imm(
         IntCC::UnsignedGreaterThanOrEqual,
         comparison,
-        debit.comparison as i64,
+        debit
+            .comparison
+            .checked_add(phase.replay_comparison)
+            .ok_or_else(|| backend("child reduction comparison credit overflows"))? as i64,
     );
     let enough = b.ins().band(enough, enough_comparison);
     let funded = b.create_block();

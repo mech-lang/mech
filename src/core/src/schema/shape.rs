@@ -120,12 +120,30 @@ impl ShapeInstance {
     }
 
     /// Resolves a schema dimension against this validated shape instance.
+    #[inline]
     pub fn resolve_dimension(&self, expression: &DimensionExpr) -> Result<u64, SemanticModelError> {
         evaluate_dimension(expression, &self.parameter_values)
     }
 }
 
+/// Keep the common leaves in callers of shape validation and resolution.
+/// This reads only the current parameter slice and grants no shape validity.
+#[inline]
 pub(crate) fn evaluate_dimension(
+    expression: &DimensionExpr,
+    values: &[u64],
+) -> Result<u64, SemanticModelError> {
+    match expression {
+        DimensionExpr::Constant(value) => Ok(*value),
+        DimensionExpr::Parameter(id) => values
+            .get(id.get() as usize)
+            .copied()
+            .ok_or(SemanticModelError::UnknownDimensionParameterV1 { id: *id }),
+        _ => evaluate_compound_dimension(expression, values),
+    }
+}
+
+fn evaluate_compound_dimension(
     expression: &DimensionExpr,
     values: &[u64],
 ) -> Result<u64, SemanticModelError> {

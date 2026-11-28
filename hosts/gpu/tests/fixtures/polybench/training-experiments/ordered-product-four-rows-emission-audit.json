@@ -1,0 +1,368 @@
+{
+  "schema": "mech.polybench.ordered-four-row-emission-audit.v1",
+  "created_at": "2026-11-28T09:31:50.653959+00:00",
+  "before_any_performance_sample": true,
+  "compiler_fingerprint": "e6af8964dfca9701e21ddf8fb1ca83a6df1a242d25db6e25b2720ab761f2fdbd",
+  "driver_sha256": "c750544edd54907a4f4e0d4bb1c370165550d317d5a8eb0f97ca80e8c05551ad",
+  "source_review_passed": true,
+  "actual_object_def_use_witnesses": {
+    "mvt": {
+      "shared_reached_load": "     79c:      \tldr\td4, [x12, x8, lsl #3]",
+      "multiply_sites": [
+        "     7d0:      \tfmul\td5, d5, d4",
+        "     7d8:      \tfmul\td5, d6, d4",
+        "     7e0:      \tfmul\td5, d7, d4",
+        "     7e8:      \tfmul\td4, d20, d4"
+      ],
+      "independent_add_registers": [
+        "f0",
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "block": [
+        "     798:      \tmadd\tx8, x6, x14, x5",
+        "     79c:      \tldr\td4, [x12, x8, lsl #3]",
+        "     7a0:      \tmadd\tx8, x7, x15, x6",
+        "     7a4:      \tldr\td5, [x11, x8, lsl #3]",
+        "     7a8:      \tadd\tx8, x7, #1",
+        "     7ac:      \tmadd\tx8, x8, x15, x6",
+        "     7b0:      \tldr\td6, [x11, x8, lsl #3]",
+        "     7b4:      \tadd\tx8, x7, #2",
+        "     7b8:      \tmadd\tx8, x8, x15, x6",
+        "     7bc:      \tldr\td7, [x11, x8, lsl #3]",
+        "     7c0:      \tadd\tx8, x7, #3",
+        "     7c4:      \tmadd\tx8, x8, x15, x6",
+        "     7c8:      \tldr\td20, [x11, x8, lsl #3]",
+        "     7cc:      \tadd\tx6, x6, #1",
+        "     7d0:      \tfmul\td5, d5, d4",
+        "     7d4:      \tfadd\td3, d3, d5",
+        "     7d8:      \tfmul\td5, d6, d4",
+        "     7dc:      \tfadd\td2, d2, d5",
+        "     7e0:      \tfmul\td5, d7, d4",
+        "     7e4:      \tfadd\td1, d1, d5",
+        "     7e8:      \tfmul\td4, d20, d4",
+        "     7ec:      \tfadd\td0, d0, d4",
+        "     7f0:      \tb\t0x65c <_mech_canonical_program_entry_v1+0x65c>"
+      ]
+    },
+    "correlation": {
+      "shared_reached_load": "    3144:      \tldr\tq0, [x1, x11]",
+      "multiply_sites": [
+        "    317c:      \tfmul.2d\tv1, v1, v0",
+        "    3188:      \tfmul.2d\tv1, v1, v0",
+        "    3194:      \tfmul.2d\tv1, v1, v0",
+        "    31a0:      \tfmul.2d\tv0, v1, v0"
+      ],
+      "independent_add_registers": [
+        "f16",
+        "f5",
+        "f6",
+        "f7"
+      ],
+      "block": [
+        "    313c:      \tmadd\tx11, x10, x5, x9",
+        "    3140:      \tlsl\tx11, x11, #3",
+        "    3144:      \tldr\tq0, [x1, x11]",
+        "    3148:      \tmadd\tx11, x8, x6, x10",
+        "    314c:      \tadd\tx11, x0, x11, lsl #3",
+        "    3150:      \tadd\tx12, x8, #1",
+        "    3154:      \tmadd\tx12, x12, x6, x10",
+        "    3158:      \tadd\tx12, x0, x12, lsl #3",
+        "    315c:      \tadd\tx13, x8, #2",
+        "    3160:      \tmadd\tx13, x13, x6, x10",
+        "    3164:      \tadd\tx13, x0, x13, lsl #3",
+        "    3168:      \tadd\tx14, x8, #3",
+        "    316c:      \tmadd\tx14, x14, x6, x10",
+        "    3170:      \tadd\tx14, x0, x14, lsl #3",
+        "    3174:      \tadd\tx10, x10, #1",
+        "    3178:      \tld1r.2d\t{ v1 }, [x11]",
+        "    317c:      \tfmul.2d\tv1, v1, v0",
+        "    3180:      \tfadd.2d\tv5, v5, v1",
+        "    3184:      \tld1r.2d\t{ v1 }, [x12]",
+        "    3188:      \tfmul.2d\tv1, v1, v0",
+        "    318c:      \tfadd.2d\tv6, v6, v1",
+        "    3190:      \tld1r.2d\t{ v1 }, [x13]",
+        "    3194:      \tfmul.2d\tv1, v1, v0",
+        "    3198:      \tfadd.2d\tv7, v7, v1",
+        "    319c:      \tld1r.2d\t{ v1 }, [x14]",
+        "    31a0:      \tfmul.2d\tv0, v1, v0",
+        "    31a4:      \tfadd.2d\tv16, v16, v0",
+        "    31a8:      \tb\t0x30fc <_mech_canonical_program_entry_v1+0x30fc>"
+      ]
+    }
+  },
+  "source_derived_work": {
+    "correlation": {
+      "product_output_shape": [
+        28,
+        28
+      ],
+      "inner": 32,
+      "rows_per_group": [
+        2,
+        4
+      ],
+      "rhs_vector_loads_and_k_loop_iterations": [
+        6272,
+        3136
+      ],
+      "scalar_multiplies_each_version": 25088,
+      "scalar_adds_each_version": 25088
+    },
+    "mvt": {
+      "products": 2,
+      "product_output_shape_each": [
+        40,
+        1
+      ],
+      "inner_each": 40,
+      "rows_per_group": [
+        2,
+        4
+      ],
+      "rhs_scalar_loads_and_k_loop_iterations_per_product": [
+        800,
+        400
+      ],
+      "scalar_multiplies_per_product_each_version": 1600,
+      "scalar_adds_per_product_each_version": 1600
+    },
+    "scope": "Counts derive from unchanged source/admitted geometry and actual shared RHS def-use. Not hardware-retired counts, measured DRAM traffic or a speedup forecast."
+  },
+  "static_telemetry": {
+    "2mm": {
+      "code_bytes": [
+        6776,
+        9476
+      ],
+      "static_instruction_count": [
+        1694,
+        2369
+      ],
+      "reported_native_stack_bytes": [
+        112,
+        112
+      ]
+    },
+    "3mm": {
+      "code_bytes": [
+        2848,
+        4060
+      ],
+      "static_instruction_count": [
+        712,
+        1015
+      ],
+      "reported_native_stack_bytes": [
+        96,
+        112
+      ]
+    },
+    "atax": {
+      "code_bytes": [
+        2792,
+        3612
+      ],
+      "static_instruction_count": [
+        698,
+        903
+      ],
+      "reported_native_stack_bytes": [
+        96,
+        112
+      ]
+    },
+    "bicg": {
+      "code_bytes": [
+        2764,
+        3560
+      ],
+      "static_instruction_count": [
+        691,
+        890
+      ],
+      "reported_native_stack_bytes": [
+        96,
+        96
+      ]
+    },
+    "cholesky": {
+      "code_bytes": [
+        19944,
+        19944
+      ],
+      "static_instruction_count": [
+        4986,
+        4986
+      ],
+      "reported_native_stack_bytes": [
+        1600,
+        1600
+      ]
+    },
+    "correlation": {
+      "code_bytes": [
+        14620,
+        15016
+      ],
+      "static_instruction_count": [
+        3655,
+        3754
+      ],
+      "reported_native_stack_bytes": [
+        128,
+        128
+      ]
+    },
+    "covariance": {
+      "code_bytes": [
+        5160,
+        5552
+      ],
+      "static_instruction_count": [
+        1290,
+        1388
+      ],
+      "reported_native_stack_bytes": [
+        112,
+        112
+      ]
+    },
+    "deriche": {
+      "code_bytes": [
+        62308,
+        62308
+      ],
+      "static_instruction_count": [
+        15577,
+        15577
+      ],
+      "reported_native_stack_bytes": [
+        496,
+        496
+      ]
+    },
+    "doitgen": {
+      "code_bytes": [
+        1464,
+        1864
+      ],
+      "static_instruction_count": [
+        366,
+        466
+      ],
+      "reported_native_stack_bytes": [
+        96,
+        96
+      ]
+    },
+    "durbin": {
+      "code_bytes": [
+        20968,
+        20968
+      ],
+      "static_instruction_count": [
+        5242,
+        5242
+      ],
+      "reported_native_stack_bytes": [
+        2032,
+        2032
+      ]
+    },
+    "gemm": {
+      "code_bytes": [
+        5316,
+        7216
+      ],
+      "static_instruction_count": [
+        1329,
+        1804
+      ],
+      "reported_native_stack_bytes": [
+        112,
+        112
+      ]
+    },
+    "gramschmidt": {
+      "code_bytes": [
+        52992,
+        52992
+      ],
+      "static_instruction_count": [
+        13248,
+        13248
+      ],
+      "reported_native_stack_bytes": [
+        23104,
+        23104
+      ]
+    },
+    "mvt": {
+      "code_bytes": [
+        6940,
+        9980
+      ],
+      "static_instruction_count": [
+        1735,
+        2495
+      ],
+      "reported_native_stack_bytes": [
+        112,
+        112
+      ]
+    },
+    "nussinov": {
+      "code_bytes": [
+        19360,
+        19360
+      ],
+      "static_instruction_count": [
+        4840,
+        4840
+      ],
+      "reported_native_stack_bytes": [
+        320,
+        320
+      ]
+    },
+    "seidel-2d": {
+      "code_bytes": [
+        16104,
+        16104
+      ],
+      "static_instruction_count": [
+        4026,
+        4026
+      ],
+      "reported_native_stack_bytes": [
+        288,
+        288
+      ]
+    }
+  },
+  "stack_scope": "The exact NativeObject.metadata.stack_bytes field, not a measured complete dynamic call-stack/process RSS/heap peak. Original metadata/disassembly and pre-augmentation census are preserved.",
+  "all_execution_counters_identical": true,
+  "finite_optimization_C_values": 17002,
+  "generated_code_changed_cases": [
+    "2mm",
+    "3mm",
+    "atax",
+    "bicg",
+    "correlation",
+    "covariance",
+    "doitgen",
+    "gemm",
+    "mvt"
+  ],
+  "no_new_fma": true,
+  "runtime_state_buffers_allocations_unchanged": true,
+  "source_qualification": {
+    "broad": 756,
+    "focused": 4,
+    "both_features": true,
+    "all30_original_decoded_restored_C": true
+  },
+  "performance_observations": 0
+}

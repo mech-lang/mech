@@ -1,0 +1,61 @@
+{
+  "schema": "mech.polybench.optimization-regression-profile-plan.v1",
+  "created_at": "2026-11-28T19:49:32.040521+00:00",
+  "user_direction": "Use exact round62 Seidel1.62x source as the foundation and fix regressions elsewhere. Preserve Seidel lowering.",
+  "accepted_round": 59,
+  "source_parent": "44e0ce9f25534f1bc0f4ff04f3fbcbf2743784ac",
+  "foundation_source_commit": "705d1cc791148e496e11076d9ec348d450442853",
+  "compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "aec43fa7bfcc14b85fba19325d3eeb8f171d40dc53d03cd01c13d1f84bd9a72f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "2cca365d2c9b2d03fe8eb55204ac0dff544bbb7ffd3d52ec53d0821cadb52d5a"
+  },
+  "cases": [
+    "deriche",
+    "2mm",
+    "correlation"
+  ],
+  "selection": "Optimization only: three largest remaining raw runtime regressions versus accepted59. No holdout diagnosis.",
+  "regression_rows": [
+    {
+      "case": "deriche",
+      "accepted59_mech_us": 207,
+      "round62_mech_us": 221.792,
+      "raw_mech_runtime_multiplier": 1.0714589371980676
+    },
+    {
+      "case": "2mm",
+      "accepted59_mech_us": 16.667,
+      "round62_mech_us": 17.292,
+      "raw_mech_runtime_multiplier": 1.0374992500149998
+    },
+    {
+      "case": "correlation",
+      "accepted59_mech_us": 72.208,
+      "round62_mech_us": 74.417,
+      "raw_mech_runtime_multiplier": 1.0305921781520053
+    }
+  ],
+  "method": "Freeze exact previously qualified round62 source as an unpromoted diagnostic foundation; unchanged public-API warm residence host with Cranelift sole source generator; sample each owned process3seconds at1ms, capture only named executable JIT ranges after sampling in same PID; resume to terminal0; finite C liveouts and exact frozen counters; bind full instructions to genuine round62 Objects. No official timing score or repeat performance sampling of observed fingerprint.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-62-static-telemetry.json",
+  "census_actor": "candidate",
+  "counter_gate": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/untimed-counter-gate.json",
+  "profiled_driver": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/single-pass-matrix-preflight-complete-driver",
+  "profiled_driver_sha256": "a4124616f98754541862071cec15ca5cb7d9b4af95a8a4fc8d4077243f9bdc3d",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "history_entries_unchanged": 63,
+  "hypothesis_to_check": "Locate actual generated computation, floating word checks, matrix preflight/allocation and map passes on the three optimization regressors. Deriche causal FSM has one selected F64 input read feeding a compound scalar recurrence; current source-closed-prefix rule requires at least two reads, possibly leaving repeated finite classifications/word conversions. Verify from actual source CFG and sampled machine code before any transformation. Other regressors can reveal shared map/kernel preparation opportunities.",
+  "scope_limit": "Warm residence includes output drop/reset and differs from official cache-flushed samples. Samples are instruction locations, not exclusive cost/hardware IPC/RSS or speedup forecasts. Retain all failures/observations. No source causality/noise claims for unchanged native functions. No Rust edits during owned jobs. Accepted59 ledger unchanged until new qualified fingerprint passes existing O-only probe/formal gates."
+}

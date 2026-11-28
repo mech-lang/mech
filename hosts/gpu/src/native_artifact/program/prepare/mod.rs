@@ -19,7 +19,11 @@ pub(in crate::native_artifact) mod cleanup_effects;
 pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
+pub(in crate::native_artifact) mod numeric_binary;
+pub(in crate::native_artifact) mod numeric_generators;
 pub(in crate::native_artifact) mod numeric_phase;
+pub(in crate::native_artifact) mod numeric_prefix;
+pub(in crate::native_artifact) mod numeric_product_epilogues;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod visit_predecessors;
 pub(in crate::native_artifact) mod worker_values;
@@ -107,6 +111,12 @@ pub(in crate::native_artifact) struct ProgramMetadata {
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
     pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
+    // Pure source-derived cache, rebuilt independently on every image load.
+    pub(in crate::native_artifact) numeric_binary: numeric_binary::Layout,
+    // Complete source/bank/funding cache; independently rebuilt on image load.
+    pub(in crate::native_artifact) numeric_generators: numeric_generators::funding::Layout,
+    // Pure nonserialized source funds; rebuilt with exact selected calls.
+    pub(in crate::native_artifact) nested_numeric: numeric_maps::nested::Funding,
     pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
@@ -218,6 +228,7 @@ impl PreparedNativeProgram {
         let line_matrices = native::program::prepare::line_matrix::Layout::derive(&plan)?;
         let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
+        let numeric_binary = numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -240,10 +251,14 @@ impl PreparedNativeProgram {
             &mut analysis_visits,
             &mut visits,
             |site| {
-                Ok(if utf8_reads.at_header(site).is_some() {
+                Ok(if numeric_binary.at(site).is_some() {
+                    numeric_binary::HEADER_WORK
+                } else if utf8_reads.at_header(site).is_some() {
                     utf8_reads::HEADER_WORK
                 } else if numeric_maps.at_header(site).is_some() {
                     numeric_maps::HEADER_WORK
+                } else if numeric_maps.at_transpose_finish(site).is_some() {
+                    numeric_maps::TRANSPOSE_FINISH_WORK
                 } else {
                     0
                 })
@@ -343,11 +358,35 @@ impl PreparedNativeProgram {
             &calls,
             &fixed_key_loops,
         )?;
+        let numeric_generator_candidates = numeric_generators::Layout::derive(
+            &plan,
+            &buffer_frames,
+            &scalar_aggregates,
+            &closed_tails,
+        )
+        .map_err(str::to_owned)?;
+        // Like Tail's own optional entry fee, this is added after deriving
+        // its complete child source prices. It never changes the child proof.
         compose_work(
             &mut analysis_visits,
             &mut visits,
-            |site| Ok(closed_tails.extra_work(site)),
-            "closed Tail work overflow",
+            |site| {
+                closed_tails
+                    .extra_work(site)
+                    .checked_add(
+                        if numeric_generator_candidates
+                            .regions
+                            .iter()
+                            .any(|r| r.header as usize == site)
+                        {
+                            numeric_generators::HEADER_WORK
+                        } else {
+                            0
+                        },
+                    )
+                    .ok_or("numeric generator header work overflow")
+            },
+            "closed Tail/generator work overflow",
         )?;
         let map_admission = native::program::prepare::map_admission::Layout::derive(
             &plan,
@@ -357,6 +396,8 @@ impl PreparedNativeProgram {
             &closed_tails,
         )?;
         let visits: Box<[NativeIterationVisit]> = visits.into();
+        let nested_numeric =
+            numeric_maps::nested::Funding::derive(&plan, &numeric_maps, &calls, &visits);
         let frame_retirements =
             frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
         let cleanup_effects = cleanup_effects::Layout::derive(
@@ -428,7 +469,13 @@ impl PreparedNativeProgram {
                     .regions
                     .iter()
                     .filter_map(|r| r.numeric.as_ref())
-                    .map(|p| p.words + if p.writes() { 4 } else { 2 })
+                    .map(|p| {
+                        if p.writes() {
+                            p.write_argument_words()
+                        } else {
+                            p.words + 2
+                        }
+                    })
                     .max()
                     .unwrap_or(0),
             )
@@ -448,7 +495,8 @@ impl PreparedNativeProgram {
                 4
             })
             .max(compositions.argument_words())
-            .max(if word_collections.is_empty() { 0 } else { 3 });
+            .max(if word_collections.is_empty() { 0 } else { 3 })
+            .max(numeric_binary.epilogue_arguments());
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -501,6 +549,15 @@ impl PreparedNativeProgram {
             &borrowed_map_keys,
         );
         let call_cache = call_cache::Layout::derive(&plan, &calls)?;
+        let numeric_generators = numeric_generators::funding::Layout::derive(
+            numeric_generator_candidates,
+            &plan,
+            &closed_tails,
+            &calls,
+            &visits,
+            scalar_bytes,
+            observation_schema_bytes,
+        );
         let (scalar_aggregates, line_retention_frontiers) = facts.into_preparation_inventories();
         let mut metadata = ProgramMetadata {
             plan,
@@ -521,6 +578,9 @@ impl PreparedNativeProgram {
             uniform_word_collections,
             utf8_reads,
             numeric_maps,
+            numeric_binary,
+            numeric_generators,
+            nested_numeric,
             word_collections,
             unsigned_buffer_calls,
             buffer_frames,
@@ -730,6 +790,7 @@ pub(in crate::native_artifact) mod window_histogram;
 pub(in crate::native_artifact) mod word_collections;
 
 pub(in crate::native_artifact) mod numeric_maps;
+pub(in crate::native_artifact) mod numeric_reduction_budget;
 pub(in crate::native_artifact) mod query_stages;
 pub(in crate::native_artifact) mod utf8_reads;
 

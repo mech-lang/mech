@@ -46,8 +46,11 @@ pub(super) fn validate(
                 reads.extend(&summary.requires);
                 writes.extend(&summary.writes);
             }
-            if let Some(Operation::Write { array, .. } | Operation::Append { array, .. }) =
-                actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op)
+            if let Some(
+                Operation::Write { array, .. }
+                | Operation::CellWrite { array, .. }
+                | Operation::Append { array, .. },
+            ) = actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op)
             {
                 writes.insert(arrays[*array].root);
             }
@@ -299,7 +302,9 @@ fn read_keys(
         }
         Some(
             operation @ (Operation::Read { array, .. }
+            | Operation::CellRead { array, .. }
             | Operation::Write { array, .. }
+            | Operation::CellWrite { array, .. }
             | Operation::Append { array, .. }
             | Operation::Length { array, .. }),
         ) => {

@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.accepted-margin-profile-plan.v1",
+  "created_at": "2026-11-27T21:34:36.116303+00:00",
+  "source_parent": "b1ca0e462222587151434b160d7837bcac7351ba",
+  "accepted_round": 44,
+  "accepted_source_commit": "9bb8ada636a494ae45aae80b7b6b4e83aad9fcf2",
+  "compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "driver": "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+  "driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "scope": "Fresh accepted44 optimization15 CPU profiles, ordered by descending frozen round44 Mech/C kernel ratio. No holdout source diagnosis, profiling or per-case tuning.",
+  "method": "Reuse the maintained macOS sample/JIT-map analysis. One sequential frozen-driver process per optimization case, unchanged source/inputs/limits, one 12-second sample at nominal1ms after1s startup. Estimate enough checked calls for24s residence using the prior completed profile wall/call ratio; diagnostic times do not enter benchmark scores. Exclude parse/JIT/input import/cache flush/serialization by canonical execution stack. Validate all current finite C liveouts and exact accepted44 execution report. Preserve every source/profile/map/log/exit status.",
+  "constraints": [
+    "No Rust edits, build, tests, candidate timing or other profiles while a sample/driver is live. Poll the exact live process/session; an observation timeout never authorizes restart.",
+    "PERF_BUILDID_DIR enables only compilation-time Cranelift map logging. No native kernel instrumentation or arithmetic/FP change.",
+    "No source-port, C binary/flags/input, split, metric, finite-resource, tolerance or timing/cache boundary change.",
+    "Use only optimization15 evidence to choose a new general compiler change. Holdout stays the aggregate gate after qualification, one fresh-process training probe, source commit/push and exact freeze."
+  ],
+  "formal_history_entries": 45,
+  "accepted_scores": {
+    "optimization": 10.24618089248072,
+    "holdout": 38.46047945936111
+  },
+  "performance_score_observations": 0
+}

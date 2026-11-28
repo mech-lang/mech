@@ -1,0 +1,367 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-34-native-type-keys",
+  "compiler_commit": "c82333fc2bb7e7fcab23ce6a64768435fe3cb40f",
+  "compiler_fingerprint": "be83fdbadfd04a14b3c53899a91218f0167ce344df676ce70e5b780110c31f68",
+  "driver_sha256": "09ab814c9da2b909853f98388edb1b23eca899992e39abc9270d1394f1f056af",
+  "frozen_candidate_sha256": "5e32f712651c9d3406fdae51dbffd839b9b974c3e119f2a207b71c41273e680f",
+  "native_typed_ir_version": 397,
+  "native_work_policy_version": 156,
+  "native_abi_version": 47,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "type-image-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        26,
+        0
+      ],
+      "log": "qualification/round-34-native-type-keys/type-image-regressions.log.gz",
+      "log_sha256": "0581eb79c59c12c2b4cef1434bc24793c4294cdcc1b82a542e7e249a249e9236"
+    },
+    {
+      "suite": "numeric-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        411
+      ],
+      "log": "qualification/round-34-native-type-keys/numeric-regressions.log.gz",
+      "log_sha256": "4342583b9567b346ebbcb2a2be095d3af792f5130cc06896ece3fe91b079f175"
+    },
+    {
+      "suite": "matrix-polybench",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "qualification/round-34-native-type-keys/matrix-polybench.log.gz",
+      "log_sha256": "ee2bd9c26534024f021bb8eef7a075f7d2082c878f8246aa0bda22d67022aecc"
+    },
+    {
+      "suite": "program-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        114
+      ],
+      "log": "qualification/round-34-native-type-keys/program-regressions.log.gz",
+      "log_sha256": "298a2264f8d8fe963e7a23c6db5cd7a2e172feef439789a278fae008afecf485"
+    },
+    {
+      "suite": "protocol",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        2
+      ],
+      "log": "qualification/round-34-native-type-keys/protocol.log.gz",
+      "log_sha256": "0b6a3ccdb7dda1a6c877d897e8e455c0b91603681179636a505fb78b583ac62c"
+    },
+    {
+      "suite": "abi-layout",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "passed_by_target": [
+        1
+      ],
+      "log": "qualification/round-34-native-type-keys/abi-layout.log.gz",
+      "log_sha256": "334a88a9e961c36f89075f63b141ccf3e3c427a2590ad3c50496f7958d6b5297"
+    }
+  ],
+  "feature_checks": [
+    {
+      "suite": "runtime-feature",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "passed_by_target": [],
+      "log": "qualification/round-34-native-type-keys/runtime-feature.log.gz",
+      "log_sha256": "21560a48e025474b66ae2cb09d97b5e3e210062d9ca901b2d06a559068c89765"
+    },
+    {
+      "suite": "production-feature",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "passed_by_target": [],
+      "log": "qualification/round-34-native-type-keys/production-feature.log.gz",
+      "log_sha256": "734c8a8bc3a5ada871d38344411407d8684f52ecab2b51b471bb4d71cecd6269"
+    }
+  ],
+  "total_unique_selected_checks": 608,
+  "source_invariants": [
+    "Every native type constructor computes its semantic key from its actual immutable definition. No cache key is accepted from an image. Both rich and compact type image readers reconstruct the derived key. Source bytecode and native image wire formats are unchanged.",
+    "The schema definition and cached key are private; shared getters cannot mutate either. Test-only definition replacement regenerates the key for existing negative nominal and constrained-schema tests. Scalar native identity, checked errors, finite admission, canonical validation, ownership and atomic output publication remain.",
+    "The cache adds32 bytes per immutable native type in compiled host metadata, with no additional allocation, invocation field, owner, pointer, helper or execution authority. No admitted invocation layout, source fee or memory envelope changes. IR397/work156/ABI47.",
+    "All15 optimization Object function disassemblies exactly match accepted31. Every training-probe execution counter matches accepted31 exactly. The optimization changes shared host metadata lookup only, not generated scalar/matrix instructions.",
+    "All30 original/decoded PolyBench programs, finite C live-outs and Object emission qualify. Both runtime-only and full compiler features pass. Actual maintained native scalar Bool/U64/I64/F64 paths remain.",
+    "No benchmark-name dispatch, source port/input/C flag/tolerance/limit/split/objective/timing-boundary changes. One prospective seven-sample training probe; all cases and regressions retained. Commit/freeze before both formal sets; strict improvement of both aggregate scores over accepted31."
+  ],
+  "profiling_basis": {
+    "receipt": "training-experiments/root-operator-profile.json",
+    "sha256": "92cde7455d744873ba3126f73778cfba305eb85572c0e1ba452b98197f96bcf6",
+    "partition": "optimization",
+    "cases": [
+      "mvt",
+      "bicg"
+    ],
+    "observation": "Actual matrix-operation helper stacks rebuild canonical schema bytes and hash immutable native type identities. Allocation and schema/planning comprise54% and63% of samples.",
+    "limitation": "Coarse sampling is not an exact cost estimate. No profiler time enters scores."
+  },
+  "emission_census": {
+    "receipt_sha256": "4dbd23c8b20c03fd7acec53cba92a8356035213dda15141d6afdf8fd5ed4d1ba",
+    "cases": 15,
+    "native_code_changed_cases": [],
+    "scope": "Checked optimization-only Object exports inspected; function disassemblies identical to accepted31."
+  },
+  "training_probe": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0268150170966808,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.000975583,
+    "sum_reference_median_seconds": 0.000999832
+  },
+  "performance_acceptance": {
+    "history_index": 34,
+    "label": "round-34-native-type-keys",
+    "source_commit": "c82333fc2bb7e7fcab23ce6a64768435fe3cb40f",
+    "history_entry_sha256": "9555293c3001d59a205f41f8b4a93dcab2d50692602228bfe506d622c79339a9",
+    "scores": {
+      "optimization": 11.471281724314528,
+      "holdout": 38.72314933453182
+    },
+    "previous_measured_index": 33,
+    "run_outcome": "improved_both",
+    "compared_to_accepted_index": 31,
+    "multipliers_vs_accepted": {
+      "optimization": 1.0030537472941428,
+      "holdout": 0.9849285088984755
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 31
+  },
+  "aggregate_controls_vs_accepted31": {
+    "optimization": {
+      "raw_mech_speedup": 1.008577290222339,
+      "original_reference_runtime_multiplier": 1.0108320092481522,
+      "reference_adjusted_speedup": 1.0195022087575036,
+      "c_runtime_multiplier": 0.9884770947678022,
+      "raw_regressions_over_five_percent_vs_accepted31": 3
+    },
+    "holdout": {
+      "raw_mech_speedup": 1.006116896133093,
+      "original_reference_runtime_multiplier": 1.01920361052267,
+      "reference_adjusted_speedup": 1.0254379731467105,
+      "c_runtime_multiplier": 1.009129377233606,
+      "raw_regressions_over_five_percent_vs_accepted31": 2
+    }
+  },
+  "scope": [
+    "MINI/F64 CPU qualification only. No larger dataset, accelerator, full compression/AOT application or linked Object performance claim.",
+    "Holdout may reject this candidate. Its performance data does not select or tune this source."
+  ],
+  "holdout_use": "Aggregate acceptance only; no per-case diagnosis or tuning.",
+  "receipts": {
+    "round-34-frozen.json": "5e32f712651c9d3406fdae51dbffd839b9b974c3e119f2a207b71c41273e680f",
+    "round-34-optimization.json": "4ab0896aa85b69ea5e47b4cf63fb734a9df5b4e9273cdb3ea6ef24bae61f9d15",
+    "round-34-holdout.json": "cf3ec22c131f038cae1fb67311b7d5c0353de77db0cef0268671243d8fdc6f58",
+    "round-34-progress.json": "07eb94e65e85ab1efdb4fa950cf03c41d6ab12435bb516b177f28cacdf274dd1",
+    "round-34-performance-acceptance.json": "16a63c24a01b77b2c73be54b4fedadffde86787e08fd95144f9a40f3b6700ca7",
+    "round-34-audit.json": "e72be7c94b94c87d49495f7a346224e5741133d82b3ea61294d201b8cf5c88b2",
+    "round-34-training-probe.json": "9c008a8053d6f2d3bf80b72359a1e0546b27002c9f564033ca7fb7a8442942ce",
+    "round-34-training-qualification.json": "c4206fad27f41144b937d2e8d4e7193f10c8039a663e65fdb6c9033abe3ab846",
+    "round-34-training-selection.json": "581494780f40040bbd4149060341606abe233a3034b70cd791538a9b681b6bfe",
+    "round-34-emission-census.json": "4dbd23c8b20c03fd7acec53cba92a8356035213dda15141d6afdf8fd5ed4d1ba"
+  },
+  "compiler_restored_to_accepted31": {
+    "restored_from_commit": "f60baf055a39497400f9392e0294911becf1a697",
+    "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+    "source_paths": [
+      "src/engine/src/native_artifact/program.rs",
+      "src/engine/src/resident/general/native_match_lowering.rs",
+      "src/engine/src/native_artifact/program_image_nodes.rs",
+      "src/engine/src/native_artifact/guarded_histogram_query_tests.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs"
+    ],
+    "versions": {
+      "ir": 390,
+      "work": 156,
+      "abi": 47
+    },
+    "accepted_driver_unchanged": true,
+    "reason": "Optimization Mech/C regressed vs accepted31. Both scores must strictly improve. Small raw speedups and improved holdout cannot override the fixed gate."
+  },
+  "next_research_receipt": "training-experiments/root-operator-regions-plan.json",
+  "next_research_sha256": "40e45048a6ce7c74ab2059cf488ece379b67b324803c49d509b553497f090747",
+  "formal_run_archives": {
+    "audit-results.py.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/audit-results.py.gz",
+      "sha256": "c5267758d851cff3b8a025a211f9016157574bcb1d398221b694dc3499ad5673",
+      "compressed_sha256": "9e3f1cb07d8b110d657910f11b0e6a9e48796aa907c98fe96139612ffad3113e"
+    },
+    "formal-measurement.log.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/formal-measurement.log.gz",
+      "sha256": "e6120ac02d9bb96d08fddbf27de7d2991b2c7ab3330a339e08898bc7b97fd6c7",
+      "compressed_sha256": "c5ec50ff763a926bd0f6efbd4b9da9faef427c2edec36ed41a925cbfed78b2a1"
+    },
+    "formal-report-rows.json.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/formal-report-rows.json.gz",
+      "sha256": "3c364cd9cb6b9be23690a2f6ab4863ccaba0c99b6bfe8b90ceef91c7e2a91de5",
+      "compressed_sha256": "dc2f30c08bd3f4bee8dee3c8ea54b1893db099bfd7f00ec1deb09d7f8da049d0"
+    },
+    "formal-source-commit.json.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/formal-source-commit.json.gz",
+      "sha256": "4e2100dd20b5b57b6b286291935e919527a5ab64ec30b9624a7f00fa6e9e4199",
+      "compressed_sha256": "b9746a897f9ed8bf234f52855c20a2895178542dc8104d56bf8d0dd46d21c8cd"
+    },
+    "frozen-source-checkpoint.json.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/frozen-source-checkpoint.json.gz",
+      "sha256": "28cf3559fff771d82501728315f5ec074afd922a939ba814c4f08bf64204c8d2",
+      "compressed_sha256": "e9f64461ebf1190403eb0710499c36a98a7f94f1ce81c099d3e1f7d057d68e23"
+    },
+    "inter-round-aggregates.json.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/inter-round-aggregates.json.gz",
+      "sha256": "683b2be7e2a9c831da62671c5be47c3fbd09cbce6b231e26c3953d3ccb9fb830",
+      "compressed_sha256": "accb525dcb5f6c0581aeb2b30c4fc9fc27dc5de049dbacf8f08ba21b2f277e26"
+    },
+    "next-research.json.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/next-research.json.gz",
+      "sha256": "40e45048a6ce7c74ab2059cf488ece379b67b324803c49d509b553497f090747",
+      "compressed_sha256": "6951a2d35f19aa4de29d20679dc69e49c68069f74a43bc6a16c3137ee5454657"
+    },
+    "record-results.py.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/record-results.py.gz",
+      "sha256": "d0ae25e6db0bc83ca1db46518fbe03d42c8df2f677cc1dbc844fee55a8638728",
+      "compressed_sha256": "e2d59e5491bc915c9ab24816ea67753b71316aec15f2cfad44eaf095012149ab"
+    },
+    "restore-after-rejection.py.gz": {
+      "path": "qualification/round-34-native-type-keys/formal-run/restore-after-rejection.py.gz",
+      "sha256": "4c9604b02d58d45964beed66322e25533f6329be016bf790a00a2da2db6383a5",
+      "compressed_sha256": "12c1ec5c3c2b4a5fa12453b5e2a7af3f69d7f4e61b396fbda62841fcf9d98ced"
+    }
+  }
+}

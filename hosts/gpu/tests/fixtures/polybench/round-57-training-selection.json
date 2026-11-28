@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T12:42:34.194075+00:00",
+  "compiler_fingerprint": "48e05773ee9b334949a37f6859fe03caea4c12ad03992cf79ac820205c7ded7b",
+  "driver_sha256": "9b1a883ecdf02d522870aae0647dd52fc566fda869663a8eaabab3feac8ceae6",
+  "source_parent": "d645930f01447fdfb5850ba72bebb53d1f103bc4",
+  "policy_sha256": "6f744bb50f2c7cd1d1850fddc6ef3fc06784e7d7a75caef0927731ab0406c464",
+  "adopted_selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted56": 1.0366738858661368,
+    "regressions_over_five_percent": 0,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted56/candidate medians on optimization15; one prospective fresh-process probe, all samples and regressions retained.",
+  "formal_gate": "If selected commit/push clean frozen source+driver; one900-observation formal run with29482 finite C outputs and immutable history57. Promote iff optimization15 Mech/C<8.175763531282765. Holdout reported independently, never select/veto/diagnose/tune/rollback/retry. Report raw Mech and original reference/C drift separately."
+}

@@ -654,3 +654,112 @@ mod owned_capture_tests;
 #[cfg(feature = "canonical-native-program-runtime")]
 #[path = "dense_tests.rs"]
 mod dense_tests;
+
+#[cfg(feature = "canonical-native-program-runtime")]
+#[test]
+fn prepared_private_numeric_publication_keeps_aliases_confined_and_covers_both_entry_and_fresh_bounds()
+ {
+    use mech_core::snapshot::{NumericMatrixViewMut, UnsignedMatrixBuffer};
+    use mech_core::{DimensionExpr, IntegerWidth};
+    let memory = ManagedMemoryBudget::new(16 * 1024 * 1024);
+    let foreign = ManagedMemoryBudget::new(16 * 1024 * 1024);
+    let fresh = || {
+        value(
+            SchemaBody::Matrix {
+                element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                dimensions: [DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into(),
+            },
+            ValueDataDraft::Matrix([1, 2, 3, 4, 5, 6].map(ValueDataDraft::U64).into()),
+        )
+    };
+    let (ty, raw) = fresh();
+    let mut wider = Vec::with_capacity(64);
+    wider.extend([1, 2, 3, 4, 5, 6]);
+    let fallback = Value::from_unsigned_matrix_buffer(
+        raw.schema(),
+        raw.shape().clone(),
+        UnsignedMatrixBuffer::U64(wider),
+        raw.schemas().unwrap(),
+    )
+    .unwrap();
+    let fallback = admit(&fallback, &memory);
+    let expected_fallback = fallback.memory_budget_retained_bytes(&memory).unwrap();
+    let private = |budget: &ManagedMemoryBudget| {
+        let (_, value) = fresh();
+        let mut reservation = budget
+            .reserve_capacity(value.memory_budget_admission_bytes(budget).unwrap())
+            .unwrap();
+        value.into_private_numeric_matrix(&mut reservation).unwrap()
+    };
+    let mut private = private(&memory);
+    let alien = {
+        let (_, value) = fresh();
+        let mut reservation = foreign
+            .reserve_capacity(value.memory_budget_admission_bytes(&foreign).unwrap())
+            .unwrap();
+        value.into_private_numeric_matrix(&mut reservation).unwrap()
+    };
+    let mut work = NativeWorkMeter::new(100_000_000).unwrap();
+    let types = [ty];
+    let mut arena = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    let mut other = NativeValueArena::new(&types, TRANSPORT_LIMIT, &memory, &mut work).unwrap();
+    assert!(matches!(
+        arena.prepare_private_put(0, &alien, None, &mut work),
+        Err(NativeValueError::UnadmittedPayload)
+    ));
+    let (_, wrong) = text("different type");
+    let wrong = admit(&wrong, &memory);
+    assert!(matches!(
+        arena.prepare_private_put(0, &private, Some(&wrong), &mut work),
+        Err(NativeValueError::TypeMismatch)
+    ));
+    let wrong_work = NativeWorkMeter::new(100_000_000).unwrap();
+    let mut wrong_work = wrong_work;
+    assert!(matches!(
+        arena.prepare_private_put(0, &private, None, &mut wrong_work),
+        Err(NativeValueError::WrongWorkLedger)
+    ));
+    let expected = expected_fallback.max(private.memory_budget_retained_bytes(&memory).unwrap());
+    assert!(expected_fallback > private.memory_budget_retained_bytes(&memory).unwrap());
+    let ticket = arena
+        .prepare_private_put(0, &private, Some(&fallback), &mut work)
+        .unwrap();
+    assert_eq!(ticket.retained, expected);
+    let stale = arena
+        .prepare_private_put(0, &private, Some(&fallback), &mut work)
+        .unwrap();
+    let foreign_ticket = arena
+        .prepare_private_put(0, &private, Some(&fallback), &mut work)
+        .unwrap();
+    assert!(
+        arena.current(0).unwrap().is_none(),
+        "prepayment exposes no private Value alias"
+    );
+    let NumericMatrixViewMut::U64(words) = private.elements_mut() else {
+        panic!()
+    };
+    words[0] = u64::MAX;
+    let output = private.finish();
+    assert_eq!(
+        other
+            .put_prepared(foreign_ticket, output.clone())
+            .unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    arena.put_prepared(ticket, fallback.clone()).unwrap();
+    assert_eq!(
+        arena.put_prepared(stale, output.clone()).unwrap_err(),
+        NativeValueError::StaleHandle
+    );
+    let ticket = arena.prepare_put(0, &output, &mut work).unwrap();
+    arena.put_prepared(ticket, output).unwrap();
+    assert_eq!(
+        arena
+            .current(0)
+            .unwrap()
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap(),
+        ValueDataDraft::Matrix([u64::MAX, 2, 3, 4, 5, 6].map(ValueDataDraft::U64).into())
+    );
+}

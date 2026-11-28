@@ -1,0 +1,130 @@
+{
+  "schema": "mech.polybench.compiler-prerequisite-qualification.v1",
+  "created_at": "2026-11-26T04:05:26.674527+00:00",
+  "source_commit": "76ae78bb45cfcfa8a34c0e1dc93d1ad7fb9b1ebf",
+  "compiler_fingerprint": "ca79f0a0319514a63352a071355f48fe4ce1850c5866c088edbfc40089417468",
+  "native_typed_ir_version": 361,
+  "native_work_policy_version": 130,
+  "status": "Correctness qualification of typed linear numeric phases; no new frozen timing round.",
+  "driver_sha256": "83dd07c976322811628eb1eb534e12ef74a2777af1b6dcf795b6bf9ec6fa1854",
+  "checks": [
+    {
+      "log": "core-tests.log",
+      "sha256": "82b275f50ae771a36207cb11eeed2eec6a68ce58ba854b484e0b94325e7cc81c",
+      "passed_by_target": [
+        23
+      ],
+      "filtered_by_target": [
+        173
+      ]
+    },
+    {
+      "log": "typed-fourth.log",
+      "sha256": "6e745efd8902f55c3f37ea0bd53c6d41472f7085fe4e2b8f895c1dddd49e5533",
+      "passed_by_target": [
+        2
+      ],
+      "filtered_by_target": [
+        1437
+      ]
+    },
+    {
+      "log": "numeric-regressions.log",
+      "sha256": "459ae66b43d5a9d0d9bb04ca75b98c503d8664cfc4dfa48e2d985c088f49570d",
+      "passed_by_target": [
+        293
+      ],
+      "filtered_by_target": [
+        1146
+      ]
+    },
+    {
+      "log": "matrix-polybench.log",
+      "sha256": "23e61659b83b186df6010ba71d5d47ca309f51d55f43b15f9fee9fabef2fe88c",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "filtered_by_target": [
+        0,
+        0
+      ]
+    },
+    {
+      "log": "program-regressions.log",
+      "sha256": "ebd8e024f78614a9e7783967bc82fd518e25de489d00cf60d59ffe8639bd26ec",
+      "passed_by_target": [
+        102
+      ],
+      "filtered_by_target": [
+        415
+      ]
+    }
+  ],
+  "scope": [
+    "Shared fixed-shape PrivateNumericMatrix publication owner for exact Bool/U8/U16/U32/U64/I64/F64 storage; exclusive fresh unadmitted input and complete pre-admission remain mandatory.",
+    "Maintained unsigned append/preparation/prefix APIs keep their exact unsigned type and checks; typed fixed-shape owners receive no growth or spare-cell authority.",
+    "Exact selected linear read/replace factories, immutable current views, scalar kind/width consistency, shared managed-root provenance and current-version proofs across leaf, tree and phase derivation.",
+    "Native scalar loads and checked stores reuse the maintained Cranelift emission; Bool stores guard canonical 0/1 before writing private initialized storage.",
+    "One original selected first-change operation validates bounds/resources and performs the same-account copy/transfer before native stores; identity updates retain their original immutable backing.",
+    "All seven kinds execute actual native read/write regions in single and nested source loops, original/decoded artifacts and restored descriptors; selected read/write sites have no per-iteration library dispatch.",
+    "Rectangular 2x3 linear column-major addressing, exact I64/F64 bits including signed zeros/infinities/NaN payloads, live aliases, partial-write bounds failures, atomic prior outputs and retry.",
+    "Finite decline/recovery across output elements/bytes, temporary bytes, cloned bytes, nodes, compute, comparison and native work.",
+    "All 24 matrix and all 30 PolyBench original/decoded regressions and Object emission; 29,482 finite C live-outs per artifact with unchanged sources, inputs and tolerances.",
+    "Selected scalar/buffer/compression regressions preserve the checked scalar and allocation paths; no full application/AOT or GPU/SIMD performance qualification."
+  ],
+  "policy_test_maintenance": {
+    "reason": "The broadened regression run exposed a source-work test pinned to policy127, older than the prior frozen policy129. Both current pins now name policy130 while retaining their exact established work equations.",
+    "initial_log_sha256": "8940313e52a614ec5039f2190f3979d19f3890224b62fa9192c0e109be46a2b5",
+    "initial_result": {
+      "passed": 291,
+      "failed": 1,
+      "failure": "Expected work policy127, observed130; source work assertion had not run yet."
+    }
+  },
+  "last_frozen_compiler": {
+    "schema": "mech.polybench.frozen-candidate.v1",
+    "created_at": "2026-11-26T03:21:41.827499+00:00",
+    "label": "round-04-conditional-maps",
+    "source_commit": "19cd8a6bcb5ba504b6ac22c059c3e33a66d6ee5c",
+    "compiler_fingerprint": "cfe15c471e802e98272aa3b2ac7ca542623c475d0f3cbaa8eda249de78f353fc",
+    "driver_sha256": "d000b7b77f102db3d0a68e9d2d738e8767e9cbde364bcd0585ad2da3725b765d",
+    "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+    "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+    "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+    "runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "machine": {
+      "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "processor": "arm64"
+    }
+  },
+  "last_frozen_scores": {
+    "optimization": 301.1974962493746,
+    "holdout": 724.2742286534767,
+    "all": 467.0648608794867
+  },
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 724.2742286534767,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.804652835
+  },
+  "timing": {
+    "new_samples": 0,
+    "frozen_round": "round-04",
+    "history_entries": 5,
+    "comparison": "Kernel Mech/C equal-weight geometric mean; lower is better."
+  },
+  "remaining": [
+    "Full managed-array tagged carriers still fail the numeric-frame leaf proof.",
+    "Whole-loop two-axis read/write selectors need independent axis/version proofs; current one-coordinate traversal optimizations admit only linear selectors.",
+    "The strict below-1.0x C holdout goal is unachieved. Larger datasets, GPU/SIMD selection and full compression application/AOT remain unqualified."
+  ]
+}

@@ -3,6 +3,29 @@ use crate::resident::native_factory_linkage::{NativeLinkedFactory, raw_entry};
 use mech_core::ImplementationMemoryClass;
 
 macro_rules! factory {
+    ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path, $primitive:ident) => {
+        pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
+            concat!("mech_engine::linked_factories::", stringify!($token)),
+            &[],
+            || {
+                #[cfg(any(feature = "pure_text", feature = "map_ops", feature = "sequence_buffers"))]
+                {
+                    super::super::native_collection_semantics::make_entry(
+                        $module,
+                        $name,
+                        ImplementationMemoryClass::$memory,
+                        $binder,
+                        super::super::native_collection_semantics::NativeCollectionPrimitive::$primitive,
+                        &$token,
+                    )
+                }
+                #[cfg(not(any(feature = "pure_text", feature = "map_ops", feature = "sequence_buffers")))]
+                {
+                    raw_entry($module, $name, ImplementationMemoryClass::$memory, $binder, &$token)
+                }
+            },
+        );
+    };
     ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path) => {
         pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
             concat!("mech_engine::linked_factories::", stringify!($token)),
@@ -25,7 +48,8 @@ factory!(
     &["math"],
     "add",
     NoAdditionalScratch,
-    super::bind_add
+    super::bind_add,
+    MatrixAdd
 );
 factory!(
     NUMERIC_MATH_ADD_ASSIGN,
@@ -74,21 +98,24 @@ factory!(
     &["math"],
     "sub",
     NoAdditionalScratch,
-    super::bind_sub
+    super::bind_sub,
+    MatrixSubtract
 );
 factory!(
     NUMERIC_MATH_MUL,
     &["math"],
     "mul",
     NoAdditionalScratch,
-    super::bind_semantic_mul
+    super::bind_semantic_mul,
+    MatrixMultiply
 );
 factory!(
     NUMERIC_MATH_DIV,
     &["math"],
     "div",
     NoAdditionalScratch,
-    super::bind_div
+    super::bind_div,
+    MatrixDivide
 );
 factory!(
     NUMERIC_MATH_MOD,
@@ -109,7 +136,8 @@ factory!(
     &["math"],
     "pow",
     NoAdditionalScratch,
-    super::bind_pow
+    super::bind_pow,
+    F64Power
 );
 factory!(
     NUMERIC_MATH_ABS,
@@ -340,7 +368,8 @@ factory!(
     &["math"],
     "sqrt",
     NoAdditionalScratch,
-    super::bind_sqrt
+    super::bind_sqrt,
+    MatrixSqrt
 );
 factory!(
     NUMERIC_MATH_SINH,
@@ -660,7 +689,8 @@ factory!(
     &["matrix"],
     "matmul",
     NoAdditionalScratch,
-    super::bind_matmul
+    super::bind_matmul,
+    MatrixMatmul
 );
 factory!(
     NUMERIC_MATRIX_DOT,
@@ -674,7 +704,8 @@ factory!(
     &["matrix"],
     "transpose",
     CanonicalFinalize,
-    super::bind_semantic_transpose
+    super::bind_semantic_transpose,
+    MatrixTranspose
 );
 factory!(
     NUMERIC_CORE_ASSIGN,
@@ -721,7 +752,8 @@ factory!(
     &["core", "assign"],
     "indexed-rectangle",
     CanonicalFinalize,
-    super::bind_indexed_assign_rectangle
+    super::bind_indexed_assign_rectangle,
+    MatrixCellReplace
 );
 factory!(
     NUMERIC_CORE_ASSIGN_COLLECTION_ENTRY,

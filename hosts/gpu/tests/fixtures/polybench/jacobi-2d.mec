@@ -1,0 +1,14 @@
+-- Each half-step constructs the five-point interior simultaneously.
+stencil(a<[f64]:30,30>, boundary<[f64]:30,30>, size<u64>) => <[f64]:30,30> :=
+  [[((i == 1u64 || j == 1u64 || i == size || j == size)? | true => boundary[i,j] | false => 0.2 * (a[i,j] + a[i,j - 1u64] + a[i,j + 1u64] + a[i + 1u64,j] + a[i - 1u64,j])) | i <- 1u64..=size]' | j <- 1u64..=size].
+#Jacobi(a<[f64]:30,30>, b<[f64]:30,30>, size<u64>, steps<u64>) => <[f64]:30,30>
+  | :Forward(a<[f64]:30,30>, b<[f64]:30,30>, remaining<u64>)
+  | :Backward(a<[f64]:30,30>, b<[f64]:30,30>, remaining<u64>)
+  | :Done(a<[f64]:30,30>).
+#Jacobi(a, b, size, steps) -> :Forward(a, b, steps)
+  :Forward(a, b, remaining)
+    | remaining > 0u64 -> :Backward(a, stencil(a, b, size), remaining)
+    | * -> :Done(a)
+  :Backward(a, b, remaining) -> :Forward(stencil(b, a, size), b, remaining - 1u64)
+  :Done(a) => a.
+#Jacobi(A<[f64]:30,30>, B<[f64]:30,30>, n<u64>, tsteps<u64>)

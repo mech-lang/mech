@@ -1,0 +1,6 @@
+{
+  "created_at": "2026-11-28T18:45:13.552914+00:00",
+  "basis": "Exact source CFG inspection: remaining prefix104..109 exports U64 next-index70 and F64 sum74, not two raw F64 values. Its2reads+1add collapse3 floating classifications to1. The raw-load-only prefix49..58 is absent. Initial static expected all Nussinov prefixes absent and was too broad; both original failed receipts are retained. No performance observations.",
+  "gate": "Preserve productive remaining104..109 prefix and exact source integer export; require unproductive49..58 absent. Seidel code/stack exact round60 and actual paired native loop gates unchanged. Compiler source and focused9/9 fingerprint e78ac104 unchanged.",
+  "source_cfg_sha256": "2b87b7529d4d9a046d606149c9b0ea1f72ec9964da4ef9146dc50769ccc07043"
+}

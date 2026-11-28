@@ -34,6 +34,12 @@ impl Funding {
         b: &mut FunctionBuilder<'_>,
     ) -> Option<Self> {
         let phase = proof.phase.as_ref().filter(|p| p.checked_children)?;
+        // These windows price base traversals once at their entry. Reached
+        // summary debits can change that balance before later window headers;
+        // retain ordinary checked funding for such phases.
+        if !phase.summaries.is_empty() {
+            return None;
+        }
         let debit = phase.loops.iter().skip(1).find(|d| d.header == header)?;
         let current = captures.first()?;
         if current.width == 0

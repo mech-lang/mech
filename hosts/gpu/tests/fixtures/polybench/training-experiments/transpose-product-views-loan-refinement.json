@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.transpose-product-view-loan.v1",
+  "created_at": "2026-11-28T01:50:49.811514+00:00",
+  "before_native_emission_and_performance": true,
+  "source_proof": "Three groups pass on accepted47, attempt03; four eligible optimization graphs; ATAX remains outside initial straight-line scope.",
+  "additional_source_path": "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_transpose_product.rs",
+  "frame": "Reuse exact NumericBinaryFrame and prepare/finish tags. A source-proved transpose entry with two managed original-operand arguments selects the fused loan; an ordinary one-argument transpose retains the maintained path. No serialized flag, pointer or view is accepted.",
+  "source_funding": [
+    "Admit both genuine selected-call demands, output geometries and complete old coexistence/node/clone/physical reservation envelopes before pinning or mutation.",
+    "Charge both source compute/comparison obligations, every elided continuation visit fee, the missing source input alias copy32, the omitted canonical transpose put/retirement upper bound64+4*its persistent-byte demand, and96 per elided copy alias. The existing genuine source demand funds this upper bound, rather than invented physical visits.",
+    "Reserve complete cold replay credit and comparison credit before entry. Refusal leaves the original producer path available. No source budget is refilled."
+  ],
+  "execution": [
+    "Keep both original current F64 owners pinned and unchanged. Their logical dimensions/strides swap only on the source-proved transposed operand. Each ordered dot product starts+0 and visits k in original order with maintained scalar emission and independent SIMD outputs.",
+    "Allocate and initialize only final product cells. Finish checks the exact issued frame/epoch/producer, publishes the final canonical product, and performs one private source-proved transition to the consumer predecessor without incrementing fictitious visits. Unsupported scalar admission, owner, active-loan or context overlaps decline."
+  ],
+  "versions": {
+    "ir": 413,
+    "work": 157,
+    "abi": 47
+  },
+  "performance_observations": 0
+}

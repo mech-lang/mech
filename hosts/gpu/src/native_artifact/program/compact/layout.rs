@@ -6,11 +6,11 @@ use mech_engine::native_artifact::NativeProgramArtifactPlan;
 use std::sync::Arc;
 
 // pointer, initialized length, capacity, rows, columns, concrete owner
-pub(super) const ARRAY_WORDS: usize = 6;
-pub(super) const ARRAY_OWNER: usize = 5;
+pub(in crate::native_artifact) const ARRAY_WORDS: usize = 6;
+pub(in crate::native_artifact) const ARRAY_OWNER: usize = 5;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) enum LayoutKind {
+pub(in crate::native_artifact) enum LayoutKind {
     /// Immutable UTF8 bytes borrowed for the complete native invocation.
     /// Constants borrow their Object data; input spans borrow admitted input
     /// storage. Neither a managed String nor an owner token enters this ABI.
@@ -33,20 +33,20 @@ pub(super) enum LayoutKind {
     },
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct Field {
+pub(in crate::native_artifact) struct Field {
     pub name: Option<String>,
     pub offset: usize,
     pub packed_offset: Option<usize>,
     pub ty: Arc<Type>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct Variant {
+pub(in crate::native_artifact) struct Variant {
     pub name: String,
     pub offset: usize,
     pub ty: Option<Arc<Type>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct Type {
+pub(in crate::native_artifact) struct Type {
     pub kind: LayoutKind,
     pub words: usize,
     // Array leaves are concrete owner references, never canonical identities.
@@ -232,7 +232,7 @@ impl Type {
             packed_align: alignment,
         }))
     }
-    pub(super) fn leaves(self: &Arc<Self>) -> Vec<(usize, Arc<Type>)> {
+    pub(in crate::native_artifact) fn leaves(self: &Arc<Self>) -> Vec<(usize, Arc<Type>)> {
         fn visit(ty: &Arc<Type>, base: usize, out: &mut Vec<(usize, Arc<Type>)>) {
             match &ty.kind {
                 LayoutKind::Product(fields) => {
@@ -247,7 +247,10 @@ impl Type {
         visit(self, 0, &mut out);
         out
     }
-    pub(super) fn at_path(&self, path: &[usize]) -> Result<(usize, &Type), NativeCompileError> {
+    pub(in crate::native_artifact) fn at_path(
+        &self,
+        path: &[usize],
+    ) -> Result<(usize, &Type), NativeCompileError> {
         let mut ty = self;
         let mut offset = 0;
         for &ordinal in path {
@@ -303,18 +306,33 @@ impl Type {
     }
 }
 
-pub(super) struct Layout {
+pub(in crate::native_artifact) struct Layout {
     pub types: Vec<Arc<Type>>,
     pub base: Vec<usize>,
     pub words: usize,
 }
 impl Layout {
     pub fn derive(plan: &NativeProgramArtifactPlan) -> Result<Self, NativeCompileError> {
+        Self::derive_scoped(plan, |_| true)
+    }
+    /// Only the source-closed unit's values require a native layout. Unrelated
+    /// schemas cannot prevent a numeric unit from compiling inside a program.
+    pub fn derive_scoped(
+        plan: &NativeProgramArtifactPlan,
+        selected: impl Fn(u32) -> bool,
+    ) -> Result<Self, NativeCompileError> {
         let mut schemas: Vec<(&SchemaBody, Arc<Type>)> = vec![];
         let mut types = Vec::with_capacity(plan.values().len());
         let mut base = vec![];
         let mut words = plan.values().len();
         for (value, ty) in plan.values().iter().enumerate() {
+            if !selected(value as u32) {
+                types.push(Type::derive(&SchemaBody::UnsignedInteger(
+                    IntegerWidth::W64,
+                ))?);
+                base.push(usize::MAX);
+                continue;
+            }
             let body = ty.definition().body();
             let layout = if let Some((_, layout)) = schemas.iter().find(|(s, _)| *s == body) {
                 Arc::clone(layout)
@@ -351,6 +369,8 @@ impl Layout {
     ) -> Result<(usize, Arc<Type>), NativeCompileError> {
         let (value, field) = match array.storage {
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::Carrier { field, .. } => (carrier, Some(field)),
+            crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::TaggedCarrier { .. } => return Err(backend("tagged root requires its current native enum bank")),
+            crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::PhaseLocal { .. } => return Err(backend("local map result requires its admitted phase bank")),
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::Capture { value } => (value, None),
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
         };

@@ -1,0 +1,17 @@
+-- MINI_DATASET specializes the closed FSM payload to thirty elements.
+-- Two stencil phases retain the distinct A and B boundary values.
+#Jacobi(a<[f64]:30,1>, b<[f64]:30,1>, size<u64>, steps<u64>) => <[f64]:30,1>
+  | :Forward(a<[f64]:30,1>, b<[f64]:30,1>, remaining<u64>)
+  | :Backward(a<[f64]:30,1>, b<[f64]:30,1>, remaining<u64>)
+  | :Done(a<[f64]:30,1>).
+#Jacobi(a, b, size, steps) -> :Forward(a, b, steps)
+  :Forward(a, b, remaining)
+    | remaining > 0u64 -> {
+        next := [((i == 1u64 || i == size)? | true => b[i] | false => 0.33333 * (a[i - 1u64] + a[i] + a[i + 1u64])) | i <- 1u64..=30u64]'
+      } -> :Backward(a, next, remaining)
+    | * -> :Done(a)
+  :Backward(a, b, remaining) -> {
+      next := [((i == 1u64 || i == size)? | true => a[i] | false => 0.33333 * (b[i - 1u64] + b[i] + b[i + 1u64])) | i <- 1u64..=30u64]'
+    } -> :Forward(next, b, remaining - 1u64)
+  :Done(a) => a.
+#Jacobi(A<[f64]:30,1>, B<[f64]:30,1>, n<u64>, tsteps<u64>)

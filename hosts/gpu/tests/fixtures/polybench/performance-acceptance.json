@@ -1,0 +1,1289 @@
+{
+  "schema": "mech.polybench.performance-acceptance.v2",
+  "adopted_at": "2026-11-26T22:36:04.587006+00:00",
+  "retrospective_through_history_index": 22,
+  "interpretation": "Original decisions through46 remain exact. The explicit user-directed amendment accepts measured round47 using optimization only and applies that rule to subsequent rounds. Immutable measurements are unchanged; holdout is report-only for selection.",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "selection_partition": "optimization",
+    "promotion": "Optimization score must be strictly below the last accepted optimization score. Holdout never vetoes, selects or retunes a candidate.",
+    "failed_run": "Optimization score fails to strictly improve the last accepted optimization score.",
+    "comparison_threshold": "Strict optimization improvement; no post-hoc tolerance or observation exclusions.",
+    "scope": "Performance selection only; correctness and frozen-source qualification remain prerequisites. Both complete aggregate sets are reported.",
+    "holdout_use": "Report aggregate generalization and the below1.0x C goal separately; no promotion/rollback decision, per-case diagnosis, tuning or candidate retry based on holdout.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; selection uses the fixed optimization Mech/C score.",
+    "historical_decisions": "Retain the original two-set decisions through history46. An explicit user-directed amendment accepts round47 and applies optimization-only promotion from47 onward."
+  },
+  "history_sha256": "a826f46a6b5892460b68cb473b763e6b361139f361ba49565ac6117477d5020a",
+  "history_entries": 63,
+  "entries": [
+    {
+      "history_index": 0,
+      "label": "baseline",
+      "source_commit": "58c085a5e508b21766482d5c12c45009d53871f3",
+      "history_entry_sha256": "5afa422b201142a2a1844983ac94aeb8d8fb97fb6e974f3262067e228c94d2aa",
+      "scores": {
+        "optimization": 783.2584767166992,
+        "holdout": 2020.0854398950937
+      },
+      "previous_measured_index": null,
+      "run_outcome": "baseline",
+      "compared_to_accepted_index": null,
+      "multipliers_vs_accepted": null,
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 0
+    },
+    {
+      "history_index": 1,
+      "label": "round-01-native-matrix-frames",
+      "source_commit": "b791cd541ce2a39d46e3ea1236523fc111019b78",
+      "history_entry_sha256": "f642d2fd5be1d7f7bbc5a2832238c2837108dc1dafdfbc9d0c0ca51b09ea161c",
+      "scores": {
+        "optimization": 441.859811127942,
+        "holdout": 1610.2738988969445
+      },
+      "previous_measured_index": 0,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 0,
+      "multipliers_vs_accepted": {
+        "optimization": 0.5641302638436182,
+        "holdout": 0.7971315802269079
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 1
+    },
+    {
+      "history_index": 2,
+      "label": "round-02-native-scalar-matrix-updates",
+      "source_commit": "ea3977e8f1cf3aa085424b854816bbb6e81d85db",
+      "history_entry_sha256": "f5087c1ac151bacb227dae6479280ad9e331fa7536587a18249739907714222c",
+      "scores": {
+        "optimization": 346.0245145135151,
+        "holdout": 1529.298567056931
+      },
+      "previous_measured_index": 1,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 1,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7831092708572279,
+        "holdout": 0.9497133177806071
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 2
+    },
+    {
+      "history_index": 3,
+      "label": "round-03-native-maps",
+      "source_commit": "e68d404257b794b4daaea33c4dd7b6310b3896d3",
+      "history_entry_sha256": "20fdbc5b7acc7649c5e83949d6b633ac92cdb662def5a294194981d113db33b1",
+      "scores": {
+        "optimization": 318.8440279096326,
+        "holdout": 1468.5568039584937
+      },
+      "previous_measured_index": 2,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 2,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9214492457504166,
+        "holdout": 0.9602812920858664
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 3
+    },
+    {
+      "history_index": 4,
+      "label": "round-04-conditional-maps",
+      "source_commit": "19cd8a6bcb5ba504b6ac22c059c3e33a66d6ee5c",
+      "history_entry_sha256": "2456fd1aa72d08ac4fe249b9eb342a150e50dc1f482aeb9d85e5b49f80f3da63",
+      "scores": {
+        "optimization": 301.1974962493746,
+        "holdout": 724.2742286534767
+      },
+      "previous_measured_index": 3,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 3,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9446546583420423,
+        "holdout": 0.49318775188075537
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 4
+    },
+    {
+      "history_index": 5,
+      "label": "round-05-guarded-tagged-numeric",
+      "source_commit": "6887ed78c8741a311c7648d050b773897ec420f0",
+      "history_entry_sha256": "6cb92f7d010b23048a65d45560718c65a63607eb5b195ebec4394c9b92ce4669",
+      "scores": {
+        "optimization": 159.69306245409211,
+        "holdout": 814.6680951794095
+      },
+      "previous_measured_index": 4,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 4,
+      "multipliers_vs_accepted": {
+        "optimization": 0.5301938576603414,
+        "holdout": 1.124806134126831
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 4
+    },
+    {
+      "history_index": 6,
+      "label": "round-06-numeric-call-cache",
+      "source_commit": "fe60ce70f840357c9eaee32dc751f0e96213b17f",
+      "history_entry_sha256": "fc72c8029a114b0e5a6f3c611d942c4c36aa5f93977887f044859a2ba6671c59",
+      "scores": {
+        "optimization": 142.99940019704346,
+        "holdout": 440.80369001956063
+      },
+      "previous_measured_index": 5,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 4,
+      "multipliers_vs_accepted": {
+        "optimization": 0.47476955146615163,
+        "holdout": 0.6086143515544852
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 6
+    },
+    {
+      "history_index": 7,
+      "label": "round-07-captured-numeric-phases",
+      "source_commit": "0c37ee2e170769c3c187bda09deab98326722e8b",
+      "history_entry_sha256": "2036c0e783a72e426e4820b851128eb104ca4d907f7082ef44b60b3129ab3786",
+      "scores": {
+        "optimization": 123.8647535830103,
+        "holdout": 456.18124066068634
+      },
+      "previous_measured_index": 6,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 6,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8661907211661943,
+        "holdout": 1.0348852584252264
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 6
+    },
+    {
+      "history_index": 8,
+      "label": "round-08-packed-numeric-output",
+      "source_commit": "cec3d5d8eb386be4d91d7daf251b0249bf10ec48",
+      "history_entry_sha256": "d1a76a8fcddd245face8e7494d5380cf71306ae069890ae4b896b656678087f0",
+      "scores": {
+        "optimization": 111.80426614944933,
+        "holdout": 435.6414828354201
+      },
+      "previous_measured_index": 7,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 6,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7818512944487225,
+        "holdout": 0.9882891016998713
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 8
+    },
+    {
+      "history_index": 9,
+      "label": "round-09-rectangular-maps",
+      "source_commit": "24135d2a5aef38c56ebc651d91d8a851b0442fde",
+      "history_entry_sha256": "1c01d20d1ac22ecf14cacdcb8ea26987f06e8e78a46c38bbae18de82a56b6402",
+      "scores": {
+        "optimization": 104.87592047162897,
+        "holdout": 278.73326129407394
+      },
+      "previous_measured_index": 8,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 8,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9380314730695588,
+        "holdout": 0.6398225887027749
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 9
+    },
+    {
+      "history_index": 10,
+      "label": "round10-prefix-fsms",
+      "source_commit": "b08f2ff9cf543fd63e10e0b2c6c05970b13dd9b9",
+      "history_entry_sha256": "61b3cbe9cd351dfdef87ceeb0c36a14d1510a85623f5c75ae93cc1f23adc629c",
+      "scores": {
+        "optimization": 76.82871792007424,
+        "holdout": 269.2266523277008
+      },
+      "previous_measured_index": 9,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 9,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7325677579235925,
+        "holdout": 0.9658935251493243
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 10
+    },
+    {
+      "history_index": 11,
+      "label": "round11-map-reductions",
+      "source_commit": "c72146bbcb1d86c71dd72e27e6efca759a5c2b6d",
+      "history_entry_sha256": "065cbf11b02e47821edd5ac50d4fb1a1d8a7dcd035ef06c86655773bfc34c5f1",
+      "scores": {
+        "optimization": 69.99384808712122,
+        "holdout": 241.6990656664671
+      },
+      "previous_measured_index": 10,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 10,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9110375648847426,
+        "holdout": 0.8977531146220721
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 11
+    },
+    {
+      "history_index": 12,
+      "label": "round12-map-transposes",
+      "source_commit": "b7a3610472f83f4ccda82d193235f71bf167bb97",
+      "history_entry_sha256": "8801917ba52372f69e9aea6b0915b0e07598d8b6d27f4007afaeec79c70b910b",
+      "scores": {
+        "optimization": 64.35912213077829,
+        "holdout": 214.24126775818524
+      },
+      "previous_measured_index": 11,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 11,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9194968399318552,
+        "holdout": 0.8863967560959781
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 12
+    },
+    {
+      "history_index": 13,
+      "label": "round13-direct-rectangles",
+      "source_commit": "5cbf06b8000f37a10cabf1aa74a752cf29216ff3",
+      "history_entry_sha256": "3bc5a5972e0b2ad09bd6bebd86f375d8611c87e397a4a96d313acb0f25848c23",
+      "scores": {
+        "optimization": 60.50055958437494,
+        "holdout": 196.25384877579955
+      },
+      "previous_measured_index": 12,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 12,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9400463769757034,
+        "holdout": 0.9160412969424353
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 13
+    },
+    {
+      "history_index": 14,
+      "label": "round14-phase-reductions",
+      "source_commit": "e065bf86a67ad7c74c40d3264ef5940de74fb9db",
+      "history_entry_sha256": "54ff1500d3f63289c99e56b3082feaefe6ce41d7eea378b3607bc4ad1741ec17",
+      "scores": {
+        "optimization": 48.3629118002557,
+        "holdout": 181.02105364633815
+      },
+      "previous_measured_index": 13,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 13,
+      "multipliers_vs_accepted": {
+        "optimization": 0.799379578180729,
+        "holdout": 0.92238218396999
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 14
+    },
+    {
+      "history_index": 15,
+      "label": "round-15-block-range-cursors",
+      "source_commit": "6b84591c2f3e435552af969fe435f3c1937a3d35",
+      "history_entry_sha256": "cab91cb55e4523fb8e2dade3082e330841f79741e347ab383e4391a1c399f9c5",
+      "scores": {
+        "optimization": 47.201218958057694,
+        "holdout": 133.61134224078683
+      },
+      "previous_measured_index": 14,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 14,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9759796753554474,
+        "holdout": 0.7380983567901669
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 15
+    },
+    {
+      "history_index": 16,
+      "label": "round-16-typed-numeric-operands",
+      "source_commit": "52a80673f627d6bfff778382203dc8db2b98bd59",
+      "history_entry_sha256": "d9493111d48da56d95ed0a60a53d98b71230a1e2f6cbfe311e787582e0d24df1",
+      "scores": {
+        "optimization": 44.38513146877133,
+        "holdout": 129.6480569298469
+      },
+      "previous_measured_index": 15,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 15,
+      "multipliers_vs_accepted": {
+        "optimization": 0.940338670240938,
+        "holdout": 0.9703372090686917
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 16
+    },
+    {
+      "history_index": 17,
+      "label": "round-17-nested-ordered-reductions",
+      "source_commit": "8974a661a4e0987cfd6ae24bb572dc4284bd478e",
+      "history_entry_sha256": "c6e744b503066f3e3e42346d3669ddbd56d6d783380ee4fc739eed951c98eb92",
+      "scores": {
+        "optimization": 41.513488187773284,
+        "holdout": 91.53488471866345
+      },
+      "previous_measured_index": 16,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 16,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9353016835599893,
+        "holdout": 0.706025889521764
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 17
+    },
+    {
+      "history_index": 18,
+      "label": "round-18-direct-typed-f64-broadcast",
+      "source_commit": "ec96f1d0ec97a8554c07b30c7b7bda94d98c3a16",
+      "history_entry_sha256": "3dd7a1cefbcc5ce929a2fd1da0ddba2dea09102d4c24e64767378f4525020cd6",
+      "scores": {
+        "optimization": 39.77160968397907,
+        "holdout": 89.6891841365111
+      },
+      "previous_measured_index": 17,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 17,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9580406614853618,
+        "holdout": 0.9798360965021675
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 18
+    },
+    {
+      "history_index": 19,
+      "label": "round-19-inline-current-shape-leaves",
+      "source_commit": "3294d36340510bdbd0c7ec071ef78ce96468389f",
+      "history_entry_sha256": "b30f2d61f46966e27a0af190d3199b4c32715103c9ea235d2054146629328e7c",
+      "scores": {
+        "optimization": 39.05084826487183,
+        "holdout": 84.28176686288246
+      },
+      "previous_measured_index": 18,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 18,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9818774893740954,
+        "holdout": 0.9397093715848914
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 20,
+      "label": "round-20-phase-maps",
+      "source_commit": "9f6ed6c5e789f363a5194b604f95db4ad4fe6ad8",
+      "history_entry_sha256": "c90e8c85b9985de64a20672d1eb20bab4473a6344375239a75fa83773d474940",
+      "scores": {
+        "optimization": 33.21157075463987,
+        "holdout": 86.62116166287066
+      },
+      "previous_measured_index": 19,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.850469893237001,
+        "holdout": 1.0277568314840166
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 21,
+      "label": "round-21-owned-maps",
+      "source_commit": "3789f44d051a5749daf5c5cfb2e8cd3b81bdbf88",
+      "history_entry_sha256": "25ee31b813447c9c84a8abcedcc49b707dc94bdb083cc2b950e31f05a46b4c05",
+      "scores": {
+        "optimization": 35.08102837485539,
+        "holdout": 116.81341366363743
+      },
+      "previous_measured_index": 20,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8983422879039612,
+        "holdout": 1.3859867680951745
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 22,
+      "label": "round-22-owned-maps",
+      "source_commit": "6a6b5f47078edd5f67b5857fed70655f9f21326c",
+      "history_entry_sha256": "95ce59f4024c3b8fb90ba3727f6ba2141fcd98b3f5c3cce0489911daf2e87864",
+      "scores": {
+        "optimization": 31.63318246430962,
+        "holdout": 68.4768756565068
+      },
+      "previous_measured_index": 21,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8100510967072956,
+        "holdout": 0.8124755591314483
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 22
+    },
+    {
+      "history_index": 23,
+      "label": "round-23-shared-bounds",
+      "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+      "history_entry_sha256": "38d9f28778985f00b8144f02f6b08a4eafc5d11c7502f0a942092e2c8ecabc0c",
+      "scores": {
+        "optimization": 30.769365191381855,
+        "holdout": 63.7243057918152
+      },
+      "previous_measured_index": 22,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 22,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9726926851605154,
+        "holdout": 0.9305959885125102
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 23
+    },
+    {
+      "history_index": 24,
+      "label": "round-24-typed-reductions",
+      "source_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+      "history_entry_sha256": "e69077712b1a7af52cf92fa8b4b0d1762d6809c7888ba83a504e5ad6c844528a",
+      "scores": {
+        "optimization": 30.72497867548146,
+        "holdout": 64.04715094835615
+      },
+      "previous_measured_index": 23,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 23,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9985574445353579,
+        "holdout": 1.0050662796954692
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 23
+    },
+    {
+      "history_index": 25,
+      "label": "round-25-numeric-composition",
+      "source_commit": "083d27e6ccbeff5edc36c699cbf89daa09244522",
+      "history_entry_sha256": "4df82c912686e61253ad72a44c623f9e9a09a963b523e13fa00055412eb52d73",
+      "scores": {
+        "optimization": 27.796394538392843,
+        "holdout": 56.601226943851046
+      },
+      "previous_measured_index": 24,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 23,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9033788758884858,
+        "holdout": 0.8882203774610747
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 25
+    },
+    {
+      "history_index": 26,
+      "label": "round-26-matrix-product",
+      "source_commit": "cb4e8f923e04d9079a90f091bf740e1f1de20e02",
+      "history_entry_sha256": "b8361b2455120bfeb65a224603be946b3d4bf9d5503bf1728a48982afa27e7e1",
+      "scores": {
+        "optimization": 18.0785033163086,
+        "holdout": 46.093348121179915
+      },
+      "previous_measured_index": 25,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 25,
+      "multipliers_vs_accepted": {
+        "optimization": 0.6503902256581612,
+        "holdout": 0.8143524550608232
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 26
+    },
+    {
+      "history_index": 27,
+      "label": "round-27-numeric-closure",
+      "source_commit": "087987c8d10b305e09efec20612a06b4155c228e",
+      "history_entry_sha256": "a53c579cdec98163306aa8e555bb54baf335071a3522f1e9aa00abea68ab4d51",
+      "scores": {
+        "optimization": 17.519055937433034,
+        "holdout": 44.532614191614975
+      },
+      "previous_measured_index": 26,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 26,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9690545522996427,
+        "holdout": 0.9661397144450918
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 27
+    },
+    {
+      "history_index": 28,
+      "label": "round-28-generators",
+      "source_commit": "adf18d96b336a13f0c78063590db93bc769d8014",
+      "history_entry_sha256": "8ba06405aecab3365039f906e5ca21d5231ceba41925f9b58b6bb0e56eb69506",
+      "scores": {
+        "optimization": 15.979830245243638,
+        "holdout": 45.75887540273015
+      },
+      "previous_measured_index": 27,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 27,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9121399179449775,
+        "holdout": 1.0275362503049745
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 27
+    },
+    {
+      "history_index": 29,
+      "label": "round-29-transpose",
+      "source_commit": "8e761004ffc518460060202363fa681f14fc4a9a",
+      "history_entry_sha256": "f3664abbc693abe670e6e618dc78ee5c86d9d47b0ecde01c5799ab7447179ae4",
+      "scores": {
+        "optimization": 14.235225376608883,
+        "holdout": 41.53371663796421
+      },
+      "previous_measured_index": 28,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 27,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8125566484545792,
+        "holdout": 0.9326583986121474
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 29
+    },
+    {
+      "history_index": 30,
+      "label": "round-30-sums",
+      "source_commit": "9e3bf20f99ffaa594230331e0f33bfecc99c301e",
+      "history_entry_sha256": "cdf122b2a9e5ffc30895c860d10edecd2e1ec7f2765774680420227f14847dae",
+      "scores": {
+        "optimization": 13.037107924280457,
+        "holdout": 42.290151138524635
+      },
+      "previous_measured_index": 29,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 29,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9158343179942093,
+        "holdout": 1.0182125406005442
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 29
+    },
+    {
+      "history_index": 31,
+      "label": "round-31-inverse-bitcasts",
+      "source_commit": "8ee7fe59ab97562f269317b1fe772fb907cfb966",
+      "history_entry_sha256": "6dbd469d814983fd4b837d7f6bb77e99307e1ec0c0dce8298853a7681cf0234a",
+      "scores": {
+        "optimization": 11.43635797708715,
+        "holdout": 39.31569548924827
+      },
+      "previous_measured_index": 30,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 29,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8033843985272765,
+        "holdout": 0.946597094402851
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 32,
+      "label": "round-32-bit-copy",
+      "source_commit": "a7ab551a61739461642339997812e53f339cfcdf",
+      "history_entry_sha256": "578b996a5eb4c8789aab051e92d6a315fdcc13a53a5fd2476a6b45e138ca8d67",
+      "scores": {
+        "optimization": 12.128357830313583,
+        "holdout": 39.49347996952224
+      },
+      "previous_measured_index": 31,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0605087611469368,
+        "holdout": 1.0045219721554357
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 33,
+      "label": "round-33-rectangles",
+      "source_commit": "2067d00b53b4d7ffeb97ba1164ae9ff0c232a150",
+      "history_entry_sha256": "e498720c1cfdd7dfefd70337d42009682c8362c0f0315ae788360291de8e9131",
+      "scores": {
+        "optimization": 11.813178533746218,
+        "holdout": 38.8188960957936
+      },
+      "previous_measured_index": 32,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.03294934955814,
+        "holdout": 0.9873638406424596
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 34,
+      "label": "round-34-native-type-keys",
+      "source_commit": "c82333fc2bb7e7fcab23ce6a64768435fe3cb40f",
+      "history_entry_sha256": "9555293c3001d59a205f41f8b4a93dcab2d50692602228bfe506d622c79339a9",
+      "scores": {
+        "optimization": 11.471281724314528,
+        "holdout": 38.72314933453182
+      },
+      "previous_measured_index": 33,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0030537472941428,
+        "holdout": 0.9849285088984755
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 35,
+      "label": "round-35-matrix-expression-regions",
+      "source_commit": "54990a49aca3be73a44c10cdb753b8f810f06c22",
+      "history_entry_sha256": "b585e9f2179c972eba52ab8d5b1a90aeacbd253872264491f3ad062129234471",
+      "scores": {
+        "optimization": 12.020652207931867,
+        "holdout": 40.93922854820974
+      },
+      "previous_measured_index": 34,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0510909357695306,
+        "holdout": 1.0412947816071436
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 36,
+      "label": "round-36-native-finite-guards",
+      "source_commit": "a6ae11915f114a7c53b3ee94493dc3402b0c598f",
+      "history_entry_sha256": "40e949aafd3daaaef185f4a541157ff721e7eadc8a791dd1c46f41d41c8d206b",
+      "scores": {
+        "optimization": 13.94766662478119,
+        "holdout": 41.57037861029694
+      },
+      "previous_measured_index": 35,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.2195898950282487,
+        "holdout": 1.0573481682821881
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 37,
+      "label": "round-37-rectangular-map-induction",
+      "source_commit": "19d478691e6eb5f62d6938a434ab3c4a1b6b0484",
+      "history_entry_sha256": "5734ccc858ea9585c2b190034377e9cdc5dac6235a6bb22b50ba565c71496e76",
+      "scores": {
+        "optimization": 12.107292771679115,
+        "holdout": 39.45198365884885
+      },
+      "previous_measured_index": 36,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0586668234709151,
+        "holdout": 1.0034665079150857
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 38,
+      "label": "round-38-versioned-map-bounds",
+      "source_commit": "c1f782cf3a79de0561d01333bf890affdab02936",
+      "history_entry_sha256": "3e033016d9edb557441a02b65f2d585c08761d35b5ed59f767155f23f68b6985",
+      "scores": {
+        "optimization": 11.86032191827669,
+        "holdout": 39.864984592635594
+      },
+      "previous_measured_index": 37,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0370715871293077,
+        "holdout": 1.0139712421858984
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 39,
+      "label": "round-39-numeric-composite",
+      "source_commit": "cc9283737f86d0332505e258ac2fe81fd9fb3619",
+      "history_entry_sha256": "4d260313ad7a0faaa4c5e0cbc1d043be1ef196a0d98adf69699c8b76f0af37ee",
+      "scores": {
+        "optimization": 10.88234889799657,
+        "holdout": 41.26878226320756
+      },
+      "previous_measured_index": 38,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9515572107658276,
+        "holdout": 1.0496770246502038
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 40,
+      "label": "round-40-native-map-memory",
+      "source_commit": "b30c003638df3e28e0dfd90481462f4772a72114",
+      "history_entry_sha256": "2600b06afb8d02a77273e4688bfc9fb512a59c1d8e58f773e8a87c231f47d5b4",
+      "scores": {
+        "optimization": 12.176723368206272,
+        "holdout": 39.59330423517927
+      },
+      "previous_measured_index": 39,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0647378643273016,
+        "holdout": 1.0070610157718543
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 41,
+      "label": "round-41-native-map-ssa",
+      "source_commit": "1f75711d3b8ca715abf0b9e74738a061c20110f3",
+      "history_entry_sha256": "bac70838e457745eb5006d94b3c565b4aafd31b2943b6daa6cd9b955195c2d1c",
+      "scores": {
+        "optimization": 12.038834166933128,
+        "holdout": 40.63008387120563
+      },
+      "previous_measured_index": 40,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0526807739888036,
+        "holdout": 1.033431645189052
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 42,
+      "label": "round-42-total-private-maps",
+      "source_commit": "a1a29a7d8d81f0d9daa86e33be1cb4ffc20beb23",
+      "history_entry_sha256": "a126f91062b1a8e3b03781a1b90d24e279673f68c2661767d052f22734db0ad5",
+      "scores": {
+        "optimization": 11.895182201575672,
+        "holdout": 40.45041787031207
+      },
+      "previous_measured_index": 41,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0401197851105903,
+        "holdout": 1.0288618163037233
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 43,
+      "label": "round-43-guarded-map-domains",
+      "source_commit": "4d95bf34fcd32d63bfaf9bf65f0c78a194bc46e3",
+      "history_entry_sha256": "3cf61853ef10a61ee58535a230893a17ab7a57a013be389444e72373eb9432c4",
+      "scores": {
+        "optimization": 12.378819382185672,
+        "holdout": 40.55974559274308
+      },
+      "previous_measured_index": 42,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0824092256456777,
+        "holdout": 1.0316425816207428
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 44,
+      "label": "round-44-prepared-composite-binding",
+      "source_commit": "9bb8ada636a494ae45aae80b7b6b4e83aad9fcf2",
+      "history_entry_sha256": "38411845d8ebbc5f6fb0f757807450f55d304ac34d601c8519f226eca48ae608",
+      "scores": {
+        "optimization": 10.24618089248072,
+        "holdout": 38.46047945936111
+      },
+      "previous_measured_index": 43,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8959304101016283,
+        "holdout": 0.97824746531265
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 44
+    },
+    {
+      "history_index": 45,
+      "label": "round-45-current-bound-rectangles",
+      "source_commit": "48df1f857e78ba6bbbd82339f0c2abd82b7659e1",
+      "history_entry_sha256": "87ace96c646eb508e5b8afbf903e2dfef3ef15f6c210328012ea7d39d7d6e2bb",
+      "scores": {
+        "optimization": 9.784192694066512,
+        "holdout": 25.86144806723818
+      },
+      "previous_measured_index": 44,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 44,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9549111807353271,
+        "holdout": 0.672416164092921
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 45
+    },
+    {
+      "history_index": 46,
+      "label": "round-46-prepared-type-slots",
+      "source_commit": "ebbc4a8c17dfb0ded3665baf4c7388a78d4eff68",
+      "history_entry_sha256": "cc8bb90913b93ee2013f2cd8dd3782960b3291f5243a64858057abe36abf784f",
+      "scores": {
+        "optimization": 11.138641082047057,
+        "holdout": 24.975755055163358
+      },
+      "previous_measured_index": 45,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 45,
+      "multipliers_vs_accepted": {
+        "optimization": 1.138432309167616,
+        "holdout": 0.9657523813139901
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 45
+    },
+    {
+      "history_index": 47,
+      "label": "round-47-masked-matrix-maps",
+      "source_commit": "44236f0be9ab3713b8b577927ddc172427fb10de",
+      "history_entry_sha256": "32240990c3abcbb7ff6cab7e700259a8325e089710bfc984e75915f6ba16737c",
+      "scores": {
+        "optimization": 9.575943659594117,
+        "holdout": 27.506517683644883
+      },
+      "previous_measured_index": 46,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 45,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9787157672601149,
+        "holdout": 1.0636108856754511
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 47
+    },
+    {
+      "history_index": 48,
+      "label": "round-48-ordered-product-epilogues",
+      "source_commit": "cc89f77879dfadb22a7643dc0400522d7ff537b8",
+      "history_entry_sha256": "a8374dbf30457e0d7f0d23d5e27728dc5ff7846fcb962691e9832a5661351611",
+      "scores": {
+        "optimization": 9.401799375716326,
+        "holdout": 24.666190246754944
+      },
+      "previous_measured_index": 47,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 47,
+      "multipliers_vs_accepted": {
+        "optimization": 0.981814399701139,
+        "holdout": 0.8967398392789367
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 48
+    },
+    {
+      "history_index": 49,
+      "label": "round-49-selected-scratch-initialization",
+      "source_commit": "8c2e856d8375b57b4f710fe5db719fadcda31f9a",
+      "history_entry_sha256": "161d106405cd211cd3bfce0976278f841e71d5522c7d8d4bd6191c92f5025fb1",
+      "scores": {
+        "optimization": 9.4153094154071,
+        "holdout": 25.371030014392296
+      },
+      "previous_measured_index": 48,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 48,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0014369631972437,
+        "holdout": 1.0285751370838503
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 48
+    },
+    {
+      "history_index": 50,
+      "label": "round-50-compound-conditional-domains",
+      "source_commit": "7f66135795a7cdc54e3f5f1fc55e7ede1b587254",
+      "history_entry_sha256": "87d92b66e7a8c745f646ba80df8693d4bf75fd6a78d3841295e7a28602d9115f",
+      "scores": {
+        "optimization": 9.243502020687457,
+        "holdout": 25.148487819220833
+      },
+      "previous_measured_index": 49,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 48,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9831630788210891,
+        "holdout": 1.0195529819417224
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 50
+    },
+    {
+      "history_index": 51,
+      "label": "round-51-ordered-product-row-pairs",
+      "source_commit": "b707a3f0bb8547b48c7f10fb3ea1e2f5fe8f7c39",
+      "history_entry_sha256": "19db329470012521d3639c57904029e1ba7f5953ee9971947f71b34ed2c0cb8b",
+      "scores": {
+        "optimization": 9.096908651052887,
+        "holdout": 24.60099065552092
+      },
+      "previous_measured_index": 50,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 50,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9841409273988921,
+        "holdout": 0.9782294200893676
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 51
+    },
+    {
+      "history_index": 52,
+      "label": "round-52-ordered-reduction-producers",
+      "source_commit": "5b9cdba96b55da4a50657d83aeacca8bc6c3c561",
+      "history_entry_sha256": "fc458812fa53d6410004837c4ba32fa3c72fd8b0076c7b7d4e385d67110d5bb3",
+      "scores": {
+        "optimization": 8.964570055711857,
+        "holdout": 24.520309780198453
+      },
+      "previous_measured_index": 51,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 51,
+      "multipliers_vs_accepted": {
+        "optimization": 0.985452355254143,
+        "holdout": 0.9967204216914589
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 52
+    },
+    {
+      "history_index": 53,
+      "label": "round-53-ordered-product-four-rows",
+      "source_commit": "2c9adcc963d004da49bdad64856f8f1f319a7757",
+      "history_entry_sha256": "779a4920b3dae0cb8cf31cf0c72ac767c3f41dcffcd7c6a62de3a7c80f02eb0b",
+      "scores": {
+        "optimization": 8.866344202351284,
+        "holdout": 24.816540346717115
+      },
+      "previous_measured_index": 52,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 52,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9890428818392705,
+        "holdout": 1.012081028713507
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 53
+    },
+    {
+      "history_index": 54,
+      "label": "round-54-typed-map-folds",
+      "source_commit": "4f13eba2848408c7841dd5db6c49ea45419d93e5",
+      "history_entry_sha256": "35633e885b9b2e37a0d2833ab5d1e688b6ce7a24fb58e115bfee730e13ce6de8",
+      "scores": {
+        "optimization": 8.365861893301812,
+        "holdout": 24.599383003745523
+      },
+      "previous_measured_index": 53,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 53,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9435525739101412,
+        "holdout": 0.9912494916721815
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 54
+    },
+    {
+      "history_index": 55,
+      "label": "round-55-selected-map-spans",
+      "source_commit": "1f3e81a6fb30d5b5a2ad2f4c5d925966d1cb9105",
+      "history_entry_sha256": "f59cbc3949055b5a5d1465493747505bbce884e2a953e133b2cad41993100c83",
+      "scores": {
+        "optimization": 8.661911366321608,
+        "holdout": 24.869335257565737
+      },
+      "previous_measured_index": 54,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 54,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0353878030495376,
+        "holdout": 1.0109739440936023
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 54
+    },
+    {
+      "history_index": 56,
+      "label": "round-56-ordered-map-dots",
+      "source_commit": "7297ae3a6906b719538d021f7ddc1f27128c413f",
+      "history_entry_sha256": "aef722d07a382cd7989af3ad54cd52e9a171ca73d29ef308c20813a925b32e33",
+      "scores": {
+        "optimization": 8.175763531282765,
+        "holdout": 23.016525775215847
+      },
+      "previous_measured_index": 55,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 54,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9772768945455279,
+        "holdout": 0.9356545963657434
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 56
+    },
+    {
+      "history_index": 57,
+      "label": "round-57-transpose-tiles",
+      "source_commit": "990f859182c78a0af98e7fac8b2dbe39b0c5bbbd",
+      "history_entry_sha256": "e33d41f399882d558657e645760655ff185a490c07e9a92ae7b58c4bbfaf9ab6",
+      "scores": {
+        "optimization": 8.425680945656508,
+        "holdout": 23.81198992773327
+      },
+      "previous_measured_index": 56,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 56,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0305680825304557,
+        "holdout": 1.0345605657554962
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 56
+    },
+    {
+      "history_index": 58,
+      "label": "round-58-transpose-epilogue-views",
+      "source_commit": "47a9e1c5be7d45404cbf923b91765defceca7ba2",
+      "history_entry_sha256": "751abca8364f035f7ef6e2083c2e338921cea08af6e5be8b335c574302b771e3",
+      "scores": {
+        "optimization": 8.144951071643966,
+        "holdout": 24.70557552923209
+      },
+      "previous_measured_index": 57,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 56,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9962312437828098,
+        "holdout": 1.0733842183877729
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 58
+    },
+    {
+      "history_index": 59,
+      "label": "round-59-closed-map-result-validation",
+      "source_commit": "1fc9f28e254cf688fc5cbec8b926f5c0f568c0ea",
+      "history_entry_sha256": "45c303e143b2e1963af7bbba72ad3155b38ef5b23bbc2ca396656be24aaa8fac",
+      "scores": {
+        "optimization": 7.852513248471486,
+        "holdout": 23.989161547848273
+      },
+      "previous_measured_index": 58,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 58,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9640958158495783,
+        "holdout": 0.9710019311010932
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 59
+    },
+    {
+      "history_index": 60,
+      "label": "round-60-source-closed-cell-prefix",
+      "source_commit": "5014983b6b0a54529f296c8991e31bc4996596ef",
+      "history_entry_sha256": "582b9e89e014666269e6cfa25ef140cfa566ed902df80caadc109eea65b31294",
+      "scores": {
+        "optimization": 8.27949120580784,
+        "holdout": 23.700133944182735
+      },
+      "previous_measured_index": 59,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 59,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0543746879280296,
+        "holdout": 0.9879517421611819
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 59
+    },
+    {
+      "history_index": 61,
+      "label": "round-61-ordered-dot-regression-recovery",
+      "source_commit": "dbc84c2e495fed3e488882cd16b63a4792cc1fd5",
+      "history_entry_sha256": "d54861d1b03c935af7d52c3f62aad5ecfc2dc3123962049564ecb47d7c0e4504",
+      "scores": {
+        "optimization": 10.252962229540335,
+        "holdout": 27.458741210792507
+      },
+      "previous_measured_index": 60,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 59,
+      "multipliers_vs_accepted": {
+        "optimization": 1.3056918091206153,
+        "holdout": 1.1446311350242018
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 59
+    },
+    {
+      "history_index": 62,
+      "label": "round-62-single-pass-matrix-preflight",
+      "source_commit": "705d1cc791148e496e11076d9ec348d450442853",
+      "history_entry_sha256": "304c9da90580310f76d0ff4545c2c641a5f1d7cfe70ee1cb6e8189ebedafb040",
+      "scores": {
+        "optimization": 8.164896734823678,
+        "holdout": 24.39039668116209
+      },
+      "previous_measured_index": 61,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 59,
+      "multipliers_vs_accepted": {
+        "optimization": 1.039781338339416,
+        "holdout": 1.0167256839099408
+      },
+      "performance_gate": "not_promoted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_not_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 59
+    }
+  ],
+  "accepted_history_index": 59,
+  "policy_amended_at": "2026-11-28T01:43:24.649475+00:00",
+  "policy_amendment": "performance-selection-policy-v4.json",
+  "policy_amendment_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "previous_ledger": {
+    "path": "qualification/selection-policy-v4/previous-performance-acceptance.json.gz",
+    "sha256": "b10a9dc87ca026787948d97b76ce5d3c105cf23abbe2f40e3a883b43d22cf3b6",
+    "compressed_sha256": "8129a3595eb347fa0fcedb627420cd96925396729a23e55bf874fe98d1547a1c"
+  }
+}

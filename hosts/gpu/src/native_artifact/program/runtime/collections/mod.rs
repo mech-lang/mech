@@ -30,8 +30,18 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+mod numeric_generator;
 pub(in crate::native_artifact) mod numeric_map;
+mod numeric_rectangles;
+pub(in crate::native_artifact::program::runtime) use numeric_rectangles::Geometry as NumericRectangleGeometry;
+mod numeric_reductions;
+mod numeric_transpose_budget;
+mod numeric_transposes;
 mod row_blocks;
+#[cfg(test)]
+pub(super) fn test_take_block_orders() -> (u64, u64) {
+    row_blocks::test_take_block_orders()
+}
 pub(in crate::native_artifact) mod uniform_words;
 pub(in crate::native_artifact::program::runtime) mod utf8_read;
 mod word_collections;
@@ -100,12 +110,32 @@ struct PreparedRange {
     start: u64,
     count: u64,
 }
+// Three states fit the same two words as the former Option<u64> rows. The
+// order marker belongs to this builder's complete bank, never a source Value.
+enum BlockRows {
+    Unknown,
+    ColumnMajor(u64),
+    RowMajor(u64),
+}
+impl BlockRows {
+    fn rows(&self) -> Option<u64> {
+        match self {
+            Self::Unknown => None,
+            Self::ColumnMajor(rows) | Self::RowMajor(rows) => Some(*rows),
+        }
+    }
+    fn is_row_major(&self) -> bool {
+        matches!(self, Self::RowMajor(_))
+    }
+}
 struct Builder {
     // Owned drafts and their backing are released before their reservation.
     values: data::CollectedValues,
     join: Option<text_join::Builder>,
     query: Option<histogram_query::Builder>,
     histogram: Option<histogram::Builder>,
+    block_rows: BlockRows,
+    block_columns: u64,
     payload_bytes: u64,
     cloned_bytes: u64,
     compute: u64,
@@ -123,6 +153,8 @@ pub(in crate::native_artifact::program::runtime) struct State {
     native_read: Option<Box<utf8_read::Storage>>,
     native_fill: Option<Box<uniform_words::Loan>>,
     native_map: Option<Box<numeric_map::Loan>>,
+    native_generator: Option<Box<numeric_generator::Loan>>,
+    native_reduction: Option<Box<numeric_reductions::Pending>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -266,6 +298,16 @@ impl State {
                 0
             } else {
                 size_of::<Option<Box<numeric_map::Loan>>>()
+            } + if descriptor
+                .metadata()
+                .numeric_maps
+                .regions
+                .iter()
+                .any(|r| r.reduction.is_some())
+            {
+                size_of::<Option<Box<numeric_reductions::Pending>>>()
+            } else {
+                0
             } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
@@ -357,6 +399,8 @@ impl State {
             native_read: None,
             native_fill: None,
             native_map: None,
+            native_generator: None,
+            native_reduction: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,
@@ -370,7 +414,12 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
-        if self.has_utf8_read() || self.native_fill.is_some() {
+        if self.has_utf8_read()
+            || self.native_fill.is_some()
+            || self.native_map.is_some()
+            || self.native_generator.is_some()
+            || self.native_reduction.is_some()
+        {
             return false;
         }
         self.current.is_none()
@@ -551,6 +600,7 @@ impl State {
                 }
                 charge(&mut ctx.work(), 64)?;
                 let nodes = ctx.library().memory_budget().reserve_nodes(2)?;
+                let block_rows = self.initial_block_rows(ctx, *collection)?;
                 self.builders[*collection as usize] = Some(Builder {
                     values: data::CollectedValues::new(
                         plan.values()[definition.output().get() as usize]
@@ -560,6 +610,8 @@ impl State {
                     join: None,
                     query: None,
                     histogram: None,
+                    block_rows: block_rows.map_or(BlockRows::Unknown, BlockRows::ColumnMajor),
+                    block_columns: 0,
                     payload_bytes: 0,
                     cloned_bytes: 0,
                     compute: 0,
@@ -1056,14 +1108,11 @@ impl State {
         let descriptor = ctx.descriptor();
         let definition = &descriptor.metadata().plan.collections()[id as usize];
         let output = &descriptor.metadata().plan.values()[definition.output().get() as usize];
+        let block_extents = self.finish_block_order(ctx, id)?;
         let builder = self.builder(id)?;
         let count = builder.values.len() as u64;
         let payload = builder.payload_bytes;
-        let cloned = if builder.values.packed_width().is_some() {
-            0
-        } else {
-            payload
-        };
+        let cloned = builder.values.finalization_cloned_bytes(payload);
         let output_bytes = builder.values.output_bytes(
             payload,
             count,
@@ -1074,8 +1123,9 @@ impl State {
             descriptor.metadata().scalar_bytes,
             add(mul(builder.reservation.capacity_bytes(), 4)?, 4096)?,
         )?;
-        // Packed finalization takes the existing allocation; the draft path
-        // still constructs a second payload and keeps its original copy debit.
+        // Unsigned finalization retains its allocation. Boxed scalar banks
+        // fund a possible shrink-copy; drafts still fund the second payload.
+        // The envelope covers both banks while the builder claim stays live.
         self.account(ctx, id, cloned, add(mul(envelope, 16)?, 256)?)?;
         check(
             definition.origin(),
@@ -1141,6 +1191,8 @@ impl State {
                 return Err(invalid("preserved collection cardinality differs"));
             }
             [rows, columns]
+        } else if let Some(extents) = block_extents {
+            extents
         } else {
             [1, count]
         };

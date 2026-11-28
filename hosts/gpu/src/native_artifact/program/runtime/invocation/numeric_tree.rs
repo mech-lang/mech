@@ -167,7 +167,9 @@ impl Invocation<'_, '_, '_> {
             5 if proof.action(site).is_some_and(|operation| {
                 matches!(
                     operation,
-                    Operation::Write { .. } | Operation::Append { .. }
+                    Operation::Write { .. }
+                        | Operation::CellWrite { .. }
+                        | Operation::Append { .. }
                 )
             }) =>
             {
@@ -441,8 +443,12 @@ impl Invocation<'_, '_, '_> {
             }
         }
         if mode == 2 {
-            let Some(Operation::Read { array, .. } | Operation::Write { array, .. }) =
-                proof.action(site)
+            let Some(
+                Operation::Read { array, .. }
+                | Operation::Write { array, .. }
+                | Operation::CellRead { array, .. }
+                | Operation::CellWrite { array, .. },
+            ) = proof.action(site)
             else {
                 return Err(invalid(
                     "numeric tree bounds exit has no original array operation",

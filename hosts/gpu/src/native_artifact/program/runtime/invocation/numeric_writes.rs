@@ -3,7 +3,8 @@
 use super::{Error, Invocation, invalid};
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 use crate::native_artifact::program::protocol::NumericWriteHandoff;
-use mech_core::snapshot::UnsignedMatrixViewMut;
+use crate::native_artifact::program::runtime::buffer_frames::PrivateNumericArray;
+use mech_core::snapshot::NumericMatrixViewMut;
 use mech_engine::native_artifact::NativeIterationAction as Action;
 
 impl Invocation<'_, '_, '_> {
@@ -31,6 +32,7 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("numeric materialization lacks proof"))?;
         let Some(
             operation @ (Operation::Write { array, .. }
+            | Operation::CellWrite { array, .. }
             | Operation::Append { array, .. }
             | Operation::AppendLeBytes { array, .. }),
         ) = proof.action(site)
@@ -53,6 +55,17 @@ impl Invocation<'_, '_, '_> {
         // selector, ordinary append position, or positive bulk byte count.
         let index = self.read_borrowed_word(2 + proof.words)?;
         let incoming = self.read_borrowed_word(3 + proof.words)?;
+        let column = if matches!(operation, Operation::CellWrite { .. }) {
+            Some(self.read_borrowed_word(4 + proof.words)?)
+        } else {
+            None
+        };
+        let indices = [index, column.unwrap_or(0)];
+        let indices = if column.is_some() {
+            &indices[..]
+        } else {
+            &indices[..1]
+        };
         // Close the current loan before any fallible factory/account operation.
         // This traversal has already been prepaid at its native header.
         self.end_closed_tail(site, [args[0], args[1], 5])?;
@@ -86,8 +99,7 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("numeric ownership work overflows"))?,
         )?;
         let source = self.state.buffer_frames.take_numeric_owner(
-            proof.arrays[*array]
-                .physical()
+            self.numeric_array_mutable_home(&proof.arrays[*array])?
                 .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
             proof.arrays[*array].schema,
         )?;
@@ -117,6 +129,7 @@ impl Invocation<'_, '_, '_> {
                 &self.state.library,
                 coexistence,
             )
+            .map(PrivateNumericArray::Unsigned)
         } else if matches!(operation, Operation::Append { .. }) {
             call.unsigned_matrix_append_private(
                 source,
@@ -126,7 +139,24 @@ impl Invocation<'_, '_, '_> {
                 &self.state.library,
                 coexistence,
             )
-        } else {
+            .map(PrivateNumericArray::Unsigned)
+        } else if let Some(column) = column.filter(|_| {
+            call.scalar_matrix_replace_kind()
+                .and_then(|k| k.unsigned_maximum())
+                .is_some()
+        }) {
+            call.unsigned_matrix_cell_replace_private(
+                source,
+                index,
+                column,
+                incoming,
+                true,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map(PrivateNumericArray::Unsigned)
+        } else if call.supports_unsigned_matrix_replace() {
             call.unsigned_matrix_replace_private(
                 source,
                 index,
@@ -136,6 +166,18 @@ impl Invocation<'_, '_, '_> {
                 &self.state.library,
                 coexistence,
             )
+            .map(PrivateNumericArray::Unsigned)
+        } else {
+            call.scalar_matrix_replace_private(
+                source,
+                indices,
+                incoming,
+                true,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map(PrivateNumericArray::Scalar)
         };
         let mut private = result.map_err(|error| Error::Library {
             origin: metadata.plan.blocks()[site].origin(),
@@ -160,9 +202,16 @@ impl Invocation<'_, '_, '_> {
                 .append_preparation_mut(id, *array)?
                 .take()
                 .ok_or_else(|| invalid("numeric append lost its admitted preparation"))?;
-            private = private
-                .with_append_preparation(preparation)
-                .map_err(Error::Snapshot)?;
+            let PrivateNumericArray::Unsigned(owner) = private else {
+                return Err(invalid(
+                    "scalar private matrix cannot receive unsigned append authority",
+                ));
+            };
+            private = PrivateNumericArray::Unsigned(
+                owner
+                    .with_append_preparation(preparation)
+                    .map_err(Error::Snapshot)?,
+            );
         }
         let address = if let Some(capacity) = proof.capacity(*array) {
             let [address, length, cells] = private
@@ -175,10 +224,13 @@ impl Invocation<'_, '_, '_> {
             address
         } else {
             match private.elements_mut() {
-                UnsignedMatrixViewMut::U8(cells) => cells.as_mut_ptr() as u64,
-                UnsignedMatrixViewMut::U16(cells) => cells.as_mut_ptr() as u64,
-                UnsignedMatrixViewMut::U32(cells) => cells.as_mut_ptr() as u64,
-                UnsignedMatrixViewMut::U64(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::Bool(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::I64(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::F64(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::U8(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::U16(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::U32(cells) => cells.as_mut_ptr() as u64,
+                NumericMatrixViewMut::U64(cells) => cells.as_mut_ptr() as u64,
             }
         };
         // Moving this owner moves only metadata; the allocated cells stay put.
@@ -190,7 +242,7 @@ impl Invocation<'_, '_, '_> {
     }
 
     pub(super) fn finish_numeric_array(
-        mut private: mech_core::snapshot::PrivateUnsignedMatrix,
+        mut private: PrivateNumericArray,
         length: Option<u64>,
     ) -> Result<mech_core::Value, Error> {
         if let Some(length) = length {
@@ -200,7 +252,12 @@ impl Invocation<'_, '_, '_> {
             // before a traversal and advances the live length only after its
             // typed store. No borrow survives the closed-tail reconciliation.
             // Core additionally rejects shrinking or exceeding actual capacity.
-            unsafe { private.assume_initialized_prefix(length) }.map_err(Error::Snapshot)?;
+            let PrivateNumericArray::Unsigned(owner) = &mut private else {
+                return Err(invalid(
+                    "scalar private matrix cannot initialize unsigned spare cells",
+                ));
+            };
+            unsafe { owner.assume_initialized_prefix(length) }.map_err(Error::Snapshot)?;
         }
         Ok(private.finish())
     }

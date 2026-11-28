@@ -1,0 +1,105 @@
+{
+  "schema": "mech.polybench.transpose-product-focused.v1",
+  "created_at": "2026-11-28T02:12:18.168135+00:00",
+  "status": "Untimed IR413 candidate; eight focused groups pass, broad qualification running. Accepted performance remains47.",
+  "compiler_fingerprint": "95bb12a9533b8bfc1d4c882997c028de7b38af122dae318f1c89ffe3bf6b1c15",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs": "c77e5ba8c7b14617fdc17550ec85c9b25dda63a93ed6d4c016818f4b12229188",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "0affeacc217293e0de87eb70d3173f2ba22458e019be99753fb68735f2c8cf99",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "f11735ddd591712f3510844fc775349e77fa01c71121aa829f94c29b4770d844",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "1d07292d226d7a1dd781a7e83361906be663836e12cc84a8148c47c890c078b6",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "4c9409690fa7d4f2eadb62f280da98187c15ed90546a057351bd4ccafb765c7b",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "ced07791d6296f852368a0574a46f27a547a900e0650d8a3ca3c99739a56c279",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "947cd742b437eda1b8eedd7ccfd80624a0f7d73d05b87058502723fcecb206f3",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs": "e6712894451ecf747c3e4e34c479d98b4d1f93c1310cd633b11871c43146d4a6",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b74bf33bb2b3aa987d027987fd2ebdb49a54046a4b0dc9596bb66783399ff185",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "5f740828aaffd4b7461bebfd0ea93b22a4cbb4fa7cb743209939d99f0cab63ae",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "d439bba7ad40a67ff152e58690a4b06b26a5f3639aabd162028d359149bd30a9",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_transpose_product.rs": "b7fcd8580f2b8ce07bd8ce2ce8662ea8ff6118de42774a2bb81486e297071cb6",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "1df66232408e98bee35dd48f341aa87d389de606f3f38e1ec36ae4e14c97045c",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "e80e9a5e7b7c721b9170b438cf8cc0391283721f901af95f7f548fc4468c6c75",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "bcc68d64574f1f6c440483dcb5c0dbd7b741b9caa45a90e47425558abbfe18b3"
+  },
+  "focused": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "numeric_transpose_products",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 93.62325433269143,
+    "compiler_fingerprint": "95bb12a9533b8bfc1d4c882997c028de7b38af122dae318f1c89ffe3bf6b1c15",
+    "source_unchanged": true,
+    "passed_tests": [
+      8
+    ],
+    "scope": "Untimed source proof, ordered transpose/product view execution, physical bank/callback census and resource/error/alias checks; no candidate performance observations",
+    "complete": true,
+    "tests": 8,
+    "raw_receipt": "attempt-07/result.json",
+    "raw_receipt_sha256": "ca51ad4d4ea0932399e1e2a860d9ffe22f832c92ab312b64c9fba7c2921d0949",
+    "log_sha256": "bc2bc73ab5608f9d1d12365fcd37b332a62467c8322a86178a7b8d34e444c55a",
+    "performance_observations": 0
+  },
+  "covered": "Genuine original/decoded source proofs, actual checked Object emission versus ablation, ordered scalar/SIMD views, empty/odd/fixed shapes, exact F64 bits and NaN fallback, aliases, resource/source fees, physical bank/callback census, finite/physical/spent budgets, atomic errors, cleanup/retry, forged loans/epochs/context and confined genuine-image reconstruction.",
+  "development_failures_preserved": "Attempt05 seven groups passed; one test incorrectly treated an unsafe build-owned identity as authentication. Its correction tests source operand/wire consistency and verifies identity-only changes cannot affect source-derived views. Attempt06 diagnostic namespace/import compile errors are retained.",
+  "archives": [
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-05/focused.log.gz",
+      "sha256": "40f988a5e00736efa1dd91059b45dff3c9586d17047506ea84f2d55da983d0ec",
+      "compressed_sha256": "fbbeaa867650c0f9ecc29980b321b58d3fbec22c8e0fd2dd6d3f5863c3a2f4a2"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-05/result.json.gz",
+      "sha256": "5f21f390db3bc068fcc486d5b2fa22d95bbbce0bdc290be4e0d3dc05453fd283",
+      "compressed_sha256": "a47c9ef762218b66754f4e46765b2fe4ac6d1e635750529628b7116e52b22623"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-06/focused.log.gz",
+      "sha256": "b240e1a6ae4653486a5cdd7f244399c8b975251e48c198e9e8a32864c4b6f8e1",
+      "compressed_sha256": "1b57d1bf66605708a5f0d54afdb958aa9a675ec5414562b53ffc1db6a4c66720"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-06/result.json.gz",
+      "sha256": "d992b8c266885db0b175afae6a15f85f054f97d37670a816b48ad1b525201136",
+      "compressed_sha256": "dbb055ed2561062bb93eccc42e077156f20633326a5b87bddbe7e8bf20b1febf"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-07/focused.log.gz",
+      "sha256": "bc2bc73ab5608f9d1d12365fcd37b332a62467c8322a86178a7b8d34e444c55a",
+      "compressed_sha256": "da3567cfd6a9f90d162e42c5e705f2fab75f3a02abd3bb970092b6438548f22c"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/attempt-07/result.json.gz",
+      "sha256": "ca51ad4d4ea0932399e1e2a860d9ffe22f832c92ab312b64c9fba7c2921d0949",
+      "compressed_sha256": "d87a49c9329325ed325f0fc9ca622153272b8ba300e88b842b1e61e97e494c98"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/focused-result.json.gz",
+      "sha256": "bde3fb60c9222a7202647641b5c19041f55fa7d165c1ec5e2f6dce1464be1c7b",
+      "compressed_sha256": "db50c79599b898cd3e0261995e519c1dc73efee2297ebb85c7448200887a71a8"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/run-focused.py.gz",
+      "sha256": "bdb25596b4c9d5897c20d77e3e01961ca2d794b647ca5c70582401e98f0b2539",
+      "compressed_sha256": "5b38ec3110212e90548f2dffea5a40971c4fd786e1eb1c73d874612169222566"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-focused/plan.json.gz",
+      "sha256": "6e198b0465ac763a255c9ae5bbc532606c8ee76d07bd1dceeb520dda2405e1ed",
+      "compressed_sha256": "b4161a351488c55d3d0e4ceb66c8d13cd97cd82d161a5a00b6b8c94845c882a8"
+    }
+  ],
+  "performance_observations": 0
+}

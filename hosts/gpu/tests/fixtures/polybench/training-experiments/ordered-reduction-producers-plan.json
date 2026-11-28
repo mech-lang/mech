@@ -1,0 +1,98 @@
+{
+  "schema": "mech.polybench.ordered-reduction-producers-plan.v1",
+  "created_at": "2026-11-28T08:27:18.904474+00:00",
+  "status": "Prospective before compiler edits or candidate timing",
+  "source_parent": "9ebcd97ec88f014ec6bc372aa6eea7e0f979e1e7",
+  "accepted_round": 51,
+  "accepted_scores": {
+    "optimization": 9.096908651052887,
+    "holdout": 24.60099065552092
+  },
+  "accepted_compiler_fingerprint": "c58f49cf83a22b0d2dfbd0d138a8a338b9cd5dde0199cbddd7ffebf7dc3a2800",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-52/ordered-product-row-pairs/ordered-product-row-pairs-driver",
+  "accepted_driver_sha256": "bd9316769f90230c9bb6e45c74956d20fe6fed2ec6089682fa084696615e0bac",
+  "formal_history_entries": 52,
+  "formal_history_next_index": 52,
+  "private_trial": 54,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_reduction_producers.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_sum.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+    "hosts/gpu/src/native_artifact/program/compiler.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_reduction_producers.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs": "0b9d17d9d74d724d3bbaf6c17701603dc944475f64d8fa2ff0e83524dc77dc05",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "5e96cd6702104cc06dbc15068cc3a508fb5a041401f288d7a344378efee07e2c",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "5d2386de7958abcaedab9d471900a0cd84aff1a45e21043cf7759aaf0311b53d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_reduction_producers.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_sum.rs": "7066f61a858521a43a92b695f2221ee4ef2675d97d23cf5b73fb84c71f98a6b7",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "dfc0b0d7840ecf4fbc1c6d1d1727f580089bc172ef871ff17acefe56fc7e2ed8",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "05f3947a8ef9bfbfb1737d419a1b4be921bcb8564f801024cefdb46d0af84cb5",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "4a36bf964cfef3979af70b753bd83b43eb0f2ca3927772cf8a109ebdb76bb6d3",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "3e15083d34df2a55cbf2c33f7bcb13013dd4b70e7264cf3a611c77aa9c184553",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f127675d59eff4818f0fc9526d27a25bad22e38a1e510bf5d58575c87ca76fe2",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "1181b7677fdf0d6522e6bc995ae31206ac048aff52e414c09ba830f2f5d4d1e8",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "9894ab2a86cab22d4e656b7590b78f624d42abb246ea270156a5ec8794ea2209",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_reduction_producers.rs": null
+  },
+  "profiling_basis": [
+    "accepted50-correlation-profile.json: allocation/free17.78%, preparation/schema15.66%, exact same-PID Object verification; ordinary pointwise producer feeds ordered sum in unchanged correlation source.",
+    "Accepted51 retained that producer materialization while product row-pair code changed. Gram-Schmidt/Durbin generated maps remain separate opportunities; this choice uses optimization cases only."
+  ],
+  "transformation": "Extend independently source-derived bounded expression recipes: a pure F64 elementwise DAG, a sole ordered row/column sum consumer, no escaping intermediates and exact straight CFG. Generate each original rounded cell expression directly as the term of its original +0-seeded ordered output accumulation. Reuse existing current-owner checked private source-closed expression loan, complete source resource envelope, input owners, initialized final bank and cancellation/replay. Remove intermediate Values, buffers, full passes and individual operator boundaries. No per-op native dispatch or new ABI/frame/state.",
+  "invariants": [
+    "Original all30 ports, inputs, C flags/binaries, limits/tolerances/arithmetic/timer/cache boundaries and15/15 split unchanged; no benchmark names or fixed MINI dimensions in compiler rules.",
+    "Pure source closures and exact read-role escape/dominance proof derived again from source and every image path. Ambiguous joins/cycles, additional uses, incompatible geometry, unsupported operations or missing admission retain original source.",
+    "Both reduction axes preserve each output term order and +0 seed. SIMD lanes are independent outputs only. No FMA, reassociation or split horizontal sums; finite producer intermediates retain exact node order/rounding.",
+    "Nonfinite consumed producer terms cancel all private output and replay unchanged source with original first-error/alias/atomicity behavior. Full issued frame/epoch/context/owner/schema/type/geometry validation remains.",
+    "Every original logical work/comparison/copy/publication/retirement obligation remains funded; only source-proved physical visits may decrease. Other counters equal. Finite/missing/zero/spent limits must preserve original errors and cleanup/retry.",
+    "Cranelift remains sole Mech generator. Efficient scalar/compression paths unchanged. Reuse existing expression loan and native sum kernel; no new retained runtime field or authority-bearing wire data. IR421/work157/ABI48."
+  ],
+  "qualification": "Focused original/decoded/restored source closure and real helper/bank tests, both axes/shapes/broadcasts/empty dimensions, exact cancellation/signedzero/subnormal/nonfinite bits, source fees/caps and malformed frame/image/epoch/context tests. Maintained748-or-current broad selected numeric/matrix/scalar/compression/source/type/protocol checks, both features and all30 C original/decoded/restored correctness before any samples. Preserve every failure and source revision.",
+  "untimed_gate": "All17002 optimization15 finite C liveouts; source work and comparison never decrease, every other counter equal except independently source-derived exact skipped-site physical visits. Genuine Objects must show correlation producer-to-sum closure selected, final-only bank/helper observation, original arithmetic order/no new FMA. Other optimization Object differences are retained and explained.",
+  "training_probe": {
+    "actors": [
+      "accepted51",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fully qualified prospective fresh-process optimization-only probe per materially changed fingerprint. Raw equal-weight GM accepted51/candidate median-runtime speedup strictly>1, all original samples/regressions retained, no retries/exclusions."
+  },
+  "formal_acceptance": "After full qualification and selected probe, commit/push and freeze exact clean source+driver. One900-observation formal run and29482 finite C liveouts, append immutable history at index52. Promote only optimization15 kernel Mech/C strictly below9.096908651052887. Holdout independently reported; cannot veto/select/diagnose/tune/trigger rollback or retry.",
+  "prior_experiment": {
+    "name": "immutable-map-read-reuse",
+    "fingerprint": "5a4c883e55572c62a893331585ad24e7d130e683446fc1ce93469f8712472090",
+    "probe_speedup": 0.9906874989625698,
+    "selected": false,
+    "difference": "That candidate retained all operators/buffers and removed duplicate checked-read guard work; the accepted backend already shared the data load. This experiment removes whole producer matrices and execution/publication boundaries."
+  },
+  "performance_observations": 0,
+  "versions": {
+    "ir": 421,
+    "work": 157,
+    "abi": 48
+  },
+  "implementation": {
+    "transformation": "Extend independently source-derived bounded expression recipes: a pure F64 elementwise DAG, a sole ordered row/column sum consumer, no escaping intermediates and exact straight CFG. Generate each original rounded cell expression directly as the term of its original +0-seeded ordered output accumulation. Reuse existing current-owner checked private source-closed expression loan, complete source resource envelope, input owners, initialized final bank and cancellation/replay. Remove intermediate Values, buffers, full passes and individual operator boundaries. No per-op native dispatch or new ABI/frame/state.",
+    "invariants": [
+      "Original all30 ports, inputs, C flags/binaries, limits/tolerances/arithmetic/timer/cache boundaries and15/15 split unchanged; no benchmark names or fixed MINI dimensions in compiler rules.",
+      "Pure source closures and exact read-role escape/dominance proof derived again from source and every image path. Ambiguous joins/cycles, additional uses, incompatible geometry, unsupported operations or missing admission retain original source.",
+      "Both reduction axes preserve each output term order and +0 seed. SIMD lanes are independent outputs only. No FMA, reassociation or split horizontal sums; finite producer intermediates retain exact node order/rounding.",
+      "Nonfinite consumed producer terms cancel all private output and replay unchanged source with original first-error/alias/atomicity behavior. Full issued frame/epoch/context/owner/schema/type/geometry validation remains.",
+      "Every original logical work/comparison/copy/publication/retirement obligation remains funded; only source-proved physical visits may decrease. Other counters equal. Finite/missing/zero/spent limits must preserve original errors and cleanup/retry.",
+      "Cranelift remains sole Mech generator. Efficient scalar/compression paths unchanged. Reuse existing expression loan and native sum kernel; no new retained runtime field or authority-bearing wire data. IR421/work157/ABI48."
+    ]
+  }
+}

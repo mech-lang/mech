@@ -8,6 +8,22 @@ impl Invocation<'_, '_, '_> {
         site: usize,
         words: &[u64],
     ) -> Result<bool, Error> {
+        self.matrix_replace_call::<true>(site, words)
+    }
+
+    pub(super) fn scalar_matrix_replace_call(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<bool, Error> {
+        self.matrix_replace_call::<false>(site, words)
+    }
+
+    fn matrix_replace_call<const UNSIGNED: bool>(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<bool, Error> {
         let descriptor = self.descriptor;
         let proof = descriptor
             .metadata()
@@ -27,18 +43,20 @@ impl Invocation<'_, '_, '_> {
         let kinds = |index: usize| {
             descriptor.metadata().plan.values()[operands[index].get() as usize].scalar_kind()
         };
-        if !call.supports_unsigned_matrix_replace()
+        let kind = call
+            .scalar_matrix_replace_kind()
+            .ok_or_else(|| invalid("scalar store lost its exact selected kind"))?;
+        if (UNSIGNED && !call.supports_unsigned_matrix_replace())
             || proof.site() as usize != site
-            || operands.len() != 3
-            || words.len() != 3
+            || !matches!(operands.len(), 3 | 4)
+            || words.len() != operands.len()
             || words[0] != 0
             || proof.source() != Some(operands[0])
             || proof.sublist().is_some()
             || kinds(0).is_some()
-            || kinds(2) != Some(NativeScalarKind::U64)
-            || !kinds(1).is_some_and(|kind| {
-                kind.unsigned_maximum().is_some() && kind.accepts_bits(words[1])
-            })
+            || (2..operands.len()).any(|index| kinds(index) != Some(NativeScalarKind::U64))
+            || kinds(1) != Some(kind)
+            || !kind.accepts_bits(words[1])
             || descriptor.metadata().plan.values()[output.get() as usize]
                 .scalar_kind()
                 .is_some()
@@ -69,8 +87,8 @@ impl Invocation<'_, '_, '_> {
                 &mut self.state.control.work,
             )?;
         }
-        let (value, _changed) = call
-            .unsigned_matrix_replace(
+        let result = if UNSIGNED {
+            call.unsigned_matrix_replace(
                 source,
                 words[2],
                 words[1],
@@ -79,10 +97,21 @@ impl Invocation<'_, '_, '_> {
                 &self.state.library,
                 coexistence,
             )
-            .map_err(|error| Error::Library {
-                origin: descriptor.metadata().plan.blocks()[site].origin(),
-                error,
-            })?;
+        } else {
+            call.scalar_matrix_replace(
+                source,
+                &words[2..],
+                words[1],
+                !proof.owned_source_slots().is_empty(),
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+        };
+        let (value, _changed) = result.map_err(|error| Error::Library {
+            origin: descriptor.metadata().plan.blocks()[site].origin(),
+            error,
+        })?;
         self.state
             .arena
             .put(output.get(), &value, &mut self.state.control.work)?;

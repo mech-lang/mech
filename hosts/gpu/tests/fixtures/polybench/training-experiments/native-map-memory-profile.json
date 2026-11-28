@@ -1,0 +1,1206 @@
+{
+  "schema": "mech.polybench.training-native-loop-profile.v1",
+  "scope": "Offline analysis of retained same-driver accepted31 optimization Gram samples. No new processes, performance samples, compiler changes or holdout diagnosis.",
+  "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "source_commit": "f60baf055a39497400f9392e0294911becf1a697",
+  "raw_sample_sha256": "4c4b5b537dc441f8e59be467eeccfd7b7d5df965da691d4a58f466b1f226f54c",
+  "map_sha256": "bdd8400f467be682e46cb4a60afac43576cc5a40236d5721796f24480fbe35dc",
+  "object_sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d",
+  "disassembly_sha256": "7029c3df9e17276751d5da557a8611857be870d6a27de8ee381adb16d8a23a80",
+  "native_function": "mech_canonical_program_entry_v1_numeric_5",
+  "execution_samples": 225,
+  "jit_self_samples": 174,
+  "loop_attributed_samples": 174,
+  "outside_loop_samples": 0,
+  "loops": [
+    {
+      "header": 7748,
+      "header_hex": "0x1e44",
+      "static_instructions": 50,
+      "self_samples": 45,
+      "percent_of_jit_self": 25.862068965517242,
+      "opcodes": {
+        "b": 4,
+        "add": 4,
+        "ldr": 8,
+        "cmp": 7,
+        "fmov": 1,
+        "b.eq": 2,
+        "fsqrt": 1,
+        "mov.d": 1,
+        "b.hi": 1,
+        "madd": 3,
+        "sub": 3,
+        "str": 2,
+        "ccmp": 2,
+        "b.lo": 4,
+        "mov": 1,
+        "movk": 3,
+        "umulh": 1,
+        "lsr": 1,
+        "msub": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 7748,
+          "hex": "0x1e44",
+          "samples": 16,
+          "instruction": "cmp x13, x9"
+        },
+        {
+          "offset": 9804,
+          "hex": "0x264c",
+          "samples": 17,
+          "instruction": "ldr x5, [sp, #21624]"
+        },
+        {
+          "offset": 9816,
+          "hex": "0x2658",
+          "samples": 11,
+          "instruction": "add x0, x3, x1"
+        },
+        {
+          "offset": 9860,
+          "hex": "0x2684",
+          "samples": 1,
+          "instruction": "add x0, x3, x1"
+        }
+      ]
+    },
+    {
+      "header": 9096,
+      "header_hex": "0x2388",
+      "static_instructions": 48,
+      "self_samples": 34,
+      "percent_of_jit_self": 19.54022988505747,
+      "opcodes": {
+        "b": 2,
+        "fmov": 3,
+        "msub": 3,
+        "cmp": 7,
+        "b.lo": 4,
+        "cset": 2,
+        "fmul": 1,
+        "sub": 2,
+        "fsub": 1,
+        "mov.d": 1,
+        "and": 1,
+        "ldr": 5,
+        "madd": 3,
+        "uxtb": 1,
+        "str": 1,
+        "cbnz": 1,
+        "add": 2,
+        "mov": 1,
+        "movk": 3,
+        "umulh": 1,
+        "lsr": 1,
+        "b.hi": 1,
+        "ccmp": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 9096,
+          "hex": "0x2388",
+          "samples": 15,
+          "instruction": "cmp x1, x6"
+        },
+        {
+          "offset": 9296,
+          "hex": "0x2450",
+          "samples": 10,
+          "instruction": "ldr x0, [sp, #21624]"
+        },
+        {
+          "offset": 9308,
+          "hex": "0x245c",
+          "samples": 1,
+          "instruction": "msub x12, x2, x24, x1"
+        },
+        {
+          "offset": 9376,
+          "hex": "0x24a0",
+          "samples": 5,
+          "instruction": "uxtb w14, w14"
+        },
+        {
+          "offset": 9416,
+          "hex": "0x24c8",
+          "samples": 1,
+          "instruction": "ldr x7, [x13, x12, lsl #3]"
+        },
+        {
+          "offset": 9748,
+          "hex": "0x2614",
+          "samples": 2,
+          "instruction": "mov.d x0, v27[0]"
+        }
+      ]
+    },
+    {
+      "header": 6424,
+      "header_hex": "0x1918",
+      "static_instructions": 31,
+      "self_samples": 31,
+      "percent_of_jit_self": 17.816091954022987,
+      "opcodes": {
+        "cmp": 4,
+        "b.lo": 3,
+        "ldr": 4,
+        "mov": 1,
+        "movk": 3,
+        "msub": 3,
+        "umulh": 1,
+        "madd": 2,
+        "lsr": 1,
+        "str": 2,
+        "add": 2,
+        "b": 2,
+        "b.eq": 1,
+        "sub": 1,
+        "ccmp": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 6424,
+          "hex": "0x1918",
+          "samples": 12,
+          "instruction": "cmp x11, x2"
+        },
+        {
+          "offset": 10312,
+          "hex": "0x2848",
+          "samples": 9,
+          "instruction": "ldr x12, [sp, #21624]"
+        },
+        {
+          "offset": 10324,
+          "hex": "0x2854",
+          "samples": 9,
+          "instruction": "msub x3, x0, x24, x11"
+        },
+        {
+          "offset": 10364,
+          "hex": "0x287c",
+          "samples": 1,
+          "instruction": "msub x3, x0, x24, x11"
+        }
+      ]
+    },
+    {
+      "header": 11724,
+      "header_hex": "0x2dcc",
+      "static_instructions": 25,
+      "self_samples": 17,
+      "percent_of_jit_self": 9.770114942528735,
+      "opcodes": {
+        "cmp": 4,
+        "b": 1,
+        "cset": 2,
+        "b.lo": 2,
+        "ldr": 2,
+        "sub": 2,
+        "and": 1,
+        "uxtb": 1,
+        "cbnz": 1,
+        "fadd": 1,
+        "madd": 1,
+        "add": 2,
+        "fmov": 3,
+        "mov.d": 1,
+        "fmul": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 11724,
+          "hex": "0x2dcc",
+          "samples": 4,
+          "instruction": "cmp x3, x15"
+        },
+        {
+          "offset": 11768,
+          "hex": "0x2df8",
+          "samples": 9,
+          "instruction": "add x5, x7, x3"
+        },
+        {
+          "offset": 11784,
+          "hex": "0x2e08",
+          "samples": 2,
+          "instruction": "cmp x5, #20"
+        },
+        {
+          "offset": 11800,
+          "hex": "0x2e18",
+          "samples": 2,
+          "instruction": "ldr x12, [x11, x5, lsl #3]"
+        }
+      ]
+    },
+    {
+      "header": 7764,
+      "header_hex": "0x1e54",
+      "static_instructions": 7,
+      "self_samples": 16,
+      "percent_of_jit_self": 9.195402298850574,
+      "opcodes": {
+        "add": 1,
+        "mov": 1,
+        "cmp": 1,
+        "b.lo": 1,
+        "ldr": 2,
+        "str": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 7764,
+          "hex": "0x1e54",
+          "samples": 2,
+          "instruction": "ldr x12, [x8, x0]"
+        },
+        {
+          "offset": 7772,
+          "hex": "0x1e5c",
+          "samples": 14,
+          "instruction": "str x12, [x1, x0]"
+        }
+      ],
+      "all_instructions": [
+        {
+          "offset": 7764,
+          "instruction": "ldr x12, [x8, x0]"
+        },
+        {
+          "offset": 7768,
+          "instruction": "ldr x1, [sp, #21792]"
+        },
+        {
+          "offset": 7772,
+          "instruction": "str x12, [x1, x0]"
+        },
+        {
+          "offset": 7776,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 7780,
+          "instruction": "mov x13, #7200"
+        },
+        {
+          "offset": 7784,
+          "instruction": "cmp x0, x13"
+        },
+        {
+          "offset": 7788,
+          "instruction": "b.lo 0x1e54 <_mech_canonical_program_entry_v1_numeric_5+0x1e54>"
+        }
+      ]
+    },
+    {
+      "header": 5104,
+      "header_hex": "0x13f0",
+      "static_instructions": 223,
+      "self_samples": 10,
+      "percent_of_jit_self": 5.747126436781609,
+      "opcodes": {
+        "cmp": 46,
+        "uxtb": 15,
+        "b.eq": 24,
+        "cset": 19,
+        "b.lo": 3,
+        "mov": 12,
+        "adds": 5,
+        "ldr": 29,
+        "sub": 3,
+        "mul": 3,
+        "umulh": 3,
+        "and": 1,
+        "cbnz": 6,
+        "b.ne": 2,
+        "b.ls": 3,
+        "str": 26,
+        "orr": 4,
+        "lsl": 3,
+        "add": 4,
+        "madd": 1,
+        "fmov": 3,
+        "fmul": 1,
+        "fadd": 1,
+        "mov.d": 1,
+        "b": 3,
+        "b.hi": 1,
+        "subs": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 10736,
+          "hex": "0x29f0",
+          "samples": 1,
+          "instruction": "mov x0, #1"
+        },
+        {
+          "offset": 10768,
+          "hex": "0x2a10",
+          "samples": 1,
+          "instruction": "mov x1, #1"
+        },
+        {
+          "offset": 10952,
+          "hex": "0x2ac8",
+          "samples": 2,
+          "instruction": "ldr x15, [sp, #2304]"
+        },
+        {
+          "offset": 11104,
+          "hex": "0x2b60",
+          "samples": 1,
+          "instruction": "cmp x5, #0"
+        },
+        {
+          "offset": 11188,
+          "hex": "0x2bb4",
+          "samples": 1,
+          "instruction": "cmp x7, #0"
+        },
+        {
+          "offset": 11204,
+          "hex": "0x2bc4",
+          "samples": 1,
+          "instruction": "ldr x7, [sp, #2296]"
+        },
+        {
+          "offset": 11320,
+          "hex": "0x2c38",
+          "samples": 2,
+          "instruction": "cmp w12, #0"
+        },
+        {
+          "offset": 11372,
+          "hex": "0x2c6c",
+          "samples": 1,
+          "instruction": "cmp x0, #0"
+        },
+        {
+          "offset": 11724,
+          "hex": "0x2dcc",
+          "samples": 4,
+          "instruction": "cmp x3, x15"
+        },
+        {
+          "offset": 11768,
+          "hex": "0x2df8",
+          "samples": 9,
+          "instruction": "add x5, x7, x3"
+        },
+        {
+          "offset": 11784,
+          "hex": "0x2e08",
+          "samples": 2,
+          "instruction": "cmp x5, #20"
+        },
+        {
+          "offset": 11800,
+          "hex": "0x2e18",
+          "samples": 2,
+          "instruction": "ldr x12, [x11, x5, lsl #3]"
+        }
+      ]
+    },
+    {
+      "header": 6440,
+      "header_hex": "0x1928",
+      "static_instructions": 7,
+      "self_samples": 6,
+      "percent_of_jit_self": 3.4482758620689653,
+      "opcodes": {
+        "b.lo": 1,
+        "ldr": 2,
+        "str": 1,
+        "add": 1,
+        "mov": 1,
+        "cmp": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 6448,
+          "hex": "0x1930",
+          "samples": 6,
+          "instruction": "str x1, [x11, x0]"
+        }
+      ],
+      "all_instructions": [
+        {
+          "offset": 6440,
+          "instruction": "ldr x1, [x4, x0]"
+        },
+        {
+          "offset": 6444,
+          "instruction": "ldr x11, [sp, #21784]"
+        },
+        {
+          "offset": 6448,
+          "instruction": "str x1, [x11, x0]"
+        },
+        {
+          "offset": 6452,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 6456,
+          "instruction": "mov x1, #4800"
+        },
+        {
+          "offset": 6460,
+          "instruction": "cmp x0, x1"
+        },
+        {
+          "offset": 6464,
+          "instruction": "b.lo 0x1928 <_mech_canonical_program_entry_v1_numeric_5+0x1928>"
+        }
+      ]
+    },
+    {
+      "header": 9112,
+      "header_hex": "0x2398",
+      "static_instructions": 7,
+      "self_samples": 5,
+      "percent_of_jit_self": 2.8735632183908044,
+      "opcodes": {
+        "str": 1,
+        "add": 1,
+        "mov": 1,
+        "cmp": 1,
+        "b.lo": 1,
+        "ldr": 2
+      },
+      "sampled_instructions": [
+        {
+          "offset": 9112,
+          "hex": "0x2398",
+          "samples": 2,
+          "instruction": "ldr x13, [x5, x0]"
+        },
+        {
+          "offset": 9120,
+          "hex": "0x23a0",
+          "samples": 3,
+          "instruction": "str x13, [x9, x0]"
+        }
+      ],
+      "all_instructions": [
+        {
+          "offset": 9112,
+          "instruction": "ldr x13, [x5, x0]"
+        },
+        {
+          "offset": 9116,
+          "instruction": "ldr x9, [sp, #21800]"
+        },
+        {
+          "offset": 9120,
+          "instruction": "str x13, [x9, x0]"
+        },
+        {
+          "offset": 9124,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 9128,
+          "instruction": "mov x14, #4800"
+        },
+        {
+          "offset": 9132,
+          "instruction": "cmp x0, x14"
+        },
+        {
+          "offset": 9136,
+          "instruction": "b.lo 0x2398 <_mech_canonical_program_entry_v1_numeric_5+0x2398>"
+        }
+      ]
+    },
+    {
+      "header": 892,
+      "header_hex": "0x37c",
+      "static_instructions": 2274,
+      "self_samples": 4,
+      "percent_of_jit_self": 2.2988505747126435,
+      "opcodes": {
+        "str": 194,
+        "ldr": 257,
+        "mul": 23,
+        "umulh": 26,
+        "cmp": 344,
+        "cset": 138,
+        "sub": 420,
+        "uxtb": 110,
+        "b.ne": 171,
+        "b.eq": 40,
+        "mov": 136,
+        "b.hi": 20,
+        "lsl": 20,
+        "orr": 33,
+        "cbz": 23,
+        "adds": 46,
+        "movk": 74,
+        "b.lo": 22,
+        "ccmp": 18,
+        "b.hs": 2,
+        "add": 34,
+        "b": 16,
+        "lsr": 3,
+        "msub": 7,
+        "madd": 11,
+        "and": 3,
+        "cbnz": 9,
+        "fmov": 11,
+        "fmul": 3,
+        "fsub": 1,
+        "mov.d": 5,
+        "b.ls": 4,
+        "subs": 7,
+        "fsqrt": 2,
+        "stur": 20,
+        "ldur": 18,
+        "fadd": 2,
+        "fdiv": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 2792,
+          "hex": "0xae8",
+          "samples": 1,
+          "instruction": "cmp x2, x13"
+        },
+        {
+          "offset": 3840,
+          "hex": "0xf00",
+          "samples": 1,
+          "instruction": "ldr x0, [x2, x7]"
+        },
+        {
+          "offset": 3848,
+          "hex": "0xf08",
+          "samples": 2,
+          "instruction": "str x0, [x3, x7]"
+        },
+        {
+          "offset": 4684,
+          "hex": "0x124c",
+          "samples": 1,
+          "instruction": "ldr x13, [sp, #1784]"
+        },
+        {
+          "offset": 5132,
+          "hex": "0x140c",
+          "samples": 1,
+          "instruction": "str x1, [x2, x0]"
+        },
+        {
+          "offset": 6424,
+          "hex": "0x1918",
+          "samples": 12,
+          "instruction": "cmp x11, x2"
+        },
+        {
+          "offset": 6448,
+          "hex": "0x1930",
+          "samples": 6,
+          "instruction": "str x1, [x11, x0]"
+        },
+        {
+          "offset": 6920,
+          "hex": "0x1b08",
+          "samples": 1,
+          "instruction": "ldr x7, [sp, #21640]"
+        },
+        {
+          "offset": 7268,
+          "hex": "0x1c64",
+          "samples": 1,
+          "instruction": "uxtb w14, w14"
+        },
+        {
+          "offset": 7748,
+          "hex": "0x1e44",
+          "samples": 16,
+          "instruction": "cmp x13, x9"
+        },
+        {
+          "offset": 7764,
+          "hex": "0x1e54",
+          "samples": 2,
+          "instruction": "ldr x12, [x8, x0]"
+        },
+        {
+          "offset": 7772,
+          "hex": "0x1e5c",
+          "samples": 14,
+          "instruction": "str x12, [x1, x0]"
+        },
+        {
+          "offset": 9096,
+          "hex": "0x2388",
+          "samples": 15,
+          "instruction": "cmp x1, x6"
+        },
+        {
+          "offset": 9104,
+          "hex": "0x2390",
+          "samples": 1,
+          "instruction": "str x6, [sp, #21040]"
+        },
+        {
+          "offset": 9112,
+          "hex": "0x2398",
+          "samples": 2,
+          "instruction": "ldr x13, [x5, x0]"
+        },
+        {
+          "offset": 9120,
+          "hex": "0x23a0",
+          "samples": 3,
+          "instruction": "str x13, [x9, x0]"
+        },
+        {
+          "offset": 9296,
+          "hex": "0x2450",
+          "samples": 10,
+          "instruction": "ldr x0, [sp, #21624]"
+        },
+        {
+          "offset": 9308,
+          "hex": "0x245c",
+          "samples": 1,
+          "instruction": "msub x12, x2, x24, x1"
+        },
+        {
+          "offset": 9376,
+          "hex": "0x24a0",
+          "samples": 5,
+          "instruction": "uxtb w14, w14"
+        },
+        {
+          "offset": 9416,
+          "hex": "0x24c8",
+          "samples": 1,
+          "instruction": "ldr x7, [x13, x12, lsl #3]"
+        },
+        {
+          "offset": 9748,
+          "hex": "0x2614",
+          "samples": 2,
+          "instruction": "mov.d x0, v27[0]"
+        },
+        {
+          "offset": 9804,
+          "hex": "0x264c",
+          "samples": 17,
+          "instruction": "ldr x5, [sp, #21624]"
+        },
+        {
+          "offset": 9816,
+          "hex": "0x2658",
+          "samples": 11,
+          "instruction": "add x0, x3, x1"
+        },
+        {
+          "offset": 9860,
+          "hex": "0x2684",
+          "samples": 1,
+          "instruction": "add x0, x3, x1"
+        },
+        {
+          "offset": 10312,
+          "hex": "0x2848",
+          "samples": 9,
+          "instruction": "ldr x12, [sp, #21624]"
+        },
+        {
+          "offset": 10324,
+          "hex": "0x2854",
+          "samples": 9,
+          "instruction": "msub x3, x0, x24, x11"
+        },
+        {
+          "offset": 10364,
+          "hex": "0x287c",
+          "samples": 1,
+          "instruction": "msub x3, x0, x24, x11"
+        },
+        {
+          "offset": 10736,
+          "hex": "0x29f0",
+          "samples": 1,
+          "instruction": "mov x0, #1"
+        },
+        {
+          "offset": 10768,
+          "hex": "0x2a10",
+          "samples": 1,
+          "instruction": "mov x1, #1"
+        },
+        {
+          "offset": 10952,
+          "hex": "0x2ac8",
+          "samples": 2,
+          "instruction": "ldr x15, [sp, #2304]"
+        },
+        {
+          "offset": 11104,
+          "hex": "0x2b60",
+          "samples": 1,
+          "instruction": "cmp x5, #0"
+        },
+        {
+          "offset": 11188,
+          "hex": "0x2bb4",
+          "samples": 1,
+          "instruction": "cmp x7, #0"
+        },
+        {
+          "offset": 11204,
+          "hex": "0x2bc4",
+          "samples": 1,
+          "instruction": "ldr x7, [sp, #2296]"
+        },
+        {
+          "offset": 11320,
+          "hex": "0x2c38",
+          "samples": 2,
+          "instruction": "cmp w12, #0"
+        },
+        {
+          "offset": 11372,
+          "hex": "0x2c6c",
+          "samples": 1,
+          "instruction": "cmp x0, #0"
+        },
+        {
+          "offset": 11724,
+          "hex": "0x2dcc",
+          "samples": 4,
+          "instruction": "cmp x3, x15"
+        },
+        {
+          "offset": 11768,
+          "hex": "0x2df8",
+          "samples": 9,
+          "instruction": "add x5, x7, x3"
+        },
+        {
+          "offset": 11784,
+          "hex": "0x2e08",
+          "samples": 2,
+          "instruction": "cmp x5, #20"
+        },
+        {
+          "offset": 11800,
+          "hex": "0x2e18",
+          "samples": 2,
+          "instruction": "ldr x12, [x11, x5, lsl #3]"
+        },
+        {
+          "offset": 12496,
+          "hex": "0x30d0",
+          "samples": 1,
+          "instruction": "madd x3, x3, x19, x5"
+        }
+      ]
+    },
+    {
+      "header": 3840,
+      "header_hex": "0xf00",
+      "static_instructions": 6,
+      "self_samples": 3,
+      "percent_of_jit_self": 1.7241379310344827,
+      "opcodes": {
+        "ldr": 2,
+        "str": 1,
+        "add": 1,
+        "cmp": 1,
+        "b.lo": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 3840,
+          "hex": "0xf00",
+          "samples": 1,
+          "instruction": "ldr x0, [x2, x7]"
+        },
+        {
+          "offset": 3848,
+          "hex": "0xf08",
+          "samples": 2,
+          "instruction": "str x0, [x3, x7]"
+        }
+      ],
+      "all_instructions": [
+        {
+          "offset": 3840,
+          "instruction": "ldr x0, [x2, x7]"
+        },
+        {
+          "offset": 3844,
+          "instruction": "ldr x3, [sp, #21776]"
+        },
+        {
+          "offset": 3848,
+          "instruction": "str x0, [x3, x7]"
+        },
+        {
+          "offset": 3852,
+          "instruction": "add x7, x7, #8"
+        },
+        {
+          "offset": 3856,
+          "instruction": "cmp x7, #160"
+        },
+        {
+          "offset": 3860,
+          "instruction": "b.lo 0xf00 <_mech_canonical_program_entry_v1_numeric_5+0xf00>"
+        }
+      ]
+    },
+    {
+      "header": 2792,
+      "header_hex": "0xae8",
+      "static_instructions": 25,
+      "self_samples": 1,
+      "percent_of_jit_self": 0.5747126436781609,
+      "opcodes": {
+        "sub": 2,
+        "fadd": 1,
+        "mov.d": 1,
+        "cmp": 3,
+        "b": 1,
+        "cset": 2,
+        "ldr": 2,
+        "and": 1,
+        "uxtb": 2,
+        "cbnz": 2,
+        "madd": 1,
+        "b.lo": 1,
+        "add": 2,
+        "fmul": 1,
+        "fmov": 2,
+        "str": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 2792,
+          "hex": "0xae8",
+          "samples": 1,
+          "instruction": "cmp x2, x13"
+        }
+      ]
+    },
+    {
+      "header": 3824,
+      "header_hex": "0xef0",
+      "static_instructions": 20,
+      "self_samples": 1,
+      "percent_of_jit_self": 0.5747126436781609,
+      "opcodes": {
+        "ldr": 3,
+        "add": 2,
+        "sub": 2,
+        "cmp": 2,
+        "ccmp": 1,
+        "b.lo": 2,
+        "madd": 1,
+        "fmov": 2,
+        "fsqrt": 1,
+        "fdiv": 1,
+        "mov.d": 1,
+        "str": 1,
+        "b": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 12496,
+          "hex": "0x30d0",
+          "samples": 1,
+          "instruction": "madd x3, x3, x19, x5"
+        }
+      ]
+    },
+    {
+      "header": 5124,
+      "header_hex": "0x1404",
+      "static_instructions": 8,
+      "self_samples": 1,
+      "percent_of_jit_self": 0.5747126436781609,
+      "opcodes": {
+        "b": 1,
+        "ldr": 3,
+        "str": 1,
+        "add": 1,
+        "cmp": 1,
+        "b.hs": 1
+      },
+      "sampled_instructions": [
+        {
+          "offset": 5132,
+          "hex": "0x140c",
+          "samples": 1,
+          "instruction": "str x1, [x2, x0]"
+        }
+      ],
+      "all_instructions": [
+        {
+          "offset": 5124,
+          "instruction": "ldr x1, [x14, x0]"
+        },
+        {
+          "offset": 5128,
+          "instruction": "ldr x2, [sp, #21768]"
+        },
+        {
+          "offset": 5132,
+          "instruction": "str x1, [x2, x0]"
+        },
+        {
+          "offset": 5136,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 5140,
+          "instruction": "cmp x0, #240"
+        },
+        {
+          "offset": 5144,
+          "instruction": "b.hs 0x1424 <_mech_canonical_program_entry_v1_numeric_5+0x1424>"
+        },
+        {
+          "offset": 5148,
+          "instruction": "ldr x14, [sp, #21752]"
+        },
+        {
+          "offset": 5152,
+          "instruction": "b 0x1404 <_mech_canonical_program_entry_v1_numeric_5+0x1404>"
+        }
+      ]
+    }
+  ],
+  "outside_loop_instructions": [],
+  "cfg_method": "AArch64 instruction CFG, reachable dominators and natural backedges; innermost loops contain no strict natural subloop. Static counts are not runtime percentages.",
+  "cautions": [
+    "PC attribution is sampled, not exact instruction cost. The174 generated-code samples are coarse; each PC is assigned to its smallest containing natural loop.",
+    "The prior round30 native-attribution capture has a different fingerprint and was inspected only to locate analysis tooling; its PCs are not used here.",
+    "No benchmark timing or acceptance score is produced."
+  ],
+  "created_at": "2026-11-27T18:09:41.761252+00:00",
+  "copy_loops": [
+    {
+      "header": "0x1e54",
+      "samples": 16,
+      "instructions": [
+        {
+          "offset": 7764,
+          "instruction": "ldr x12, [x8, x0]"
+        },
+        {
+          "offset": 7768,
+          "instruction": "ldr x1, [sp, #21792]"
+        },
+        {
+          "offset": 7772,
+          "instruction": "str x12, [x1, x0]"
+        },
+        {
+          "offset": 7776,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 7780,
+          "instruction": "mov x13, #7200"
+        },
+        {
+          "offset": 7784,
+          "instruction": "cmp x0, x13"
+        },
+        {
+          "offset": 7788,
+          "instruction": "b.lo 0x1e54 <_mech_canonical_program_entry_v1_numeric_5+0x1e54>"
+        }
+      ]
+    },
+    {
+      "header": "0x1928",
+      "samples": 6,
+      "instructions": [
+        {
+          "offset": 6440,
+          "instruction": "ldr x1, [x4, x0]"
+        },
+        {
+          "offset": 6444,
+          "instruction": "ldr x11, [sp, #21784]"
+        },
+        {
+          "offset": 6448,
+          "instruction": "str x1, [x11, x0]"
+        },
+        {
+          "offset": 6452,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 6456,
+          "instruction": "mov x1, #4800"
+        },
+        {
+          "offset": 6460,
+          "instruction": "cmp x0, x1"
+        },
+        {
+          "offset": 6464,
+          "instruction": "b.lo 0x1928 <_mech_canonical_program_entry_v1_numeric_5+0x1928>"
+        }
+      ]
+    },
+    {
+      "header": "0x2398",
+      "samples": 5,
+      "instructions": [
+        {
+          "offset": 9112,
+          "instruction": "ldr x13, [x5, x0]"
+        },
+        {
+          "offset": 9116,
+          "instruction": "ldr x9, [sp, #21800]"
+        },
+        {
+          "offset": 9120,
+          "instruction": "str x13, [x9, x0]"
+        },
+        {
+          "offset": 9124,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 9128,
+          "instruction": "mov x14, #4800"
+        },
+        {
+          "offset": 9132,
+          "instruction": "cmp x0, x14"
+        },
+        {
+          "offset": 9136,
+          "instruction": "b.lo 0x2398 <_mech_canonical_program_entry_v1_numeric_5+0x2398>"
+        }
+      ]
+    },
+    {
+      "header": "0xf00",
+      "samples": 3,
+      "instructions": [
+        {
+          "offset": 3840,
+          "instruction": "ldr x0, [x2, x7]"
+        },
+        {
+          "offset": 3844,
+          "instruction": "ldr x3, [sp, #21776]"
+        },
+        {
+          "offset": 3848,
+          "instruction": "str x0, [x3, x7]"
+        },
+        {
+          "offset": 3852,
+          "instruction": "add x7, x7, #8"
+        },
+        {
+          "offset": 3856,
+          "instruction": "cmp x7, #160"
+        },
+        {
+          "offset": 3860,
+          "instruction": "b.lo 0xf00 <_mech_canonical_program_entry_v1_numeric_5+0xf00>"
+        }
+      ]
+    },
+    {
+      "header": "0x1404",
+      "samples": 1,
+      "instructions": [
+        {
+          "offset": 5124,
+          "instruction": "ldr x1, [x14, x0]"
+        },
+        {
+          "offset": 5128,
+          "instruction": "ldr x2, [sp, #21768]"
+        },
+        {
+          "offset": 5132,
+          "instruction": "str x1, [x2, x0]"
+        },
+        {
+          "offset": 5136,
+          "instruction": "add x0, x0, #8"
+        },
+        {
+          "offset": 5140,
+          "instruction": "cmp x0, #240"
+        },
+        {
+          "offset": 5144,
+          "instruction": "b.hs 0x1424 <_mech_canonical_program_entry_v1_numeric_5+0x1424>"
+        },
+        {
+          "offset": 5148,
+          "instruction": "ldr x14, [sp, #21752]"
+        },
+        {
+          "offset": 5152,
+          "instruction": "b 0x1404 <_mech_canonical_program_entry_v1_numeric_5+0x1404>"
+        }
+      ]
+    }
+  ],
+  "copy_loop_samples": 31,
+  "copy_percent_of_jit": 17.816091954022987,
+  "copy_percent_of_checked_execution": 13.777777777777779,
+  "main_map_samples": 110,
+  "main_map_percent_of_jit": 63.2183908045977,
+  "archives": {
+    "analyze-loops.py": {
+      "path": "qualification/experiments/native-map-memory-profile/analyze-loops.py.gz",
+      "sha256": "e996a3950bf7510c3cfa36b6b189e722bde7183e5be7b0975a684b1ae604fa7d",
+      "compressed_sha256": "35748cc04b42e942cef344153b03e3d0298f04ddb2937e6df2ddd8094d2fc4e2"
+    },
+    "loop-attribution.json": {
+      "path": "qualification/experiments/native-map-memory-profile/loop-attribution.json.gz",
+      "sha256": "56fdbc786a8752661116a3c36b4506075efe21d28c1dba2cc314af665976bddb",
+      "compressed_sha256": "164788e101b3c8c830b5dba3e5f03e93a20f66edb15dcab47dabdff29faf19b2"
+    },
+    "gramschmidt.sample.txt": {
+      "path": "qualification/experiments/native-map-memory-profile/gramschmidt.sample.txt.gz",
+      "sha256": "4c4b5b537dc441f8e59be467eeccfd7b7d5df965da691d4a58f466b1f226f54c",
+      "compressed_sha256": "12e33c074a629959c1a15124c908a38aad4610b44b4f099d9ac3d19cefcad9a4"
+    },
+    "gramschmidt.perf.map": {
+      "path": "qualification/experiments/native-map-memory-profile/gramschmidt.perf.map.gz",
+      "sha256": "bdd8400f467be682e46cb4a60afac43576cc5a40236d5721796f24480fbe35dc",
+      "compressed_sha256": "f0d040701d8e986f735ad0d6cbce036c396d79884d2990ce173aa1dc720d7c6a"
+    },
+    "native-loop-census.py": {
+      "path": "qualification/experiments/native-map-memory-profile/native-loop-census.py.gz",
+      "sha256": "e2074df9414c93b0dba21afa84b7cb4e51f437739373e467b1bed2ab1a32757a",
+      "compressed_sha256": "14b14af84045f8644432b461e95c9efc59f4ab988a5281c8067a50cf8f7a9421"
+    },
+    "gramschmidt.disasm.txt": {
+      "path": "qualification/experiments/native-map-memory-profile/gramschmidt.disasm.txt.gz",
+      "sha256": "7029c3df9e17276751d5da557a8611857be870d6a27de8ee381adb16d8a23a80",
+      "compressed_sha256": "2154eafcb7d2c0b1cf9d6f7d64c06b8481356e4cc36878094881560c11e2ce48"
+    }
+  },
+  "accepted_round": 31,
+  "formal_history_entries_unchanged": 40,
+  "new_performance_observations": 0
+}

@@ -46,12 +46,12 @@ pub(crate) fn element_supported(body: &SchemaBody) -> bool {
     )
 }
 
-/// A row block can append directly to the canonical scalar bank. Its width
-/// may vary per visit; fixed one-row geometry avoids a hidden row permutation.
+/// Matrix blocks retain their checked geometry. The compact bank appends in
+/// column-major order; the managed boundary permutes to canonical row-major
+/// order once, after all blocks have agreed on their row count.
 pub(crate) fn row_block_supported(schema: &mech_core::Schema) -> bool {
     matches!(schema.body(), SchemaBody::Matrix { element, dimensions }
         if dimensions.len() == 2
-            && dimensions[0] == mech_core::DimensionExpr::Constant(1)
             && element_supported(element))
         && schema
             .dimension_parameters()
@@ -64,9 +64,7 @@ pub(crate) fn collection_kind_supported(kind: ComprehensionKind) -> bool {
         kind,
         ComprehensionKind::Matrix
             | ComprehensionKind::MatrixPreserveShape
-            | ComprehensionKind::MatrixHorizontalBlocks {
-                rows: crate::MatrixBlockRows::Fixed(1)
-            }
+            | ComprehensionKind::MatrixHorizontalBlocks { .. }
     )
 }
 

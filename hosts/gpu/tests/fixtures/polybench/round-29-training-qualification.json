@@ -1,0 +1,690 @@
+{
+  "schema": "mech.polybench.training-qualification.v1",
+  "created_at": "2026-11-27T06:22:12.368782+00:00",
+  "scope": "Selected current-source correctness and standalone feature qualification before formal timing. Holdout performance untouched.",
+  "source_parent": "e6207c6c16d776483063eb8255ce573d706ad200",
+  "compiler_fingerprint": "3beaf42d17fb5e3d663aeef15b9da6b21e58bb42beed0062a84a0b5925b5f743",
+  "driver_sha256": "28daeaa814e6ffef34800c9eeedb3165c40862ef1d879a4cbdc80f5ca4a32d59",
+  "versions": {
+    "ir": 388,
+    "work": 155,
+    "abi": 46
+  },
+  "total_unique_selected_checks": 576,
+  "checks": [
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 99.6449337922968,
+      "passed_tests": [
+        405
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.37604387523606,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.698182875290513,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18795941676944494,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16450895881280303,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 12.366165999788791,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.72732758335769,
+      "passed_tests": []
+    }
+  ],
+  "logs": [
+    {
+      "log": "qualification/round-29-transpose/numeric-regressions.log.gz",
+      "log_sha256": "1aff691f259868aa3497de939578806a6e50de4c9ffda8a0e0b3256d4dcebec3",
+      "compressed_sha256": "93bfcde4d0fb0b18f58d601b682090cb70ddf99a5927c98ba30d417907c0e159",
+      "passed_tests": 405
+    },
+    {
+      "log": "qualification/round-29-transpose/matrix-polybench.log.gz",
+      "log_sha256": "b904a92d97e44318f2b809af1758a046c4b38fdeeffaa23a2fcfc4d03bd050fe",
+      "compressed_sha256": "a96994fa990ea8252d620a9d78637814a51242228811e71be4bd21a007ec677c",
+      "passed_tests": 54
+    },
+    {
+      "log": "qualification/round-29-transpose/program-regressions.log.gz",
+      "log_sha256": "f9c86f0d0285006bec5253561996ed580aaf6d8786d4461571f3422a04fcc76b",
+      "compressed_sha256": "5d6ef8c4fcb5244aab668558de130d5f137822602ef3e83948628e719909684d",
+      "passed_tests": 114
+    },
+    {
+      "log": "qualification/round-29-transpose/protocol.log.gz",
+      "log_sha256": "e652621fa4292ca6af08e69717fe951afe91593073ec185bfeebd23a4d8630a0",
+      "compressed_sha256": "f84dcf74f489dae99356bb2313038eb2bdce933f1f086ea8672f8282af2ef0e0",
+      "passed_tests": 2
+    },
+    {
+      "log": "qualification/round-29-transpose/abi-layout.log.gz",
+      "log_sha256": "e0b3682600fb640133828ec640d0bf6da75ddd0d803e279665d21c8ff64292d4",
+      "compressed_sha256": "d04cc86af01c5f459e130c633726a647a659e6e4f27a2ebf2ce4dba294924122",
+      "passed_tests": 1
+    },
+    {
+      "log": "qualification/round-29-transpose/runtime-feature.log.gz",
+      "log_sha256": "2a6c687c23441792ddad70f546a9a46fbe4b45a3061c98db4ebc51651223baa1",
+      "compressed_sha256": "2908e2b876559a9601e22b4fed7cd0fa957ca968d77b9b3cb0974d6a55d238a6",
+      "passed_tests": 0
+    },
+    {
+      "log": "qualification/round-29-transpose/production-feature.log.gz",
+      "log_sha256": "a21b0a363895d616f22fb48fd8776a85acfc52a08915a920ad691be95a5b4b6a",
+      "compressed_sha256": "0e96b9b5be1539534acdbcd2a099beb10dced5a6467e78f78e4c9feff69280e8",
+      "passed_tests": 0
+    }
+  ],
+  "development_archives": {
+    "abi-layout.log": {
+      "path": "qualification/round-29-transpose/abi-layout.log.gz",
+      "sha256": "e0b3682600fb640133828ec640d0bf6da75ddd0d803e279665d21c8ff64292d4",
+      "compressed_sha256": "d04cc86af01c5f459e130c633726a647a659e6e4f27a2ebf2ce4dba294924122"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-29-transpose/audit-results.py.gz",
+      "sha256": "d3088310d2049dfe9a0c49893a9ac6cee2061a1f1bfee570d499beea9816b014",
+      "compressed_sha256": "bfbfc38a1ef5b1f357bd81c823045b0bfbf3265b5e6f34cad8f9b27a847312a7"
+    },
+    "common-loan/abi-layout.log": {
+      "path": "qualification/round-29-transpose/common-loan/abi-layout.log.gz",
+      "sha256": "5831781786d63ede8849ec8276517386be564bba6e2ef62e27b22ffda0e7c5d1",
+      "compressed_sha256": "b5842cacc4746ad34fa87ab1994e429eb08528ecf1fbcb531407a270a688d0ee"
+    },
+    "common-loan/driver-build.log": {
+      "path": "qualification/round-29-transpose/common-loan/driver-build.log.gz",
+      "sha256": "eb2a0fda91d1e6f66202c81703a59cb2bdf4d5a100d9d05e3d185319b2d4e488",
+      "compressed_sha256": "da91d7819209a01651e5e761c8c3e28814daa5dda9474a3d6137d7b9c674506f"
+    },
+    "common-loan/focused-command.json": {
+      "path": "qualification/round-29-transpose/common-loan/focused-command.json.gz",
+      "sha256": "6cc5744602bd4645e2ad27e766388eddbaa4d19c89148998a33610b2d31d70ad",
+      "compressed_sha256": "175dc88dba7ad2fa8fb48a2609a01077c5974fd82146479d86d09eb50ce47ef9"
+    },
+    "common-loan/focused.log": {
+      "path": "qualification/round-29-transpose/common-loan/focused.log.gz",
+      "sha256": "639991b5f1f6607d308dc03207a4a01648223e44ae369d79b89fad3ebfad30d6",
+      "compressed_sha256": "933417a9449fe97f489f75edac4349643ca55059b79736a6551ab5a4cf1d29be"
+    },
+    "common-loan/matrix-polybench.log": {
+      "path": "qualification/round-29-transpose/common-loan/matrix-polybench.log.gz",
+      "sha256": "cc75a90275ef9c891bb511a6da22970d4983ed1e53af0d36a81612cd30d17d41",
+      "compressed_sha256": "4f3565e0edcd6381540459af2a8cece99f52e72ebb5d28e1183302d6a6362d2d"
+    },
+    "common-loan/numeric-regressions.log": {
+      "path": "qualification/round-29-transpose/common-loan/numeric-regressions.log.gz",
+      "sha256": "22bb54e9746452011d18b53355caaafaffe7f0cf35b058c2f1ba30043eaebf64",
+      "compressed_sha256": "ac24854f24fe086c40371832026093f3273de4c38e8adbfcf7c36d1559b9c930"
+    },
+    "common-loan/production-feature.log": {
+      "path": "qualification/round-29-transpose/common-loan/production-feature.log.gz",
+      "sha256": "904422b9856231727847288c2a0dda35c48b2d2fe8acf1c0793323683878e918",
+      "compressed_sha256": "085c3592a885287dd2365c5091cf77e296643ad2ec9254120d98ec4d76a8338a"
+    },
+    "common-loan/program-regressions.log": {
+      "path": "qualification/round-29-transpose/common-loan/program-regressions.log.gz",
+      "sha256": "0503beb69a53a0338ea34a175acd716dac6802f11fc900ce5a64753bc39595a6",
+      "compressed_sha256": "ec88d7272b23706add70c33944cea5df2b5bc7f34320d93cc0d191fa8ef65e8d"
+    },
+    "common-loan/protocol.log": {
+      "path": "qualification/round-29-transpose/common-loan/protocol.log.gz",
+      "sha256": "e652621fa4292ca6af08e69717fe951afe91593073ec185bfeebd23a4d8630a0",
+      "compressed_sha256": "f84dcf74f489dae99356bb2313038eb2bdce933f1f086ea8672f8282af2ef0e0"
+    },
+    "common-loan/qualification-checks.json": {
+      "path": "qualification/round-29-transpose/common-loan/qualification-checks.json.gz",
+      "sha256": "d92d6a0e85325741da9a922a61b707d3cae62127bf9c8092162d21c9de549a2f",
+      "compressed_sha256": "673e1252d7f5560ac4046cca2903c4017342c512232228abec3a4f0243818cbb"
+    },
+    "common-loan/qualification-progress.log": {
+      "path": "qualification/round-29-transpose/common-loan/qualification-progress.log.gz",
+      "sha256": "3e95e12def2e7fc60106dd98f22f47a82682fca0ab998f0a8e9f95a7d52a7529",
+      "compressed_sha256": "3766b98407432fecd2a8a020ea52c9c3bfab7308554e645b87563c30272afadf"
+    },
+    "common-loan/qualification.json": {
+      "path": "qualification/round-29-transpose/common-loan/qualification.json.gz",
+      "sha256": "16374c77931efa8a416e4dd170770eaec7f63e59a6eb8d6b15dd3058b02a44fd",
+      "compressed_sha256": "75e8a50bfae2a80503a5c8c55946b1ebe61ae09fdf3f0f9e81233e8628b83f29"
+    },
+    "common-loan/run-qualification.py": {
+      "path": "qualification/round-29-transpose/common-loan/run-qualification.py.gz",
+      "sha256": "cf873891da4bc5fe7397183d0684e923986f23b5928b90234b6ce2b6b6227274",
+      "compressed_sha256": "708cdfe1a6a2e5385c506b34f362b048ea64f7e10676bcc1401adfc7ef78236d"
+    },
+    "common-loan/runtime-feature.log": {
+      "path": "qualification/round-29-transpose/common-loan/runtime-feature.log.gz",
+      "sha256": "dd1c8b5abe8088b9de2682dc64b8544af66488cca1c7bef9c47a5376d56493ce",
+      "compressed_sha256": "5139e28b0e22402785bb4ffbd17a053298db871888eb39a3182aa0ab582b3243"
+    },
+    "common-loan/selection-policy.json": {
+      "path": "qualification/round-29-transpose/common-loan/selection-policy.json.gz",
+      "sha256": "bef1cfeffc07ace051b9e979a98191fbf7c3744802ce6a072848df6e36862150",
+      "compressed_sha256": "2ae8be8cd51551aad19d44c889304cb422cef7d63083272352087e252e277bee"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "f8f930b5925d402c88fa606fb3c23c2b33c6f002fb5539897d866733e23c42ba",
+      "compressed_sha256": "68ffea1cbbf1b6a0c5784b940681c07bbfb66e359f4644dc1ad21151ff030f70"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs.gz",
+      "sha256": "cbf8c4f0a7cb083c2c0fdb02f148caeeb4ce3651ccc12a24724757577b988480",
+      "compressed_sha256": "441e1c80cc4fcdd151f867fab7883431456e97a5d8665040d3a4fbade385479b"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs.gz",
+      "sha256": "05aa62402f8788e7b33254cf97db7e60223625c4325b50debccfd15b1dadef3c",
+      "compressed_sha256": "4b987b69f627d76d50d69f6a00c997a4743321f6631d0a41dac129eb0471ebde"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs.gz",
+      "sha256": "c921ddf044d87eb3183d92afe32649cc5023b7d2eab6fbee7a1a444a037cdb43",
+      "compressed_sha256": "05f3c78284ea2b9c91deff5b4bf1353e7eea2cdaa8a8b6b6239e5264c2f75ca1"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs.gz",
+      "sha256": "4163c548ffebeb9e6d40fc9658c227d92aec941a132e9ff90f433040d8f41307",
+      "compressed_sha256": "ffade3c96dd561ce504be6693d24da0d16cf863ce5223a5483e58fa421c9dad1"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "6817dd2b6f6f45948060689d35ddc3b84fa10132ee926e247b8050a5001c0290",
+      "compressed_sha256": "99ace5a3ddcaf32dee078f0c1e55b46e5c130eccb1bd8cf87c1c42b0937107bc"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz",
+      "sha256": "68ae1937653cf9903b30556609f4933efcae4f782b144bf1da982e8bab1cfbda",
+      "compressed_sha256": "dd3314b993be185f7c74c1346fa41a83e652a753b04ab3493b49b8bdc9fee578"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/prepare/numeric_generators.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/prepare/numeric_generators.rs.gz",
+      "sha256": "4ef58caf2bb5e4295e50d7fd69d81929c859a76266425314cb319dfa178253c9",
+      "compressed_sha256": "3d0686fcdd9a19b616fc0df4929ff49c86d6438d7c63a1e6f60b2b87b8507176"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz",
+      "sha256": "f25473b47c33dae1c6396e90afad0802eaa5542b533de0b4435f16c4201b3195",
+      "compressed_sha256": "e0cf901a5a4b67118112f13df77028cc30e8867ff9ad5540398b49d2da3a2674"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/mod.rs.gz",
+      "sha256": "e5665dbc3c1c3343a1854d49509b35a9e87e4b862eeac93b8a7c1d3dda438333",
+      "compressed_sha256": "9dcc1cecf1269063fc7faa5f2eeda508e67b894d15231ef66a972049d9b521cc"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_generator.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_generator.rs.gz",
+      "sha256": "89cfc94d6f57e697a5a7edf97863d8c76b29b46571205f33db01a422cbf519c7",
+      "compressed_sha256": "c81b77b9d7ebfc83b69b12cf1d66d245ececc041d6e661bcce660d1c76d95006"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs.gz",
+      "sha256": "60c6244800836f750c26caa7a8f78aad2f4bc0dc0b9d552043cf545137eb3e79",
+      "compressed_sha256": "44fd129e0ed09612ae6fa4e834bded5100efeac1b6568d6a32eeeff582452fcc"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/collections/numeric_transposes.rs.gz",
+      "sha256": "5da6c10b2c22f5290d602f2335b534fe150f1f03ecf8c9dd448c358770567e50",
+      "compressed_sha256": "95722c2e7336d4cba628f7b4e39051198de4d5eee22caa8432ad3bc121fb9565"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "bd61ebb9e3fac35738c5428e1370bd5a68f7230861c5b95aab0003fbfb0cfe2a",
+      "compressed_sha256": "c4afa70bcc8260189d582102154c78f94e570eadfbc7a0289d673fbcbcaf617d"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs.gz",
+      "sha256": "5410ffbdbb886c6737a7e6b51df5c351874c9a9c0f413bbfdf8be9a2ff8bbda7",
+      "compressed_sha256": "f4779baffee2ad3c1f672d3b58e4ea6b4ae890f62ec565a0a182d1e50a8a8659"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs.gz",
+      "sha256": "98cf7cd0f83bcf8d21aa268a6895fba1ed1319646fe2ccb463eba00317601e9d",
+      "compressed_sha256": "34a36864e6964ad1673a8e64ab47ecc19abdba0b198c7ff45f3917ff4d708c14"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs.gz",
+      "sha256": "a6e85fed8abe8cbdb2c96bb089ca022cfe21345585814af6671c5a8e2d7d2380",
+      "compressed_sha256": "974d69c99bcac46a4a2631aab8fcf5262e405e629aebb93ee6339be85f5150e6"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz",
+      "sha256": "a41d964021697010b502c65b805a9da148771611904d741019f3bba28ca7cf21",
+      "compressed_sha256": "77642e3f95ba2d74610d1f8d3205639f546655ed1fd2e576b9b0e4b922015186"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz",
+      "sha256": "c78652ec334794f12c2b651f59e5e22ff12136256de28c5fb38da72a48494839",
+      "compressed_sha256": "265201cd3960ba180af8c7444ce1e462fee2825408cc85d8096f65a869722eaa"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz",
+      "sha256": "8d0eb734193a98912fe2c20fec65d45d06db1db5818fad5bfc0d822ee9212837",
+      "compressed_sha256": "e35625c5733100bfe64f04be8a2f579b2afa4299c9f5ed69a04f2b83dafffa63"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_generator.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_generator.rs.gz",
+      "sha256": "e4b91c9b1e3fe4f7b44814c0f01ccb3ea4e423b189e639cfec551c449450ab98",
+      "compressed_sha256": "e67d8c637a5944e36d7eed97ba47e98e9c99bd0fbfa1b07b1bc778c23948ca47"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_loan.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_loan.rs.gz",
+      "sha256": "896055f98d418cc6070a72314cb7da8b4ec675631f8a69e7a449b9e53bcc55ca",
+      "compressed_sha256": "8b6e9dbba73086368407b83c874668168c83d6fbe24787fe6d1967ec5e5affbf"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz",
+      "sha256": "4c3739582bfa8bde7578487400ebe969bcc5553a22ac98e69054dd304032782a",
+      "compressed_sha256": "143c7e50fbff7b718f076f57065e3f837e78d7b541a4048cff78fb00585e892c"
+    },
+    "common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz",
+      "sha256": "df70ff756e619cc59161b9f084ac3be65fa800349cafce72bc576184615e0f08",
+      "compressed_sha256": "369ca4f3f5f36971eb13a1d856084c33396631de66a05f727c8b8c8e437ef73d"
+    },
+    "common-loan/source-checkpoint-before-restore/source/src/engine/src/resident/general/native_collection_numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz",
+      "sha256": "e70ebcd3cd114b3f56dfcf99adf3a78c621648618a52b2f9deebf46f79e2fa5b",
+      "compressed_sha256": "39d95027f442754fb8557d86ed34916c88eb3d2b27cc43dccf2548c8e92ce032"
+    },
+    "common-loan/source-checkpoint-before-restore/source/src/engine/src/resident/numeric/mod.rs": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source/src/engine/src/resident/numeric/mod.rs.gz",
+      "sha256": "c2242684081271e17cec6c2658de95fe4ee489ae2076ef03e79b01ca818f530a",
+      "compressed_sha256": "54366d90a516aead72bd230bd721c41ac8948e6cd17fb9e1dfb88b327a1538c9"
+    },
+    "common-loan/source-checkpoint-before-restore/source.patch": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint-before-restore/source.patch.gz",
+      "sha256": "bc493cf3bf2100bfe0a3b54e0d49938fd6670821ed6c79a54c34efaf5e485423",
+      "compressed_sha256": "40d47e1e76556b35dd54028516c46ca745c62e907c45009aaf6696563d70b189"
+    },
+    "common-loan/source-checkpoint.json": {
+      "path": "qualification/round-29-transpose/common-loan/source-checkpoint.json.gz",
+      "sha256": "9779b11bf6f4d7a797d9d771c419d0fdcc6a54205e8014c3bea4f4c0f2ec61ec",
+      "compressed_sha256": "a56876b6d5f9b22c882599012791b0b71ca33414a6e438b2f676c6c1cd0f080b"
+    },
+    "common-loan/training-probe.json": {
+      "path": "qualification/round-29-transpose/common-loan/training-probe.json.gz",
+      "sha256": "f50e6e2128e50e15bfe6d597302b67bbf364ecee140785a6efbd4b7af7db43b9",
+      "compressed_sha256": "be2ab3f5f517245a30773bdae19652450f74b44791bde4b4262c3e421c88537b"
+    },
+    "common-loan/training-probe.log": {
+      "path": "qualification/round-29-transpose/common-loan/training-probe.log.gz",
+      "sha256": "000d371592d274343cf9241ed60b48837673cbd227db6945762ac6360451ec7f",
+      "compressed_sha256": "96a4570143263a6125600c87762232383d7c17d5eef9bd1bb65293ae8a3bfed9"
+    },
+    "common-loan/training-probe.py": {
+      "path": "qualification/round-29-transpose/common-loan/training-probe.py.gz",
+      "sha256": "36931b9a120f5239bb22dd41aa9d9bcb6d5e219ff34ba1d60ce5967883124273",
+      "compressed_sha256": "3604506e3dbb76bb4af248a31bf3b660c09c41a6dc7ed64383c1c8cf915c213c"
+    },
+    "driver-build.log": {
+      "path": "qualification/round-29-transpose/driver-build.log.gz",
+      "sha256": "df02fb902e89fd50e792e05d447f5e14ae22f90c609497feadc75271f97e8c39",
+      "compressed_sha256": "781aa95434a17d035d535237dbaceab1a15d26478672d6d75bd20f16307559dc"
+    },
+    "edit.py": {
+      "path": "qualification/round-29-transpose/edit.py.gz",
+      "sha256": "15d9501dc28f691aa8302bf5fd5b381b1dd48f2c036bbec7ccbcd1b4863343d7",
+      "compressed_sha256": "090eaa6fe5b7bc22b0df14379e93cb404f933be90c1f94a6e1002fb7e45b91b4"
+    },
+    "focused.log": {
+      "path": "qualification/round-29-transpose/focused.log.gz",
+      "sha256": "66004c77cd823792935222b8970723a36a79bf5d610f8e2a0ff2f3a6ff00aaaa",
+      "compressed_sha256": "20527cf65d6b2bdc043ff4be92bf34f864e2d8faae473607e22acce982dbac5a"
+    },
+    "matrix-polybench.log": {
+      "path": "qualification/round-29-transpose/matrix-polybench.log.gz",
+      "sha256": "b904a92d97e44318f2b809af1758a046c4b38fdeeffaa23a2fcfc4d03bd050fe",
+      "compressed_sha256": "a96994fa990ea8252d620a9d78637814a51242228811e71be4bd21a007ec677c"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-29-transpose/measure-candidate.py.gz",
+      "sha256": "8fb7874ce8ba8d46ae823a83ae18e25a5ffa694274c40d99d05e0ef6c7f5f4c6",
+      "compressed_sha256": "e70352e607edd0aa5e06a7f4a01f8fab98fcec3d7e4c276398df1029a69f59f2"
+    },
+    "numeric-regressions.log": {
+      "path": "qualification/round-29-transpose/numeric-regressions.log.gz",
+      "sha256": "1aff691f259868aa3497de939578806a6e50de4c9ffda8a0e0b3256d4dcebec3",
+      "compressed_sha256": "93bfcde4d0fb0b18f58d601b682090cb70ddf99a5927c98ba30d417907c0e159"
+    },
+    "numeric_transpose.rs": {
+      "path": "qualification/round-29-transpose/numeric_transpose.rs.gz",
+      "sha256": "bfcabe5928cd3be37a84796b940ddaaf3bd32173734ccce0122a1f242cbd1779",
+      "compressed_sha256": "6e2c8998ad83226a232de0a03d93f213040c37ed4d446a4472336d2e7b373213"
+    },
+    "prepare-receipts.py": {
+      "path": "qualification/round-29-transpose/prepare-receipts.py.gz",
+      "sha256": "2c01f984742cf0540af659810b2118049f14e163877cc6bae46c5466356d9ac1",
+      "compressed_sha256": "1daee17b3dd170d6003a0debc88fbcce7ab5918d33b718daa19662dfacdb9343"
+    },
+    "production-feature.log": {
+      "path": "qualification/round-29-transpose/production-feature.log.gz",
+      "sha256": "a21b0a363895d616f22fb48fd8776a85acfc52a08915a920ad691be95a5b4b6a",
+      "compressed_sha256": "0e96b9b5be1539534acdbcd2a099beb10dced5a6467e78f78e4c9feff69280e8"
+    },
+    "program-regressions.log": {
+      "path": "qualification/round-29-transpose/program-regressions.log.gz",
+      "sha256": "f9c86f0d0285006bec5253561996ed580aaf6d8786d4461571f3422a04fcc76b",
+      "compressed_sha256": "5d6ef8c4fcb5244aab668558de130d5f137822602ef3e83948628e719909684d"
+    },
+    "protocol.log": {
+      "path": "qualification/round-29-transpose/protocol.log.gz",
+      "sha256": "e652621fa4292ca6af08e69717fe951afe91593073ec185bfeebd23a4d8630a0",
+      "compressed_sha256": "f84dcf74f489dae99356bb2313038eb2bdce933f1f086ea8672f8282af2ef0e0"
+    },
+    "qualification-checks.json": {
+      "path": "qualification/round-29-transpose/qualification-checks.json.gz",
+      "sha256": "959f83658c3f83975b70cb2763c55c7b4c36c8f8f1b6071b6715ab461349dcdc",
+      "compressed_sha256": "b375bb7845d304bc3b0d9ceb851239ef6c612ec0b345861c857aa7da316bbac6"
+    },
+    "qualification-progress.log": {
+      "path": "qualification/round-29-transpose/qualification-progress.log.gz",
+      "sha256": "3e95e12def2e7fc60106dd98f22f47a82682fca0ab998f0a8e9f95a7d52a7529",
+      "compressed_sha256": "3766b98407432fecd2a8a020ea52c9c3bfab7308554e645b87563c30272afadf"
+    },
+    "qualification.json": {
+      "path": "qualification/round-29-transpose/qualification.json.gz",
+      "sha256": "545189acd4b328bf18b56664a88d99bbd4c54355e0e115a97c49509d340441d2",
+      "compressed_sha256": "69c524c558b75d9a76213792711895a233d40c45b39481e5cf9a688c08a64cbb"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-29-transpose/run-qualification.py.gz",
+      "sha256": "cf873891da4bc5fe7397183d0684e923986f23b5928b90234b6ce2b6b6227274",
+      "compressed_sha256": "708cdfe1a6a2e5385c506b34f362b048ea64f7e10676bcc1401adfc7ef78236d"
+    },
+    "runtime-feature.log": {
+      "path": "qualification/round-29-transpose/runtime-feature.log.gz",
+      "sha256": "2a6c687c23441792ddad70f546a9a46fbe4b45a3061c98db4ebc51651223baa1",
+      "compressed_sha256": "2908e2b876559a9601e22b4fed7cd0fa957ca968d77b9b3cb0974d6a55d238a6"
+    },
+    "source-checkpoint.json": {
+      "path": "qualification/round-29-transpose/source-checkpoint.json.gz",
+      "sha256": "465fee128c89575ecef476bed205a989e2540145207fae47975b3531bbae771b",
+      "compressed_sha256": "8125cae729b87d20b1a772036aae98590b2e940e8f5b116f8a888a0d1c25d981"
+    },
+    "training-probe.json": {
+      "path": "qualification/round-29-transpose/training-probe.json.gz",
+      "sha256": "221288e71f287177607a9048c2c100343d4fb00b4dae2470fac3bfa83b2ca926",
+      "compressed_sha256": "ee469b023e0c8c7221a32780bef6cc9a19eb1a49faaaedc33371762c5527beaf"
+    },
+    "training-probe.log": {
+      "path": "qualification/round-29-transpose/training-probe.log.gz",
+      "sha256": "62a170d7a53fbc9dc724131ca951a074991153a2d935f16c80255a56c851f486",
+      "compressed_sha256": "da4e518bee5de8cb9ef3dcefb2ec201340c69e227148eba2ab6560654198284a"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-29-transpose/training-probe.py.gz",
+      "sha256": "312e6750ce7b1e3cbacdd067ff10546e95dde45824d6aa7d8986bf841a9e211f",
+      "compressed_sha256": "7a0bf900a7a44ac57c9777202809eb7845d323609e20b848280c06b12f01abcb"
+    },
+    "training-selection.json": {
+      "path": "qualification/round-29-transpose/training-selection.json.gz",
+      "sha256": "b7c21e5e81367e28bcab6bdf154c8702684a7bd5ab9b9789b4fa9b7af4826be1",
+      "compressed_sha256": "3f290456bd48a71749a2d14396656cefd0d9106784ad87f70714086963e7051f"
+    },
+    "transpose-only-checkpoint/qualification-checks.json": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/qualification-checks.json.gz",
+      "sha256": "959f83658c3f83975b70cb2763c55c7b4c36c8f8f1b6071b6715ab461349dcdc",
+      "compressed_sha256": "b375bb7845d304bc3b0d9ceb851239ef6c612ec0b345861c857aa7da316bbac6"
+    },
+    "transpose-only-checkpoint/qualification.json": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/qualification.json.gz",
+      "sha256": "545189acd4b328bf18b56664a88d99bbd4c54355e0e115a97c49509d340441d2",
+      "compressed_sha256": "69c524c558b75d9a76213792711895a233d40c45b39481e5cf9a688c08a64cbb"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "f8f930b5925d402c88fa606fb3c23c2b33c6f002fb5539897d866733e23c42ba",
+      "compressed_sha256": "68ffea1cbbf1b6a0c5784b940681c07bbfb66e359f4644dc1ad21151ff030f70"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs.gz",
+      "sha256": "cbf8c4f0a7cb083c2c0fdb02f148caeeb4ce3651ccc12a24724757577b988480",
+      "compressed_sha256": "441e1c80cc4fcdd151f867fab7883431456e97a5d8665040d3a4fbade385479b"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs.gz",
+      "sha256": "05aa62402f8788e7b33254cf97db7e60223625c4325b50debccfd15b1dadef3c",
+      "compressed_sha256": "4b987b69f627d76d50d69f6a00c997a4743321f6631d0a41dac129eb0471ebde"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs.gz",
+      "sha256": "c921ddf044d87eb3183d92afe32649cc5023b7d2eab6fbee7a1a444a037cdb43",
+      "compressed_sha256": "05f3c78284ea2b9c91deff5b4bf1353e7eea2cdaa8a8b6b6239e5264c2f75ca1"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs.gz",
+      "sha256": "4163c548ffebeb9e6d40fc9658c227d92aec941a132e9ff90f433040d8f41307",
+      "compressed_sha256": "ffade3c96dd561ce504be6693d24da0d16cf863ce5223a5483e58fa421c9dad1"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "6817dd2b6f6f45948060689d35ddc3b84fa10132ee926e247b8050a5001c0290",
+      "compressed_sha256": "99ace5a3ddcaf32dee078f0c1e55b46e5c130eccb1bd8cf87c1c42b0937107bc"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz",
+      "sha256": "68ae1937653cf9903b30556609f4933efcae4f782b144bf1da982e8bab1cfbda",
+      "compressed_sha256": "dd3314b993be185f7c74c1346fa41a83e652a753b04ab3493b49b8bdc9fee578"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/prepare/numeric_generators.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/prepare/numeric_generators.rs.gz",
+      "sha256": "4ef58caf2bb5e4295e50d7fd69d81929c859a76266425314cb319dfa178253c9",
+      "compressed_sha256": "3d0686fcdd9a19b616fc0df4929ff49c86d6438d7c63a1e6f60b2b87b8507176"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz",
+      "sha256": "f25473b47c33dae1c6396e90afad0802eaa5542b533de0b4435f16c4201b3195",
+      "compressed_sha256": "e0cf901a5a4b67118112f13df77028cc30e8867ff9ad5540398b49d2da3a2674"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "bd61ebb9e3fac35738c5428e1370bd5a68f7230861c5b95aab0003fbfb0cfe2a",
+      "compressed_sha256": "c4afa70bcc8260189d582102154c78f94e570eadfbc7a0289d673fbcbcaf617d"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs.gz",
+      "sha256": "3b51501a49e67d089207262602435576fd4ff06b83dedbaf390295fbe89a0b8b",
+      "compressed_sha256": "b9c2e589c58098591224dbaeeaef7e039e04b1877bc5bf4e970102bb2a5881d3"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs.gz",
+      "sha256": "a6e85fed8abe8cbdb2c96bb089ca022cfe21345585814af6671c5a8e2d7d2380",
+      "compressed_sha256": "974d69c99bcac46a4a2631aab8fcf5262e405e629aebb93ee6339be85f5150e6"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz",
+      "sha256": "bc99bd44ea770423b4636781a1be195149dd956bf856a41cd09f6be96bc2b1d2",
+      "compressed_sha256": "055b2d4e033910113dd51f8464c912c37df767889e1c961611e4bd0809ed7f91"
+    },
+    "transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz",
+      "sha256": "df70ff756e619cc59161b9f084ac3be65fa800349cafce72bc576184615e0f08",
+      "compressed_sha256": "369ca4f3f5f36971eb13a1d856084c33396631de66a05f727c8b8c8e437ef73d"
+    },
+    "transpose-only-checkpoint/source/src/engine/src/resident/general/native_collection_numeric_binary.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz",
+      "sha256": "e70ebcd3cd114b3f56dfcf99adf3a78c621648618a52b2f9deebf46f79e2fa5b",
+      "compressed_sha256": "39d95027f442754fb8557d86ed34916c88eb3d2b27cc43dccf2548c8e92ce032"
+    },
+    "transpose-only-checkpoint/source/src/engine/src/resident/numeric/mod.rs": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source/src/engine/src/resident/numeric/mod.rs.gz",
+      "sha256": "c2242684081271e17cec6c2658de95fe4ee489ae2076ef03e79b01ca818f530a",
+      "compressed_sha256": "54366d90a516aead72bd230bd721c41ac8948e6cd17fb9e1dfb88b327a1538c9"
+    },
+    "transpose-only-checkpoint/source-checkpoint.json": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source-checkpoint.json.gz",
+      "sha256": "465fee128c89575ecef476bed205a989e2540145207fae47975b3531bbae771b",
+      "compressed_sha256": "8125cae729b87d20b1a772036aae98590b2e940e8f5b116f8a888a0d1c25d981"
+    },
+    "transpose-only-checkpoint/source.patch": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/source.patch.gz",
+      "sha256": "6ebd0fe57703fbda20da171827ea6e8bc2176270c1c80b5bc698d9e7725cda2a",
+      "compressed_sha256": "d1bc553238766905920fde15da6954f64cb103f80e46128ffa4be6a6396e5bc7"
+    },
+    "transpose-only-checkpoint/training-probe.json": {
+      "path": "qualification/round-29-transpose/transpose-only-checkpoint/training-probe.json.gz",
+      "sha256": "221288e71f287177607a9048c2c100343d4fb00b4dae2470fac3bfa83b2ca926",
+      "compressed_sha256": "ee469b023e0c8c7221a32780bef6cc9a19eb1a49faaaedc33371762c5527beaf"
+    }
+  },
+  "common_loan_selected": false,
+  "invariants": [
+    "All30 unchanged ports match29482 finite C live-outs in original/decoded artifacts and emit Objects.",
+    "Exact sealed F64 rank2 transpose uses maintained resident geometry and the existing checked numeric-matrix loan. Dynamic/fixed shape, empty and rectangular matrices share the same Cranelift copy emitter as inlined generators. Every F64 bit, including signed zero and quiet/signaling NaN payloads, is copied exactly.",
+    "Original source work/factory/binding/visit fees and full128x general matrix replay credit are unchanged. Real current inputs are pinned; initialized private output, exact checked frame/shadow, overflow/alignment/disjointness, schema/key/shape, finite byte/node/work admission and atomic publication remain mandatory.",
+    "Selected source/driver are exactly those qualified. Shared numeric-loan ownership, if selected, uses one owned enum instead of a duplicated marker, retains the same Box allocations/pins, rejects cross-kind callbacks and visits, preserves matching finish/fallback/cleanup/retry, and rejects return with an outstanding numeric loan.",
+    "Original/decoded/restored tests cover fixed/dynamic empty/vector/rectangular axes, NaN payloads/infinities/signedzero, finite limits and physical memory/node refusal, forged frame fields, cross-kind callbacks, input/output alias preservation, cleanup and retry. Existing generator/native-map/scalar/compression checks remain selected.",
+    "No benchmark-name dispatch, port/input changes, C changes, threshold changes, limit changes, split/objective changes or holdout diagnosis. Source and driver must be committed and frozen before both formal sets. Promotion requires both aggregate scores strictly improve vs accepted27."
+  ],
+  "limitations": [
+    "F64 rank2 matrix transpose only; larger datasets, accelerators and linked Object execution remain unqualified.",
+    "No acceptance claim until the complete frozen two-set measurement and strict gate."
+  ]
+}

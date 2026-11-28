@@ -49,7 +49,9 @@ impl Region {
     pub fn cold_resume(&self) -> Option<usize> {
         self.numeric
             .as_ref()
-            .is_some_and(|proof| !proof.exits.is_empty())
+            .is_some_and(|proof| {
+                !proof.exits.is_empty() || proof.tagged.as_ref().is_some_and(|v| v.prefix.is_some())
+            })
             .then(|| self.words + 3)
     }
     fn state_words(&self) -> usize {
@@ -188,7 +190,14 @@ impl Layout {
                         .iter()
                         .any(|exit| matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported))
             });
-            let mut numeric = if phase.is_some() && !partial_phase {
+            // Newly representable ancestor captures must not displace a
+            // complete tree's append, owner-handoff and fuel specializations.
+            // Reuse that stronger existing proof when it succeeds; guarded
+            // states or incomplete trees retain the capture phase otherwise.
+            let capture_phase = phase
+                .as_ref()
+                .is_some_and(|proof| proof.arrays.iter().any(|array| array.immutable_capture()));
+            let mut numeric = if phase.is_some() && !partial_phase && !capture_phase {
                 phase
             } else if map.is_none() {
                 if let Ok(tree) = discovery.discover(tail) {
@@ -235,6 +244,13 @@ impl Layout {
                 }
             }
             let successors = |site: usize| {
+                if let Some(after) = numeric
+                    .as_ref()
+                    .and_then(|p| p.action(site))
+                    .and_then(super::numeric_plan::Operation::summary_after)
+                {
+                    return vec![after];
+                }
                 if numeric.as_ref().is_some_and(|proof| {
                     proof.exits.iter().any(|exit| {
                         exit.to == site
@@ -321,8 +337,21 @@ impl Layout {
             let partial = numeric
                 .as_ref()
                 .is_some_and(|proof| !proof.prepaid_sites.is_empty());
+            // A proved terminal publication ends the native traversal before
+            // the ordinary constructor. It still retains the declared native
+            // backedge; its finish can only execute after the loan has closed.
+            let terminal = numeric.as_ref().is_some_and(|proof| {
+                proof.phase.is_some()
+                    && matches!(
+                        proof.result,
+                        super::readonly_numeric::ResultRecipe::Unreachable
+                    )
+                    && !proof.exits.is_empty()
+            });
             if !closed
-                || (!partial && (!seen[tail.finish() as usize] || !seen[tail.latch() as usize]))
+                || (!partial
+                    && (!seen[tail.latch() as usize]
+                        || (!terminal && !seen[tail.finish() as usize])))
             {
                 continue;
             }
@@ -407,7 +436,7 @@ impl Layout {
                 if numeric
                     .as_ref()
                     .and_then(|p| p.action(site as usize))
-                    .is_some_and(|a| matches!(a, super::readonly_numeric::Operation::Write { .. }))
+                    .is_some_and(|a| a.replaces())
                 {
                     comparison = comparison
                         .checked_add(1)
@@ -546,9 +575,7 @@ impl Layout {
                             .checked_add(visits[site].work)
                             .and_then(|n| n.checked_add(OVERHEAD))
                             .ok_or("numeric tree node price overflow")?;
-                        if proof.action(site).is_some_and(|a| {
-                            matches!(a, super::readonly_numeric::Operation::Write { .. })
-                        }) {
+                        if proof.action(site).is_some_and(|a| a.replaces()) {
                             node.comparison = node
                                 .comparison
                                 .checked_add(1)
@@ -710,6 +737,29 @@ pub(in crate::native_artifact) fn validate_image(
     selected
         .fund_visit_checks(&mut visits)
         .map_err(str::to_owned)?;
+    // A composed fold prices its original collection header as well as its
+    // parent sites. Reconstruct the same optional native-header fees used by
+    // normal preparation before deriving any complete source summaries.
+    let numeric_maps = super::numeric_maps::Layout::derive(plan)?;
+    let numeric_binary = super::numeric_binary::Layout::derive(plan)?;
+    let utf8_reads = super::utf8_reads::Layout::derive(plan)?;
+    for (site, visit) in visits.iter_mut().enumerate() {
+        let extra = if numeric_binary.at(site).is_some() {
+            super::numeric_binary::HEADER_WORK
+        } else if utf8_reads.at_header(site).is_some() {
+            super::utf8_reads::HEADER_WORK
+        } else if numeric_maps.at_header(site).is_some() {
+            super::numeric_maps::HEADER_WORK
+        } else if numeric_maps.at_transpose_finish(site).is_some() {
+            super::numeric_maps::TRANSPOSE_FINISH_WORK
+        } else {
+            0
+        };
+        visit.work = visit
+            .work
+            .checked_add(extra)
+            .ok_or("restored native header price overflows")?;
+    }
     let prefix = super::prefix::derive_with_frontiers(
         plan,
         &borrowed,

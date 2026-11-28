@@ -1,0 +1,122 @@
+{
+  "schema": "mech.polybench.frozen-candidate-optimization-profile-plan.v1",
+  "created_at": "2026-11-28T14:35:07.317970+00:00",
+  "accepted_round": 58,
+  "accepted_compiler_fingerprint": "3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241",
+  "accepted_workspace_commit": "440cb43d2e5721504ea6701fcd9bf07daf6b4382",
+  "source_commit": "7635c09c5630492e839efc2937bc5d6daa3ea82d",
+  "compiler_fingerprint": "c946afc1ea23529c975b3e93b41ba5533227577b751b5d03bafd4d9591b0617f",
+  "candidate_selected": false,
+  "candidate_probe_raw_speedup": 0.9727125117859827,
+  "cases": [
+    "durbin",
+    "gramschmidt"
+  ],
+  "selection": "Optimization15 only. Diagnose the exact unselected source-closed affine F64 cell candidate; no holdout source diagnosis/profiling and no new performance score or probe.",
+  "method": "Unchanged public-API diagnostic host linked from exact Cargo artifact JSON rlibs. Each owned warm process resides30s, sampled3s at1ms. LLDB captures complete named JIT code in the same PID after sampling, then resumes that process to terminal0. Validate finite warm/final C outputs and exact frozen counters. Bind all sampled instructions and local BL targets to the frozen candidate Objects.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/private/tmp/mech-polybench-optimization/round-67/affine-map-cells/emission-census.json",
+  "counter_gate": "/private/tmp/mech-polybench-optimization/round-67/affine-map-cells/untimed-counter-gate.json",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "source_native_generator": "Maintained public Cranelift JIT/Object APIs; rustc builds only the unchanged host wrapper.",
+  "hypothesis_to_check": "Locate selected publication, affine stream preflight, typed arithmetic and per-cell finite-classification control in the actual sampled candidate. The failed probe does not establish which cost caused its result. Use source-bound instruction evidence before the next material optimization.",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "scope_limit": "Warm residence includes reset/drop. Self-time samples are not exact formal timer shares, hardware retirement/cache/traffic/RSS counts or speedup forecasts. No comparison of residence-call counts or elapsed time is used as a new performance probe.",
+  "restoration": "Before collection temporarily restore only the19 qualified candidate paths from the frozen committed source and verify every source hash/fingerprint. No Rust edits while build/profile is live. After terminal collection and code binding, verify candidate hashes, restore the saved accepted preimages, remove only known introduced matching candidate files, and verify exact accepted58 fingerprint.",
+  "source_preimage": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": {
+      "exists": true,
+      "sha256": "7b175c9152eb986193c40489c2fa99abcf034d519e257e939cd670af60f13c5e"
+    },
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": {
+      "exists": true,
+      "sha256": "9b79ff9e129d3cc3f79bd107f026ce1ac72715a99123eb225cff317cbec8abba"
+    },
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cells.rs": {
+      "exists": false
+    },
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cell_tests.rs": {
+      "exists": false
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs": {
+      "exists": true,
+      "sha256": "978c97161f692e3dc12481ecd83ddda804f5441d881af94935a59187798d9a93"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs": {
+      "exists": true,
+      "sha256": "c929d8e42b5ef491aa21b2397255cb118cc06f15090e6099f3c0c1ec8c94a7d2"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/windows.rs": {
+      "exists": false
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs": {
+      "exists": true,
+      "sha256": "04a6b9680db547a729b4f413886c2b393e0530458750a6d9082352c024b4d337"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/cells.rs": {
+      "exists": false
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": {
+      "exists": true,
+      "sha256": "439fe615822a90b30761b14c9a719a841efc795ed6e69b2e08085f3f7375228d"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": {
+      "exists": true,
+      "sha256": "1a2be6d81c1a367459226cadb8a6e2cebf8422a9ea8763c08cfdf004654dd11f"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": {
+      "exists": true,
+      "sha256": "ba981c5f66bdd22009ce42bc10a7e7f20cfa6c118b88d8e391e6da2a360aa61d"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": {
+      "exists": true,
+      "sha256": "324028fc522a520cc61cf4223fb36b99207893b50c5c38fbd4fd022d204d0cdc"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "exists": true,
+      "sha256": "0ea3d5b375b3396dbc5d296c8c185209660fd653b5384a25c0b1f52ebb388289"
+    },
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "exists": true,
+      "sha256": "b41d7cf34e47a211451c42d2d433c562f47c817384c25125d19d524c80ae31c8"
+    },
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/affine_map_cells.rs": {
+      "exists": false
+    },
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": {
+      "exists": true,
+      "sha256": "84f4af8e2a81402f4ca64acecd16b5a4bbebd0bac0560f6f924e970872d0ce67"
+    },
+    "hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "exists": true,
+      "sha256": "1f66dc8fb050c65b714d38decf7862d96d6d11af13dc1a521930aeb5df22e5f1"
+    },
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "exists": true,
+      "sha256": "4ad96a4f219a2e202912a4fe6d1eef8f5a8f9d753d13d76fcbbee7c98d67c261"
+    }
+  },
+  "candidate_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": "7766f3863b3c06e9a5a334331d51538cb9d34e05e70c8be1cdb5372a679e1d83",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": "16cf48c3ab96f8015dbcdb56600fee4ef0c39b4de09759afa2b5ca743e6ca83d",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cells.rs": "783751672e37684d8b19c2c8b89c50b256c84d4969ad664dc522915b15e3c11c",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cell_tests.rs": "32eef6c13ab467c239578b4a2bea31cc6cbf099cd9c5b849cd4236ca67ffcdea",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs": "3f2d3e0a6cee0dd6257179589cc0f50e5502438aa16fb9b9804f3d3ca0016696",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs": "984760386f725120b82ca190aa85ee1f971a7b75af9a939fac4fbbb653e6e089",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/windows.rs": "b90adaf3228bb73704d4560c57ac419db00c984c4ca6f9e7ec9fbf953fd24033",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs": "49e07d25a842dc74698cd73862e1dbbab8468083cf6360624bd53eb1e22f9b7d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/cells.rs": "cf80b061240f2dcc16f6da76f7e3271b613f6f6a35882cb1f60f2a38764f2f62",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": "5fac1cb7a16062386cc2811de576382f63b7747466659a8b0f743bf0af41d645",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "50d59c7ac098bbc747b17649616263ae234eb0c9ce648fad9f98980a1840aad1",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "2acd275951c7454702e7c53690afcdd7684f7e20e0fbad0087295db9199909bb",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "1fab446f14e3aa17febbd5981f23550bad2698f8590036972d2392c2e5723a60",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "7d9e750a0ba536b053977dc6d4274d388e73d4f9260f27649d51858ed70fa7fc",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "12fd4e90d0385ac0dfb5b067785f5b22290c78dc21486d665ea16af45f899850",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/affine_map_cells.rs": "f017dc7bf2b7bee7bbb846a5c8cb12dc5f330332b5b4e4b16804f66b7854e1e3",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "95d05fb135638556b523fd4603084ff6f05e14e0040c2ce9806fabd9d16277a0",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "182b2b843cc66efaa34e6cc61736e4729b8e4f5a3f28b8f54484e176d7d7036c",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "caa7237cd567db96f9db8074d7add5cbb2f4311957de58fbb6517d528a2ddc2d"
+  }
+}

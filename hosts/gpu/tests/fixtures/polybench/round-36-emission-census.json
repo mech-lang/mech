@@ -1,0 +1,1800 @@
+{
+  "scope": "Real checked Object export for optimization15 only; no timing observations or linked Object execution.",
+  "compiler_fingerprint": "4717ff8eacdf08846335a6d8946c68a32c6f9e15d7308021176210768bee7fb2",
+  "driver_sha256": "510d881ab1fa6f09ea9b2d9cbe389835410ec85704c6e0aefffb9567db73b593",
+  "cases": {
+    "2mm": {
+      "code_bytes": 7096,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1774,
+          "disassembly_sha256": "ef1cbc30ee009759072d83bde819fabd194fc53cf6606e2640f7bb4e685de93a",
+          "f64_integer_register_moves": 60,
+          "f64_loads": 65,
+          "f64_stores": 34,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "431085f64088c191e249683e64c175936a8c4560880b29e976ad92f7425d637e",
+      "metadata_sha256": "38770268b412cc0575bd05a2d8fcfc8b7aaec653d6a753ae0991a42af7c303a2",
+      "disassembly_sha256": "6c48ac8864caf95c32d699a24e74f922486693f9fff55f35d6db46c8ab582491",
+      "object_executed": false,
+      "accepted31_code_bytes": 3876,
+      "code_bytes_delta": 3220,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 24,
+          "f64_stores": 17,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                4,
+                2,
+                5,
+                3
+              ],
+              "last_reads": [
+                1,
+                2,
+                4,
+                4,
+                6
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 10
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 6,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 7,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 8,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "External": 4
+                      },
+                      {
+                        "External": 5
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 9,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 10,
+                    "site": 6
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 7
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "3mm": {
+      "code_bytes": 3160,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 790,
+          "disassembly_sha256": "9d49621eac839f639f6e4c97c97cba18661bd126d3fe3505ed01495d64927030",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 21,
+          "f64_stores": 6,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "6f004ec27f74280168dbce54a9e6dcf46bd67b4111e73fc63bd9580e73cfee06",
+      "metadata_sha256": "92280e80d9b28b9c4b289ca00a344f119abc45d440775ed900fabc028f7daa4d",
+      "disassembly_sha256": "9c06e493039c5de4ea2b4510a17092bf648265b0356292817dd6f973a88373d1",
+      "object_executed": false,
+      "accepted31_code_bytes": 2040,
+      "code_bytes_delta": 1120,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 9,
+          "f64_stores": 3,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "last_reads": [
+                2,
+                2,
+                4
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 6
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 6,
+                    "site": 4
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 5
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "atax": {
+      "code_bytes": 3480,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 870,
+          "disassembly_sha256": "81e4ca43f89cb06e28e4e624fcf81c3f1538e78e9ff214e63bf8f95eed234eb2",
+          "f64_integer_register_moves": 1,
+          "f64_loads": 15,
+          "f64_stores": 4,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "fc9dc02417b32ba410f11a7277ccf5afb94fce46a8b628d470d4f7f6a95d3939",
+      "metadata_sha256": "fee2caf4f60af6fa13b2c77d0a0eec001f0c97364e5bb2d2f235d4fd51fbdb3f",
+      "disassembly_sha256": "d1cb00c76725d502d58dbf4b68b4575faac32dd87a3042a98722f60bf6def727",
+      "object_executed": false,
+      "accepted31_code_bytes": 2256,
+      "code_bytes_delta": 1224,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                2,
+                2,
+                4
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 4
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 2,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 3,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 4
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 5
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "bicg": {
+      "code_bytes": 3560,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 890,
+          "disassembly_sha256": "620a909211e4cf60507e1c750b024c17c195c16f39a5ffbf0ec7f03ac8de6df5",
+          "f64_integer_register_moves": 1,
+          "f64_loads": 15,
+          "f64_stores": 4,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "8a8f4cdb913a34f8c4b27680bf5d39e3acfa4b3ee588feaee07bb24da61d946c",
+      "metadata_sha256": "c8a2f113ed72e27a59498e3e1cd309b4f1ae7e3a0b894512186c8659f92bc712",
+      "disassembly_sha256": "741418f6ab5d8b585356f3c45923bd56a3be8a3543c88959c17ee6c6ac31ff65",
+      "object_executed": false,
+      "accepted31_code_bytes": 2224,
+      "code_bytes_delta": 1336,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 5,
+              "external": [
+                0,
+                1,
+                2
+              ],
+              "last_reads": [
+                1,
+                3,
+                3
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 1
+                  },
+                  "value": 4
+                },
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 5
+                }
+              ],
+              "private_banks": [
+                0
+              ],
+              "slots": 2,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 3,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 4,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 2
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 4
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "cholesky": {
+      "code_bytes": 19928,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "disassembly_sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "2fb8c92ecd01d01d23d0ed587fbb6e9aaf66c9d69bac008f7e9c4abf06557134",
+      "metadata_sha256": "767b1cb693a13de2a058bcafb4c7316cac5cb54f19dfebaec9a6b7cb7059f108",
+      "disassembly_sha256": "9606b95d2325c26823c3a7c023d091febc3671fbc57af6fe3d304ccbccb4df1a",
+      "object_executed": false,
+      "accepted31_code_bytes": 19928,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "disassembly_sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "correlation": {
+      "code_bytes": 19312,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 4828,
+          "disassembly_sha256": "640544584ee93f78cb3e36dd0845b66d8ce3e7b7fc51cec65fe41512c071b985",
+          "f64_integer_register_moves": 116,
+          "f64_loads": 105,
+          "f64_stores": 61,
+          "f64_divisions": 30,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "61517143bd028ab235004fc037ba440f433559e49ea771691d391a9892c77299",
+      "metadata_sha256": "9343856430fca868350980712037f170aca0a027f640faace6a60538158e9838",
+      "disassembly_sha256": "e705d7c82b15e233cc8d2836cc00d488bd9611ccf9f9929f8cfb95d643507b4c",
+      "object_executed": false,
+      "accepted31_code_bytes": 13108,
+      "code_bytes_delta": 6204,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3277,
+          "disassembly_sha256": "5c1919ae880d64bcba130b5af3d9e4806aa954e97b4043334922637001e0678b",
+          "f64_integer_register_moves": 65,
+          "f64_loads": 41,
+          "f64_stores": 33,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 8,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                1,
+                2,
+                6,
+                4,
+                5,
+                6
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 10
+                },
+                {
+                  "source": {
+                    "Bank": 5
+                  },
+                  "value": 13
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                3,
+                4
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 8,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 9,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Sub"
+                    },
+                    "output": 10,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 11,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 12,
+                    "site": 6
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 5,
+                    "inputs": [
+                      {
+                        "Bank": 4
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 13,
+                    "site": 7
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2,
+                1
+              ]
+            },
+            {
+              "entry": 30,
+              "exit": 33,
+              "external": [
+                10,
+                20
+              ],
+              "last_reads": [
+                2,
+                2,
+                3
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 2
+                  },
+                  "value": 23
+                }
+              ],
+              "private_banks": [
+                0,
+                1
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 21,
+                    "site": 30
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 22,
+                    "site": 31
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 23,
+                    "site": 32
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "covariance": {
+      "code_bytes": 7960,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1990,
+          "disassembly_sha256": "fcc2bb0974b690f0225a793acf303807a65aa58602d0b1050d0bdf7d822fd631",
+          "f64_integer_register_moves": 53,
+          "f64_loads": 51,
+          "f64_stores": 29,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "8b7d491a0c752e69e591c42f7e75e65bd12ee703a927253276d35693088be53b",
+      "metadata_sha256": "d2dd0cec7bf32a07e8ab62a6f2fee46b02032d7341abb8ece5d58ec21ce09c83",
+      "disassembly_sha256": "a623825ca28dfca8d7ea5d8c9bedd184bff3a8b0b79297f18daf9ba0edc475cd",
+      "object_executed": false,
+      "accepted31_code_bytes": 4884,
+      "code_bytes_delta": 3076,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "f64_integer_register_moves": 32,
+          "f64_loads": 22,
+          "f64_stores": 17,
+          "f64_divisions": 10,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 7,
+              "external": [
+                0,
+                1
+              ],
+              "last_reads": [
+                1,
+                2,
+                4,
+                4,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 7
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Sum": {
+                        "axis": 0,
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 3,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "Bank": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Div"
+                    },
+                    "output": 4,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "Bank": 1
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Sub"
+                    },
+                    "output": 5,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 6,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "Bank": 3
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 7,
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                1,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "deriche": {
+      "code_bytes": 62308,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "53e44cbb0b7b2ab997bb43b82db2c10d1446c8794d6bd4e8a836a61dda29a6f1",
+      "metadata_sha256": "e6d33f03104879a34f6d02a408d49800670dc50e4d040bed1afb6ac99e73a1f5",
+      "disassembly_sha256": "2768f00556f1cd59e66b36935ba03dfa571532ede07932896fab9f72406f1772",
+      "object_executed": false,
+      "accepted31_code_bytes": 62308,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "doitgen": {
+      "code_bytes": 1200,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "083a3a5c1d6b57798ffff68cded120afb04f64f9fea02ef1b0c0932047eb7689",
+      "metadata_sha256": "d0fddd5f8a9a28f31f8327a5b567be0e763f521cac2655218fecbf07d264ed4b",
+      "disassembly_sha256": "c1bfafde1029c3a4d3595fd7c42d2e5bfc32bd20d1178a80b0b1d6ce9cc5da88",
+      "object_executed": false,
+      "accepted31_code_bytes": 1200,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "durbin": {
+      "code_bytes": 20008,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "disassembly_sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "f64_integer_register_moves": 38,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 4,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "dd22b8234aa94b01d2b90c832b287ffc8bb6f2207c6c125d24d3aa484b4734fc",
+      "metadata_sha256": "0cce0dd901491e4dbc45a8c056eb503ab50a9db6fbe422cd26b2903496cd6d87",
+      "disassembly_sha256": "afdc9bef31c218cc7b8fd3ef448531710517d575d2a122746ad05dc5dbcf4c95",
+      "object_executed": false,
+      "accepted31_code_bytes": 20008,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "disassembly_sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "f64_integer_register_moves": 38,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 4,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "gemm": {
+      "code_bytes": 6336,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1584,
+          "disassembly_sha256": "0477d696734acf8b70b0d4956f7676494439aa6ac85719df2cf7efe36e71cc0c",
+          "f64_integer_register_moves": 60,
+          "f64_loads": 58,
+          "f64_stores": 32,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "b384ee333f245d6e902c7dbb02269927ce49fdb81e8b32aed41c88bca45caccd",
+      "metadata_sha256": "a31c3cd7f8ee7391f28bb9823a2a6c88c776d46038165cf1cc3d988aa6b44837",
+      "disassembly_sha256": "d6f4cac49e3e2c5ddf3b1d1ed65b42e5ef9672f68a513d024b22c97673bf51eb",
+      "object_executed": false,
+      "accepted31_code_bytes": 3424,
+      "code_bytes_delta": 2912,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 21,
+          "f64_stores": 16,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": null,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "last_reads": [
+                1,
+                3,
+                3,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 3
+                  },
+                  "value": 8
+                }
+              ],
+              "private_banks": [
+                0,
+                1,
+                2
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 6,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 3
+                      },
+                      {
+                        "External": 4
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Mul"
+                    },
+                    "output": 7,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 1
+                      },
+                      {
+                        "Bank": 2
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 8,
+                    "site": 5
+                  }
+                },
+                {
+                  "Empty": {
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": 50664,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "disassembly_sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "714cc8746f3bfb4f0f3de99a74d526c411b1ca012b5b83f9278b146fc8387988",
+      "metadata_sha256": "4d24632646eba2545e1e152c83fb7a7bbc92ea393c28cf4af12babcea9ecbc35",
+      "disassembly_sha256": "a6a58c9ae2f5bd58ab9703b283ad4ab263bfbc6d5f48f9089bb98bb9135f156f",
+      "object_executed": false,
+      "accepted31_code_bytes": 50664,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "disassembly_sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "mvt": {
+      "code_bytes": 6672,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1668,
+          "disassembly_sha256": "98c1be39952c0d52a45e0602b70431be03768b28d7a392e0bc52a0dd3c710bda",
+          "f64_integer_register_moves": 41,
+          "f64_loads": 49,
+          "f64_stores": 24,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "8120edfd0559115d860d9bf711cc8e2704c86ef4681b69b284519b4a1d90be29",
+      "metadata_sha256": "7eb871810123036f2c7315f13bf7ba0e6aa7057ce96969990e3a7df5ad0527e3",
+      "disassembly_sha256": "e38cd683f336115684554bd59950f6fe67b7de1ab3017f092b59812f225a3d5e",
+      "object_executed": false,
+      "accepted31_code_bytes": 3812,
+      "code_bytes_delta": 2860,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 18,
+          "f64_stores": 12,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": [
+            {
+              "entry": 2,
+              "exit": 7,
+              "external": [
+                0,
+                2,
+                1,
+                4,
+                3
+              ],
+              "last_reads": [
+                1,
+                5,
+                3,
+                4,
+                5
+              ],
+              "outputs": [
+                {
+                  "source": {
+                    "Bank": 1
+                  },
+                  "value": 6
+                },
+                {
+                  "source": {
+                    "Bank": 4
+                  },
+                  "value": 9
+                }
+              ],
+              "private_banks": [
+                0,
+                2,
+                3
+              ],
+              "slots": 3,
+              "steps": [
+                {
+                  "Operator": {
+                    "bank": 0,
+                    "inputs": [
+                      {
+                        "External": 0
+                      },
+                      {
+                        "External": 1
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 5,
+                    "site": 2
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 1,
+                    "inputs": [
+                      {
+                        "External": 2
+                      },
+                      {
+                        "Bank": 0
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 6,
+                    "site": 3
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 2,
+                    "inputs": [
+                      {
+                        "External": 0
+                      }
+                    ],
+                    "kind": {
+                      "Transpose": {
+                        "input": [
+                          null,
+                          null
+                        ]
+                      }
+                    },
+                    "output": 7,
+                    "site": 4
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 3,
+                    "inputs": [
+                      {
+                        "Bank": 2
+                      },
+                      {
+                        "External": 3
+                      }
+                    ],
+                    "kind": "Product",
+                    "output": 8,
+                    "site": 5
+                  }
+                },
+                {
+                  "Operator": {
+                    "bank": 4,
+                    "inputs": [
+                      {
+                        "External": 4
+                      },
+                      {
+                        "Bank": 3
+                      }
+                    ],
+                    "kind": {
+                      "Elementwise": "F64Add"
+                    },
+                    "output": 9,
+                    "site": 6
+                  }
+                }
+              ],
+              "storage_slots": [
+                0,
+                1,
+                0,
+                2,
+                0
+              ]
+            }
+          ]
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": true
+      }
+    },
+    "nussinov": {
+      "code_bytes": 19360,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "0be803a2cb1b5a5557848361e56c991907353b5ba83bb833d4bc6460ffd49454",
+      "metadata_sha256": "9c3eb0d4b6c873bb8be88f552c2d1fc83817739eea98fb2924480703922f234d",
+      "disassembly_sha256": "77444ea275d802bce2964950e52b5643894cdf20af61ff92e650c1060c2b7782",
+      "object_executed": false,
+      "accepted31_code_bytes": 19360,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": 16104,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "b918984618d1f51cdc7c39da0224dbeb05e7c2364317cafe523ab1fedd7f4f9e",
+      "metadata_sha256": "2994b89e51ada0dfbbdc39b65ac1a5c86f854dc0d7ef8f5d6f61b3f2764ffafc",
+      "disassembly_sha256": "a49ddd01e712db9dbefb77e96eaf2161aeb0ea8c3a4112d893ea66449aee474d",
+      "object_executed": false,
+      "accepted31_code_bytes": 16104,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "matrix_expression_candidates": {
+        "inventory": {
+          "candidates": []
+        },
+        "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+        "selected": false
+      }
+    }
+  },
+  "native_code_changed_cases": [
+    "2mm",
+    "3mm",
+    "atax",
+    "bicg",
+    "correlation",
+    "covariance",
+    "gemm",
+    "mvt"
+  ],
+  "selected_region_cases": [
+    "2mm",
+    "3mm",
+    "atax",
+    "bicg",
+    "correlation",
+    "covariance",
+    "gemm",
+    "mvt"
+  ],
+  "complete": true
+}

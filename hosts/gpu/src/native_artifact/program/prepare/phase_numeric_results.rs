@@ -1,6 +1,6 @@
 //! Exact private return recipes in their existing scalar/owner word banks.
 use super::*;
-use mech_engine::native_artifact::{NativeBufferFrameField, NativeScalarAggregates};
+use mech_engine::native_artifact::NativeScalarAggregates;
 
 pub(in crate::native_artifact) use super::super::readonly_numeric::ResultRecipe;
 
@@ -11,7 +11,6 @@ pub(super) fn derive(
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
-    carrier: &[NativeBufferFrameField],
     arrays: &[Array],
     provenance: &mut Provenance<'_, '_>,
 ) -> Result<ResultRecipe, &'static str> {
@@ -27,13 +26,14 @@ pub(super) fn derive(
         let field = provenance
             .array(value.get(), ordinal)
             .ok_or("leaf result lacks a numeric carrier root")?;
-        if schema != carrier[field].schema() {
+        let at = arrays
+            .iter()
+            .position(|a| a.root == field)
+            .ok_or("returned array outside selected phase")?;
+        if schema != arrays[at].schema {
             return Err("returned array requires a different schema binding");
         }
-        arrays
-            .iter()
-            .position(|a| a.field == field)
-            .ok_or("returned array outside carrier")
+        Ok(at)
     };
     if matches!(ty.definition().body(), SchemaBody::Matrix { .. }) {
         return Ok(ResultRecipe::Array {

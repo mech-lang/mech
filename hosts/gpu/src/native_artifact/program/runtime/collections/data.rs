@@ -1,20 +1,23 @@
-//! Borrowed sequence reads and typed unsigned collection storage.
+//! Borrowed sequence reads and exact typed scalar collection storage.
 use super::{Error, invalid};
 use mech_core::{
     Value, ValueData,
-    snapshot::{SequenceView, UnsignedMatrixBuffer},
+    snapshot::{F64Bits, SequenceView, UnsignedMatrixBuffer},
 };
 use mech_engine::native_artifact::NativeScalarKind;
 
-// The collected word stays in its exact storage width. Finalization transfers
-// that allocation to the ordinary canonical Matrix constructor, without an
-// intermediate draft array, shrinking reallocation or per-element repacking.
-// Spare capacity is retained and included in output admission.
+// Collected scalars stay in their exact storage width, without an intermediate
+// draft array or per-element repacking. Canonical unsigned storage retains the
+// vector's spare capacity. Bool/I64/F64 use the existing boxed-slice constructors;
+// their possible shrinking copy is admitted before finalization.
 pub(super) enum CollectedValues {
     U8(Vec<u8>),
     U16(Vec<u16>),
     U32(Vec<u32>),
     U64(Vec<u64>),
+    Bool(Vec<bool>),
+    I64(Vec<i64>),
+    F64(Vec<F64Bits>),
     Draft(Vec<mech_core::ValueDataDraft>),
 }
 impl Default for CollectedValues {
@@ -29,7 +32,9 @@ impl CollectedValues {
             Self::U16(v) => v.as_mut_ptr() as u64,
             Self::U32(v) => v.as_mut_ptr() as u64,
             Self::U64(v) => v.as_mut_ptr() as u64,
-            Self::Draft(_) => return Err(invalid("word kernel requires unsigned storage")),
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) | Self::Draft(_) => {
+                return Err(invalid("word kernel requires unsigned storage"));
+            }
         })
     }
     /// # Safety
@@ -56,18 +61,23 @@ impl CollectedValues {
                 Self::U16(v) => finish(v, count),
                 Self::U32(v) => finish(v, count),
                 Self::U64(v) => finish(v, count),
-                Self::Draft(_) => Err(invalid("word kernel has no unsigned sink")),
+                Self::Bool(_) | Self::I64(_) | Self::F64(_) | Self::Draft(_) => {
+                    Err(invalid("word kernel has no unsigned sink"))
+                }
             }
         }
     }
     pub(super) fn new(body: &mech_core::SchemaBody) -> Self {
-        use mech_core::{IntegerWidth as W, SchemaBody as B};
+        use mech_core::{FloatWidth, IntegerWidth as W, SchemaBody as B};
         match body {
             B::Matrix { element, .. } => match element.as_ref() {
                 B::UnsignedInteger(W::W8) => Self::U8(Vec::new()),
                 B::UnsignedInteger(W::W16) => Self::U16(Vec::new()),
                 B::UnsignedInteger(W::W32) => Self::U32(Vec::new()),
                 B::UnsignedInteger(W::W64) => Self::U64(Vec::new()),
+                B::Bool => Self::Bool(Vec::new()),
+                B::SignedInteger(W::W64) => Self::I64(Vec::new()),
+                B::FloatingPoint(FloatWidth::W64) => Self::F64(Vec::new()),
                 _ => Self::default(),
             },
             _ => Self::default(),
@@ -75,10 +85,10 @@ impl CollectedValues {
     }
     pub(super) fn packed_width(&self) -> Option<u64> {
         match self {
-            Self::U8(_) => Some(1),
+            Self::Bool(_) | Self::U8(_) => Some(1),
             Self::U16(_) => Some(2),
             Self::U32(_) => Some(4),
-            Self::U64(_) => Some(8),
+            Self::U64(_) | Self::I64(_) | Self::F64(_) => Some(8),
             Self::Draft(_) => None,
         }
     }
@@ -88,6 +98,9 @@ impl CollectedValues {
             Self::U16(v) => v.len(),
             Self::U32(v) => v.len(),
             Self::U64(v) => v.len(),
+            Self::Bool(v) => v.len(),
+            Self::I64(v) => v.len(),
+            Self::F64(v) => v.len(),
             Self::Draft(v) => v.len(),
         }
     }
@@ -97,6 +110,9 @@ impl CollectedValues {
             Self::U16(v) => v.capacity(),
             Self::U32(v) => v.capacity(),
             Self::U64(v) => v.capacity(),
+            Self::Bool(v) => v.capacity(),
+            Self::I64(v) => v.capacity(),
+            Self::F64(v) => v.capacity(),
             Self::Draft(v) => v.capacity(),
         }
     }
@@ -127,12 +143,24 @@ impl CollectedValues {
         } else {
             super::add(super::mul(count, 32)?, 256)?
         };
-        let retained_payload = if self.packed_width().is_some() {
-            self.backing_bytes(capacity, payload)?
-        } else {
-            payload
+        let retained_payload = match self {
+            Self::U8(_) | Self::U16(_) | Self::U32(_) | Self::U64(_) => {
+                self.backing_bytes(capacity, payload)?
+            }
+            // Canonical boxed slices retain only initialized elements.
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) => super::mul(count, self.element_bytes())?,
+            Self::Draft(_) => payload,
         };
         super::add(retained_payload, metadata)
+    }
+    pub(super) fn finalization_cloned_bytes(&self, payload: u64) -> u64 {
+        match self {
+            Self::U8(_) | Self::U16(_) | Self::U32(_) | Self::U64(_) => 0,
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) if self.capacity() == self.len() => 0,
+            // Vec::into_boxed_slice may move a bank with spare capacity. Fund
+            // that complete copy even if this allocator can shrink in place.
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) | Self::Draft(_) => payload,
+        }
     }
     pub(super) fn retained_nodes(&self) -> Result<u64, Error> {
         super::add(
@@ -150,8 +178,54 @@ impl CollectedValues {
             Self::U16(v) => v.as_mut_ptr() as u64,
             Self::U32(v) => v.as_mut_ptr() as u64,
             Self::U64(v) => v.as_mut_ptr() as u64,
-            Self::Draft(_) => return Err(invalid("native fill requires packed unsigned storage")),
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) | Self::Draft(_) => {
+                return Err(invalid("native fill requires packed unsigned storage"));
+            }
         })
+    }
+    /// Exact typed sink for a checked scalar map. This is separate from the
+    /// unsigned-only word/fill loans; a width match alone grants no access.
+    pub(super) fn scalar_capacity_pointer(&mut self, kind: NativeScalarKind) -> Result<u64, Error> {
+        use NativeScalarKind as K;
+        Ok(match (self, kind) {
+            (Self::U8(v), K::U8) => v.as_mut_ptr() as u64,
+            (Self::U16(v), K::U16) => v.as_mut_ptr() as u64,
+            (Self::U32(v), K::U32) => v.as_mut_ptr() as u64,
+            (Self::U64(v), K::U64) => v.as_mut_ptr() as u64,
+            (Self::Bool(v), K::Bool) => v.as_mut_ptr() as u64,
+            (Self::I64(v), K::I64) => v.as_mut_ptr() as u64,
+            (Self::F64(v), K::F64) => v.as_mut_ptr() as u64,
+            _ => return Err(invalid("native scalar sink kind differs")),
+        })
+    }
+    /// # Safety
+    /// The successful same-build scalar kernel initialized the complete exact
+    /// capacity in its precise kind. Bool stores must have been guarded <=1.
+    /// A failed/partial kernel must leave the vector's length at zero.
+    pub(super) unsafe fn set_initialized_scalar_len(
+        &mut self,
+        count: usize,
+        kind: NativeScalarKind,
+    ) -> Result<(), Error> {
+        self.scalar_capacity_pointer(kind)?;
+        if self.len() != 0 || self.capacity() != count {
+            return Err(invalid("native scalar sink initialized extent differs"));
+        }
+        // SAFETY: exact kind, complete capacity and zero previous length were
+        // checked above; the caller supplies the successful initialized loan.
+        unsafe {
+            match self {
+                Self::U8(v) => v.set_len(count),
+                Self::U16(v) => v.set_len(count),
+                Self::U32(v) => v.set_len(count),
+                Self::U64(v) => v.set_len(count),
+                Self::Bool(v) => v.set_len(count),
+                Self::I64(v) => v.set_len(count),
+                Self::F64(v) => v.set_len(count),
+                Self::Draft(_) => unreachable!("exact scalar kind checked"),
+            }
+        }
+        Ok(())
     }
     /// Caller proves that generated stores initialized exactly the complete
     /// capacity. A partially filled vector must retain its zero length.
@@ -169,7 +243,9 @@ impl CollectedValues {
             Self::U16(v) => unsafe { v.set_len(count) },
             Self::U32(v) => unsafe { v.set_len(count) },
             Self::U64(v) => unsafe { v.set_len(count) },
-            Self::Draft(_) => return Err(invalid("native fill initialized nonunsigned storage")),
+            Self::Bool(_) | Self::I64(_) | Self::F64(_) | Self::Draft(_) => {
+                return Err(invalid("native fill initialized nonunsigned storage"));
+            }
         }
         Ok(())
     }
@@ -237,6 +313,9 @@ impl CollectedValues {
             Self::U16(v) => grow(v, capacity),
             Self::U32(v) => grow(v, capacity),
             Self::U64(v) => grow(v, capacity),
+            Self::Bool(v) => grow(v, capacity),
+            Self::I64(v) => grow(v, capacity),
+            Self::F64(v) => grow(v, capacity),
             Self::Draft(v) => grow(v, capacity),
         }
     }
@@ -250,6 +329,9 @@ impl CollectedValues {
             (Self::U16(v), D::U16(x)) => v.push(x),
             (Self::U32(v), D::U32(x)) => v.push(x),
             (Self::U64(v), D::U64(x)) => v.push(x),
+            (Self::Bool(v), D::Bool(x)) => v.push(x),
+            (Self::I64(v), D::I64(x)) => v.push(x),
+            (Self::F64(v), D::F64(x)) => v.push(x),
             (Self::Draft(v), x) => v.push(x),
             _ => return Err(invalid("collected word kind differs")),
         }
@@ -286,6 +368,9 @@ impl CollectedValues {
                 UnsignedMatrixBuffer::U64(v),
                 schemas,
             ),
+            Self::Bool(v) => Value::from_bool_matrix(schema, shape, v.into_boxed_slice(), schemas),
+            Self::I64(v) => Value::from_i64_matrix(schema, shape, v.into_boxed_slice(), schemas),
+            Self::F64(v) => Value::from_f64_matrix(schema, shape, v.into_boxed_slice(), schemas),
             Self::Draft(v) => mech_core::ValueDraft {
                 schema,
                 shape_values: shape.parameter_values().to_vec().into_boxed_slice(),

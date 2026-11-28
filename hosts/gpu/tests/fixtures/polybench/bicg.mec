@@ -1,0 +1,3 @@
+-- The two independent BiCG products share the input matrix.
+a := A<[f64]>
+(a' ** r<[f64]>, a ** p<[f64]>)

@@ -1,0 +1,5 @@
+-- Update the lower triangle; the upper triangle retains its original values.
+a := A<[f64]>
+c := C<[f64]>
+updated := alpha<f64> * (a ** a') + beta<f64> * c
+[[((i >= j)? | true => updated[i,j] | false => c[i,j]) | i <- 1u64..=n<u64>]' | j <- 1u64..=n]

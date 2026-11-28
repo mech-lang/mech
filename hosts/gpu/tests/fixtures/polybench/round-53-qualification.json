@@ -1,0 +1,337 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v3",
+  "label": "round-53-ordered-product-four-rows",
+  "compiler_commit": "2c9adcc963d004da49bdad64856f8f1f319a7757",
+  "compiler_fingerprint": "e6af8964dfca9701e21ddf8fb1ca83a6df1a242d25db6e25b2720ab761f2fdbd",
+  "driver_sha256": "c750544edd54907a4f4e0d4bb1c370165550d317d5a8eb0f97ca80e8c05551ad",
+  "frozen_candidate_sha256": "9e9e18f5ec5742b53c45f268acfb664cb87376cb7c357854478ea62e8d3f7be4",
+  "native_typed_ir_version": 422,
+  "native_work_policy_version": 157,
+  "native_abi_version": 48,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "corpus_liveouts": 29482
+  },
+  "checks": [
+    {
+      "name": "shared-constructor-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "baselib,compiler,serde",
+        "--lib",
+        "--",
+        "composite_constructor",
+        "prepared_composite",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3305572080425918,
+      "passed_tests": [
+        11
+      ]
+    },
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.21670724963769317,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3280252921395004,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3090558750554919,
+      "passed_tests": [
+        31,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 119.00514283310622,
+      "passed_tests": [
+        466
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 65.41478658281267,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.21449566585943,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18641708279028535,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "ordered_product_frame_preserves_product_and_scalar_prefixes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1700200829654932,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.411426375154406,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.602260500192642,
+      "passed_tests": []
+    }
+  ],
+  "broad_selected_checks": 756,
+  "focused_selected_checks": 4,
+  "restored_corpus": {
+    "programs": 30,
+    "forms": 60,
+    "finite_liveouts": 58964
+  },
+  "both_feature_checks_passed": true,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": "f097694f87c38cf341d1006f3e1cd0c78986a82636f2d8b2dc54a579075dfe27",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "290488204dc1a19f912935e569a86abb5f65214829ddaf5651656dfa8590a0bf",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "c4ae07464fe6a0eb0e1500da65f31be08541b487049612b3dc63e809301a77fd",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "993c8ef183c2ff4fe2ea106ad0c311b4e5c31adaff4dd1a786354bd4a974ca97",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "1bd2c90d3c25ab4b96d206bd0739571b922e5f14a8770666799a1786d3644643",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "01f5a6ec1103dc5406e296c4b9f172cf5da84bb8ef8820acb19761f7f1cd20d7",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "6b48d9651f0666aceb1d54355e87290a7f20d5b621b98165d168e31ec8dabd78",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "618e48fef45d9bc971c126fafc5add9abb0fc095afbe494668c0c14ab7c00e0c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_quartets.rs": "f643e4c3128980e45525a1dfda658244d877c3af682ce019f49a56d2a286249d"
+  },
+  "training_qualification_sha256": "eafd1b04f13b76b74a7a1fcad8c10dc92c62d57fa22ae9201c17eec157a68d71",
+  "training_selection_sha256": "22a67308e45f593f5613195d1dc50fbaef7c2a2debde37d38dfeed5f9c0c4a6b",
+  "training_probe_sha256": "7640f984c19fd95e8c55dc9fcd1d848501da4800e08c56fd8c99dd0d0bff60e8",
+  "route_census_sha256": "16078546d4b174babbe2b42cfa0f039a016272e31df3cc84deac8e6f46ac9018",
+  "source_work_comparison_never_reduced": true,
+  "physical_visits": "Unchanged; all execution counters match accepted52 exactly. Every original source callback remains; one private RHS load/k loop serves four ordered output rows under the unchanged issued loan.",
+  "invariants": {
+    "transformation": "Extend the shared Cranelift product register tile to four independent output rows when four remain. One reached right scalar/two-column SIMD load and k control serve four original ordered accumulators. Keep exact old two/one-row tails and scalar-column tail; product epilogues apply to every actual cell using its original row/column/index. Existing ordinary flat and two-row private ablations remain. No runtime/frame/helper/ownership/buffer change.",
+    "invariants": [
+      "No benchmark names/MINI dimensions in compiler rules, no source ports/inputs/C flags/binaries/tolerances/limits/cache/timing/split changes. Four is a bounded register tile, not a data-specific dimension.",
+      "Every cell starts at original +0 and traverses k in original order with separate F64 multiply/add. No FMA, reassociation, split partial sum or horizontal reduction. SIMD lanes remain independent columns.",
+      "Four-row access only when rows-at_row>=4, then2/1 tails; vector load/store only when columns-at_column>=2. Empty count finishes before division, either axis traversal or any address/load/store. Current geometry and full banks remain host validated.",
+      "Private product/cell epilogues use each actual cell coordinate. Consumed nonfinite intermediates cancel the entire issued loan and replay unchanged original source before publication. No cross-invocation/data cache or per-op allocation.",
+      "Logical source work/comparison, physical source visits and all other execution counters must exactly match accepted52; no resource accounting change. Current owners/schema/account, sealed frames/epoch/context, complete replay/physical envelopes, aliases, atomic errors, cleanup and retry remain.",
+      "Efficient direct Bool/U64/I64/F64 scalar paths and scalar/compression specialization remain. Cranelift is sole Mech native generator; Rust tests/diagnostic host are oracles/wrappers only. IR422/work157/ABI48."
+    ]
+  },
+  "formal_observations": 900,
+  "audit_sha256": "b16fc8d82f9df75ddd74485322d3b8ebbb5ee56ec75b2f02c25bb166e1ef0853",
+  "selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "promotion": "Optimization15 strictly below accepted52 only; holdout independently reported and cannot veto/select/tune/trigger rollback or retry."
+}

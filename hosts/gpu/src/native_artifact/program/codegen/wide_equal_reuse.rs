@@ -63,7 +63,9 @@ pub(super) fn scope(
         let mut written = BTreeSet::new();
         for (site, action) in &proof.actions {
             match action {
-                Operation::Write { array, .. } if inside(plan, *site, iteration) => {
+                Operation::Write { array, .. } | Operation::CellWrite { array, .. }
+                    if inside(plan, *site, iteration) =>
+                {
                     written.insert(*array);
                 }
                 _ if action.grows() && inside(plan, *site, iteration) => return None,

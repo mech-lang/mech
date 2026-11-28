@@ -35,8 +35,13 @@ fn candidate(plan: &Plan, id: usize, counts: &[usize]) -> Option<Cursor> {
         return None;
     };
     let collection = plan.collections().get(generator.collection() as usize)?;
-    if collection.kind() != crate::ComprehensionKind::Matrix
-        || counts.get(source.get() as usize) != Some(&1)
+    // The source cursor yields the same ordered U64 candidates regardless of
+    // whether the builder collects scalars or concatenates matrix blocks.
+    // Block row/shape checks remain at their original push/finish sites.
+    if !matches!(
+        collection.kind(),
+        crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixHorizontalBlocks { .. }
+    ) || counts.get(source.get() as usize) != Some(&1)
     {
         return None;
     }
@@ -261,6 +266,74 @@ mod tests {
             assert!(stale.validate_current_visits().is_err());
         }
     }
+    #[test]
+    fn block_range_cursors_keep_exact_source_ownership_and_setup_order() {
+        for (source, before_begin) in [
+            (
+                "[[i + j | i <- 1u64..=2u64]' | j <- 1u64..=count<u64>]\n",
+                false,
+            ),
+            (
+                "collect(count<u64>) => (out<[u64]>) :=\n  range := 1u64..=count\n  out := [[i + j | i <- 1u64..=2u64]' | j <- range].\ncollect(count<u64>)\n",
+                true,
+            ),
+        ] {
+            let (variants, catalog) = artifacts(source);
+            for artifact in variants {
+                let plan =
+                    super::super::lower_native_program_artifact(&artifact, &catalog).unwrap();
+                let (id, cursor) = plan
+                    .iterations()
+                    .iter()
+                    .enumerate()
+                    .find_map(|(id, data)| {
+                        let NativeControlLoop::Collection(data) = data else {
+                            return None;
+                        };
+                        matches!(
+                            plan.collections()[data.collection() as usize].kind(),
+                            crate::ComprehensionKind::MatrixHorizontalBlocks { .. }
+                        )
+                        .then(|| match data.source() {
+                            Source::U64Range(cursor) => Some((id, cursor)),
+                            _ => None,
+                        })
+                        .flatten()
+                    })
+                    .expect("block generator must select the existing range cursor");
+                assert_eq!(cursor.before_collection_begin(), before_begin);
+                plan.validate_current_visits().unwrap();
+                let mut forged = plan.clone();
+                let NativeControlLoop::Collection(data) = &mut forged.iterations[id] else {
+                    unreachable!()
+                };
+                let Source::U64Range(cursor) = &mut data.source else {
+                    unreachable!()
+                };
+                cursor.before_collection_begin = !cursor.before_collection_begin;
+                assert!(forged.validate_current_visits().is_err());
+            }
+        }
+        // A block builder does not license eliding another observer's range.
+        let (variants, catalog) = artifacts(
+            "range := 1u64..=count<u64>\n[[i + j | i <- 1u64..=2u64]' | j <- range]\nrange\n",
+        );
+        for artifact in variants {
+            let plan = super::super::lower_native_program_artifact(&artifact, &catalog).unwrap();
+            for data in plan.iterations() {
+                if let NativeControlLoop::Collection(data) = data {
+                    if matches!(
+                        plan.collections()[data.collection() as usize].kind(),
+                        crate::ComprehensionKind::MatrixHorizontalBlocks { .. }
+                    ) {
+                        assert!(matches!(data.source(), Source::Value(_)));
+                    }
+                }
+            }
+            plan.validate_current_visits().unwrap();
+        }
+    }
+
     #[test]
     fn range_cursor_proof_leaves_observed_stepped_and_floating_ranges_materialized() {
         for source in [

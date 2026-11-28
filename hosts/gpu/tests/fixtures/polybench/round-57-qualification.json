@@ -1,0 +1,331 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v3",
+  "label": "round-57-transpose-tiles",
+  "compiler_commit": "990f859182c78a0af98e7fac8b2dbe39b0c5bbbd",
+  "compiler_fingerprint": "48e05773ee9b334949a37f6859fe03caea4c12ad03992cf79ac820205c7ded7b",
+  "driver_sha256": "9b1a883ecdf02d522870aae0647dd52fc566fda869663a8eaabab3feac8ceae6",
+  "frozen_candidate_sha256": "fd7bf64d2b94a7c7d0a432d8f17b85c075d97bfd35d472ae6c51ba33ab9e740f",
+  "native_typed_ir_version": 426,
+  "native_work_policy_version": 157,
+  "native_abi_version": 48,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "corpus_liveouts": 29482
+  },
+  "checks": [
+    {
+      "name": "shared-constructor-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "baselib,compiler,serde",
+        "--lib",
+        "--",
+        "composite_constructor",
+        "prepared_composite",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16906233318150043,
+      "passed_tests": [
+        11
+      ]
+    },
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.21501350030303001,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.2453311667777598,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.28218558290973306,
+      "passed_tests": [
+        31,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 124.21894962526858,
+      "passed_tests": [
+        477
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 66.56159187527373,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.436741583049297,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18802433321252465,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "ordered_product_frame_preserves_product_and_scalar_prefixes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1659621251747012,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.14952716743573546,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.687562249600887,
+      "passed_tests": []
+    }
+  ],
+  "broad_selected_checks": 767,
+  "focused_selected_checks": 3,
+  "restored_corpus": {
+    "programs": 30,
+    "forms": 60,
+    "finite_liveouts": 58964
+  },
+  "both_feature_checks_passed": true,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs": "ae60c86e559437a43aab72dbdc0af2d30f0a81285cc6a38d88145c3e4d44b269",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose_tests.rs": "25969e95ffa582a96b408469c5e8dc2c3a816918d7b1cb67e553f8fb8d8ba9a4",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "0bba26ffef5b52800ec22c385da4d7dd32e7a44137364a6c217dbde9d4cedc27",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs": "1ab5d4208184c8617fd2c704d9e9a3e8b0b19ebd095c6ab5e276d3e40565ca0f",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "08716a7002bc286f7ecd27b10f097688362e5fb47c2f1d5669d713fb0927adb6",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "02b70b3ff9541ef135f9da2a910845ffe80bed38690bc4433fe7f2cdf743b940",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "5098a652c43a33edfc5ac59ef3d9185972f5ec63e95df8f48136c6058a0f279d"
+  },
+  "training_qualification_sha256": "50b29d5ff0c12cb6e167f0edfeae290f60cfae3c7e925905f735a3b4116b9c42",
+  "training_selection_sha256": "81e2a900940a0d8301e6a65305fca2b5250c841433e30b900dbb86e981e34973",
+  "training_probe_sha256": "c6a34d2bc794b0cfd1e9b059a642b4a525f9ec3425e0b09f6ea0f94566c23de8",
+  "route_census_sha256": "2c827db968b46c020981ad97eb309c13e632b1dd7f9b818a35f238968e11410a",
+  "source_work_comparison_never_reduced": true,
+  "physical_visits": "Unchanged; every execution counter matches accepted56 exactly. Original transpose owners, complete allocation and prepare/finish, source callbacks, fees, full spans, private completion and fallback remain.",
+  "invariants": [
+    "Unchanged30 sources, inputs, limits, C binaries/flags, MINI dataset, timing/cache/validation boundaries and15/15 split. No benchmark identifiers or fixed benchmark dimensions in compiler rules.",
+    "Current runtime transpose loan, source-derived shape, product overflow, full aligned disjoint spans, exact owner/epoch/context, source fees/work/comparisons/visits, zeroed private allocation, ordinary decline/fallback, finish/output publication all remain. No new helper/frame/ABI/loan/cache/owner/buffer or allocation.",
+    "Every copied word preserves signed zero, subnormal, infinity, signaling/quiet NaN payloads exactly. Integer SIMD only; no FP arithmetic or source evaluation reordering. Every vector access lies entirely within admitted real cells. Odd tails and empty axes never access padding or null spans.",
+    "All optimization15 execution counters exactly accepted56. Cranelift sole Mech code generator; direct scalar/compression paths unchanged. No Rust source edits during builds/tests/profiles/timing.",
+    "Original/decoded/restored exact outputs, aliases, finite caps and physical refusal/cleanup/retry remain covered. No static or sampled speedup claim."
+  ],
+  "formal_observations": 900,
+  "audit_sha256": "663011bb033e2f9ed72955d637a8f97b9067171d15ee532c6be3bcae49feaff7",
+  "selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "promotion": "Optimization15 strictly below accepted56 only; holdout independently reported and cannot veto/select/tune/trigger rollback/retry."
+}

@@ -1,0 +1,593 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-18-direct-typed-f64-broadcast",
+  "compiler_commit": "ec96f1d0ec97a8554c07b30c7b7bda94d98c3a16",
+  "compiler_fingerprint": "35efd51d808fa5ab83c4f613e0aa00abb9a89ad6a942060eb14fdf9dc53120a2",
+  "driver_sha256": "33f88161e373bbb6fbfef8be97abee305fd7ce4297c80c42b1d88eea09d12b6a",
+  "frozen_candidate_sha256": "1ce23693785a404c6e8c6635e675d752778d8ee9e094365488f39ad93654a137",
+  "native_typed_ir_version": 377,
+  "native_work_policy_version": 146,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric/phase, row blocks and both exact Huffman work equations",
+      "log": "numeric-regressions.log",
+      "passed_by_target": [
+        350
+      ],
+      "log_sha256": "2c9c2256bfeaa8b88e82dad9a1f6eadbd194bde1ff94679c36cde09c78ef5bf6"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "log": "matrix-polybench.log",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "1b46cfb2c2bb4737bf804a645e50ad0a716861f7f260b45a6cc39177c746c5a6"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collection and range/cursor regressions",
+      "log": "program-regressions.log",
+      "passed_by_target": [
+        114
+      ],
+      "log_sha256": "9c51243ac6b1bc93a5a2271ed91cde7bbb946cc893b64c20ec1699f5a1b10449"
+    },
+    {
+      "suite": "resident numeric, geometry, capacity, prefix projections and range cursor proofs",
+      "log": "engine-numeric.log",
+      "passed_by_target": [
+        206
+      ],
+      "log_sha256": "b441f2746f37424937cd4f0cf96f7c3ccd199b3e2d5234f7212049ea065d758f"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "log": "protocol.log",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "8e7ba2fde0eff86ffa6e00d00d3c7560cc35597c4890a07489f5d7c28e9afdfb"
+    }
+  ],
+  "total_selected_checks": 725,
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 89.6891841365111,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.023861167
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 19.90734430712032,
+      "median_speedup": 1.5557835693275874,
+      "minimum_speedup": 1.099290780141844,
+      "maximum_speedup": 19497.578309784174,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 39.77160968397907,
+      "geomean_mech_over_c_fresh": 23.884617680739996,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 193.27577935107755,
+      "sum_mech_median_seconds": 0.005521582,
+      "geomean_speedup_from_contemporaneous_baseline": 19.56978299086347,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0652482269503547
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 23.29359285062871,
+      "median_speedup": 22.204480125817575,
+      "minimum_speedup": 1.046589247311828,
+      "maximum_speedup": 397.50762041966806,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 89.6891841365111,
+      "geomean_mech_over_c_fresh": 51.96455537793497,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 495.12618190147873,
+      "sum_mech_median_seconds": 0.023861167,
+      "geomean_speedup_from_contemporaneous_baseline": 23.170984116760373,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0376344086021505
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 21.53400968299546,
+      "median_speedup": 12.917596063759888,
+      "minimum_speedup": 1.046589247311828,
+      "maximum_speedup": 19497.578309784174,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 59.725063619487635,
+      "geomean_mech_over_c_fresh": 35.230009056933525,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 495.12618190147873,
+      "sum_mech_median_seconds": 0.029382749,
+      "geomean_speedup_from_contemporaneous_baseline": 21.29439200469797,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0376344086021505
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000120209,
+      "c_median_seconds": 1.7499551177024841e-06,
+      "mech_over_c_kernel": 68.69261890431932,
+      "speedup_from_recorded_baseline": 1.3084877172258318,
+      "speedup_from_paired_original": 1.2776331223119732,
+      "runtime_multiplier_from_round17": 0.8929173630454967,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.8125e-05,
+      "c_median_seconds": 2.624932676553726e-06,
+      "mech_over_c_kernel": 33.57228960085152,
+      "speedup_from_recorded_baseline": 1.099290780141844,
+      "speedup_from_paired_original": 1.0652482269503547,
+      "runtime_multiplier_from_round17": 0.9764542936288089,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.5041e-05,
+      "c_median_seconds": 1.2079253792762756e-06,
+      "mech_over_c_kernel": 70.40252772149884,
+      "speedup_from_recorded_baseline": 1.1244576145623875,
+      "speedup_from_paired_original": 1.1543373196458178,
+      "runtime_multiplier_from_round17": 1.0149059576093182,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000116333,
+      "c_median_seconds": 1.416075974702835e-06,
+      "mech_over_c_kernel": 82.15166564379612,
+      "speedup_from_recorded_baseline": 1.1027997214891734,
+      "speedup_from_paired_original": 1.1153327086897098,
+      "runtime_multiplier_from_round17": 0.9269561752988049,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.9791e-05,
+      "c_median_seconds": 7.083173841238022e-06,
+      "mech_over_c_kernel": 8.441272421114194,
+      "speedup_from_recorded_baseline": 2654.810088474854,
+      "speedup_from_paired_original": 2642.716579418307,
+      "runtime_multiplier_from_round17": 1.0070063157894737,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000345042,
+      "c_median_seconds": 4.209112375974655e-06,
+      "mech_over_c_kernel": 81.97500308366146,
+      "speedup_from_recorded_baseline": 4.079213545017708,
+      "speedup_from_paired_original": 4.038035949246758,
+      "runtime_multiplier_from_round17": 0.9232930523296263,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000151084,
+      "c_median_seconds": 4.58303838968277e-06,
+      "mech_over_c_kernel": 32.96590321829222,
+      "speedup_from_recorded_baseline": 1.4748947605305658,
+      "speedup_from_paired_original": 1.4558722300177385,
+      "runtime_multiplier_from_round17": 0.8527821365273247,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002877458,
+      "c_median_seconds": 2.895807847380638e-05,
+      "mech_over_c_kernel": 99.36633062869706,
+      "speedup_from_recorded_baseline": 437.7649619907571,
+      "speedup_from_paired_original": 435.97922784624484,
+      "runtime_multiplier_from_round17": 0.9751067126275366,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.75e-05,
+      "c_median_seconds": 3.000255674123764e-06,
+      "mech_over_c_kernel": 19.16503333229862,
+      "speedup_from_recorded_baseline": 1.2376869565217392,
+      "speedup_from_paired_original": 1.0833391304347826,
+      "runtime_multiplier_from_round17": 1.0222222222222224,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000257583,
+      "c_median_seconds": 1.3327226042747498e-06,
+      "mech_over_c_kernel": 193.27577935107755,
+      "speedup_from_recorded_baseline": 20.1823295792036,
+      "speedup_from_paired_original": 20.03399680879561,
+      "runtime_multiplier_from_round17": 1.067701554404145,
+      "runtime_regression_over_five_percent_from_round17": true,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000102333,
+      "c_median_seconds": 4.416797310113907e-06,
+      "mech_over_c_kernel": 23.169050516687822,
+      "speedup_from_recorded_baseline": 1.5557835693275874,
+      "speedup_from_paired_original": 1.463359815504285,
+      "runtime_multiplier_from_round17": 0.8333849110691249,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000591667,
+      "c_median_seconds": 3.5408884286880493e-06,
+      "mech_over_c_kernel": 167.0956348712804,
+      "speedup_from_recorded_baseline": 168.9682152291745,
+      "speedup_from_paired_original": 169.14743935355528,
+      "runtime_multiplier_from_round17": 1.0742113175209516,
+      "runtime_regression_over_five_percent_from_round17": true,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000159042,
+      "c_median_seconds": 1.2922100722789764e-06,
+      "mech_over_c_kernel": 123.07751147575351,
+      "speedup_from_recorded_baseline": 1.1278467323097043,
+      "speedup_from_paired_original": 1.122345040932584,
+      "runtime_multiplier_from_round17": 1.0195,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000184083,
+      "c_median_seconds": 3.008311614394188e-05,
+      "mech_over_c_kernel": 6.119146670816897,
+      "speedup_from_recorded_baseline": 19497.578309784174,
+      "speedup_from_paired_original": 19556.39711434516,
+      "runtime_multiplier_from_round17": 1.0066056049213943,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000326291,
+      "c_median_seconds": 0.00010812515392899513,
+      "mech_over_c_kernel": 3.017715935130807,
+      "speedup_from_recorded_baseline": 16970.668437069977,
+      "speedup_from_paired_original": 16897.495386020455,
+      "runtime_multiplier_from_round17": 0.9949139983961409,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.009015083,
+      "c_median_seconds": 4.483293741941452e-05,
+      "mech_over_c_kernel": 201.08169392657496,
+      "speedup_from_recorded_baseline": 107.17619482815631,
+      "speedup_from_paired_original": 106.54527063145176,
+      "runtime_multiplier_from_round17": 0.9925909247305909,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000415375,
+      "c_median_seconds": 6.916932761669159e-06,
+      "mech_over_c_kernel": 60.051906576545036,
+      "speedup_from_recorded_baseline": 174.83438579596748,
+      "speedup_from_paired_original": 173.09880710201622,
+      "runtime_multiplier_from_round17": 1.0109522360815333,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00079825,
+      "c_median_seconds": 6.529083475470543e-05,
+      "mech_over_c_kernel": 12.226065159053142,
+      "speedup_from_recorded_baseline": 397.50762041966806,
+      "speedup_from_paired_original": 394.7460582524272,
+      "runtime_multiplier_from_round17": 1.007997050195917,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000308125,
+      "c_median_seconds": 1.7923302948474884e-06,
+      "mech_over_c_kernel": 171.9130680800208,
+      "speedup_from_recorded_baseline": 1.5154823529411765,
+      "speedup_from_paired_original": 1.496688032454361,
+      "runtime_multiplier_from_round17": 0.8450462804250943,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00011625,
+      "c_median_seconds": 9.578652679920197e-07,
+      "mech_over_c_kernel": 121.3636237627613,
+      "speedup_from_recorded_baseline": 1.046589247311828,
+      "speedup_from_paired_original": 1.0376344086021505,
+      "runtime_multiplier_from_round17": 1.0441648028886314,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000490334,
+      "c_median_seconds": 1.7916783690452576e-05,
+      "mech_over_c_kernel": 27.36730031859944,
+      "speedup_from_recorded_baseline": 151.25718795759624,
+      "speedup_from_paired_original": 148.92501845680698,
+      "runtime_multiplier_from_round17": 0.9994068789808919,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000188209,
+      "c_median_seconds": 4.1676685214042664e-07,
+      "mech_over_c_kernel": 451.5930166552313,
+      "speedup_from_recorded_baseline": 22.204480125817575,
+      "speedup_from_paired_original": 22.11902725161921,
+      "runtime_multiplier_from_round17": 1.0256621253405995,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003713417,
+      "c_median_seconds": 7.4999406933784485e-06,
+      "mech_over_c_kernel": 495.12618190147873,
+      "speedup_from_recorded_baseline": 19.84498589843263,
+      "speedup_from_paired_original": 19.925426366066617,
+      "runtime_multiplier_from_round17": 1.0001009953563682,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00377925,
+      "c_median_seconds": 1.200009137392044e-05,
+      "mech_over_c_kernel": 314.93510192875436,
+      "speedup_from_recorded_baseline": 63.843200899649396,
+      "speedup_from_paired_original": 63.98416802275584,
+      "runtime_multiplier_from_round17": 1.003296403105739,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.004168041,
+      "c_median_seconds": 1.2332573533058167e-05,
+      "mech_over_c_kernel": 337.97009106228546,
+      "speedup_from_recorded_baseline": 59.868832864168084,
+      "speedup_from_paired_original": 59.91489767015248,
+      "runtime_multiplier_from_round17": 0.9982435110618806,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000168667,
+      "c_median_seconds": 3.917142748832703e-06,
+      "mech_over_c_kernel": 43.05868098635473,
+      "speedup_from_recorded_baseline": 4.849051681716044,
+      "speedup_from_paired_original": 4.781362092169778,
+      "runtime_multiplier_from_round17": 0.8482804751702425,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00031125,
+      "c_median_seconds": 6.624963134527206e-06,
+      "mech_over_c_kernel": 46.981393508118366,
+      "speedup_from_recorded_baseline": 4.839222489959839,
+      "speedup_from_paired_original": 4.805355823293173,
+      "runtime_multiplier_from_round17": 0.8076548816088226,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000225041,
+      "c_median_seconds": 5.417037755250931e-06,
+      "mech_over_c_kernel": 41.5431847012437,
+      "speedup_from_recorded_baseline": 5.9902062290871445,
+      "speedup_from_paired_original": 5.989650774747712,
+      "runtime_multiplier_from_round17": 0.8321998986750093,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.625e-05,
+      "c_median_seconds": 9.587965905666351e-07,
+      "mech_over_c_kernel": 27.378069820301118,
+      "speedup_from_recorded_baseline": 148.9253714285714,
+      "speedup_from_paired_original": 147.94761904761904,
+      "runtime_multiplier_from_round17": 1.0534976120720794,
+      "runtime_regression_over_five_percent_from_round17": true,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000137625,
+      "c_median_seconds": 3.2498501241207123e-06,
+      "mech_over_c_kernel": 42.34810675684195,
+      "speedup_from_recorded_baseline": 5.118982742960945,
+      "speedup_from_paired_original": 5.144108991825613,
+      "runtime_multiplier_from_round17": 1.010714862741066,
+      "runtime_regression_over_five_percent_from_round17": false,
+      "observations": 30
+    }
+  },
+  "implementation": [
+    "Maintained selected F64 matrix add/subtract/multiply/divide now operate directly on current exact Core F64 banks. Scalar, row, column and exact broadcasting use the already validated geometry. The operation is matched once outside the loop, removing generic operand/result ValueDataDraft construction and per-cell operation dispatch.",
+    "The resident/JIT compiler execution path is shared. Both current schema/backing pairs must be exact F64 and the result must be a matrix with exact F64 schema. Dense column-major transport, other numeric kinds, constrained/composite schemas, power/remainder and rational power keep their existing paths.",
+    "The original complete preflight runs before typed selection. Source input/schema/shape and full length checks, output/clone/temporary/node/compute/comparison/storage envelopes, strict Core typed construction, prior-output publication comparison and atomic replacement are unchanged. No source arithmetic reassociation, FMA, result cache, cached pointer or admission capability is introduced.",
+    "IR377/work146 identify the execution change; all existing numeric source/construction prices and both exact Huffman work equations remain unchanged. No benchmark source, input, pinned C binary, tolerance or timing boundary changed."
+  ],
+  "development_checks": {
+    "focused_tests": {
+      "passed": 3,
+      "log_sha256": "030f244a2454b2d4f048280c967b060f7c51629bc8d419d2a89389752cc94009",
+      "scope": "Actual direct-path selection, every scalar/matrix/row/column/exact broadcast pair, fresh current inputs, immutable aliases, exact IEEE bits including signed zero/subnormal/NaN/Inf, empty axes, all eight finite resource dimensions, atomic failure and retry. Direct-path ablation retains the previous typed-input and typed-output implementation."
+    },
+    "selection": "One seven-sample replay of all fifteen optimization programs against frozen round17. No current holdout timing or profile selects or refines the candidate."
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round17": 0.9699399719192323,
+      "reference_new_over_round17": 1.006328261061031,
+      "c_new_over_round17": 1.012420464926219,
+      "mech_over_c_score_new_over_round17": 0.9580406614853618,
+      "mech_new_over_round17_regressions_over_five_percent": 2
+    },
+    "holdout": {
+      "mech_new_over_round17": 0.9616596878012382,
+      "reference_new_over_round17": 1.0062549199699433,
+      "c_new_over_round17": 0.9814495416470005,
+      "mech_over_c_score_new_over_round17": 0.9798360965021673,
+      "mech_new_over_round17_regressions_over_five_percent": 1
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "durbin",
+      "reference": "frozen round17 Mech",
+      "runtime_multiplier": 1.067701554404145
+    },
+    {
+      "partition": "optimization",
+      "case": "gramschmidt",
+      "reference": "frozen round17 Mech",
+      "runtime_multiplier": 1.0742113175209516
+    },
+    {
+      "partition": "holdout",
+      "case": "trisolv",
+      "reference": "frozen round17 Mech",
+      "runtime_multiplier": 1.0534976120720794
+    }
+  ],
+  "training_probe": {
+    "receipt_sha256": "f18fda9051072c9107e3f8578e0d6a590ee73d80fb9dcbcae1025777378115be",
+    "reference": "frozen round17 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_17_replay": 1.0613428375648373,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.005124499,
+      "sum_reference_median_seconds": 0.005390378
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": []
+  },
+  "profiling": {
+    "receipt_sha256": "60be292c341892446577404019babf48525a56ad290144751c8587fa21ac3d84",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d",
+      "durbin"
+    ],
+    "canonical_execution_samples": 3606,
+    "coverage_of_training_sum": 0.796518280449335,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.3086561735686288,
+        "estimated_seconds_in_training_sum": 0.0013574825062579456
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.1820852912125121,
+        "estimated_seconds_in_training_sum": 0.0008008185762495679
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.15798285358944272,
+        "estimated_seconds_in_training_sum": 0.0006948150673833662
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.12161333566518352,
+        "estimated_seconds_in_training_sum": 0.0005348604364022394
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.10988346687878714,
+        "estimated_seconds_in_training_sum": 0.0004832719925550479
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.10695670032288015,
+        "estimated_seconds_in_training_sum": 0.0004703999532447402
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.011154363491908802,
+        "estimated_seconds_in_training_sum": 4.905734796631808e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0010917398591977294,
+        "estimated_seconds_in_training_sum": 4.801516662085841e-06
+      },
+      {
+        "name": "Typed matrix scalar reads",
+        "fraction_of_profiled_time": 0.0005760754114589938,
+        "estimated_seconds_in_training_sum": 2.5336032786885247e-06
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "The split and prior holdout results were already exposed. No current holdout profile or timing selected/refined the candidate.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Each process validates complete finite untimed warm-up live-outs; timed checked calls must succeed but their outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only the PR1001 branch is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-18-frozen.json": "1ce23693785a404c6e8c6635e675d752778d8ee9e094365488f39ad93654a137",
+    "round-18-optimization.json": "093645f1259ae9f8dc8e663e5651b54b671a2bb6707f84dd0b1e3da805e894f6",
+    "round-18-holdout.json": "b46b91b5158646eb5fd0cd962696b72e6028167631fa4c17af8a3ee0c7b5104f",
+    "round-18-progress.json": "f9a0bc5797da0a219c472bd7204de137b94f328d737ed046bc985523664aa595",
+    "round-18-training-probe.json": "f18fda9051072c9107e3f8578e0d6a590ee73d80fb9dcbcae1025777378115be",
+    "round-18-training-profile.json": "60be292c341892446577404019babf48525a56ad290144751c8587fa21ac3d84"
+  }
+}

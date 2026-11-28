@@ -6,7 +6,7 @@ use crate::native_artifact::codegen::options::{OptimizationOptions, Optimization
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
@@ -106,6 +106,9 @@ pub(super) fn source_slots(
             .find(|(s, _)| *s == site)
             .map(|(_, action)| action)
         {
+            Some(action @ (Operation::Reduce { .. } | Operation::Map { .. })) => {
+                slots.extend(action.summary_values().into_iter().map(|v| v as usize));
+            }
             Some(Operation::Read { index, .. }) => {
                 slots.insert(*index as usize);
             }
@@ -113,6 +116,17 @@ pub(super) fn source_slots(
                 index, incoming, ..
             }) => {
                 slots.extend([*index as usize, *incoming as usize]);
+            }
+            Some(Operation::CellRead { row, column, .. }) => {
+                slots.extend([*row as usize, *column as usize]);
+            }
+            Some(Operation::CellWrite {
+                row,
+                column,
+                incoming,
+                ..
+            }) => {
+                slots.extend([*row as usize, *column as usize, *incoming as usize]);
             }
             Some(Operation::Append { incoming, .. }) => {
                 slots.insert(*incoming as usize);
@@ -165,9 +179,14 @@ pub(super) fn source_slots(
     Ok(slots)
 }
 /// Original read/write ordering, shared with the current-traversal analysis.
+#[path = "numeric_prefix_words.rs"]
+mod prefix;
+pub(super) use prefix::entry as prefix_inputs;
 pub(super) struct FrameWordMoves {
     pub assignments: Vec<(usize, usize)>,
     pub parallel: bool,
+    pub constants: Vec<(usize, u64)>,
+    pub comparisons: Vec<(usize, usize, u64)>,
 }
 
 /// Exact scalar lane assignments; managed fields retain their checked recipes.
@@ -176,6 +195,16 @@ pub(super) fn frame_word_moves(
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
+) -> Result<FrameWordMoves, NativeCompileError> {
+    frame_word_moves_for(shadow, code, site, recipes, None)
+}
+
+pub(super) fn frame_word_moves_for(
+    shadow: usize,
+    code: CodePlan<'_>,
+    site: usize,
+    recipes: &[FrameWords],
+    variant: Option<&crate::native_artifact::program::prepare::readonly_numeric::tagged::Variant>,
 ) -> Result<FrameWordMoves, NativeCompileError> {
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
@@ -192,6 +221,41 @@ pub(super) fn frame_word_moves(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
+    if let Some(prefix) = variant.and_then(|variant| variant.prefix.as_deref()) {
+        if let Some(moves) = prefix::moves(shadow, code, operation, recipes, prefix)? {
+            return Ok(moves);
+        }
+    }
+    if let (
+        Some(variant),
+        Frame::Observe {
+            source,
+            path,
+            observation,
+            output,
+        },
+    ) = (variant, operation)
+        && variant.contains(source.get())
+        && path.is_empty()
+        && let mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { ordinal } =
+            observation
+    {
+        return Ok(FrameWordMoves {
+            assignments: Vec::new(),
+            comparisons: Vec::new(),
+            parallel: true,
+            constants: vec![(
+                output.get() as usize,
+                u64::from(*ordinal == variant.ordinal),
+            )],
+        });
+    }
+    let projected = variant.and_then(|variant| {
+        crate::native_artifact::program::prepare::readonly_numeric::tagged::operation(
+            operation, variant,
+        )
+    });
+    let operation = projected.as_ref().unwrap_or(operation);
     let assignments = match operation {
         Frame::EnumPack { .. } | Frame::Observe { .. } => {
             return Err(backend("tagged frame outside numeric word emitter"));
@@ -247,7 +311,9 @@ pub(super) fn frame_word_moves(
                 if source.is_empty() {
                     return Ok(FrameWordMoves {
                         assignments: Vec::new(),
+                        comparisons: Vec::new(),
                         parallel: true,
+                        constants: Vec::new(),
                     });
                 }
                 let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
@@ -266,7 +332,9 @@ pub(super) fn frame_word_moves(
     // emission, and expose that ordering to current-traversal proofs.
     Ok(FrameWordMoves {
         assignments,
+        comparisons: Vec::new(),
         parallel: true,
+        constants: Vec::new(),
     })
 }
 
@@ -277,8 +345,23 @@ pub(super) fn frame_words(
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
+    variant: Option<&crate::native_artifact::program::prepare::readonly_numeric::tagged::Variant>,
 ) -> Result<(), NativeCompileError> {
-    let moves = frame_word_moves(shadow, code, site, recipes)?;
+    let moves = frame_word_moves_for(shadow, code, site, recipes, variant)?;
+    for (to, from, ordinal) in moves.comparisons {
+        let tag = words.read(b, from);
+        let equal = b.ins().icmp_imm(
+            cranelift_codegen::ir::condcodes::IntCC::Equal,
+            tag,
+            ordinal as i64,
+        );
+        let bits = b.ins().uextend(types::I64, equal);
+        words.write(b, to, bits);
+    }
+    for (to, bits) in moves.constants {
+        let value = b.ins().iconst(types::I64, bits as i64);
+        words.write(b, to, value);
+    }
     let copied = moves
         .assignments
         .into_iter()
@@ -380,3 +463,62 @@ mod tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_unsigned_load_tests.rs"]
 mod unsigned_load_tests;
+
+/// A raw native Bool store must never create an invalid Rust bool in the
+/// privately owned initialized bank. Other exact scalar kinds accept all bits.
+pub(super) fn guard_scalar_store(
+    b: &mut FunctionBuilder<'_>,
+    code: CodePlan<'_>,
+    site: usize,
+    incoming: Value,
+    fail: Block,
+) -> Result<(), NativeCompileError> {
+    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+        return Err(backend("numeric store lost its selected scalar operation"));
+    };
+    if code.kind(operands[1]) == Some(mech_engine::native_artifact::NativeScalarKind::Bool) {
+        let valid = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThanOrEqual, incoming, 1);
+        let good = b.create_block();
+        let bad = b.create_block();
+        b.set_cold_block(bad);
+        b.ins().brif(valid, good, &[], bad, &[]);
+        b.switch_to_block(bad);
+        let status = b
+            .ins()
+            .iconst(types::I64, crate::native_artifact::abi::STATUS_ABI as i64);
+        b.ins().jump(fail, &[status.into()]);
+        b.switch_to_block(good);
+    }
+    Ok(())
+}
+
+/// Independent one-based axes over an entry-validated canonical row-major
+/// view. Check both pure axes, then compute only a physical ordinal.
+/// The caller's cold block executes the original selected rejecting operation.
+pub(super) fn cell_address(
+    b: &mut FunctionBuilder<'_>,
+    row: Value,
+    column: Value,
+    rows: Value,
+    columns: Value,
+    width: u8,
+    base: Value,
+    bad: Block,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+    let row = b.ins().iadd_imm(row, -1);
+    let row_valid = b.ins().icmp(IntCC::UnsignedLessThan, row, rows);
+    let column = b.ins().iadd_imm(column, -1);
+    let column_valid = b.ins().icmp(IntCC::UnsignedLessThan, column, columns);
+    // Both tests are pure words already available at this source operation.
+    // One miss edge replays the same original operation, retaining its exact
+    // axis error order. Neither an address nor a load precedes both bounds.
+    let valid = b.ins().band(row_valid, column_valid);
+    let good = b.create_block();
+    b.ins().brif(valid, good, &[], bad, &[]);
+    b.switch_to_block(good);
+    let start = b.ins().imul(row, columns);
+    let physical = b.ins().iadd(start, column);
+    element_address(b, physical, width, |_| base)
+}

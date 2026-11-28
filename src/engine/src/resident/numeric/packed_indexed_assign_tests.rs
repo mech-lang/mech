@@ -74,14 +74,49 @@ fn projection(
 
 #[test]
 fn single_projection_matches_incremental_cost_and_every_finite_prefix() {
-    for (width, word) in [
-        (IntegerWidth::W8, ValueDataDraft::U8(255)),
-        (IntegerWidth::W16, ValueDataDraft::U16(u16::MAX)),
-        (IntegerWidth::W32, ValueDataDraft::U32(u32::MAX)),
-        (IntegerWidth::W64, ValueDataDraft::U64(u64::MAX)),
-        (IntegerWidth::W128, ValueDataDraft::U128(u128::MAX)),
+    for (element, word) in [
+        (SchemaBody::Bool, ValueDataDraft::Bool(true)),
+        (
+            SchemaBody::SignedInteger(IntegerWidth::W64),
+            ValueDataDraft::I64(i64::MIN),
+        ),
+        (
+            SchemaBody::SignedInteger(IntegerWidth::W64),
+            ValueDataDraft::I64(i64::MAX),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W8),
+            ValueDataDraft::U8(255),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W16),
+            ValueDataDraft::U16(u16::MAX),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W32),
+            ValueDataDraft::U32(u32::MAX),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            ValueDataDraft::U64(u64::MAX),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W128),
+            ValueDataDraft::U128(u128::MAX),
+        ),
+        (
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ValueDataDraft::F64(F64Bits::from_f64(-0.0)),
+        ),
+        (
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ValueDataDraft::F64(F64Bits::from_f64(f64::NAN)),
+        ),
+        (
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64),
+            ValueDataDraft::F64(F64Bits::from_f64(f64::INFINITY)),
+        ),
     ] {
-        let element = SchemaBody::UnsignedInteger(width);
         let (current, schemas) = value(
             matrix(element.clone(), 2, 3),
             ValueDataDraft::Matrix(vec![word.clone(); 6].into()),
@@ -137,7 +172,7 @@ fn single_projection_matches_incremental_cost_and_every_finite_prefix() {
                     );
                     assert_eq!(
                         old_result.0, new_result.0,
-                        "{width:?}, packed={packed_source}, limit={limit}"
+                        "{element:?}, packed={packed_source}, limit={limit}"
                     );
                     assert_eq!(old.estimate(), new.estimate());
                     if limit >= exact {

@@ -1,0 +1,6 @@
+{
+  "schema": "mech.polybench.development-failure.v1",
+  "source_parent": "79aecffb50d14fc0c76969c497b23970db530a93",
+  "candidate_performance_measured_at_failing_stages": false,
+  "failures": []
+}

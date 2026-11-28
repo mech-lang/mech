@@ -392,3 +392,26 @@ fn source_rational_power_preserves_the_integral_exponent() {
         );
     }
 }
+
+#[test]
+fn source_outer_broadcast_retains_both_vector_axes() {
+    for (source, expected) in [
+        ("[1.0; 2.0] + [3.0 5.0 7.0]", vec![4., 6., 8., 5., 7., 9.]),
+        ("[3.0 5.0 7.0] - [1.0; 2.0]", vec![2., 4., 6., 1., 3., 5.]),
+        ("[1.0; 2.0] * [3.0 5.0 7.0]", vec![3., 5., 7., 6., 10., 14.]),
+    ] {
+        let value = evaluate(source).unwrap_or_else(|e| panic!("{source}: {e:?}"));
+        assert_eq!(current_extents(&value).as_ref(), &[2, 3]);
+        let ValueData::Matrix(matrix) = value.data() else {
+            panic!("matrix broadcast output")
+        };
+        let SequenceView::F64(elements) = matrix.elements() else {
+            panic!("F64 broadcast output")
+        };
+        assert_eq!(
+            elements.iter().map(|v| v.to_f64()).collect::<Vec<_>>(),
+            expected
+        );
+    }
+    assert!(evaluate("[1.0 2.0; 3.0 4.0] + [3.0 5.0 7.0]").is_err());
+}

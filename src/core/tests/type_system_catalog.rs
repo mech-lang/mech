@@ -1086,3 +1086,47 @@ fn parameter_metadata_cannot_disagree_with_the_catalog_input_authority() {
         assert_eq!(error.kind_name(), "FunctionCatalogInvalidTypeDeclaration");
     }
 }
+
+#[test]
+fn promoted_arithmetic_outer_broadcast_combines_column_and_row_axes() {
+    for name in ["math/add", "math/sub", "math/mul", "math/div"] {
+        for rows in [0, 1, 2, 7] {
+            for columns in [0, 1, 3, 8] {
+                let column = fixed_matrix(BuiltinScalarKind::F32, rows, 1);
+                let row = fixed_matrix(BuiltinScalarKind::F64, 1, columns);
+                for inputs in [[column.clone(), row.clone()], [row.clone(), column.clone()]] {
+                    let resolved = resolve_named_overload(name, &inputs)
+                        .unwrap_or_else(|e| panic!("{name} {rows}x1 / 1x{columns}: {e:?}"));
+                    assert_eq!(
+                        resolved.outputs.as_ref(),
+                        &[fixed_matrix(BuiltinScalarKind::F64, rows, columns)]
+                    );
+                    for (conversion, original) in resolved.conversions.iter().zip(&inputs) {
+                        assert_eq!(&conversion.source, original, "input types remain rigid");
+                        let axes = |ty: &ResolvedType| {
+                            let KindExpr::Matrix { dimensions, .. } = ty.kind() else {
+                                panic!("matrix conversion target")
+                            };
+                            dimensions.clone()
+                        };
+                        assert_eq!(
+                            axes(&conversion.target),
+                            axes(original),
+                            "promotion preserves source geometry"
+                        );
+                    }
+                }
+            }
+        }
+        assert!(
+            resolve_named_overload(
+                name,
+                &[
+                    fixed_matrix(BuiltinScalarKind::F64, 2, 2),
+                    fixed_matrix(BuiltinScalarKind::F64, 1, 3)
+                ]
+            )
+            .is_err()
+        );
+    }
+}

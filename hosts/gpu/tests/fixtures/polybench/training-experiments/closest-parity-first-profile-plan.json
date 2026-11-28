@@ -1,0 +1,32 @@
+{
+  "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+  "created_at": "2026-11-28T15:12:22.998466+00:00",
+  "accepted_round": 59,
+  "source_commit": "ea428645fabc89de76546b319250aea6d1dd6f44",
+  "compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "cases": [
+    "seidel-2d"
+  ],
+  "selection": "User-directed closest-parity-first procedure. Seidel2D is the smallest optimization Mech/C ratio above1.0x in the latest accepted complete formal run. Keep this target until accepted parity. No holdout diagnosis.",
+  "target_policy_sha256": "e398f0afb1a82915f4060435a2e27de2ecc952a2d0fdc65dc62a284125aa12e3",
+  "target_state_sha256": "d09300d24b6eb527b9c5fd8b57110e2c817d3da98b9518559da998071e598ad9",
+  "target_baseline": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "method": "Unchanged public-API diagnostic host linked against exact current Cargo artifact JSON rlibs. Cranelift sole Mech generator. Sample one owned warm process3s at1ms; capture named executable JIT code from that same PID after sampling; resume child to real terminal0; validate finite warm/final C outputs and frozen counters; bind every executable byte/local BL target to a genuine exact accepted Object.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-59-static-telemetry.json",
+  "counter_gate": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/training-experiments/closed-map-result-validation-route-census.json",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "source_native_generator": "Maintained public Cranelift JIT/Object APIs; Rust builds only the unchanged external host.",
+  "hypothesis_to_check": "Identify the active in-place state-machine path and its numeric/address/guard/ownership/publication work. Select a general compiler transformation from actual same-PID hot instructions, preserving ordered in-place dependencies and exact original arithmetic/source bills. No source rewrite or benchmark-name/extent compiler rule.",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "scope_limit": "Warm residence includes output reset/drop. Sampled self time is not an exact formal timer share, retired instructions, IPC/cache/traffic, RSS or speedup forecast."
+}

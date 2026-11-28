@@ -1,0 +1,287 @@
+{
+  "schema": "mech.polybench.ordered-reduction-producer-emission-audit.v1",
+  "created_at": "2026-11-28T08:48:53.720095+00:00",
+  "before_any_performance_sample": true,
+  "compiler_fingerprint": "3bc0dc1088d118108a81943224740ad1d37970f3122e8f4c054d191716b759a0",
+  "driver_sha256": "809f4d26ba44ff5423c9481c2f5dea1a366d7e416f82f69ca617dece916afb93",
+  "source_review_passed": true,
+  "checked_object_case": "correlation",
+  "source_closure": {
+    "entry": 5,
+    "end": 6,
+    "resume": 7,
+    "parent": null,
+    "operators": [
+      5,
+      6
+    ],
+    "external": [
+      10
+    ],
+    "elided_values": [
+      11
+    ],
+    "axis": 0
+  },
+  "actual_path_evidence": {
+    "accepted51_square": [
+      {
+        "offset": "0xa74",
+        "instruction": "lsl\tx5, x10, #3"
+      },
+      {
+        "offset": "0xa78",
+        "instruction": "ldr\tq24, [x2, x5]"
+      },
+      {
+        "offset": "0xa7c",
+        "instruction": "ldr\tq25, [x1, x5]"
+      },
+      {
+        "offset": "0xa80",
+        "instruction": "fmul.2d\tv24, v24, v25"
+      },
+      {
+        "offset": "0xa84",
+        "instruction": "str\tq24, [x0, x5]"
+      },
+      {
+        "offset": "0xa88",
+        "instruction": "add\tx10, x10, #2"
+      },
+      {
+        "offset": "0xa8c",
+        "instruction": "b\t0xa4c <_mech_canonical_program_entry_v1+0xa4c>"
+      }
+    ],
+    "candidate_term_and_accumulate": [
+      {
+        "offset": "0xa30",
+        "instruction": "cmp\tx6, #0"
+      },
+      {
+        "offset": "0xa34",
+        "instruction": "b.eq\t0xa80 <_mech_canonical_program_entry_v1+0xa80>"
+      },
+      {
+        "offset": "0xa38",
+        "instruction": "cmp\tx6, #2"
+      },
+      {
+        "offset": "0xa3c",
+        "instruction": "b.eq\t0xa60 <_mech_canonical_program_entry_v1+0xa60>"
+      },
+      {
+        "offset": "0xa40",
+        "instruction": "madd\tx8, x7, x4, x12"
+      },
+      {
+        "offset": "0xa44",
+        "instruction": "cmp\tx6, #2"
+      },
+      {
+        "offset": "0xa48",
+        "instruction": "csel\tx9, x7, x12, eq"
+      },
+      {
+        "offset": "0xa4c",
+        "instruction": "cmp\tx6, #1"
+      },
+      {
+        "offset": "0xa50",
+        "instruction": "csel\tx8, x8, x9, eq"
+      },
+      {
+        "offset": "0xa54",
+        "instruction": "lsl\tx8, x8, #3"
+      },
+      {
+        "offset": "0xa58",
+        "instruction": "ldr\tq20, [x2, x8]"
+      },
+      {
+        "offset": "0xa5c",
+        "instruction": "b\t0xa88 <_mech_canonical_program_entry_v1+0xa88>"
+      },
+      {
+        "offset": "0xa60",
+        "instruction": "madd\tx8, x7, x4, x12"
+      },
+      {
+        "offset": "0xa64",
+        "instruction": "cmp\tx6, #2"
+      },
+      {
+        "offset": "0xa68",
+        "instruction": "csel\tx9, x7, x12, eq"
+      },
+      {
+        "offset": "0xa6c",
+        "instruction": "cmp\tx6, #1"
+      },
+      {
+        "offset": "0xa70",
+        "instruction": "csel\tx8, x8, x9, eq"
+      },
+      {
+        "offset": "0xa74",
+        "instruction": "add\tx8, x2, x8, lsl #3"
+      },
+      {
+        "offset": "0xa78",
+        "instruction": "ld1r.2d\t{ v20 }, [x8]"
+      },
+      {
+        "offset": "0xa7c",
+        "instruction": "b\t0xa88 <_mech_canonical_program_entry_v1+0xa88>"
+      },
+      {
+        "offset": "0xa80",
+        "instruction": "fmov\td0, x5"
+      },
+      {
+        "offset": "0xa84",
+        "instruction": "dup.2d\tv20, v0[0]"
+      },
+      {
+        "offset": "0xa88",
+        "instruction": "fmul.2d\tv0, v20, v20"
+      },
+      {
+        "offset": "0xa8c",
+        "instruction": "mov\tx8, #9218868437227405312"
+      },
+      {
+        "offset": "0xa90",
+        "instruction": "dup.2d\tv2, x8"
+      },
+      {
+        "offset": "0xa94",
+        "instruction": "and.16b\tv3, v0, v2"
+      },
+      {
+        "offset": "0xa98",
+        "instruction": "cmeq.2d\tv2, v3, v2"
+      },
+      {
+        "offset": "0xa9c",
+        "instruction": "umaxp.4s\tv2, v2, v2"
+      },
+      {
+        "offset": "0xaa0",
+        "instruction": "mov.d\tx8, v2[0]"
+      },
+      {
+        "offset": "0xaa4",
+        "instruction": "cbnz\tx8, 0xab4 <_mech_canonical_program_entry_v1+0xab4>"
+      },
+      {
+        "offset": "0xaa8",
+        "instruction": "add\tx7, x7, #1"
+      },
+      {
+        "offset": "0xaac",
+        "instruction": "fadd.2d\tv1, v1, v0"
+      },
+      {
+        "offset": "0xab0",
+        "instruction": "b\t0xa18 <_mech_canonical_program_entry_v1+0xa18>"
+      }
+    ],
+    "candidate_final_pair_store": [
+      {
+        "offset": "0xa18",
+        "instruction": "cmp\tx7, x1"
+      },
+      {
+        "offset": "0xa1c",
+        "instruction": "b.lo\t0xa30 <_mech_canonical_program_entry_v1+0xa30>"
+      },
+      {
+        "offset": "0xa20",
+        "instruction": "lsl\tx7, x12, #3"
+      },
+      {
+        "offset": "0xa24",
+        "instruction": "str\tq1, [x0, x7]"
+      },
+      {
+        "offset": "0xa28",
+        "instruction": "add\tx12, x12, #2"
+      },
+      {
+        "offset": "0xa2c",
+        "instruction": "b\t0x95c <_mech_canonical_program_entry_v1+0x95c>"
+      }
+    ],
+    "interpretation": "On the checked current exact-matrix mode, one vector input load feeds a same-register square, finite guard and separate ordered fadd. There is no intermediate square store; only final output pairs store after the entire original inner loop. The old square has two vector loads and an intermediate store."
+  },
+  "source_derived_work_on_original_input": {
+    "input_shape": [
+      32,
+      28
+    ],
+    "producer_cells": 896,
+    "eliminated_intermediate_payload_bytes": 7168,
+    "sum_output_cells": 28,
+    "output_pairs": 14,
+    "terms_per_output": 32,
+    "vector_term_evaluations": 448,
+    "square_input_vector_loads_before": 896,
+    "square_input_vector_loads_after": 448,
+    "intermediate_vector_stores_before": 448,
+    "intermediate_vector_stores_after": 0,
+    "sum_intermediate_vector_loads_before": 448,
+    "sum_intermediate_vector_loads_after": 0,
+    "kernel_array_operand_bytes_before": 28672,
+    "kernel_array_operand_bytes_after": 7168,
+    "scope": "Source/loop-derived kernel array accesses at the unchanged admitted geometry, corroborated by actual Object load/store instructions and reached fast execution counters. Excludes final stores, validation/owner scans, cache effects, spills, cold paths and machine-level speculation; not measured DRAM traffic or retired hardware counters."
+  },
+  "actual_fast_execution_counter_delta": {
+    "work": 8014944,
+    "comparison_work": 10752,
+    "visits": -1,
+    "transport_bytes": 0,
+    "hash_table_regions": 0,
+    "hash_table_updates": 0,
+    "packed_map_regions": 0,
+    "direct_lookup_regions": 0,
+    "packed_map_updates": 0,
+    "packed_ssa_regions": 0,
+    "guarded_loop_regions": 0,
+    "guarded_call_regions": 0,
+    "frozen_map_regions": 0,
+    "frozen_map_reads": 0,
+    "worker_credit_claims": 0,
+    "worker_credit_batches": 0,
+    "worker_credit_reclaims": 0,
+    "fused_string_map_bytes": 0,
+    "parallel_regions": 0,
+    "parallel_batches": 0,
+    "parallel_tasks": 0,
+    "parallel_peak_workers": 0,
+    "parallel_numeric_regions": 0,
+    "parallel_numeric_work": 0
+  },
+  "all_other_optimization_generated_functions_identical": true,
+  "no_new_fma": true,
+  "static_tradeoff": {
+    "code_bytes": [
+      14096,
+      14620
+    ],
+    "instructions": [
+      3524,
+      3655
+    ],
+    "interpretation": "Static totals grow because original fallback variants remain. The change removes real materialization and boundaries; runtime improvement remains unproven until the single prospective probe."
+  },
+  "qualification": {
+    "broad": 752,
+    "focused": 8,
+    "both_features": true,
+    "optimization_finite_C_values": 17002,
+    "all30_original_decoded_restored": true
+  },
+  "performance_observations": 0
+}

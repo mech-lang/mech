@@ -1,0 +1,19 @@
++> stats
++> math
+-- A pivot normalizes one column, then projects all later columns together.
+#Orthogonalize(initial<[f64]:20,30>, upper<[f64]:30,30>, orthogonal<[f64]:20,30>, columns<u64>) => <([f64]:20,30, [f64]:30,30, [f64]:20,30)>
+  | :Pivot(a<[f64]:20,30>, r<[f64]:30,30>, q<[f64]:20,30>, k<u64>)
+  | :Done(a<[f64]:20,30>, r<[f64]:30,30>, q<[f64]:20,30>).
+#Orthogonalize(initial, upper, orthogonal, columns) -> :Pivot(initial, upper, orthogonal, 1u64)
+  :Pivot(a, r, q, k)
+    | k <= columns -> {
+        norm := math/sqrt(stats/sum/column([a[i,k] * a[i,k] | i <- 1u64..=20u64])[1u64])
+        column := [a[i,k] / norm | i <- 1u64..=20u64]'
+        projection := [((j > k)? | true => stats/sum/column([column[i] * a[i,j] | i <- 1u64..=20u64])[1u64] | false => 0.0) | j <- 1u64..=30u64]
+        next-q := [[((j == k)? | true => column[i] | false => q[i,j]) | i <- 1u64..=20u64]' | j <- 1u64..=30u64]
+        next-r := [[((i == k)? | true => ((j == k)? | true => norm | false => ((j > k)? | true => projection[j] | false => r[i,j])) | false => r[i,j]) | i <- 1u64..=30u64]' | j <- 1u64..=30u64]
+        next-a := [[((j > k)? | true => a[i,j] - column[i] * projection[j] | false => a[i,j]) | i <- 1u64..=20u64]' | j <- 1u64..=30u64]
+      } -> :Pivot(next-a, next-r, next-q, k + 1u64)
+    | * -> :Done(a, r, q)
+  :Done(a, r, q) => (a, r, q).
+#Orthogonalize(A<[f64]:20,30>, R<[f64]:30,30>, Q<[f64]:20,30>, n<u64>)

@@ -318,12 +318,20 @@ impl NativeProgramObject {
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_product_epilogues"] = serde_json::json!(&self.codegen.product_epilogues);
+        metadata["compiled_reduction_producers"] =
+            serde_json::json!(&self.codegen.reduction_producers);
         metadata["compiled_numeric_map_regions"] =
             serde_json::to_value(&self.descriptor.metadata().numeric_maps.regions).unwrap();
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         let prepared = self.descriptor.metadata();
+        metadata["numeric_generator_candidates"] = serde_json::json!({
+            "scope": "Source-closed ordinary generator entry; current finite admission required",
+            "selected": !prepared.numeric_generators.regions.is_empty(),
+            "inventory": &prepared.numeric_generators,
+        });
         metadata["readonly_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
             let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
             if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }

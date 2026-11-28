@@ -1,0 +1,67 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T14:02:27.618994+00:00",
+  "name": "affine-map-cells",
+  "source_parent": "ffbee66a1f11e55b9eb3cc4cac817d5817f14207",
+  "accepted_round": 58,
+  "accepted_scores": {
+    "optimization": 8.144951071643966,
+    "holdout": 24.70557552923209
+  },
+  "accepted_compiler_fingerprint": "3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-65/transpose-epilogue-views/transpose-epilogue-views-complete-driver",
+  "accepted_driver_sha256": "54620ba908ef66de2458ba051deb2276c99aebc669776498348379b97dbeb0f1",
+  "formal_history_index": 59,
+  "versions": {
+    "ir": 428,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cells.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cell_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/windows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/cells.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/affine_map_cells.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+  ],
+  "profiling_basis": "Accepted58 optimization-only same-PID Durbin/Gram-Schmidt profiles, training-experiments/accepted58-phase-profile.json. Generated self time39.66%/74.71%. Next-A checked-axis PCs and selected loop headers remain hot. Both current numeric functions match genuine Objects byte-for-byte and processes terminate0 with exact counters/finite C outputs.",
+  "transformation": "Reconstruct bounded acyclic pure F64 cell programs over affine immutable matrix reads. Split source U64 axis-versus-invariant predicates into exact disjoint regions, intersect with current selected-map windows, and reuse ordered-dot checked-corner stream proofs. Emit original typed arithmetic into existing scratch using row-major independent output cells, contiguous two-lane SIMD or invariant splats and scalar strided/tail paths. Remove per-cell checked source-DAG/selector/word transport; retain original checked DAG as decline/replay.",
+  "invariants": [
+    "All30 ports/inputs/C binaries/flags/limits/tolerance/arithmetic/cache/timing/split fixed. Compiler rules use source CFG, scalar types, effects, affine expressions and current geometry; no benchmark names or MINI dimensions.",
+    "Cranelift sole Mech generator. Share existing affine read proof, checked U64 scalar emitter, f64_arithmetic, finite guards, current map loans and scratch. No helper/frame/ABI/owner/caching/per-op allocation/interpreter additions. Efficient scalar/compression paths retained.",
+    "Only range maps with F64 outputs, no nested reduction or side effect. Bounded source paths retain every read, checked subexpression and FP operation, including unused potentially failing operations; unsupported predicates/actions decline. Source-derived recipes are absent from wire authority and rederived for original/decoded/restored images.",
+    "Current full frame, widths, geometry, ranges, spans, epochs and private scratch remain validated. Each nonempty path window checks every affine intermediate and read at corners before access. Empty/inactive source arms perform no read, endpoint arithmetic or bounds rejection. All actual scratch/source banks must be disjoint before speculative evaluation.",
+    "Preserve exact scalar arithmetic tree, every intermediate rounding, signed zeros and original dot/reduction term order. SIMD lanes are independent outputs only. No reassociation, FMA, horizontal sums or source shortcut. Nonfinite inputs/intermediates cancel to original source DAG before publication.",
+    "All source owners stay immutable until complete evaluation. Any bounds/arithmetic/finite decline after partial scratch restarts the unchanged checked map from ordinal0 over the old source views; no partial publication. Selected scratch certificates, complement initialization, simultaneous reversed reads, original errors and non-failing publication remain.",
+    "All source work/comparison obligations never decrease. All other counters exactly match accepted58; no new source visit elimination is proposed and no padding is allowed. Finite/physical denial, output atomicity, aliases, cleanup and retry remain.",
+    "Only optimization15 diagnosis/tuning/selection/promotion. Holdout is independently reported and cannot veto/select/diagnose/tune/retry. No Rust edits while builds/tests/profiles/timing are live."
+  ],
+  "prior_related_work": "Rejected38 added a bounds flag around the original checked cell DAG; rejected41 removed only transient Frame storage; rejected43 skipped identity columns through a retained-map path; rejected55 changed publication spans. This source-closed typed piecewise expression kernel replaces the actual dynamic cell computation and shares the subsequently accepted affine stream and conditional-domain machinery. None of the earlier observed fingerprints is retried.",
+  "qualification": "Proof tests for straight/rectangular/piecewise expressions, all six axis relations, reverse/scaled affine indices, unused checked actions, extra effects, unproved predicates and forged read metadata; require unchanged Gram-Schmidt update and Durbin prefix source admission. Direct native tests with dynamic/odd/empty axes, null inactive spans, canaries and exact bits/noFMA. Original/decoded/restored versus emission ablation across finite/nonfinite/subnormal/NaN/late failures, aliases, finite/physical caps, cleanup/retry and image rederivation. Existing complete broad numeric/matrix/scalar/compression/type/source/image/protocol/all30 C regressions and both feature configurations. Preserve every attempted source/build/test failure.",
+  "untimed_gate": "Optimization15 finite17002 C values; exact accepted58 counters. Genuine Objects must show selected next-A typed SIMD without per-cell source-axis checks, and typed Durbin reversed-read prefix without repeated source selector checks. Report code/stack changes without treating static counts as retired instructions. All30 unchanged original/decoded/restored outputs must pass before the sole probe.",
+  "training_probe": {
+    "actors": [
+      "accepted58",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff equal-weight raw GM accepted58/candidate medians>1 and exact counter/resource gates pass. Retain every observation/regression; no retry or exclusion."
+  },
+  "formal_acceptance": "If selected, commit/push clean exact source/driver then freeze one900-observation formal run,29482 finite C outputs and immutable history59. Promote solely optimization Mech/C<8.144951071643966. Report both aggregates and raw Mech/C/reference drift separately. Failed optimization gate restores exact accepted58.",
+  "performance_observations": 0
+}

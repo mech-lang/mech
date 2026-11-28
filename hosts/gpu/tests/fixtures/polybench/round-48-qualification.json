@@ -1,0 +1,350 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v3",
+  "label": "round-48-ordered-product-epilogues",
+  "compiler_commit": "cc89f77879dfadb22a7643dc0400522d7ff537b8",
+  "compiler_fingerprint": "ecc417a8e887b1bac94af3a6b70e447b989edbc1d620668208c25f4cd6847021",
+  "driver_sha256": "420a7d599f580d491924fae887ebf266441b4ccfcdbf6c5b36b7d8526ac5538d",
+  "frozen_candidate_sha256": "cdcd14f9271659da422dc668bf3c553e5098e2f81cc66969f28fb58ffca7ef25",
+  "native_typed_ir_version": 415,
+  "native_work_policy_version": 157,
+  "native_abi_version": 48,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "corpus_liveouts": 29482
+  },
+  "checks": [
+    {
+      "name": "shared-constructor-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "baselib,compiler,serde",
+        "--lib",
+        "--",
+        "composite_constructor",
+        "prepared_composite",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.33677895786240697,
+      "passed_tests": [
+        11
+      ]
+    },
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.2232217499986291,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.30756412493065,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.30206179106608033,
+      "passed_tests": [
+        31,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 109.59548133285716,
+      "passed_tests": [
+        439
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 65.18186041712761,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.42843054095283,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18497616704553366,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "ordered_product_frame_preserves_product_and_scalar_prefixes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16761737503111362,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 12.514849916100502,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 17.16617316706106,
+      "passed_tests": []
+    }
+  ],
+  "broad_selected_checks": 729,
+  "focused_selected_checks": 8,
+  "restored_corpus": {
+    "programs": 30,
+    "forms": 60,
+    "finite_liveouts": 58964
+  },
+  "both_feature_checks_passed": true,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs": "0b9d17d9d74d724d3bbaf6c17701603dc944475f64d8fa2ff0e83524dc77dc05",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "66fb2fb382b3b12a76598a9ea9029024658b0eebb707a04acdb39b62d112ff08",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "f8debc7fa743eec9faca8c89c2a3a1f9b16cca3789d65aeb7db85a141fc2e546",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "255380522b23d280bb3f221c49db96277f407e038449dc6e230ff403df95a0f3",
+    "hosts/gpu/src/native_artifact/program/protocol/abi.rs": "5c77f83b8ea390613b5f1c11113dc6e8fc5f24a815e80c69349d2af67825908c",
+    "hosts/gpu/src/native_artifact/program/protocol/mod.rs": "ce271982db5890ab7a225c82cbd691fd83e97685fb4792b7b5fd5b63949f71c4",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "5e96cd6702104cc06dbc15068cc3a508fb5a041401f288d7a344378efee07e2c",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "72d55c4bc67e28d0e50d6d0b3324c84920c40d6b8fe4c76d07f155e6163b0ae3",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs": "0d44f862a79edbdc514a44753c4abb9fe1b7a19f143b6e8e61f253bb01e6b701",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "dafd989091e24eb5607e2b396d6dcddbc16e03a8dc8868272947c54f4e70827b",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "d71c1f1a71b83db082186463fa13ecfe1610f93d01aeccebea64e9f9d10c6b77",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "6fece19af7ee9efcb26a9d70eadc9e100c3b5d3e86b5cd55c94cd7b5aaaa81b5",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "dfc0b0d7840ecf4fbc1c6d1d1727f580089bc172ef871ff17acefe56fc7e2ed8",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "f1797e48858c934f3e4fcb29ce01277ac6a222b30db04c75e4b4b4265b13795c",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "4a36bf964cfef3979af70b753bd83b43eb0f2ca3927772cf8a109ebdb76bb6d3",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "3e15083d34df2a55cbf2c33f7bcb13013dd4b70e7264cf3a611c77aa9c184553",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "15cf9ce560f3239fbe26956fbcc269c9bc6eb1ba9fbaad8985a6bf407ffcea66",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "5a81afc9662af5cf29fd70879cda78d79cb16e856f0305c96986c3b1b8e67717",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "bf22bbf6dcc2d0dabbb737ecc323990c89aadfb582193e0cafabe430672950dd",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs": "ddf789a7210b088370dc44fdc74d253796c0e8a2bcb900064ba4d57ce3b9b5de",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "8d981b3b291c0bcfe007899992965308a27db782ffcda831c1f3481bc6cdd160",
+    "hosts/gpu/src/native_artifact/program/runtime/tests.rs": "42715912da413bbdef49991856139c028f29af7a9f63dce2dadd8002413ddd56",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "af638fda232fe78d999b5e907bc2c866471ee14a746a523838aba01b7bf5648a",
+    "src/engine/src/resident/general/native_collection_numeric_binary.rs": "8eabdd6504814317dc74df90aa53bd4e0a944691d5f5e1130a82b9041e9d2633"
+  },
+  "training_qualification_sha256": "374653a6cf1feff5089f5b484f3514044f42a799114b3b0f899b250bacda8f8b",
+  "training_selection_sha256": "b438f45265f401deac78bb38c0cfada0a6fdcb5586051d31c6556ff4bbfbb0c7",
+  "training_probe_sha256": "5df2026e38a95485ba307b5ee9e691a69b8d7e48c596560b338dc8f1332d2da2",
+  "route_census_sha256": "c2e34f69430012255d513a9e95d53e56862df8cd0551d8e3ba74627c2b7a58cb",
+  "source_work_comparison_never_reduced": true,
+  "physical_visits": "Only source-proved top-level completed-expression continuations are skipped: 2mm\u22123, GEMM\u22123, MVT\u22122. All other execution counters match accepted47.",
+  "invariants": [
+    "A new paired exact synchronous product-epilogue loan and frame; preserve ordinary NumericBinaryFrame/Pending layout and the frozen scalar root prefix. Pin current original owners; only final output cells allocate. No interpreter, generic per-element operation dispatch or per-operation allocation.",
+    "Use existing numeric_product scalar/SIMD ordered +0/k accumulation; add a compile-time epilogue emitter with direct maintained f64_arithmetic instructions and independent output lanes. Ordinary no-epilogue emission remains the accepted form.",
+    "Prove/admit complete original factory geometries, shapes, demands, current owners, alias/publication/retirement obligations, skipped source visit fees, all logical work/comparison fees, full coexistence/metadata/node/clone bounds and replay credit before mutation. Overflow or caps decline to the original entry.",
+    "Retain intermediate rounding. Any nonfinite intermediate before a consumer cancels the private result and replays the original source, with adequate prepaid admission, no partial publication and no reassociation/FMA. Final nonfinite arithmetic follows the maintained emitted operation; NaN inputs decline.",
+    "Finish binds issued frame, pointer/count, exact entry visit epoch/context/source proof, current budget and final output. Interleaved helper/visit and forged images/lanes/loans must reject. A genuine fused transition reports honest physical visits; no padded counters.",
+    "Broadcast composition: retain each original intermediate logical shape and factory demand; compute cheap pure elementwise intermediates per final output cell with composed shared resident input projection modes. Never recompute the expensive product. Explicitly admit/charge a checked per-final-cell bound for native epilogue work/comparisons, in addition to every original source obligation.",
+    "Only genuine external scalar words use the existing helper argument lane. Managed inputs resolve through the private source proof and current canonical arena. Cache scalar slot/ID mapping at preparation, derive only the scalar capacity floor on image loading, and preserve the fixed corpus transport geometry; no extra managed zero-word transport slots."
+  ],
+  "formal_observations": 900,
+  "audit_sha256": "b032e5d0fbdb211d5c1717729efde321c4dc7fcb19281c74deb2ae9ac2f28568",
+  "selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "promotion": "Optimization15 strictly improves accepted47; holdout independently reported and cannot veto/select/tune/trigger rollback or retry."
+}

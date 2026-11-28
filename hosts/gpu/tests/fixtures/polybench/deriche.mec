@@ -1,0 +1,41 @@
++> math
+-- A causal and an anti-causal state machine filter each line independently.
+-- Exponentials use the maintained real-power operation with Euler's constant.
+exponential(x<f64>) => <f64> := math/pow(2.718281828459045, x).
+#Causal(source<[f64]:64,1>, a1<f64>, a2<f64>, b1<f64>, b2<f64>) => <[f64]:64,1>
+  | :Sample(values<[f64]:64,1>, i<u64>, xm1<f64>, ym1<f64>, ym2<f64>)
+  | :Done(values<[f64]:64,1>).
+#Causal(source, a1, a2, b1, b2) -> :Sample([0.0 | i <- 1u64..=64u64]', 1u64, 0.0, 0.0, 0.0)
+  :Sample(values, i, xm1, ym1, ym2)
+    | i <= 64u64 -> {
+        value := a1 * source[i] + a2 * xm1 + b1 * ym1 + b2 * ym2
+        ~next := values
+        next[i] = value
+      } -> :Sample(next, i + 1u64, source[i], value, ym1)
+    | * -> :Done(values)
+  :Done(values) => values.
+#Anticausal(source<[f64]:64,1>, a3<f64>, a4<f64>, b1<f64>, b2<f64>) => <[f64]:64,1>
+  | :Sample(values<[f64]:64,1>, i<u64>, xp1<f64>, xp2<f64>, yp1<f64>, yp2<f64>)
+  | :Done(values<[f64]:64,1>).
+#Anticausal(source, a3, a4, b1, b2) -> :Sample([0.0 | i <- 1u64..=64u64]', 64u64, 0.0, 0.0, 0.0, 0.0)
+  :Sample(values, i, xp1, xp2, yp1, yp2)
+    | i > 0u64 -> {
+        value := a3 * xp1 + a4 * xp2 + b1 * yp1 + b2 * yp2
+        ~next := values
+        next[i] = value
+      } -> :Sample(next, i - 1u64, source[i], xp1, value, yp1)
+    | * -> :Done(values)
+  :Done(values) => values.
+filter-rows(image<[f64]:64,64>, a1<f64>, a2<f64>, a3<f64>, a4<f64>, b1<f64>, b2<f64>) => <[f64]:64,64> :=
+  [(#Causal([image[i,j] | j <- 1u64..=64u64]', a1, a2, b1, b2)) + (#Anticausal([image[i,j] | j <- 1u64..=64u64]', a3, a4, b1, b2)) | i <- 1u64..=64u64]'.
+coefficient := alpha<f64>
+negative := 0.0 - coefficient
+exponent := exponential(negative)
+k := (1.0 - exponent) * (1.0 - exponent) / (1.0 + 2.0 * coefficient * exponent - exponential(2.0 * coefficient))
+a2 := k * exponent * (coefficient - 1.0)
+a3 := k * exponent * (coefficient + 1.0)
+a4 := (0.0 - k) * exponential((0.0 - 2.0) * coefficient)
+b1 := math/pow(2.0, negative)
+b2 := 0.0 - exponential((0.0 - 2.0) * coefficient)
+horizontal := filter-rows(imgIn<[f64]:64,64>, k, a2, a3, a4, b1, b2)
+filter-rows(horizontal', k, a2, a3, a4, b1, b2)'

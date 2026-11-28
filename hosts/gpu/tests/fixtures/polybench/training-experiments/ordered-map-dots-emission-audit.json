@@ -1,0 +1,489 @@
+{
+  "schema": "mech.polybench.ordered-map-dots-emission-audit.v1",
+  "compiler_fingerprint": "09ed79f2d2b652ed5cb62487dc92872d5ac2f8cdbd0d2fa78871ea2c317a8eb1",
+  "driver_sha256": "88268fb43825aa4cdb24deec72d03dbbe4fbd6d9544838a7f2e5269951ecbaaa",
+  "passed": true,
+  "reviewed_source": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs": "9d85d8dc8a3253fedc22c16241adeb86300c20d87c0910d88e30a5059206a22f",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": "7b175c9152eb986193c40489c2fa99abcf034d519e257e939cd670af60f13c5e",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": "9b79ff9e129d3cc3f79bd107f026ce1ac72715a99123eb225cff317cbec8abba",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs": "aabea395d46d67a108590a6ce6e539de25ce242b1abe1518586e3ebf8426ae2d",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs": "ffbc003905006b2e3b81b29cbbeb3513a2f03a0f02f724cc5bfebb39e5d4435a",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "23a8955f75903c76b2d4261b7d88ea47208f216ce7b7457f393e1bd95fa5ca46",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": "1b507cc8dfd88f786b0a1f9299e1efaad9bb6e90c61a56a279c1d1179e0fece9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": "a4cd22d8bb5f9d9996d887e78312293fba3b872e9dc6a71d6d7a6e7419fc3630",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs": "978c97161f692e3dc12481ecd83ddda804f5441d881af94935a59187798d9a93",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs": "c929d8e42b5ef491aa21b2397255cb118cc06f15090e6099f3c0c1ec8c94a7d2",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs": "04a6b9680db547a729b4f413886c2b393e0530458750a6d9082352c024b4d337",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "1a2be6d81c1a367459226cadb8a6e2cebf8422a9ea8763c08cfdf004654dd11f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "037d58ab5a0ede575bfe5f12bbad49e8fce5d942c886e08c64d193a9b5ec5551",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": "747a93cc88cb94e098604c9e0d0f58fa5dcc0cb3dbb01e8f99d08bdbfc46cfd4",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "b0e57e14afe64a71a231880b495178ceb774aaec207752774a7ad260e5c6c250",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "324028fc522a520cc61cf4223fb36b99207893b50c5c38fbd4fd022d204d0cdc",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "ba981c5f66bdd22009ce42bc10a7e7f20cfa6c118b88d8e391e6da2a360aa61d",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "0ea3d5b375b3396dbc5d296c8c185209660fd653b5384a25c0b1f52ebb388289",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "bbaa2866c242dc0373db9ec6ed4322051ef38f70cf892d5eba785605234a3cf2",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "a1018a8ffbfff106f7e36f5df386c37709d6f922d42807fd55228b72b0f5afb9",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "9bea404eddac4651604d800996e223610f6eb0b94859cbbc3b0f4f9d91562865",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "c00720fbe83368a1b1cb506f2b3fedda482853bd14e981fead4824e2faa599e4",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dots.rs": "61d1742f82a8c582f0cc0d4135056dc0da453b7ba61c0ad98372bd871fed94aa",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dot_batches.rs": "3505be78824adbc289a35a2cc8dc6501c0bff42411218febc3382650b63765b5"
+  },
+  "object_witnesses": {
+    "gramschmidt": {
+      "object_sha256": "dd1b251c03c513e1c988c1fdabb2833ecc343028fa6443752f1d78ee7cceb80f",
+      "disassembly_sha256": "596bdeb6b94218a237033118d62db6a5fc556314e6ad6fa7e0324454d193c04d",
+      "snippets": [
+        {
+          "offset": "19b8",
+          "lines": [
+            "    19a8:      \tb\t0x1938 <_mech_canonical_program_entry_v1_numeric_5+0x1938>",
+            "    19ac:      \tmov\tx4, #0",
+            "    19b0:      \tmadd\tx12, x1, x0, x14",
+            "    19b4:      \tmov.16b\tv0, v7",
+            "    19b8:      \tmov\tx15, #240",
+            "    19bc:      \tmul\tx15, x4, x15",
+            "    19c0:      \tldr\tq25, [x12, x15]",
+            "    19c4:      \tldr\td26, [x19, x4, lsl #3]",
+            "    19c8:      \tadd\tx4, x4, #1",
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    19d0:      \tfmul.2d\tv26, v26, v25"
+          ]
+        },
+        {
+          "offset": "19d0",
+          "lines": [
+            "    19c0:      \tldr\tq25, [x12, x15]",
+            "    19c4:      \tldr\td26, [x19, x4, lsl #3]",
+            "    19c8:      \tadd\tx4, x4, #1",
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    19d0:      \tfmul.2d\tv26, v26, v25",
+            "    19d4:      \tfadd.2d\tv0, v0, v26",
+            "    19d8:      \tcmp\tx4, #20",
+            "    19dc:      \tb.lo\t0x19b8 <_mech_canonical_program_entry_v1_numeric_5+0x19b8>",
+            "    19e0:      \tand.16b\tv29, v0, v16",
+            "    19e4:      \tcmeq.2d\tv29, v29, v16",
+            "    19e8:      \tumaxp.4s\tv28, v29, v29"
+          ]
+        },
+        {
+          "offset": "19d4",
+          "lines": [
+            "    19c4:      \tldr\td26, [x19, x4, lsl #3]",
+            "    19c8:      \tadd\tx4, x4, #1",
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    19d0:      \tfmul.2d\tv26, v26, v25",
+            "    19d4:      \tfadd.2d\tv0, v0, v26",
+            "    19d8:      \tcmp\tx4, #20",
+            "    19dc:      \tb.lo\t0x19b8 <_mech_canonical_program_entry_v1_numeric_5+0x19b8>",
+            "    19e0:      \tand.16b\tv29, v0, v16",
+            "    19e4:      \tcmeq.2d\tv29, v29, v16",
+            "    19e8:      \tumaxp.4s\tv28, v29, v29",
+            "    19ec:      \tmov.d\tx4, v28[0]"
+          ]
+        },
+        {
+          "offset": "19dc",
+          "lines": [
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    19d0:      \tfmul.2d\tv26, v26, v25",
+            "    19d4:      \tfadd.2d\tv0, v0, v26",
+            "    19d8:      \tcmp\tx4, #20",
+            "    19dc:      \tb.lo\t0x19b8 <_mech_canonical_program_entry_v1_numeric_5+0x19b8>",
+            "    19e0:      \tand.16b\tv29, v0, v16",
+            "    19e4:      \tcmeq.2d\tv29, v29, v16",
+            "    19e8:      \tumaxp.4s\tv28, v29, v29",
+            "    19ec:      \tmov.d\tx4, v28[0]",
+            "    19f0:      \tcbz\tx4, 0x19fc <_mech_canonical_program_entry_v1_numeric_5+0x19fc>",
+            "    19f4:      \tstr\tx7, [sp, #21752]"
+          ]
+        }
+      ]
+    },
+    "durbin": {
+      "object_sha256": "3b68c9583c0a4c4cbe1be706772c8b700bdc0d82ddad94a6d211169764f68ea4",
+      "disassembly_sha256": "d03a681458a413a77f0ecbfa6ac3835de0e1ef0ea7f81a4ca7af8df426311c3c",
+      "snippets": [
+        {
+          "offset": "a0c",
+          "lines": [
+            "     9fc:      \tneg\tx12, x12",
+            "     a00:      \tlsl\tx22, x12, #3",
+            "     a04:      \tmov\tx2, #0",
+            "     a08:      \tmovi.2s\tv21, #0",
+            "     a0c:      \tcmp\tx2, x14",
+            "     a10:      \tb.lo\t0xb90 <_mech_canonical_program_entry_v1_numeric_4+0xb90>",
+            "     a14:      \tmov.d\tx0, v21[0]",
+            "     a18:      \tand\tx2, x0, #0x7ff0000000000000",
+            "     a1c:      \tmov\tx6, #9218868437227405312",
+            "     a20:      \tcmp\tx2, x6",
+            "     a24:      \tb.eq\t0xa34 <_mech_canonical_program_entry_v1_numeric_4+0xa34>"
+          ]
+        },
+        {
+          "offset": "b90",
+          "lines": [
+            "     b80:      \tfmov\td23, x2",
+            "     b84:      \tfmul\td22, d22, d23",
+            "     b88:      \tfadd\td0, d0, d22",
+            "     b8c:      \tb\t0xa3c <_mech_canonical_program_entry_v1_numeric_4+0xa3c>",
+            "     b90:      \tadd\tx6, x19, x21, lsl #3",
+            "     b94:      \tmul\tx12, x2, x22",
+            "     b98:      \tldr\td23, [x6, x12]",
+            "     b9c:      \tadd\tx6, x20, x11, lsl #3",
+            "     ba0:      \tmul\tx12, x2, x0",
+            "     ba4:      \tldr\td24, [x6, x12]",
+            "     ba8:      \tadd\tx2, x2, #1"
+          ]
+        },
+        {
+          "offset": "bac",
+          "lines": [
+            "     b9c:      \tadd\tx6, x20, x11, lsl #3",
+            "     ba0:      \tmul\tx12, x2, x0",
+            "     ba4:      \tldr\td24, [x6, x12]",
+            "     ba8:      \tadd\tx2, x2, #1",
+            "     bac:      \tfmul\td23, d24, d23",
+            "     bb0:      \tfadd\td21, d21, d23",
+            "     bb4:      \tb\t0xa0c <_mech_canonical_program_entry_v1_numeric_4+0xa0c>",
+            "     bb8:      \tstur\tx14, [sp, #96]",
+            "     bbc:      \tstr\tx9, [sp, #1664]",
+            "     bc0:      \tstr\tx8, [sp, #1656]",
+            "     bc4:      \tstr\tx7, [sp, #1648]"
+          ]
+        },
+        {
+          "offset": "bb0",
+          "lines": [
+            "     ba0:      \tmul\tx12, x2, x0",
+            "     ba4:      \tldr\td24, [x6, x12]",
+            "     ba8:      \tadd\tx2, x2, #1",
+            "     bac:      \tfmul\td23, d24, d23",
+            "     bb0:      \tfadd\td21, d21, d23",
+            "     bb4:      \tb\t0xa0c <_mech_canonical_program_entry_v1_numeric_4+0xa0c>",
+            "     bb8:      \tstur\tx14, [sp, #96]",
+            "     bbc:      \tstr\tx9, [sp, #1664]",
+            "     bc0:      \tstr\tx8, [sp, #1656]",
+            "     bc4:      \tstr\tx7, [sp, #1648]",
+            "     bc8:      \tmov\tx9, x0"
+          ]
+        }
+      ]
+    },
+    "cholesky": {
+      "object_sha256": "f9eff8c6fc571de679be3778e42f25c8026d9faf5926bc7c3cbab8d49f7bba9b",
+      "disassembly_sha256": "38f6355749a24fe570c051d131cafc84a6d00c5a12daf0c1c3576e1eb289cd66",
+      "snippets": [
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "lines": [
+            "     96c:      \tldp\tx29, x30, [sp], #16",
+            "     970:      \tretab",
+            "     974:      \tmov\tx0, x25",
+            "     978:      \tldr\tx21, [sp, #1280]",
+            "     97c:      \tadd\tx26, x26, #1",
+            "     980:      \tfmov\td1, x1",
+            "     984:      \tfmul\td1, d1, d1",
+            "     988:      \tfadd\td0, d0, d1",
+            "     98c:      \tb\t0x868 <_mech_canonical_program_entry_v1_numeric_5+0x868>",
+            "     990:      \tmov\tx0, x25",
+            "     994:      \tldr\tx21, [sp, #1280]",
+            "     998:      \tmov\tx25, #40",
+            "     99c:      \tmadd\tx25, x13, x25, x26"
+          ]
+        },
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "lines": [
+            "     9a0:      \tadd\tx25, x12, x25, lsl #3",
+            "     9a4:      \tmul\tx5, x1, x24",
+            "     9a8:      \tldr\td1, [x25, x5]",
+            "     9ac:      \tmul\tx5, x1, x20",
+            "     9b0:      \tldr\td2, [x25, x5]",
+            "     9b4:      \tadd\tx1, x1, #1",
+            "     9b8:      \tfmul\td1, d2, d1",
+            "     9bc:      \tfadd\td0, d0, d1",
+            "     9c0:      \tmov\tx25, x0",
+            "     9c4:      \tb\t0x828 <_mech_canonical_program_entry_v1_numeric_5+0x828>",
+            "     9c8:      \tstr\tx11, [sp, #736]",
+            "     9cc:      \tldr\tx12, [sp, #696]",
+            "     9d0:      \tsub\tx3, x3, x9"
+          ]
+        },
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "lines": [
+            "    12f0:      \tsub\tx5, x25, #1",
+            "    12f4:      \tmadd\tx5, x12, x8, x5",
+            "    12f8:      \tldr\tx12, [x13, x5, lsl #3]",
+            "    12fc:      \tadd\tx15, x15, #1",
+            "    1300:      \tfmov\td20, x26",
+            "    1304:      \tfmov\td21, x12",
+            "    1308:      \tfmul\td20, d20, d21",
+            "    130c:      \tfadd\td0, d0, d20",
+            "    1310:      \tb\t0x11cc <_mech_canonical_program_entry_v1_numeric_5+0x11cc>",
+            "    1314:      \tsub\tx25, x22, #1",
+            "    1318:      \tsub\tx24, x10, #1",
+            "    131c:      \tmadd\tx5, x25, x8, x24",
+            "    1320:      \tadd\tx25, x13, x5, lsl #3"
+          ]
+        },
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "lines": [
+            "    132c:      \tsub\tx5, x27, #1",
+            "    1330:      \tmadd\tx5, x5, x8, x24",
+            "    1334:      \tadd\tx24, x13, x5, lsl #3",
+            "    1338:      \tmul\tx5, x12, x14",
+            "    133c:      \tldr\td22, [x24, x5]",
+            "    1340:      \tadd\tx12, x12, #1",
+            "    1344:      \tfmul\td21, d22, d21",
+            "    1348:      \tfadd\td16, d16, d21",
+            "    134c:      \tb\t0x1184 <_mech_canonical_program_entry_v1_numeric_5+0x1184>",
+            "    1350:      \tstur\tx9, [sp, #96]",
+            "    1354:      \tldur\tx8, [sp, #56]",
+            "    1358:      \tmov\tx26, x22",
+            "    135c:      \tmov\tx25, x27"
+          ]
+        }
+      ]
+    }
+  },
+  "observed_emission": {
+    "gramschmidt": "numeric_5 0x19b8..0x19dc: runtime-ordered20-term loop loads one q pair from A and one d from the column, splats the latter, separate fmul.2d/fadd.2d carry v0 around the backedge. No per-term logical selector/bounds DAG, nested child frame setup or running-sum GPR transport inside this fast loop. Finite-mask check follows loop; old source DAG remains on decline.",
+    "durbin": "numeric_4 header0xa0c/body0xb90: two direct F64 stream loads, signed byte strides, fmul d23,d24,d23 and fadd d21,d21,d23; common ordered accumulator remains F64. Original checked word DAG remains at0xa3c and its body. Full preflight precedes fast loop.",
+    "cholesky": "Two source-dot fast alternatives are emitted beside retained generic checked reductions in numeric_5. Every ordered output uses separate fmul/fadd; full scalar source fallback remains.",
+    "products": "2mm/3mm/ATAX/BiCG/correlation/covariance/doitgen/GEMM/MVT code also changes from sharing the ordered reduction core. Do not attribute their static changes to source-dot recognition."
+  },
+  "telemetry": {
+    "2mm": {
+      "accepted54": {
+        "code_bytes": 9476,
+        "static_instruction_count": 2369,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 31112
+      },
+      "candidate": {
+        "code_bytes": 9768,
+        "static_instruction_count": 2442,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 31400
+      }
+    },
+    "3mm": {
+      "accepted54": {
+        "code_bytes": 4060,
+        "static_instruction_count": 1015,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 18976
+      },
+      "candidate": {
+        "code_bytes": 4256,
+        "static_instruction_count": 1064,
+        "reported_native_stack_bytes": 96,
+        "object_file_bytes": 19168
+      }
+    },
+    "atax": {
+      "accepted54": {
+        "code_bytes": 3612,
+        "static_instruction_count": 903,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 18472
+      },
+      "candidate": {
+        "code_bytes": 3732,
+        "static_instruction_count": 933,
+        "reported_native_stack_bytes": 96,
+        "object_file_bytes": 18592
+      }
+    },
+    "bicg": {
+      "accepted54": {
+        "code_bytes": 3560,
+        "static_instruction_count": 890,
+        "reported_native_stack_bytes": 96,
+        "object_file_bytes": 25504
+      },
+      "candidate": {
+        "code_bytes": 3720,
+        "static_instruction_count": 930,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 25664
+      }
+    },
+    "cholesky": {
+      "accepted54": {
+        "code_bytes": 19904,
+        "static_instruction_count": 4976,
+        "reported_native_stack_bytes": 1648,
+        "object_file_bytes": 134416
+      },
+      "candidate": {
+        "code_bytes": 21672,
+        "static_instruction_count": 5418,
+        "reported_native_stack_bytes": 1696,
+        "object_file_bytes": 136144
+      }
+    },
+    "correlation": {
+      "accepted54": {
+        "code_bytes": 15016,
+        "static_instruction_count": 3754,
+        "reported_native_stack_bytes": 128,
+        "object_file_bytes": 83880
+      },
+      "candidate": {
+        "code_bytes": 15088,
+        "static_instruction_count": 3772,
+        "reported_native_stack_bytes": 128,
+        "object_file_bytes": 83952
+      }
+    },
+    "covariance": {
+      "accepted54": {
+        "code_bytes": 5552,
+        "static_instruction_count": 1388,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 31040
+      },
+      "candidate": {
+        "code_bytes": 5624,
+        "static_instruction_count": 1406,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 31112
+      }
+    },
+    "deriche": {
+      "accepted54": {
+        "code_bytes": 62308,
+        "static_instruction_count": 15577,
+        "reported_native_stack_bytes": 496,
+        "object_file_bytes": 404840
+      },
+      "candidate": {
+        "code_bytes": 62308,
+        "static_instruction_count": 15577,
+        "reported_native_stack_bytes": 496,
+        "object_file_bytes": 404840
+      }
+    },
+    "doitgen": {
+      "accepted54": {
+        "code_bytes": 1864,
+        "static_instruction_count": 466,
+        "reported_native_stack_bytes": 96,
+        "object_file_bytes": 13400
+      },
+      "candidate": {
+        "code_bytes": 1948,
+        "static_instruction_count": 487,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 13488
+      }
+    },
+    "durbin": {
+      "accepted54": {
+        "code_bytes": 20960,
+        "static_instruction_count": 5240,
+        "reported_native_stack_bytes": 2032,
+        "object_file_bytes": 144800
+      },
+      "candidate": {
+        "code_bytes": 21236,
+        "static_instruction_count": 5309,
+        "reported_native_stack_bytes": 2032,
+        "object_file_bytes": 145080
+      }
+    },
+    "gemm": {
+      "accepted54": {
+        "code_bytes": 7216,
+        "static_instruction_count": 1804,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 27160
+      },
+      "candidate": {
+        "code_bytes": 7360,
+        "static_instruction_count": 1840,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 27304
+      }
+    },
+    "gramschmidt": {
+      "accepted54": {
+        "code_bytes": 52936,
+        "static_instruction_count": 13234,
+        "reported_native_stack_bytes": 23104,
+        "object_file_bytes": 269760
+      },
+      "candidate": {
+        "code_bytes": 55676,
+        "static_instruction_count": 13919,
+        "reported_native_stack_bytes": 23168,
+        "object_file_bytes": 272576
+      }
+    },
+    "mvt": {
+      "accepted54": {
+        "code_bytes": 9980,
+        "static_instruction_count": 2495,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 37288
+      },
+      "candidate": {
+        "code_bytes": 10264,
+        "static_instruction_count": 2566,
+        "reported_native_stack_bytes": 112,
+        "object_file_bytes": 37568
+      }
+    },
+    "nussinov": {
+      "accepted54": {
+        "code_bytes": 19360,
+        "static_instruction_count": 4840,
+        "reported_native_stack_bytes": 320,
+        "object_file_bytes": 168504
+      },
+      "candidate": {
+        "code_bytes": 19360,
+        "static_instruction_count": 4840,
+        "reported_native_stack_bytes": 320,
+        "object_file_bytes": 168504
+      }
+    },
+    "seidel-2d": {
+      "accepted54": {
+        "code_bytes": 16104,
+        "static_instruction_count": 4026,
+        "reported_native_stack_bytes": 288,
+        "object_file_bytes": 127208
+      },
+      "candidate": {
+        "code_bytes": 16104,
+        "static_instruction_count": 4026,
+        "reported_native_stack_bytes": 288,
+        "object_file_bytes": 127208
+      }
+    }
+  },
+  "limits": [
+    "Static code includes both fast and retained cold alternatives.12 optimization exports grow;3 are byte/instruction unchanged. This is not a static code-size reduction.",
+    "Gram reported stack23104->23168B, Cholesky1648->1696B; Durbin2032B unchanged. Some product cases change16B either direction. These fields are not full dynamic stack or process peak RSS.",
+    "Fixed vector streams expose identical logical/physical ordinals. Some redundant vector/same-column preflight Boolean/division work remains outside the inner reduction; it is not claimed eliminated.",
+    "Signed stride address products/base additions may rematerialize inside the direct loop. No claim of a pointer-increment or complete address-arithmetic removal.",
+    "Objects certify emitted instructions. Shared runtime-shaped core tests and public source tests execute admitted geometries; these snippets are not same-PID dynamic sample attribution, hardware-retirement counts or measured traffic.",
+    "No performance observation has occurred; only the one prospective optimization probe can select this candidate. Holdout is not diagnosed or used for selection."
+  ],
+  "qualification": {
+    "broad": 764,
+    "focused": 10,
+    "all30_original_decoded_C": true,
+    "restored_forms": 60,
+    "restored_finite_liveouts": 58964,
+    "optimization_untimed_liveouts": 17002,
+    "all_execution_counters_exactly_accepted54": true,
+    "both_features": true
+  },
+  "performance_observations": 0
+}

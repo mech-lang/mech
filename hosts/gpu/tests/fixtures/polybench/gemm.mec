@@ -1,0 +1,5 @@
+-- General matrix multiplication with the supplied scaling factors.
+a := A<[f64]>
+b := B<[f64]>
+c := C<[f64]>
+alpha<f64> * (a ** b) + beta<f64> * c

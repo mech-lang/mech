@@ -1,0 +1,25 @@
+{
+  "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+  "created_at": "2026-11-28T12:13:10.875099+00:00",
+  "accepted_round": 56,
+  "source_commit": "14506fc33e9df0025522aab3fe6dbd3076c86c44",
+  "compiler_fingerprint": "09ed79f2d2b652ed5cb62487dc92872d5ac2f8cdbd0d2fa78871ea2c317a8eb1",
+  "cases": [
+    "correlation",
+    "mvt",
+    "durbin",
+    "gramschmidt"
+  ],
+  "selection": "Optimization15 only: the three highest Mech/C margins Durbin/Correlation/Gram-Schmidt and MVT as a representative small pair of forward/transposed products. Measure current accepted56 generated work and preparation/allocation; no holdout diagnosis.",
+  "method": "Unchanged diagnostic public-API host linked against exact current Cargo artifact JSON rlibs; Cranelift remains sole Mech generator. Sample each owned warm process3s at1ms; capture named executable JIT ranges from that same PID after sampling, resume same process to terminal, validate C outputs/counters and bind complete code/actual local BL targets to exact accepted56 Objects.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-56-static-telemetry.json",
+  "counter_gate": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-56-ordered-map-dot-route-census.json",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "source_native_generator": "Maintained public Cranelift JIT/Object APIs; Rust builds only unchanged diagnostic wrapper.",
+  "hypothesis_to_check": "Identify actual current generated arithmetic/control versus schema/planning/allocation overhead, and whether source transpose/pointwise intermediates still materialize before consumers. Choose the next general physical-work reduction from current optimization evidence; no static speedup forecast or retry of an observed fingerprint.",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "scope_limit": "Warm residence includes output reset/drop; sampled self time is not an exact formal timer fraction, retired instruction/IPC/cache/traffic measurement, or a speedup forecast."
+}

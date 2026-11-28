@@ -12,8 +12,15 @@ mod captured_numeric;
 pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
+mod numeric_binary;
+mod numeric_composite;
 mod numeric_exits;
+mod numeric_generator;
 mod numeric_map;
+mod numeric_map_banks;
+mod numeric_phase_reductions;
+mod numeric_prefix;
+mod numeric_product_epilogues;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
@@ -208,6 +215,8 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
     pub(in crate::native_artifact::program::runtime) closed_tail:
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
     pub(super) numeric_prepaid: Option<NumericPrepaid>,
+    pub(super) numeric_binary: Option<Box<numeric_binary::Pending>>,
+    pub(super) numeric_product: Option<Box<numeric_product_epilogues::Loan>>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -499,6 +508,23 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         let tag = GlobalHelper::decode(operation);
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|c| c.has_numeric_generator())
+            && tag != GlobalHelper::NumericGeneratorFinish
+        {
+            return Err(invalid("helper while native generator loan is active"));
+        }
+        if self.numeric_product.is_some() && tag != GlobalHelper::NumericProductFinish {
+            return Err(invalid("helper while product epilogue loan is active"));
+        }
+        if self.numeric_binary.is_some() && tag != GlobalHelper::NumericBinaryFinish {
+            return Err(invalid(
+                "helper while native matrix arithmetic loan is active",
+            ));
+        }
         if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
             return Err(invalid("helper while compiled histogram loan is active"));
         }
@@ -608,6 +634,35 @@ impl Invocation<'_, '_, '_> {
             && tag != GlobalHelper::NumericMapFinish
         {
             return Err(invalid("helper while native numeric map loan is active"));
+        }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_reduction())
+            && tag != GlobalHelper::NumericReductionFinish
+        {
+            return Err(invalid(
+                "helper while a numeric reduction completion is pending",
+            ));
+        }
+        if matches!(
+            tag,
+            GlobalHelper::NumericBinaryPrepare | GlobalHelper::NumericBinaryFinish
+        ) {
+            return self.numeric_binary_helper(site, tag, args);
+        }
+        if matches!(
+            tag,
+            GlobalHelper::NumericProductPrepare | GlobalHelper::NumericProductFinish
+        ) {
+            return self.numeric_product_helper(site, tag, args);
+        }
+        if tag == GlobalHelper::NumericTransposeFinish {
+            return self.finish_numeric_transpose(site, args);
+        }
+        if tag == GlobalHelper::NumericReductionFinish {
+            return self.finish_numeric_reduction(site, args);
         }
         if tag == GlobalHelper::MapSeedFrame {
             return self.seed_frame_call(site, args);
@@ -783,6 +838,11 @@ impl Invocation<'_, '_, '_> {
             GlobalHelper::NumericMapPrepare | GlobalHelper::NumericMapFinish
         ) {
             self.numeric_map_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::NumericGeneratorPrepare | GlobalHelper::NumericGeneratorFinish
+        ) {
+            self.numeric_generator_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -796,6 +856,26 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|c| c.has_numeric_generator())
+        {
+            return Err(invalid(
+                "source visit while native generator loan is active",
+            ));
+        }
+        if self.numeric_product.is_some() {
+            return Err(invalid(
+                "source visit while product epilogue loan is active",
+            ));
+        }
+        if self.numeric_binary.is_some() {
+            return Err(invalid(
+                "source visit while matrix arithmetic loan is active",
+            ));
+        }
         if self.histogram.is_some() {
             return Err(invalid(
                 "source visit while compiled histogram loan is active",
@@ -1066,6 +1146,13 @@ impl Invocation<'_, '_, '_> {
         }
         if self.state.control.completed && self.parent_continuation.is_pending() {
             return Err(invalid("completion with pending parent child edge"));
+        }
+        if let Some(state) = self.state.collections.as_mut() {
+            state.advance_numeric_reduction_visit(
+                self.descriptor,
+                index,
+                self.state.control.visits,
+            )?;
         }
         self.state.consumed = false;
         // Keep the actual admitted anchor. The next callback must belong to

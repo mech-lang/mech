@@ -93,6 +93,96 @@ impl UnsignedMatrixBuffer {
     }
 }
 
+/// Detached plain scalar storage for shape-preserving numeric updates. The
+/// unsigned family keeps its capacity-bearing representation; the remaining
+/// canonical scalar families keep their existing boxed slices.
+#[derive(Debug)]
+pub enum NumericMatrixBuffer {
+    Unsigned(UnsignedMatrixBuffer),
+    Bool(Box<[bool]>),
+    I64(Box<[i64]>),
+    F64(Box<[F64Bits]>),
+}
+impl NumericMatrixBuffer {
+    fn into_storage(self) -> (SchemaBody, SequenceStorage) {
+        match self {
+            Self::Unsigned(buffer) => {
+                let (width, storage) = buffer.into_storage();
+                (SchemaBody::UnsignedInteger(width), storage)
+            }
+            Self::Bool(values) => (SchemaBody::Bool, SequenceStorage::Bool(values)),
+            Self::I64(values) => (
+                SchemaBody::SignedInteger(IntegerWidth::W64),
+                SequenceStorage::I64(values),
+            ),
+            Self::F64(values) => (
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+                SequenceStorage::F64(values),
+            ),
+        }
+    }
+    pub fn elements(&self) -> super::super::SequenceView<'_> {
+        use super::super::SequenceView;
+        match self {
+            Self::Unsigned(buffer) => buffer.elements(),
+            Self::Bool(values) => SequenceView::Bool(values),
+            Self::I64(values) => SequenceView::I64(values),
+            Self::F64(values) => SequenceView::F64(values),
+        }
+    }
+    pub fn capacity_bytes(&self) -> usize {
+        match self {
+            Self::Unsigned(buffer) => buffer.capacity_bytes(),
+            Self::Bool(values) => core::mem::size_of_val(values.as_ref()),
+            Self::I64(values) => core::mem::size_of_val(values.as_ref()),
+            Self::F64(values) => core::mem::size_of_val(values.as_ref()),
+        }
+    }
+    /// Change exactly one initialized cell. Canonical narrow/Boolean words
+    /// remain checked; signed and floating-point lanes preserve all bits.
+    /// No raw mutable pointer or permission to resize storage is granted.
+    pub fn replace_word(&mut self, at: usize, word: u64) -> Option<()> {
+        macro_rules! unsigned {
+            ($values:expr, $kind:ty) => {
+                *$values.get_mut(at)? = <$kind>::try_from(word).ok()?
+            };
+        }
+        match self {
+            Self::Unsigned(UnsignedMatrixBuffer::U8(values)) => unsigned!(values, u8),
+            Self::Unsigned(UnsignedMatrixBuffer::U16(values)) => unsigned!(values, u16),
+            Self::Unsigned(UnsignedMatrixBuffer::U32(values)) => unsigned!(values, u32),
+            Self::Unsigned(UnsignedMatrixBuffer::U64(values)) => *values.get_mut(at)? = word,
+            Self::Bool(values) if word <= 1 => *values.get_mut(at)? = word != 0,
+            Self::Bool(_) => return None,
+            Self::I64(values) => *values.get_mut(at)? = word as i64,
+            Self::F64(values) => *values.get_mut(at)? = F64Bits::from_bits(word),
+        }
+        Some(())
+    }
+}
+
+pub(super) fn plain_numeric_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, .. }
+        if matches!(element.as_ref(), SchemaBody::Bool
+            | SchemaBody::UnsignedInteger(IntegerWidth::W8 | IntegerWidth::W16 | IntegerWidth::W32 | IntegerWidth::W64)
+            | SchemaBody::SignedInteger(IntegerWidth::W64)
+            | SchemaBody::FloatingPoint(FloatWidth::W64)))
+}
+
+/// Immutable same-schema metadata; it owns no payload or mutation authority.
+#[derive(Debug)]
+pub struct NumericMatrixSnapshotConstructor {
+    schema: SchemaId,
+    shape: Arc<ShapeInstance>,
+    schemas: Arc<SchemaTable>,
+}
+impl NumericMatrixSnapshotConstructor {
+    pub fn finish(self, buffer: NumericMatrixBuffer) -> Result<Value, SnapshotValueError> {
+        let (kind, storage) = buffer.into_storage();
+        from_numeric_matrix(self.schema, self.shape, kind, storage, self.schemas)
+    }
+}
+
 /// A shape-preserving replacement retains immutable metadata only. It holds no
 /// source payload, frozen root, registration, reservation or mutation authority.
 #[derive(Debug)]
@@ -119,6 +209,24 @@ impl UnsignedMatrixSnapshotConstructor {
 }
 
 impl Value {
+    /// Retain exact immutable metadata for a plain numeric update. Ownership
+    /// transfer and complete current resource admission remain separate.
+    pub fn numeric_matrix_replacement_constructor(
+        &self,
+        schemas: Arc<SchemaTable>,
+    ) -> Result<NumericMatrixSnapshotConstructor, SnapshotValueError> {
+        if !plain_numeric_matrix(self.validate_against(&schemas)?.body()) {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: self.schema_key,
+            });
+        }
+        Ok(NumericMatrixSnapshotConstructor {
+            schema: self.schema,
+            shape: self.shape.clone(),
+            schemas,
+        })
+    }
+
     /// Retain this value's immutable shape for a same-schema unsigned update.
     /// The supplied arena is checked by key, not just by numeric schema ID.
     /// Callers retain their ordinary work/capacity admission and ownership
@@ -189,6 +297,7 @@ macro_rules! constructor {
 }
 
 impl Value {
+    constructor!(from_bool_matrix, bool, Bool, SchemaBody::Bool);
     constructor!(
         from_u8_matrix,
         u8,

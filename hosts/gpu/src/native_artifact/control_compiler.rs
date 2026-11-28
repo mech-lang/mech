@@ -622,6 +622,23 @@ pub(in crate::native_artifact) fn emit_scalar_terminator(
     })
 }
 
+/// Language literal equality shared by ordinary CFGs and admitted native
+/// regions. Signed zeros match; NaNs do not compare equal to their own bits.
+pub(in crate::native_artifact) fn literal_equal(
+    b: &mut FunctionBuilder<'_>,
+    kind: NativeScalarKind,
+    left: Value,
+    right: Value,
+) -> Value {
+    if kind == NativeScalarKind::F64 {
+        let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
+        let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
+        b.ins().fcmp(FloatCC::Equal, left, right)
+    } else {
+        b.ins().icmp(IntCC::Equal, left, right)
+    }
+}
+
 /// The same native branches serve scalar and mixed-value CFGs. A mixed value
 /// never acquires a fictitious scalar type merely to reuse this emitter.
 pub(in crate::native_artifact) fn emit_branch_terminator(
@@ -659,15 +676,7 @@ pub(in crate::native_artifact) fn emit_branch_terminator(
             })?;
             let left = load(b, locals, left)?;
             let right = load(b, locals, right)?;
-            // Match literal equality is language equality, not raw
-            // transport-bit identity: signed zeros match, NaNs do not.
-            let condition = if kind == NativeScalarKind::F64 {
-                let left = b.ins().bitcast(types::F64, MemFlags::new(), left);
-                let right = b.ins().bitcast(types::F64, MemFlags::new(), right);
-                b.ins().fcmp(FloatCC::Equal, left, right)
-            } else {
-                b.ins().icmp(IntCC::Equal, left, right)
-            };
+            let condition = literal_equal(b, kind, left, right);
             b.ins().brif(
                 condition,
                 blocks[yes as usize].expect("reachable successor"),

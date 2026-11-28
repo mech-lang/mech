@@ -168,6 +168,14 @@ impl NativeCollectionPrimitive {
             Self::CompositePack(_) => "core/composite-pack",
             Self::MatrixHorizontal(_) => "matrix/horzcat",
             Self::MatrixVertical(_) => "matrix/vertcat",
+            Self::MatrixTranspose => "matrix/transpose",
+            Self::MatrixMatmul => "matrix/matmul",
+            Self::MatrixAdd => "math/add",
+            Self::MatrixSubtract => "math/sub",
+            Self::MatrixMultiply => "math/mul",
+            Self::MatrixDivide => "math/div",
+            Self::MatrixSqrt => "math/sqrt",
+            Self::F64Power => "math/pow",
             Self::EnumPack => "core/enum-pack",
             Self::RangeExclusive => "range/exclusive",
             Self::RangeInclusive => "range/inclusive",
@@ -175,10 +183,12 @@ impl NativeCollectionPrimitive {
             Self::RangeIncrementInclusive => "range/inclusive-increment",
             Self::StringScalarAccess
             | Self::MatrixScalarAccess
+            | Self::MatrixCellAccess
             | Self::TupleScalarProjection
             | Self::MapKeyAccess => "access/scalar",
             Self::RecordFieldAccess => "access/column",
             Self::MatrixIndexedReplace => "core/assign/indexed-axis",
+            Self::MatrixCellReplace => "core/assign/indexed-rectangle",
             Self::SetContains => "set/element-of",
             Self::SetNotContains => "set/not-element-of",
             Self::StringEqual => "compare/eq",
@@ -234,7 +244,8 @@ impl NativeCollectionPrimitive {
             Self::CompositePack(arity)
             | Self::MatrixHorizontal(arity)
             | Self::MatrixVertical(arity) => arity,
-            Self::MatrixIndexedReplace => 3,
+            Self::MatrixIndexedReplace | Self::MatrixCellAccess => 3,
+            Self::MatrixCellReplace => 4,
             #[cfg(feature = "sequence_buffers")]
             Self::SequenceAppendLeBytes => 3,
             #[cfg(feature = "sequence_buffers")]
@@ -261,6 +272,12 @@ impl NativeCollectionPrimitive {
             | Self::StringEqual
             | Self::StringNotEqual
             | Self::StringConcat
+            | Self::MatrixMatmul
+            | Self::MatrixAdd
+            | Self::MatrixSubtract
+            | Self::MatrixMultiply
+            | Self::MatrixDivide
+            | Self::F64Power
             | Self::MatrixRangeAccess
             | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
@@ -297,6 +314,11 @@ fn source_schema_id(artifact: &ProgramArtifact, source: ArtifactSource) -> Resul
 }
 fn is_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+}
+fn is_f64_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2
+            && element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
 }
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
@@ -467,6 +489,35 @@ fn validate_schemas(
         return false;
     };
     match primitive {
+        NativeCollectionPrimitive::MatrixTranspose => matches!((first, output),
+            (SchemaBody::Matrix { element: left, dimensions: a }, SchemaBody::Matrix { element: right, dimensions: b })
+                if a.len() == 2 && b.len() == 2 && left == right
+                    && crate::native_artifact::NativeScalarKind::from_schema_body(left).is_some()),
+        NativeCollectionPrimitive::MatrixSqrt => is_f64_matrix(first) && is_f64_matrix(output),
+        NativeCollectionPrimitive::F64Power => {
+            let scalar = &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+            (is_f64_matrix(output) || output == scalar)
+                && inputs.iter().all(|input| {
+                    input.body() == scalar || (is_f64_matrix(output) && is_f64_matrix(input.body()))
+                })
+        }
+        NativeCollectionPrimitive::MatrixMatmul => {
+            is_f64_matrix(first) && is_f64_matrix(inputs[1].body()) && is_f64_matrix(output)
+        }
+        NativeCollectionPrimitive::MatrixAdd
+        | NativeCollectionPrimitive::MatrixSubtract
+        | NativeCollectionPrimitive::MatrixMultiply
+        | NativeCollectionPrimitive::MatrixDivide => {
+            // Scalar arithmetic retains the direct native scalar path. These
+            // witnesses select only the maintained matrix/broadcast binders;
+            // the live binder still checks exact broadcast geometry.
+            is_f64_matrix(output)
+                && inputs.iter().all(|input| {
+                    is_f64_matrix(input.body())
+                        || input.body() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+                })
+                && inputs.iter().any(|input| is_f64_matrix(input.body()))
+        }
         NativeCollectionPrimitive::CompositePack(_)
         | NativeCollectionPrimitive::MatrixHorizontal(_)
         | NativeCollectionPrimitive::MatrixVertical(_) => unreachable!("validated above"),
@@ -528,15 +579,26 @@ fn validate_schemas(
                 && positional
                 && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
         }
-        NativeCollectionPrimitive::MatrixIndexedReplace => {
+        NativeCollectionPrimitive::MatrixCellAccess => {
+            is_value_matrix(first)
+                && inputs[1..]
+                    .iter()
+                    .all(|input| mech_core::is_positional_selector_schema(input.body()))
+                && matches!(first, SchemaBody::Matrix { element, .. } if element.as_ref() == output)
+        }
+        NativeCollectionPrimitive::MatrixIndexedReplace
+        | NativeCollectionPrimitive::MatrixCellReplace => {
             is_value_matrix(first)
                 && inputs[0] == *declared_output
                 && inputs[1].dimension_parameters().is_empty()
-                && inputs[2].dimension_parameters().is_empty()
-                && matches!(
-                    inputs[2].body(),
-                    SchemaBody::Index | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
-                )
+                && inputs[2..].iter().all(|input| {
+                    input.dimension_parameters().is_empty()
+                        && matches!(
+                            input.body(),
+                            SchemaBody::Index
+                                | SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64)
+                        )
+                })
                 && matches!(first, SchemaBody::Matrix { element, .. }
                     if element.as_ref() == inputs[1].body())
         }

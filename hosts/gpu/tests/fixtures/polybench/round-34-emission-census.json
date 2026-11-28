@@ -1,0 +1,636 @@
+{
+  "scope": "Real checked Object export for optimization15 only; no timing observations or linked Object execution.",
+  "compiler_fingerprint": "be83fdbadfd04a14b3c53899a91218f0167ce344df676ce70e5b780110c31f68",
+  "driver_sha256": "09ab814c9da2b909853f98388edb1b23eca899992e39abc9270d1394f1f056af",
+  "cases": {
+    "2mm": {
+      "code_bytes": 3876,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 24,
+          "f64_stores": 17,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "43fa63b60370a56cd5a22d94caf50a73fb1eeaf405f2346accae4ce6b1a09bd8",
+      "metadata_sha256": "7ab8cb45268d6e4de9ee12433ab4a6b9ed5e9873e1668dc89ef05f6da7756e2a",
+      "disassembly_sha256": "553765ba5abb2e357fa39a3aa90d74f7390d1921286d38d90dd8ef6abed46910",
+      "object_executed": false,
+      "accepted31_code_bytes": 3876,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 24,
+          "f64_stores": 17,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "3mm": {
+      "code_bytes": 2040,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 9,
+          "f64_stores": 3,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "f997f456ca64b36d4e059acfca19ae53b68a9060397a178ef20bab66d0b15cae",
+      "metadata_sha256": "1a1931d8e98d5a147145d9ee18a2ba955136574db177ca84ebe76da1f9da4a0f",
+      "disassembly_sha256": "adaf61433a68df5dc35a0b4e3b6a83c82ddc942add5be3103ff169ff5980bad1",
+      "object_executed": false,
+      "accepted31_code_bytes": 2040,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 9,
+          "f64_stores": 3,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "atax": {
+      "code_bytes": 2256,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "53818b1ed9c891a5263b00357878d5d16ef5d4c8cd26e505436b79c3b37e369b",
+      "metadata_sha256": "7e43ea9e7d320836cae42fc8c5345c14bed59c64b3544f547f3d19e499c5633b",
+      "disassembly_sha256": "56af642883e395eb8eaa83ad26b68c32463271c61f49a45cb8c5340641563d12",
+      "object_executed": false,
+      "accepted31_code_bytes": 2256,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "bicg": {
+      "code_bytes": 2224,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "997dce2f1a8fef19ef18b8f233107abacd88408f0599ca6945a809fa57979a25",
+      "metadata_sha256": "126f7fdd962735b9f4067e2dbdd9fc98973368085430d179fa26710e205939fe",
+      "disassembly_sha256": "82dc83e7e6a340bb53099fd60b891b7b93284973481efd94c84fe364d2b3ba41",
+      "object_executed": false,
+      "accepted31_code_bytes": 2224,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "cholesky": {
+      "code_bytes": 19928,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "disassembly_sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "b5c27e2a50da77313b5433560b1bf3ee0a48c4b628d76fb07cbe392d5714b9ad",
+      "metadata_sha256": "d6df5c01b5f77e187f76b4bbcb01b5d253ef68f765b185af9f9907ff5e067cb5",
+      "disassembly_sha256": "660e29d66bf4c7b1554682cc52e31e19f3c4ceb9c98f285e7e1218b65f760b12",
+      "object_executed": false,
+      "accepted31_code_bytes": 19928,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "disassembly_sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "correlation": {
+      "code_bytes": 13108,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3277,
+          "disassembly_sha256": "5c1919ae880d64bcba130b5af3d9e4806aa954e97b4043334922637001e0678b",
+          "f64_integer_register_moves": 65,
+          "f64_loads": 41,
+          "f64_stores": 33,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "d7d57cac2b58914344ac5585b850a91aebd1375886e284a55a70e2602ecb0a42",
+      "metadata_sha256": "a659500f8fb29e96652f8a50861093c98f543d4d1b59c6ac69ca6787f1d0462f",
+      "disassembly_sha256": "717badfd171d08d083c5d146a89ca2e139e9f6850e9fbe87191090858f7e4b28",
+      "object_executed": false,
+      "accepted31_code_bytes": 13108,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3277,
+          "disassembly_sha256": "5c1919ae880d64bcba130b5af3d9e4806aa954e97b4043334922637001e0678b",
+          "f64_integer_register_moves": 65,
+          "f64_loads": 41,
+          "f64_stores": 33,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "covariance": {
+      "code_bytes": 4884,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "f64_integer_register_moves": 32,
+          "f64_loads": 22,
+          "f64_stores": 17,
+          "f64_divisions": 10,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "9603c0f236abab284a7b567f6d0232b9213eecf513be96b5a3e939521f2d87a7",
+      "metadata_sha256": "9a6a416c5692b9893a174ae239f8bae5ee12576bfae3e31840326e622da1f119",
+      "disassembly_sha256": "2561c70bcea24963ea879f7789be5a268730dca4c5da03008d98e49165337fe0",
+      "object_executed": false,
+      "accepted31_code_bytes": 4884,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "f64_integer_register_moves": 32,
+          "f64_loads": 22,
+          "f64_stores": 17,
+          "f64_divisions": 10,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "deriche": {
+      "code_bytes": 62308,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "1b7b2b8e71cefea7e5aaffc2cf9d5b5aabc9eb965f58d176f3ed65986e21c0cf",
+      "metadata_sha256": "0a07eb51a7b5153ddaef75d37bb762adbdb1895f68ea9ed05b856be2060b9202",
+      "disassembly_sha256": "a651cf7b51ed74a68f5f857a8d615c2fde89e8e1177e2cb3993cd143955a25cd",
+      "object_executed": false,
+      "accepted31_code_bytes": 62308,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "doitgen": {
+      "code_bytes": 1200,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "fba57b02126a6c5a0293f8c397af31a7ae55342884326b00865e76172f3c2b8c",
+      "metadata_sha256": "519d6dc5629c964f51c8202c89d373cdaa17fb523fb58ec603fe7cbae03dd6df",
+      "disassembly_sha256": "d0e25bfc00056d66a8d29398be8a640d393e59e6516f76aca0387ddb78a1699b",
+      "object_executed": false,
+      "accepted31_code_bytes": 1200,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "durbin": {
+      "code_bytes": 20008,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "disassembly_sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "f64_integer_register_moves": 38,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 4,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "8f970777b6676ea9bc2571ecdb5424f0c1e304a83d86cec3e6e69d0c4ced4d21",
+      "metadata_sha256": "673308bcd76641a60372f64f0ae71b996c3cb09c327328fc7b9da7b1104f13f1",
+      "disassembly_sha256": "ea814064ceec9ea10f2f40b8e2755de5cd7d0667c54e62d824cb751cc999a3e5",
+      "object_executed": false,
+      "accepted31_code_bytes": 20008,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "disassembly_sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "f64_integer_register_moves": 38,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 4,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "gemm": {
+      "code_bytes": 3424,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 21,
+          "f64_stores": 16,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "b46cb43ab08b011cd972e83e374a4df45b68bc576cb8d1b15603f537a67676b9",
+      "metadata_sha256": "a57cdbe66e4b46052215eefdf4d68fb903d1ad9d17a8e96e8b2aa7fc251186a8",
+      "disassembly_sha256": "bafcc159ba93c273268f9e272f082fa22b6c8ebd3a6ebd93b1003f208f69a640",
+      "object_executed": false,
+      "accepted31_code_bytes": 3424,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "f64_integer_register_moves": 30,
+          "f64_loads": 21,
+          "f64_stores": 16,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": 50664,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "disassembly_sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "046f3c093562327230653f0ef1c53b59579d65b9179838beefd5223eb2c347d8",
+      "metadata_sha256": "7f1ed88b5a61c5134190b3de2186c15699f271c3bf942ddce5015df514518986",
+      "disassembly_sha256": "b41f96554fcc2a3ef5c6a6f40dc61bb4c522b6784e7be028ef2d84f000af2220",
+      "object_executed": false,
+      "accepted31_code_bytes": 50664,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "disassembly_sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "f64_integer_register_moves": 27,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "mvt": {
+      "code_bytes": 3812,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 18,
+          "f64_stores": 12,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "7f667b38d9faee761139550af6ae4440bb512a966610a7f7619728f8623777e0",
+      "metadata_sha256": "cbf2777b614f02bd338a5b28b02290375b2dbaae7f74aaf3d1a5d51cf5265348",
+      "disassembly_sha256": "209aca3577a29ca3c3a7bc8733d69377c80ec3fff25292d30a40bb04fe679527",
+      "object_executed": false,
+      "accepted31_code_bytes": 3812,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 18,
+          "f64_stores": 12,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "nussinov": {
+      "code_bytes": 19360,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "072bcc1eb3baf8024123e24b5e884b920a347190093177dfb1952177c651f74e",
+      "metadata_sha256": "8b367db6713e525a9ad5ee075c3a2203c553d17c6cbd1d713cfc84e0ee2b2866",
+      "disassembly_sha256": "b0f267dbf084f5890d2a9602d9a3953643118eba2cecb431d62122a33a10c289",
+      "object_executed": false,
+      "accepted31_code_bytes": 19360,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": 16104,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "bccd8c408a311805e1f56a8120dcba8105ab5062cf0482c6ec6e28f440733ae9",
+      "metadata_sha256": "0c169810dad00c274c63e9a23162e5647a268d4fc0461d1af5659e613293d52d",
+      "disassembly_sha256": "9df6f7eb9e8e66d2ff5321cb315f1bedaa4409fb9a20df03f9852b20753bea77",
+      "object_executed": false,
+      "accepted31_code_bytes": 16104,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      }
+    }
+  },
+  "native_code_changed_cases": [],
+  "complete": true
+}

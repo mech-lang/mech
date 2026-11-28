@@ -1,0 +1,2 @@
+-- View the first two tensor axes as rows; transform every row by C4.
+A<[f64]> ** C4<[f64]>

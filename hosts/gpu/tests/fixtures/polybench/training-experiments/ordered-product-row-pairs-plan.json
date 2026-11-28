@@ -1,0 +1,89 @@
+{
+  "schema": "mech.polybench.ordered-product-row-pairs-plan.v1",
+  "created_at": "2026-11-28T07:14:55.391316+00:00",
+  "status": "Prospective before compiler edits or candidate performance samples",
+  "source_parent": "9159b5ae719d4defac22d7695963ef09286e357a",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_rows.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "d71c1f1a71b83db082186463fa13ecfe1610f93d01aeccebea64e9f9d10c6b77",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "6fece19af7ee9efcb26a9d70eadc9e100c3b5d3e86b5cd55c94cd7b5aaaa81b5",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "5942bf5d9980c5cfe9ecf8399ed39d76a8c5edf537811bf04a79dabaca6f73ac",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "f1797e48858c934f3e4fcb29ce01277ac6a222b30db04c75e4b4b4265b13795c",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "d18e88b1d9bf1a77123eff3a37491d510d7d134974e534eef775f55245b2ec10",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "77c56ac2cd0360513429de522b729e5af97622ce1bf10657dd994c5ea9dc9531",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "9602a1268df919f7f70084e556a79c4788f997014599c4d89add2f97e7f00167",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_rows.rs": null
+  },
+  "accepted_round": 50,
+  "accepted_compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+  "accepted_scores": {
+    "optimization": 9.243502020687457,
+    "holdout": 25.148487819220833
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-50/compound-conditional-domains/compound-conditional-domains-driver",
+  "accepted_driver_sha256": "f11b59a8e4946aa09c16baa6ef3a4540a3d15542e9dcb7464c8ff007c24f9178",
+  "formal_history_entries": 51,
+  "versions": {
+    "ir": 419,
+    "work": 157,
+    "abi": 48
+  },
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "scope": "Shared Cranelift ordered F64 matrix product and its existing epilogues, all runtime-admitted shapes. Pair independent output rows and retain existing adjacent-column SIMD, including scalar one-column products. No benchmark/dimension selectors, source-port/input/C/flags/limits/tolerance/cache/timing changes.",
+  "profiling_basis": {
+    "optimization_only": true,
+    "evidence": [
+      "training-experiments/accepted50-correlation-profile.json",
+      "training-experiments/accepted50-optimization-profile.json"
+    ],
+    "correlation_same_pid_full_native_bytes_identical": 13820,
+    "correlation_generated_self_percent": 31.40203449800973,
+    "correlation_hot_ordered_product_loop_self_percent": 13.578062804068995,
+    "mvt_product_loop_evidence": "Verified native scalar product k loops at0x264 and0x9cc; existing two-column SIMD cannot run on single-column products.",
+    "limits": "Statistical warm residence includes output reset/drop; not exact frozen timer shares, retired instructions or speedup forecasts."
+  },
+  "physical_work_removed": [
+    "For two output rows, share one right scalar or two-column SIMD load per k term, one k induction/loop check and common right-side address calculation. Retain one independent accumulator per output row/lane.",
+    "Expose independent ordered accumulation chains to the processor. No split partial dot products, reduction reassociation, horizontal reduction or FMA.",
+    "Use one checked row-group traversal and scalar row/column tails; remove repeated per-output row/column quotient/remainder reconstruction from the reached product loop. Every source multiply/add and final cell remains."
+  ],
+  "implementation": [
+    "Keep the original product emitter behind a private emission-only ProductRowPairs ablation. Use the new shared kernel from ordinary products and existing product epilogues; no new runtime loan/frame/helper/ABI/layout or source-fee policy. IR419/work157/ABI48.",
+    "count==0 completes before division or either axis traversal; only nonempty admitted products divide count by positive columns. Existing exact synchronous current-owner/shape/span/capacity and issued-loan validation remain. Carry bounded row/column groups; second-row and SIMD-column loads/stores require independently reached bounds.",
+    "Each cell starts at +0.0 and consumes original k terms in order with separate maintained f64_arithmetic multiply/add. Each adjacent output-column SIMD lane is independent; a second row has a separate accumulator.",
+    "Existing epilogues apply to each cell with its correct row/column/index. Any consumed nonfinite intermediate cancels private cells and replays original source exactly, preserving finite admission/replay credit and atomic publication. Final private writes may interleave independent rows; no partially constructed result escapes.",
+    "Keep full existing buffers/allocations, canonical results, validation/admission, source fees, counters and prepare/finish boundaries. No padded visits or hardware-counter claims."
+  ],
+  "required_qualification": [
+    "Original/decoded/restored actual full-program old-emitter ablation, independent ordered scalar oracle for finite dot products, square/rectangular/vector/odd row+column shapes, all three zero axes, huge representable empty axes and guards around output banks.",
+    "Exact +0, signed zero, cancellation-sensitive F64 triples, NaN/Inf and generated nonfinite values; existing source NaN admission/fallback. Product epilogues across scalar/exact/row/column broadcasts, conditional cancellation, private outputs and aliases.",
+    "Finite/missing/zero/spent logical and physical caps, atomic failure/cleanup/retry, malformed frames/images/source bindings/issued loans, all maintained numeric/scalar/compression tests and both features; all30 original/decoded/restored finite C programs.",
+    "Actual checked Objects and synthetic runtime-shaped Cranelift kernel show two ordered accumulators sharing one reached right load/k-loop; scalar tails, unchanged FMA count, static code/stack growth and every regression retained."
+  ],
+  "untimed_gate": "Optimization15 all17002 finite C liveouts and actual Objects; every execution counter, including source work/comparison and physical visits, exactly equals accepted50.",
+  "training_probe": {
+    "actors": [
+      "accepted50",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "One prospective fresh-process probe per fully qualified materially changed fingerprint; raw equal-weight GM accepted50/candidate medians strictly above1. All observations/regressions retained, no exact retries or exclusions."
+  },
+  "formal_acceptance": "After complete qualification, selected probe and clean committed/pushed/frozen source+driver: one900-observation formal run and29482 finite liveouts, immutable history append. Promote only optimization15 kernel Mech/C strictly below9.243502020687457. Holdout independently reported and cannot veto/select/diagnose/tune/trigger rollback or retry. Next formal history index is51; trial52 is distinct from unselected trial51.",
+  "prior_related_work": "Existing numeric_product emits two adjacent columns with a single row accumulator. Previous transpose induction only removed coordinate divisions and did not select; rejected transpose views changed operand representation. This experiment changes physical product reuse and independent accumulation scheduling across rows, including one-column outputs; it is not an exact retry of those or rectangular map induction.",
+  "restoration": "If unselected/unpromoted, retain all evidence and observations, restore every planned source path exactly from source_parent, stage deletions and verify accepted50 fingerprint; commit/push only PR1001.",
+  "performance_observations": 0
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "mech.polybench.transpose-product-views-accepted47-base.v1",
+  "created_at": "2026-11-28T01:44:58.182701+00:00",
+  "before_further_compiler_edits_or_performance": true,
+  "reason": "User explicitly accepts round47 from optimization improvement; holdout cannot select or veto compiler changes.",
+  "previous_plan_sha256": "52d84603c486becb641a73135f9d0168af3e0d3d3f1a8caeec30ee9d20a4d313",
+  "source_parent": "44236f0be9ab3713b8b577927ddc172427fb10de",
+  "accepted_round": 47,
+  "accepted_scores": {
+    "optimization": 9.575943659594117,
+    "holdout": 27.506517683644883
+  },
+  "accepted_compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-47/masked-matrix-maps/masked-matrix-maps-driver",
+  "accepted_driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "32645075fd02a2d6d1a849bbff1657cbf355c67c83dd0d8cd7d3446c91cc50df",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "9976fd622538419ba41ccb797a8097ce3b00af2f032de34e295f42871cf874b6",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "740ef8759493dcedda7d97b7eb3c0fa8b374c17f7036b965673457ff8715a4fd",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "5942bf5d9980c5cfe9ecf8399ed39d76a8c5edf537811bf04a79dabaca6f73ac",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "c19df2cab342c02aece792763b813a9f3e9452db38591aee8045af3874bc74aa",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "59c1cbeba27e6587a1846f9faedf62e1eff0f46ceef1d3e2faab646afe003378",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f87ce2044ec3772051b71a596723709002b040daf5a69549dcb18c751b0cfd1b",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f4007038c261259c8d59aa27a0d8ab593345ee22eab7d2af8c895c27cee2a8fc",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "c293ea9bfa7b8f66faac3bf562ccfe9460be24a6b5f94858b183d5bb685ec0ab"
+  },
+  "selection_policy": "performance-selection-policy-v4.json",
+  "selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "formal_acceptance": "Promote only if optimization15 kernel Mech/C GM strictly improves accepted47 (9.575943659594117). Retain/report the full holdout aggregate independently, regardless of regression; do not select, tune or roll back based on holdout. Correctness, freeze, source obligations, timing boundaries and one-probe/no-exclusion rules remain.",
+  "prototype_source_proof": "training-experiments/transpose-product-views-source-proof.json",
+  "prototype_status": "Three proof groups pass on former restored45; source snapshots retained. Carry onto exact accepted47 and recheck before native view emission.",
+  "performance_observations": 0
+}

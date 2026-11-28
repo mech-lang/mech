@@ -145,6 +145,45 @@ for migration context; current implemented and pending scope is detailed below.
 
 ### Scalar native execution is a primary capability
 
+Canonical native programs also admit F64 matrix transpose, matrix products,
+elementwise arithmetic, scalar/row/column broadcasting, square root and real
+power through
+the maintained resident factories. Private factory witnesses select checked
+library calls, retaining the existing shape contracts, finite admission and
+atomic output publication. Scalar arithmetic keeps direct native instructions.
+Packed F64 products borrow their canonical input banks and share the dense
+resident product stream, preserving reduction order without a generic value
+allocation or dispatch for each term. Other element kinds retain their existing
+resident implementations.
+
+F64 matrices can also cross tuple/record and closed FSM payload boundaries.
+Nested comprehensions construct general rectangular horizontal blocks, including
+empty axes. The managed boundary admits its permutation scratch before arranging
+the final canonical row-major payload. Statically sized matrix generators with
+irrefutable bindings retain exact comprehension cardinality; filters and
+refutable patterns remain runtime-sized. Construction still checks actual
+geometry before publication.
+
+Bool, I64 and F64 matrices reuse private tuple and closed-enum frame lanes,
+retaining their immutable packed owners across recursive calls and FSM steps.
+Typed linear and coordinate reads return exact scalar words through the same
+checked boundary as unsigned reads. Signed values retain all 64 bits, and
+Boolean matrices use Boolean storage. Non-compound selected assignments share
+packed snapshot construction; single-cell planning can prepay the identical
+scan cost when it fits, with the original ordered denial path otherwise.
+These paths keep finite admission, canonical publication and alias isolation.
+
+The focused `canonical_artifact_matrix` test covers original/decoded artifacts,
+Object emission, independent matrix shapes, broadcasting, coordinate access
+and replacement, real power, restored factory images,
+state transitions, triangular substitution, reduction order, empty dimensions,
+shape and budget failures, recovery and factory-witness rejection.
+
+`canonical_artifact_polybench` checks all 29,482 C live-outs for all thirty PolyBench/C
+4.2.1 MINI ports, for both original and decoded artifacts, with finite policies
+and Object emission. Its pinned reference data needs no C compiler or network
+at test time. See `tests/fixtures/polybench/README.txt` for provenance and scope.
+
 Efficient Bool, U64, I64 and F64 execution is part of the maintained native
 backend's contract. This includes short invocations, where transport/setup
 latency and allocations matter, as well as arithmetic throughput. Scalar kinds

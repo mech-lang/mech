@@ -10,14 +10,16 @@ pub(crate) fn word_matrix(body: &SchemaBody) -> bool {
             && matches!(element.as_ref(), SchemaBody::UnsignedInteger(_)))
 }
 
-/// Canonical argument matrices also admit Strings and fixed record/tuple elements. Keep
-/// this separate from `word_matrix`: these cells need the budgeted snapshot
-/// constructor, not the packed unsigned-buffer copy path.
+/// Canonical argument matrices also admit Bool, I64, F64, Strings and fixed
+/// record/tuple elements. Keep this separate from `word_matrix`: these cells need the
+/// budgeted snapshot constructor, not the packed unsigned-buffer copy path.
 pub(crate) fn carrier_matrix(body: &SchemaBody) -> bool {
     word_matrix(body)
         || matches!(body, SchemaBody::Matrix {element, dimensions}
         if dimensions.len() == 2
-            && (matches!(element.as_ref(), SchemaBody::String)
+            && (matches!(element.as_ref(), SchemaBody::Bool | SchemaBody::String
+                    | SchemaBody::SignedInteger(mech_core::IntegerWidth::W64)
+                    | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
                 || crate::is_control_fixed_aggregate_element(element)))
 }
 

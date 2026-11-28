@@ -1,0 +1,6 @@
+{
+  "created_at": "2026-11-28T18:40:14.196178+00:00",
+  "basis": "Focused9/9 passed, static attempt01 retained Seidel exactly and removed first Nussinov prefix. Actual second prefix has2reads+oneF64Add and2exports, saving only1classification. It adds148B versus unfused native baseline. No performance observations.",
+  "source_profitability": "Require checked F64 source reads/arithmetic results >=2*escaping F64 values: at least one eliminated classification per exported word. Copies do not count. This bounds minimum useful closure; original direct checked native path remains for both load-only and weak partial closure. Source-only, no benchmark names/shapes/values. Public new test includes both raw and partial-closure branches in original/decoded/restored forms.",
+  "diagnostic_correction": "Actual paired loop has8 multiply/adds, but contiguous backward-branch spans also include the disjoint odd tail and outer code. Bind the taken remaining>=2 edge from the real header to its straight-line paired body and actual backedge. Preserve initial failed static report rather than dropping it."
+}

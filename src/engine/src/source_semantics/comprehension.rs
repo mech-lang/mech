@@ -368,6 +368,31 @@ impl SemanticBuilder {
                 }
             }
         }
+        // Bind/wildcard generators over statically sized matrices cannot
+        // discard candidates. Preserve their exact Cartesian cardinality so
+        // a comprehension can satisfy a closed function or FSM payload kind.
+        // Filters and refutable patterns retain runtime-sized results.
+        let constant_yields = events.iter().try_fold(1_u64, |count, (_, qualifier)| {
+            let Qualifier::Generator { source, pattern } = qualifier else {
+                return None;
+            };
+            if !matches!(
+                pattern,
+                CollectionPattern::Bind { .. } | CollectionPattern::Wildcard
+            ) {
+                return None;
+            }
+            let schema = self.schema_draft_of(*source).ok()?;
+            let SchemaBody::Matrix { dimensions, .. } = &schema.body else {
+                return None;
+            };
+            dimensions
+                .iter()
+                .try_fold(count, |count, dimension| match dimension {
+                    DimensionExpr::Constant(extent) => count.checked_mul(*extent),
+                    _ => None,
+                })
+        });
         let result = self.required(result, syntax, "a collection yield")?;
         let yield_context = expected
             .and_then(|context| match context {
@@ -522,6 +547,22 @@ impl SemanticBuilder {
                 },
             }
         } else {
+            let inferred_columns = constant_yields.and_then(|count| {
+                if matches!(
+                    kind,
+                    crate::ComprehensionKind::MatrixHorizontalBlocks { .. }
+                ) {
+                    match &element.body {
+                        SchemaBody::Matrix { dimensions, .. } => match dimensions.get(1) {
+                            Some(DimensionExpr::Constant(width)) => count.checked_mul(*width),
+                            _ => None,
+                        },
+                        _ => None,
+                    }
+                } else {
+                    Some(count)
+                }
+            });
             let leaf = if let crate::ComprehensionKind::MatrixHorizontalBlocks { .. } = kind {
                 let SchemaBody::Matrix {
                     element: leaf,
@@ -586,7 +627,7 @@ impl SemanticBuilder {
                 }
                 ExpectedSchema::MatrixElement(_) => None,
             });
-            let columns = match declared_columns {
+            let columns = match declared_columns.or(inferred_columns) {
                 Some(columns) => DimensionExpr::Constant(columns),
                 None => fresh_axis()?,
             };

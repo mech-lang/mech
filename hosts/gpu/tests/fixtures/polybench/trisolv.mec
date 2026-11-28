@@ -1,0 +1,16 @@
++> stats
+-- A solved prefix feeds the next row; its inner product is a comprehension.
+#Substitution(a<[f64]:40,40>, rhs<[f64]:40,1>, initial<[f64]:40,1>, size<u64>) => <[f64]:40,1>
+  | :Solve(values<[f64]:40,1>, row<u64>)
+  | :Done(values<[f64]:40,1>).
+#Substitution(a, rhs, initial, size) -> :Solve(initial, 1u64)
+  :Solve(values, row)
+    | row <= size -> {
+        total := (row == 1u64? | true => 0.0 | false => stats/sum/column([a[row,j] * values[j] | j <- 1u64..row])[1u64])
+        value := (rhs[row] - total) / a[row,row]
+        ~next := values
+        next[row] = value
+      } -> :Solve(next, row + 1u64)
+    | * -> :Done(values)
+  :Done(values) => values.
+#Substitution(L<[f64]:40,40>, b<[f64]:40,1>, x<[f64]:40,1>, n<u64>)

@@ -54,6 +54,32 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     NumericCollections,
+    /// Keep proved ordered map-reduction sums in F64 SSA until word publication.
+    TypedMapFolds,
+    /// Emit source-closed affine dots through the shared ordered product core.
+    OrderedMapDots,
+    /// Closed piecewise F64 cells over corner-proved immutable affine streams.
+    AffineMapCells,
+    /// Complete fixed matrix generators containing bounded numeric FSMs.
+    NumericGenerators,
+    /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.
+    NumericMatrixArithmetic,
+    /// Share right loads and loop control across independent ordered product rows.
+    ProductRowPairs,
+    /// Share the same RHS and k control across four independent ordered rows.
+    ProductRowQuartets,
+    /// Fuse source-closed cell expressions into ordered product accumulators.
+    ProductEpilogues,
+    /// Consume a closed left transpose inside the existing product/epilogue loan.
+    TransposeProductEpilogues,
+    /// Fuse nonescaping pointwise producers into original ordered sum terms.
+    ReductionProducers,
+    /// Evaluate nonidentity matrix regions through the original checked scratch DAG.
+    MaskedMatrixMaps,
+    /// Omit identity-complement scratch copies only for selected same-bank publication.
+    SelectiveScratchInitialization,
+    /// Factor source-proved identity complements into intersected axis domains.
+    CompoundMatrixMasks,
     /// Omit capacity guards at a proved frontier with no append operation.
     ZeroAppendFrontiers,
     /// Refine a declined static capacity frontier using only a bounded pure
@@ -66,6 +92,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericOutlining,
     BooleanBranches,
     BitCounts,
+    /// Cancel lossless scalar bitcast round trips before register allocation.
+    InverseBitcasts,
     ScalarSelects,
     UnsignedGuardFacts,
     /// Preserve a convex unsigned range through one common modular addition
@@ -107,6 +135,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericTreeOwnerHandoff,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
+    /// Admit a closed pure multi-cell read expression once within its current loan.
+    CellExpressionPrefixes,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,

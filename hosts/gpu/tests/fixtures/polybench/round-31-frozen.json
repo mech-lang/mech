@@ -1,0 +1,19 @@
+{
+  "schema": "mech.polybench.frozen-candidate.v1",
+  "created_at": "2026-11-27T07:53:51.918978+00:00",
+  "label": "round-31-inverse-bitcasts",
+  "source_commit": "8ee7fe59ab97562f269317b1fe772fb907cfb966",
+  "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+  "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+  "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+  "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+  "runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "machine": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "processor": "arm64"
+  }
+}

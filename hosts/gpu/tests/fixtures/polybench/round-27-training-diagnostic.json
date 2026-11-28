@@ -1,0 +1,79 @@
+{
+  "schema": "mech.polybench.training-diagnostic.v1",
+  "scope": "Optimization-only compile-time source inventory. No performance observation, pointer, value, or resource permission.",
+  "compiler_fingerprint": "017a8a8ca4454a5bf95690f33e8ab5a2ed385b1254cade4458fb3e98a5573929",
+  "before_basis": "Accepted26 plus the diagnostic-field addition; production selection unchanged.",
+  "after_basis": "Current complete fixed-array result selection.",
+  "summary": [
+    {
+      "iteration": 3,
+      "old_cold_exits": 2,
+      "new_cold_exits": 0,
+      "result": {
+        "Array": {
+          "array": 0
+        }
+      },
+      "old_per_traversal_compute": 62128,
+      "new_per_traversal_compute": 62340
+    },
+    {
+      "iteration": 6,
+      "old_cold_exits": 2,
+      "new_cold_exits": 0,
+      "result": {
+        "Array": {
+          "array": 0
+        }
+      },
+      "old_per_traversal_compute": 63480,
+      "new_per_traversal_compute": 63712
+    },
+    {
+      "iteration": 10,
+      "old_cold_exits": 2,
+      "new_cold_exits": 0,
+      "result": {
+        "Array": {
+          "array": 0
+        }
+      },
+      "old_per_traversal_compute": 62128,
+      "new_per_traversal_compute": 62340
+    },
+    {
+      "iteration": 13,
+      "old_cold_exits": 2,
+      "new_cold_exits": 0,
+      "result": {
+        "Array": {
+          "array": 0
+        }
+      },
+      "old_per_traversal_compute": 63480,
+      "new_per_traversal_compute": 63712
+    }
+  ],
+  "archives": {
+    "diagnostic-before.log": {
+      "path": "qualification/round-27-numeric-closure/diagnostic-before.log.gz",
+      "sha256": "347ccdfebf5d02470800db6ece2b2135737fb2b4fb71425c1775813569b0fea0",
+      "compressed_sha256": "0d6861d733a19b35e0f421e1ae9976365b371419a78cdbf1acb3330e4eba8ccd"
+    },
+    "diagnostic-after.log": {
+      "path": "qualification/round-27-numeric-closure/diagnostic-after.log.gz",
+      "sha256": "152eb6515e4591050eb98c375a00f684ba3bc981aba40bd502b9fd882ae22086",
+      "compressed_sha256": "c4dcd9ca69e044b51227a712225d3d8e7ed1a805bbc61325133d6070844637dd"
+    },
+    "deriche-plan-before-closure.json": {
+      "path": "qualification/round-27-numeric-closure/deriche-plan-before-closure.json.gz",
+      "sha256": "02a184912e67d85e639fbbd5b7d5537afacca6fd11abbc74ac2e99d91394adf0",
+      "compressed_sha256": "067b0946cd38eb7b8a692f652d8bc2ab13d38b77d7b34d7998bf8ef349b5b0ce"
+    },
+    "deriche-plan.json": {
+      "path": "qualification/round-27-numeric-closure/deriche-plan.json.gz",
+      "sha256": "f068e5949545d9efde9badb7f620335c4ca603fcfa4270b132b322e293bc609b",
+      "compressed_sha256": "53ea50957f8902d0f442095041d688fa47074109741e27c37c8759b75dfd1094"
+    }
+  }
+}

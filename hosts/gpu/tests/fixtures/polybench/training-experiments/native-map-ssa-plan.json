@@ -1,0 +1,48 @@
+{
+  "schema": "mech.polybench.native-map-ssa-plan.v1",
+  "created_at": "2026-11-27T19:05:26.589319+00:00",
+  "source_parent": "d6d958b930b50d9d411ad8fe68b35ac82cf52964",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "accepted_driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "scope": "Optimization15 only. No holdout source diagnosis, profiling or selection. Fixed all30 Mech/C source, F64 MINI CPU inputs, finite tolerances, limits, timing and cache boundaries remain unchanged.",
+  "profiling_basis": {
+    "receipt": "training-experiments/native-map-memory-profile.json",
+    "receipt_sha256": "b7b00cffd3009f1ca1b3bba3d23f72ff509a5f2922b34c532d39ef17490aa5d1",
+    "target": "gramschmidt",
+    "mech_over_c": 54.480156773281955,
+    "execution_samples": 225,
+    "jit_samples": 174,
+    "main_map_samples": 110,
+    "caution": "Sampling is coarse. Static memory instructions do not establish dynamic cost or a speedup.",
+    "native_function": "mech_canonical_program_entry_v1_numeric_5",
+    "accepted31_static_emission": {
+      "instructions": 4286,
+      "stack_memory_instructions": 1146,
+      "max_stack_bytes": 22944,
+      "disassembly_sha256": "7029c3df9e17276751d5da557a8611857be870d6a27de8ee381adb16d8a23a80",
+      "object_sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d"
+    }
+  },
+  "implementation": "Compose the maintained checked numeric map DAG with native SSA values. Keep the public host/runtime Frame adapter and its complete validation. Native-to-native phase and nested-fold calls supply the same current views, scalar captures, range geometry and private scratch directly; return the ordered fold as SSA. Remove only transient adapter storage, never source operations or resource charges.",
+  "invariants": [
+    "Cranelift remains the sole native code generator; no native C/Rust implementation of Mech algorithms.",
+    "Reuse one shared scalar/DAG map emitter for runtime loans and native phase composition. Maintain direct Bool/U64/I64/F64 emission.",
+    "Keep exact input/output widths, current shape checks, pointer overflow/capacity, unsigned range and element index validation, checked scalar errors, and source CFG/order.",
+    "Whole-map replacements still finish in the existing private scratch bank before the same non-failing scalar copy to the exclusive result bank. No ownership, alias or publication change.",
+    "Maintain complete original visits/work/comparison bills, finite and physical resource admission, ordinary replay, atomic publication, cleanup and retry. No new ABI fields or serialized runtime carrier types."
+  ],
+  "prospective_emission_gate": {
+    "target": "mech_canonical_program_entry_v1_numeric_5",
+    "must_change_profiled_function": true,
+    "max_stack_bytes_strictly_below": 22944,
+    "native_instructions_strictly_below": 4286,
+    "stack_memory_instructions_strictly_below": 1146,
+    "no_new_fma_on_optimization15": true,
+    "no_Object_execution_or_timing": true
+  },
+  "qualification": "Focused direct Cranelift semantics and bounds tests, existing numeric/scalar/compression/resource/alias regressions, all30 original/decoded/restored C-liveout cases, both feature configurations; no source changes while a build/test is live.",
+  "training_selection": "Exactly one v2 prospective fresh-process optimization15 probe per exact qualified fingerprint: seven observations per actor/case, accepted31/candidate interleaved with alternating pair/case order, all210 retained. Select only raw geomean speedup >1, equal visits and no reduced source work/comparison bills; no retries or exclusions.",
+  "formal_acceptance": "Commit/freeze the exact clean source and driver before both formal sets. Keep all900 observations and29482 finite liveouts. Promote only if BOTH primary geomean median Mech/C kernel scores strictly improve on accepted31 (11.43635797708715 /39.31569548924827). Otherwise restore exact accepted31.",
+  "performance_observations": 0
+}

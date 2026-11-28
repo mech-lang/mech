@@ -1,0 +1,82 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T20:43:22.604815+00:00",
+  "name": "counted-generator-children",
+  "source_parent": "c38c4b1dc561290409509b3f3c3ba9fc604f239f",
+  "foundation_commit": "326e2a66ab66f4aff41fb19a95c64d9a240a2555",
+  "foundation_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 63,
+  "versions": {
+    "ir": 441,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_generators.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/fixed_state.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/counted_state.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_counted.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "user_direction": "Latest attached PolyBench brief prioritizes exact counted enclosing-generator child cycles while preserving the round62 Seidel1.62x foundation, then allocation-free virtual intermediate shape checks. Ignore only the earlier unrelated generated-library brief.",
+  "profiling_basis": "R84 bound same-PID O-only profiles plus R86 observed generator preparation and successful completion. Deriche main inline FSM children are the running path, with traversal limits/state dispatch/bounds surrounding direct ordered F64 arithmetic. R87 local repeated-bound candidate passed23 focused checks but was preserved unmeasured because it leaves that larger structure.",
+  "transformation": "Derive an optional exact recurring-cycle proof from the actual selected child CFG, source frame constructors, fixed seed, monotone fixed-stride induction guard and interval evaluation. Require one deterministic positive active cycle and a deterministic terminal path, no unproved control or memory access; preserve exact scalar recurrence and each source action. Emit one counted native loop over that complete active path, with constant known branches resolved, interval-proved U64 guards and linear bounds omitted, and exact source traversal totals accumulated only on completed child success. Original private loan/replay/source-fee/publication machinery remains. Unsupported children retain original lowering. No names, fixed benchmark extents, data specialization, new runtime helper or allocation.",
+  "invariants": [
+    "Unchanged30 idiomatic source ports,inputs,C flags/binaries,tolerance/caps,split,timers/cache and objective. O15 only selects/tunes/promotes; H report-only. No benchmark names,fixed MINI extents or data assumptions in compiler rules.",
+    "Cranelift sole Mech generator. Reuse current source facts, selected generator inventory, admitted current private banks, canonical typed layout, shared scalar and linear-address emitters, original loan/fee/replay/publication machinery. No runtime allocation/cache/helper/frame/ABI/mode/serialized authority or weaker accounting. Efficient scalar/compression code remains.",
+    "Maximum-trip metadata alone is insufficient. Exact seed/tag/stride/interval/path and terminal counts must be constructed from current source/frame facts and the admitted fixed-bank generator. Source header/tag/traversal control is replaced only for complete proved children. Validate exact geometry/pointers/epoch/owners as before; no cached authority or prior-visit fact.",
+    "An interval abstract walk follows actual actions and source edges for the active cycle and complete terminal path. Unknown branch, unsupported action, nonpositive/overflowing trip computation, invalid address, unproved integer update, changed recurring tag/counter, cycle or representation bound declines the proof. No speculative current resource permissions from whole-graph dominance.",
+    "Source strict IEEE F64 tree/operation order/rounding stays; no extra finite guard,FMA,reassociation or SIMD of dependent outputs. Current generator private writes,whole-source miss replay, exact original first errors/payloads, old external output atomicity, finite cap refusal, no-op/alias and cleanup/retry remain.",
+    "Retain exact round62 point-prefix,host matrix-preflight and original dot source. Do not carry failed R85 single-read prefix changes. Seidel native functions/code/stack must exactly match1.62 foundation. All O counters exactly match accepted59; no visit/source bill reduction or padding.",
+    "No Rust edits during any owned build/test/profile/timing; preserve failed scripts/logs/snapshots and every observation. One210 probe per fully qualified materially changed FP; one900 formal63 if selected. No retries/exclusions."
+  ],
+  "qualification": "Positive forward/reverse and stride/dimension variations; negative dynamic/conditional/overflow/out-of-bounds/progress/tag cases. Original/decoded/restored ablation of only counted lowering, strict F64 bits including nonfinite/subnormal/signedzero, exact first errors/caps/retry/atomicity/aliases/source reports and traversal tallies, direct kernel malformed frame/epoch/disjointness. Full both-feature/all30/restored and17002 finite O outputs/counters. Active main loses repeated traversal/tag checks; Seidel exactR62 native functions/code/stack retained. One210 O probe then one frozen900 formal63 if selected.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts; zero timing samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push exact clean source/driver, one frozen900-observation formal63/29482 finite C values. Promote iff O15 Mech/C<7.852513248471486; H report-only. Preserve all sources/attempts/observations; accepted59 until strict gate passes.",
+  "performance_observations": 0,
+  "static_gate": "Genuine active Deriche main emitted differently with source-derived exact counted children and identified per-child traversal/tag/control sequences removed; report code/stack and preserved original helper/Seidel functions. No performance prediction from static totals.",
+  "scope_correction": {
+    "created_at": "2026-11-28T19:08:52.004892+00:00",
+    "basis": "Verified SchemaTable::clone_allocation_bound_bytes returns an already cached bound. The duplicate resource methods read that cached scalar; they do not walk schemas.",
+    "work_removed": "The second pure checked-arithmetic/template-classification pass and duplicate geometry reconstruction disappear. The exact final output ShapeInstance also moves into the loan instead of being constructed again. No claim of schema-traversal removal or speedup forecast.",
+    "source": "src/core/src/schema/table.rs:1046 and src/engine/src/resident/general/native_collection_numeric_binary.rs:297"
+  },
+  "reporting": "Together report Seidel raw accepted/candidate improvement, O15 raw accepted/candidate improvement and O15 Mech/C parity at formal measurement. H independently report-only. Existing decisions/gates unchanged; no retrospective retries or promotion."
+}

@@ -1,9 +1,15 @@
 mod aggregate_access;
+mod borrowed_numeric;
+use borrowed_numeric::BorrowedNumericOperand;
 mod compact_range;
 mod compact_string_access;
+mod direct_float_binary;
 pub mod linkage_factories;
 mod nested_assignment;
 mod packed_indexed_assign;
+mod packed_snapshot_output;
+#[cfg(test)]
+mod packed_snapshot_output_tests;
 #[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
 pub(in crate::resident) use packed_indexed_assign::canonical_index as canonical_matrix_index;
 mod promoted_assignment;
@@ -9646,7 +9652,10 @@ fn indexed_assign_snapshot(
     )?
     .admit()?
     .into_plan();
-    if packed {
+    if packed
+        || (kernel.retained_state::<SemanticArithmetic>().is_none()
+            && packed_indexed_assign::supported(current_schema.body()))
+    {
         let next = packed_indexed_assign::construct(
             kernel,
             current,
@@ -10473,7 +10482,13 @@ fn indexed_assign_matrix_selection(
                 source_schema.body(),
                 source.data(),
                 output_len,
-                None,
+                // Both selectors and the one source cell have already been
+                // validated. A single fixed-width replacement cannot alter
+                // any footprint. Reuse the exact prepaid scan with its normal
+                // ordered fallback when a finite ledger cannot cover it.
+                (write_count == 1 && source_len == 1 && plan.arithmetic.is_none())
+                    .then(|| u64::try_from(output_len).ok())
+                    .flatten(),
                 |destination, meter| {
                     matrix_selection_last_source(plan, inputs, destination, true, meter)
                 },
@@ -10769,6 +10784,30 @@ fn indexed_assign_matrix_selection(
         }
         (ResidentValueRef::Snapshot([Some(source)]), ResidentValueMut::Snapshot([target])) => {
             let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+            if plan.arithmetic.is_none()
+                && packed_indexed_assign::supported(
+                    current
+                        .validate_against(schemas)
+                        .map_err(|_| ResidentKernelError::InvalidOutput)?
+                        .body(),
+                )
+            {
+                // Keep the complete preceding draft/copy/publication envelope.
+                // Only physical construction changes; aliases stay immutable.
+                let next = packed_indexed_assign::construct_rectangle(
+                    kernel,
+                    current,
+                    source,
+                    &selected_rows,
+                    &selected_columns,
+                    plan,
+                )?;
+                let changed = !current
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+                *target = Some(next);
+                return Ok(changed);
+            }
             let ValueDataDraft::Matrix(mut next) = current
                 .canonical_data_draft()
                 .map_err(|_| ResidentKernelError::InvalidOutput)?
@@ -11625,6 +11664,23 @@ fn unary_float_snapshot(
         output_len,
         0,
     )?;
+    let operand =
+        BorrowedNumericOperand::snapshot(input, comparison_element_body(input_schema.body()));
+    if let Some(next) =
+        packed_snapshot_output::try_construct(kernel, &output_shape, output_len, |index| {
+            match operand.at(index)? {
+                ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+                    operation_f32(value.to_f32()),
+                ))),
+                ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+                    operation_f64(value.to_f64()),
+                ))),
+                _ => Err(ResidentKernelError::InvalidInput),
+            }
+        })
+    {
+        return write_snapshot_value(kernel, output, next?);
+    }
     let values = snapshot_numeric_elements(input)?
         .into_iter()
         .map(|value| match value {
@@ -13342,6 +13398,16 @@ fn transpose_dense(
     }
 }
 
+pub(in crate::resident) fn native_transpose_geometry(
+    input: [usize; 2],
+) -> Result<[usize; 3], ResidentKernelError> {
+    let [rows, columns] = input;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok([columns, rows, count])
+}
+
 fn transpose_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13368,10 +13434,8 @@ fn transpose_snapshot(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let (rows, columns) = snapshot_matrix_dimensions(input, input_schema.body())?;
-    let count = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_shape = resolved_snapshot_output_shape(kernel, columns, rows)?;
+    let [output_rows, output_columns, count] = native_transpose_geometry([rows, columns])?;
+    let output_shape = resolved_snapshot_output_shape(kernel, output_rows, output_columns)?;
     let finalization_work =
         snapshot_data_finalization_work(&mut footprint_meter, input_schema.body(), input.data())?;
     let prior_footprint = match target.as_ref() {
@@ -13434,6 +13498,21 @@ fn transpose_snapshot(
     )
     .admit()?
     .into_plan();
+    let operand =
+        BorrowedNumericOperand::snapshot(input, comparison_element_body(input_schema.body()));
+    if let Some(next) =
+        packed_snapshot_output::try_construct(kernel, &output_shape, count, |index| {
+            let output_row = index / rows;
+            let output_column = index % rows;
+            operand.at(output_column * columns + output_row)
+        })
+    {
+        return write_snapshot_value(
+            kernel,
+            ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+            next?,
+        );
+    }
     let ValueDataDraft::Matrix(elements) = input
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidInput)?
@@ -13515,6 +13594,22 @@ fn sum_rows(
     }))
 }
 
+pub(in crate::resident) fn native_sum_geometry(
+    input: [usize; 2],
+    axis: usize,
+) -> Result<[usize; 4], ResidentKernelError> {
+    let [rows, columns] = input;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (output_rows, output_columns, inner) = match axis {
+        0 => (1, columns, rows),
+        1 => (rows, 1, columns),
+        _ => return Err(ResidentKernelError::InvalidShape),
+    };
+    Ok([output_rows, output_columns, count, inner])
+}
+
 fn sum_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13546,14 +13641,14 @@ fn sum_snapshot(
         return Err(ResidentKernelError::InvalidInput);
     };
     let (rows, columns) = snapshot_matrix_dimensions(input, schema.body())?;
-    let input_count = rows
-        .checked_mul(columns)
+    let [output_rows, output_columns, input_count, _] =
+        native_sum_geometry([rows, columns], usize::from(column))?;
+    let output_count = output_rows
+        .checked_mul(output_columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_count = if column { rows } else { columns };
     if snapshot_numeric_element_count(input)? != input_count {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let (output_rows, output_columns) = if column { (rows, 1) } else { (1, columns) };
     let output_shape = snapshot_output
         .then(|| resolved_snapshot_output_shape(kernel, output_rows, output_columns))
         .transpose()?;
@@ -13616,6 +13711,23 @@ fn sum_snapshot(
         )
         .admit()?
         .into_plan();
+    }
+    if let Some(shape) = &output_shape {
+        let operand = BorrowedNumericOperand::snapshot(input, element);
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, shape, output_count, |at| {
+                if column {
+                    numeric_sum(
+                        element,
+                        (0..columns).map(|column| operand.at(at * columns + column)),
+                    )
+                } else {
+                    numeric_sum(element, (0..rows).map(|row| operand.at(row * columns + at)))
+                }
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
     }
     let values = snapshot_numeric_elements(input)?;
     let mut sums = Vec::with_capacity(output_count);
@@ -18259,6 +18371,17 @@ fn snapshot_access_node_phases(
     })
 }
 
+// One typed product stream for dense executor buffers and canonical packed
+// F64 matrices. Each caller retains its original reduction identity/order and
+// physical layout; no generic value is constructed for an inner-loop term.
+fn f64_product_terms(
+    inner: usize,
+    mut left: impl FnMut(usize) -> f64,
+    mut right: impl FnMut(usize) -> f64,
+) -> impl Iterator<Item = f64> {
+    (0..inner).map(move |offset| left(offset) * right(offset))
+}
+
 fn matrix_multiply(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -18305,9 +18428,12 @@ fn matrix_multiply(
     Ok(replace_f64(output, |target| {
         let row = target % rows;
         let column = target / rows;
-        (0..inner)
-            .map(|offset| lhs[row + offset * rows] * rhs[offset + column * inner])
-            .sum()
+        f64_product_terms(
+            inner,
+            |offset| lhs[row + offset * rows],
+            |offset| rhs[offset + column * inner],
+        )
+        .sum()
     }))
 }
 
@@ -18510,11 +18636,10 @@ fn matrix_multiply_snapshot(
     let rhs_schema = rhs
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
-    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
-    if inner != rhs_rows {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let [rows, columns, inner] = native_product_geometry(
+        snapshot_matrix_dimensions(lhs, lhs_schema.body())?.into(),
+        snapshot_matrix_dimensions(rhs, rhs_schema.body())?.into(),
+    )?;
     let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
     let lhs_len = rows
         .checked_mul(inner)
@@ -18547,6 +18672,47 @@ fn matrix_multiply_snapshot(
         output_len,
         compute_work.saturating_sub(output_len),
     )?;
+    if let (SequenceView::F64(left), SequenceView::F64(right)) =
+        (lhs_matrix.elements(), rhs_matrix.elements())
+    {
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, &output_shape, output_len, |index| {
+                let row = index / columns;
+                let column = index % columns;
+                let sum = f64_product_terms(
+                    inner,
+                    |offset| left[row * inner + offset].to_f64(),
+                    |offset| right[offset * columns + column].to_f64(),
+                )
+                .fold(0.0, |sum, term| sum + term);
+                Ok(ValueDataDraft::F64(F64Bits::from_f64(sum)))
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
+        // Reuse the dense F64 product stream while borrowing the canonical
+        // row-major banks. Keep the complete existing conservative admission
+        // and atomic publisher; only per-term draft cloning/dispatch vanishes.
+        let mut result = Vec::with_capacity(output_len);
+        for row in 0..rows {
+            for column in 0..columns {
+                let sum = f64_product_terms(
+                    inner,
+                    |offset| left[row * inner + offset].to_f64(),
+                    |offset| right[offset * columns + column].to_f64(),
+                )
+                .fold(0.0, |sum, term| sum + term);
+                result.push(ValueDataDraft::F64(F64Bits::from_f64(sum)));
+            }
+        }
+        return write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(result.into_boxed_slice()),
+            Some(0),
+        );
+    }
     let ValueDataDraft::Matrix(lhs) = lhs
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidInput)?
@@ -18642,6 +18808,36 @@ fn matrix_dot_f64(
     let changed = target.to_bits() != next.to_bits();
     *target = next;
     Ok(changed)
+}
+
+/// Current product geometry shared by the ordinary packed kernel and native
+/// matrix emitter. No arithmetic, allocation, source ownership or permission.
+pub(in crate::resident) fn native_product_geometry(
+    left: [usize; 2],
+    right: [usize; 2],
+) -> Result<[usize; 3], ResidentKernelError> {
+    let [rows, inner] = left;
+    let [rhs_rows, columns] = right;
+    if inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok([rows, columns, inner])
+}
+
+/// Current row-major broadcast geometry shared with the native matrix emitter.
+/// This computes no value and grants no execution or allocation permission.
+#[cfg(feature = "native-artifact")]
+pub(in crate::resident) fn native_binary_geometry(
+    left: (usize, usize),
+    right: (usize, usize),
+) -> Result<[u64; 4], ResidentKernelError> {
+    let (rows, columns) = snapshot_broadcast_dimensions(left, right)?;
+    let output = resident_shape_for_dimensions(rows, columns)?;
+    let mode = |input: (usize, usize)| {
+        binary_broadcast_mode(resident_shape_for_dimensions(input.0, input.1)?, output)
+            .ok_or(ResidentKernelError::InvalidShape)
+    };
+    Ok([rows as u64, columns as u64, mode(left)?, mode(right)?])
 }
 
 fn snapshot_binary_broadcast_index(mode: u64, row: usize, column: usize, columns: usize) -> usize {
@@ -19147,6 +19343,22 @@ fn snapshot_numeric_binary(
                 data,
                 Some(0),
             );
+        }
+    }
+    if let Some(shape) = &output_shape {
+        if !rational_power
+            && let Some(next) = direct_float_binary::try_construct(
+                kernel, shape, rows, columns, arithmetic, &left, left_mode, &right, right_mode,
+            )
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, shape, output_len, |index| {
+                apply(index / columns, index % columns)
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
         }
     }
     let mut result = Vec::with_capacity(output_len);
@@ -20767,91 +20979,6 @@ pub(super) fn numeric_float_binary_snapshot(
             F64Bits::from_f64(operation.apply_snapshot_f64(left.to_f64(), right.to_f64())),
         )),
         _ => Err(ResidentKernelError::InvalidInput),
-    }
-}
-
-/// One validated operand, borrowed for the complete synchronous arithmetic
-/// call. Canonical matrices are row-major; dense F64 transport is column-major.
-/// Element reads use the core conversion rather than another numeric relation.
-enum BorrowedNumericOperand<'a> {
-    Snapshot {
-        value: &'a mech_core::Value,
-        element: &'a SchemaBody,
-    },
-    DenseF64 {
-        values: &'a [f64],
-        rows: usize,
-        columns: usize,
-    },
-}
-
-impl<'a> BorrowedNumericOperand<'a> {
-    fn new(
-        value: Option<&'a mech_core::Value>,
-        schema: Option<&'a mech_core::Schema>,
-        input: ResidentValueRef<'a>,
-        (rows, columns): (usize, usize),
-    ) -> Result<Self, ResidentKernelError> {
-        if let (Some(value), Some(schema)) = (value, schema) {
-            return Ok(Self::Snapshot {
-                value,
-                element: comparison_element_body(schema.body()),
-            });
-        }
-        let ResidentValueRef::F64(values) = input else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
-        if values.len()
-            != rows
-                .checked_mul(columns)
-                .ok_or(ResidentKernelError::InvalidShape)?
-        {
-            return Err(ResidentKernelError::InvalidShape);
-        }
-        Ok(Self::DenseF64 {
-            values,
-            rows,
-            columns,
-        })
-    }
-
-    fn at(&self, index: usize) -> Result<ValueDataDraft, ResidentKernelError> {
-        match self {
-            Self::Snapshot { value, element } => {
-                if let ValueData::Matrix(matrix) = value.data() {
-                    let data = matrix
-                        .elements()
-                        .value_at(index)
-                        .ok_or(ResidentKernelError::InvalidShape)?;
-                    canonical_snapshot_data_draft(element, &data)
-                        .map_err(|_| ResidentKernelError::InvalidInput)
-                } else if index == 0 {
-                    canonical_snapshot_data_draft(element, value.data())
-                        .map_err(|_| ResidentKernelError::InvalidInput)
-                } else {
-                    Err(ResidentKernelError::InvalidShape)
-                }
-            }
-            Self::DenseF64 {
-                values,
-                rows,
-                columns,
-            } => {
-                if *columns == 0 || index >= values.len() {
-                    return Err(ResidentKernelError::InvalidShape);
-                }
-                let row = index / columns;
-                let column = index % columns;
-                let offset = column
-                    .checked_mul(*rows)
-                    .and_then(|offset| offset.checked_add(row))
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                let value = values
-                    .get(offset)
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                Ok(ValueDataDraft::F64(F64Bits::from_f64(*value)))
-            }
-        }
     }
 }
 

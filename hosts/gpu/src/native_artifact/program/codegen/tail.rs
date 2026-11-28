@@ -98,10 +98,16 @@ pub(in crate::native_artifact) fn numeric_exit_words(
         }
     }
     if let Some(phase) = &proof.phase {
-        words.extend(phase.loops.iter().map(|debit| debit.counter));
+        words.extend(phase.counters());
     }
     for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
         words.push(proof.view(array) + 1);
+    }
+    // First-map ownership changes these words in generated code. The runtime
+    // entry still holds an uncommitted prototype until this exact transport.
+    for bank in &proof.map_banks {
+        words.push(proof.view(bank.array));
+        words.push(proof.private_flag(bank.array));
     }
     Ok(words)
 }
@@ -223,7 +229,18 @@ pub(in crate::native_artifact) fn leave_at(
                     .shadow
                     .ok_or_else(|| backend("numeric export lacks scratch"))?;
                 let ready = b.ins().iconst(types::I64, 1);
-                for binding in proof.scalar_inputs.iter().chain(&proof.scalar_outputs) {
+                for binding in proof
+                    .scalar_inputs
+                    .iter()
+                    .chain(&proof.scalar_outputs)
+                    .filter(|binding| {
+                        !proof
+                            .tagged
+                            .as_ref()
+                            .and_then(|v| v.prefix.as_ref())
+                            .is_some_and(|p| p.tag(binding.value).is_some())
+                    })
+                {
                     let value = load(options, b, locals, region, shadow + binding.word)?;
                     let at = binding
                         .physical
@@ -448,7 +465,71 @@ fn prepare_region(
         store(options, b, locals, region, destination, word)?;
     }
     if let Some(word) = region.cold_resume() {
-        store(options, b, locals, region, word, zero)?;
+        let status = if region
+            .numeric
+            .as_ref()
+            .and_then(|p| p.tagged.as_ref())
+            .is_some_and(|v| site == region.tail.header() as usize || v.prefix.is_some())
+        {
+            // A fixed variant may rearm after a different tag. A complete
+            // prefix remains refused across every tag until fresh Tail entry.
+            // Neither route repeatedly previews the same tight account.
+            b.ins().iconst(types::I64, 2)
+        } else {
+            zero
+        };
+        store(options, b, locals, region, word, status)?;
+    }
+    Ok(())
+}
+
+/// An ordinary source constructor can enter or leave the guarded hot run.
+/// This only arms a fresh header preview; it grants neither views nor fuel.
+pub(in crate::native_artifact) fn tagged_transition(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    layout: &Layout,
+    code: crate::native_artifact::codegen::control::plan::CodePlan<'_>,
+    site: usize,
+) -> Result<(), NativeCompileError> {
+    let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = code else {
+        return Ok(());
+    };
+    let Some(mech_engine::native_artifact::NativeBufferFrameOperation::EnumPack {
+        output,
+        ordinal,
+        ..
+    }) = program
+        .metadata()
+        .buffer_frames
+        .action(site)
+        .map(|a| a.operation())
+    else {
+        return Ok(());
+    };
+    for region in &layout.regions {
+        let Some(variant) = region.numeric.as_ref().and_then(|p| p.tagged.as_ref()) else {
+            continue;
+        };
+        if code.blocks()[site].iteration() != Some(region.iteration)
+            || program.plan().values()[output.get() as usize].schema()
+                != program.plan().values()[variant.carrier as usize].schema()
+        {
+            continue;
+        }
+        let word = region
+            .cold_resume()
+            .ok_or_else(|| backend("tagged phase lacks reentry word"))?;
+        let pending = if variant.prefix.is_some() || *ordinal == variant.ordinal {
+            let previous = load(options, b, locals, region, word)?;
+            let refused = b.ins().icmp_imm(IntCC::Equal, previous, 2);
+            let one = b.ins().iconst(types::I64, 1);
+            b.ins().select(refused, previous, one)
+        } else {
+            b.ins().iconst(types::I64, 0)
+        };
+        store(options, b, locals, region, word, pending)?;
     }
     Ok(())
 }
@@ -469,6 +550,11 @@ pub(in crate::native_artifact) fn resume_cold(
         return Ok(());
     };
     let pending = load(options, b, locals, region, word)?;
+    let pending = if region.numeric.as_ref().is_some_and(|p| p.tagged.is_some()) {
+        b.ins().icmp_imm(IntCC::Equal, pending, 1)
+    } else {
+        pending
+    };
     let resume = b.create_block();
     let ready = b.create_block();
     b.set_cold_block(resume);

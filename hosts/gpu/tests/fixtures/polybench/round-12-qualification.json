@@ -1,0 +1,494 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round12-map-transposes",
+  "compiler_commit": "b7a3610472f83f4ccda82d193235f71bf167bb97",
+  "compiler_fingerprint": "2eda3bd53473435bbd40f13dc8abd4547eaf55ff6e351aeead77ed3711f88efb",
+  "driver_sha256": "2d51ba37ab564b1863e60f808692ffd9257bcdf80bc0bd49da3481fecbf60846",
+  "frozen_candidate_sha256": "ecde50f73cb354bdd6f67aaeac86ebf0b26d3fc3f730630383f1f94b52623798",
+  "native_typed_ir_version": 371,
+  "native_work_policy_version": 140,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "resident numeric, geometry, finite capacity and prefix projection",
+      "passed_by_target": [
+        195
+      ],
+      "log_sha256": "dfb6444be4090619f4c0b442ec1d97338db559095ca27ce729b56250b9dfa51f"
+    },
+    {
+      "suite": "native numeric/phase, six direct transpose-publication tests, actual numerical source selection and exact Huffman bills",
+      "passed_by_target": [
+        334
+      ],
+      "log_sha256": "4e0d08b23e9382b71a5c85afbae5aa0e67f2986cf4f59d50a124814c04fcd7b0"
+    },
+    {
+      "suite": "matrix and all thirty PolyBench original/decoded/Object qualifications",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "17fb2b703c9502e757cd0b984e8054e1875f994f4adb62367a2ddd61b895ebb7"
+    },
+    {
+      "suite": "selected scalar, buffer, numeric and compression Program regressions",
+      "passed_by_target": [
+        102
+      ],
+      "log_sha256": "cbab7c5a15d72d464fbfdb88a9664115eafffa13d437b64bcc46d8167b5c1cda"
+    },
+    {
+      "suite": "numeric collection helper tags have distinct round-trip codes and reserved output space",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "0ef550967a29f3df354e8d8e36ac0e370af011af541b84d8b046890386e9c1b3"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 214.24126775818524,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.144621125
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 12.36736246688459,
+      "median_speedup": 1.2200126857867761,
+      "minimum_speedup": 1.00262123197903,
+      "maximum_speedup": 19680.17934475668,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 64.35912213077829,
+      "geomean_mech_over_c_fresh": 38.917585879030845,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 875.4211726597991,
+      "sum_mech_median_seconds": 0.011976041,
+      "geomean_speedup_from_contemporaneous_baseline": 12.089933754826761,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 0.9937043006057525
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 9.68944579488906,
+      "median_speedup": 4.857013559247806,
+      "minimum_speedup": 1.0296106357951036,
+      "maximum_speedup": 152.36996782713084,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 214.24126775818524,
+      "geomean_mech_over_c_fresh": 123.27737262553393,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4275.988556329419,
+      "sum_mech_median_seconds": 0.144621125,
+      "geomean_speedup_from_contemporaneous_baseline": 9.655118350152142,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.014098690835851
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 10.94682091972933,
+      "median_speedup": 4.477212422954289,
+      "minimum_speedup": 1.00262123197903,
+      "maximum_speedup": 19680.17934475668,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 117.42393247162954,
+      "geomean_mech_over_c_fresh": 69.26512640640674,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4275.988556329419,
+      "sum_mech_median_seconds": 0.156597166,
+      "geomean_speedup_from_contemporaneous_baseline": 10.804153888590797,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 0.9937043006057525
+    }
+  },
+  "cases": {
+    "2mm": {
+      "expected_live_outs": 384,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "c_binary_sha256": "2b285d8fcd35c9330e9f373a4379a8a988613d8d96d721e8c07ee9d0d16eac8a"
+    },
+    "3mm": {
+      "expected_live_outs": 352,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.220446049250313e-16,
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "c_binary_sha256": "e865519b0804f54ee247884c748bd611c6735b71ca4f727d4c230c5aa94ff59d"
+    },
+    "atax": {
+      "expected_live_outs": 42,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "c_binary_sha256": "74b1d44b54b2ec8e31c7289c633d7b2b8db604fd96d9ce451a391a590f705092"
+    },
+    "bicg": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "c_binary_sha256": "bd4b0260113dae3f89ec5f3f9cd184afbb52116df96478f9f67f5feb25dbb8a0"
+    },
+    "cholesky": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.2751579226442118e-15,
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "c_binary_sha256": "6710d27fc9e410fa389d06eabf53552a816cbd4c8db3e1ec36958c165039d75f"
+    },
+    "correlation": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "c_binary_sha256": "181e29a47cef3212ec2e038cf8a0ad90c65d0d9701aeaecaefc8baad608ca72b"
+    },
+    "covariance": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "c_binary_sha256": "1cd6f6f031e11a5611e35f6e8449c98c33c029514b2c653f9f57eb9e9cd5055a"
+    },
+    "deriche": {
+      "expected_live_outs": 4096,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 4.85722573273506e-17,
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "c_binary_sha256": "a4440580179c951c2385f5e0218b353d725d3063e8559ca6dc75d7e0f020955a"
+    },
+    "doitgen": {
+      "expected_live_outs": 960,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "c_binary_sha256": "d9dde06c4d544037afe02330ceb98abf9bacaca3c5513150a4e876494572ba2e"
+    },
+    "durbin": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "c_binary_sha256": "185aa486affc8db90972752286d6cd693417b3a83cbde0332fae1b4e0155e748"
+    },
+    "gemm": {
+      "expected_live_outs": 500,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "c_binary_sha256": "bf857a20260a91b2be987f0966fa9c5709c11db21a281ea9ad536eb0aadb7019"
+    },
+    "gramschmidt": {
+      "expected_live_outs": 2100,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "c_binary_sha256": "4491d8eb03edf17e230223f76630af4f9dbdf641dfd1524e0559d6ef589d3b53"
+    },
+    "mvt": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "c_binary_sha256": "bf57d186146c4930f000c722d693f1d516855510e68a67dceee57e170b4656f8"
+    },
+    "nussinov": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "c_binary_sha256": "e19004cdcabef6646bf08f7ef74e67132b36824b393c673224cbe77c445a0dd6"
+    },
+    "seidel-2d": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "c_binary_sha256": "b3a0bc6646ebb2a6d75b45334f4349bee5cb385fccaaed979336eebc381419b4"
+    },
+    "adi": {
+      "expected_live_outs": 400,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "4eef6deb3462a70ad1a4f04bec4ed4420670091b3f4846e978b1af19c950e621",
+      "c_binary_sha256": "2cb99d1df6fc1a5875490651e63fc5eec8ff33b7a3acc3d6ebd90bdcd31dd004"
+    },
+    "fdtd-2d": {
+      "expected_live_outs": 1800,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.2434497875801753e-14,
+      "source_sha256": "8e46cb2addaf56d522e75b690735ef39f066e7768b06322100697a4e0da26491",
+      "c_binary_sha256": "3c55e67a42a3939c265dfa17ae9a1e9a0a2ddc9758d840b8ef335046cb528151"
+    },
+    "floyd-warshall": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "d46ae4cfd3e5bb6d6afdb6967dc7be317e3d71443b1cfe7b0be5a2950b376ec6",
+      "c_binary_sha256": "485f53dc282a4022595c61993d3de18a276a6f4b8ec319072cb94652191f8a20"
+    },
+    "gemver": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.3642420526593924e-12,
+      "source_sha256": "cadbb064acc0b2ba4399e64c12d518b5968e8ab010ce11bd1b48cfed346cebec",
+      "c_binary_sha256": "37ff7d7b8f8e5b20a469e7f80483b6c7296f80a2e4e59e53a01868a598c582e7"
+    },
+    "gesummv": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "c_binary_sha256": "e151f433035736b57a34cda2ce28b7333d71aeb2cafaf282da31b27792dd4db3"
+    },
+    "heat-3d": {
+      "expected_live_outs": 1000,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "5c1df9f38726634ed9b0407320c7c84cbd212e54805996c36ec0a969ea2553e8",
+      "c_binary_sha256": "b5a4fe7de657ccfd79a986db121e27094261a4a243beb35f9ac6f7c58ce60821"
+    },
+    "jacobi-1d": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.3306690738754696e-16,
+      "source_sha256": "8323ac8a0b980045166aab68fda04fa74d3f800a366871bfc3f8d9e2423d71a9",
+      "c_binary_sha256": "37faea5e754f4d6cd39c60ab914df36c9ba00f46425084aa8ee4fa2c50192d63"
+    },
+    "jacobi-2d": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "07d9a1d89939fd28f7fb945b798de1b382108acdaeac368d121acb1a338050f2",
+      "c_binary_sha256": "9a7e086656a25f37b77a9b157f1a6a6f246395b7500d1cb208b0dec597c93ec7"
+    },
+    "lu": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.9968028886505635e-15,
+      "source_sha256": "7fb265c2d68670d34a1e6ff86f6e2440ae114b20768a19c78016e37e90a310d8",
+      "c_binary_sha256": "6ff3dfb2337b60de20055820e3d8fd332d8fda64a56e3fc18d3aa32880fa33d7"
+    },
+    "ludcmp": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 8.881784197001252e-16,
+      "source_sha256": "a652f9599cb42263da892b83aa1fbe9662e1b20df6cadfb058274a0abc0cfcf5",
+      "c_binary_sha256": "777200bf9eda48aba5c175cc890f81e62314bd0939216e49085c4fe84ca58034"
+    },
+    "symm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.842170943040401e-14,
+      "source_sha256": "6d71a90011f9b57928b2184710f19e0491147d2d1eaddac79ee974e93a49fef7",
+      "c_binary_sha256": "a69ae6185b42e898ed754a774ca5fe9208984ee1157b6ea02e1424e0a0f3c537"
+    },
+    "syr2k": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "0aca0944ba571592754e6f8358b42d7a8fdb62147d37acf4f066a8debe3a6d14",
+      "c_binary_sha256": "acd1ecf30e61385124159b208405d27c3e4bcab42a094f9b7963d65ec0c71a87"
+    },
+    "syrk": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 5.329070518200751e-15,
+      "source_sha256": "8da7871082a91840b9fcc3cbee206cc86f2e85ae740fa9a38ca0f563569ab4b5",
+      "c_binary_sha256": "2559a74cac6957dcf7ffa9070a095130610b5e4453857874c527eaaeda2e242d"
+    },
+    "trisolv": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 6.63358257213531e-15,
+      "source_sha256": "be9fde0ca616e82d3a37a511a6a9cfba29026c42eae5d66d45956d8ca3aacb11",
+      "c_binary_sha256": "8441d7845a4a986f17497f7f28f92b878634b9730e3ddde40fd3c0575e26d638"
+    },
+    "trmm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "14c42b4a82f8ac4302fa90b3cf32cac2e96f2bc41cf4a55b8882883f1a5179b5",
+      "c_binary_sha256": "50dae4618452c8d83110ad406844f4b56f5f1e8fc65e5075ffb994aa6d30fae3"
+    }
+  },
+  "coverage": [
+    "Exact sole-consumer source dataflow identifies a normal scalar Matrix comprehension followed only by identity aliases and MatrixTranspose. All seven native scalar kinds are supported. The original row builder can finalize directly in the selected column shape, preserving every bit and empty geometry. Escaped intermediates, block/rectangular results and incompatible grouping retain the existing route.",
+    "The same Cranelift numeric-map DAG, word producer or ordinary checked collection producer fills its original typed bank. No second arithmetic engine, per-element dispatch or source rewrite is introduced. The original row Value and transpose copy are elided only after complete selected-factory, source/output shape, logical constructor and finite coexistence checks.",
+    "Complete original constructor and transpose bounds cover bytes/elements, cloned/comparison/compute work, temporary storage, nodes, old owners, physical claims and full ordinary finish/call replay credit. An inadmissible optional attempt retains ordinary execution. A failed producer still reports its original arithmetic/index error. Existing direct scalar native execution and exact Core typed constructors remain maintained.",
+    "The original collection finish has a separately funded checked helper. A tracked canonical column Value remains private across exact original continuation visits. It publishes into the original transpose output slot AFTER its original admission and retirement, preserving repeated-loop generations, immutable aliases, atomic outputs and cleanup. Managed native transport remains zero; the shared post-action join preserves all later source behavior.",
+    "Six focused original/decoded/Object/restored tests cover all seven kinds including exact F64 NaN/zero/infinity bits, empty and two-dimensional source shapes, independent word/native producers, nine finite dimensions and distinct old outputs, nested repeated builders, real activation checkpoints, inactive and partial bad reads, mutations/interleaving, exact table-image forgery, ordinary escaped/shape routes and retry. Actual Deriche/Gram-Schmidt/Durbin checks require direct transpose publication. The protocol tag round-trip test is also run explicitly."
+  ],
+  "development_checks": {
+    "logs_sha256": {
+      "check.log": "f9509e4d0096cf136b96974f8ab20a228251d10d2d41488c5f5a3738b1d7b083",
+      "focused.log": "5d590e16fd6bbbe293cbb15c69d38479b8023d4ea0bc740e5e67fb6aeb0f2d05"
+    },
+    "compile_check": "The first metadata check found two Rust borrow conflicts in the new helper; retained state geometry is captured before borrowing the current builder. All six focused tests pass on their first execution.",
+    "selection": "One qualified source revision and one seven-sample optimization-only replay select the candidate before freeze. No holdout timing or profile selects/refines it.",
+    "phase_boundary_refinement": "The existing global phase validator requires a checkpoint to be a separate no-op. An explicit finish guard reinforces that contract. A sixth test executes a real activation-owned constant comprehension and verifies the original checkpoint and restored completion. All GPU qualifications are repeated after this final source refinement; Engine sources are unchanged from the195 passing checks.",
+    "initial_qualification_logs_sha256": {
+      "initial-numeric-regressions.log": "5dab8a47289b56f2bbd5e27ecf01f5d997d7dca04415cb46762205fd2c4a890c",
+      "initial-matrix-polybench.log": "544519f35b89fff18bd1aec61ef4b6d8cb5b796b2cce05e7c8781e55978e32e5",
+      "initial-program-regressions.log": "cbab7c5a15d72d464fbfdb88a9664115eafffa13d437b64bcc46d8167b5c1cda"
+    }
+  },
+  "timing": {
+    "samples_per_actor_and_comparison": 5,
+    "actors": [
+      "candidate Mech",
+      "preserved original compiler",
+      "C"
+    ],
+    "comparisons": [
+      "kernel",
+      "fresh"
+    ],
+    "observations": 900,
+    "sequential": true,
+    "frozen_before_holdout": true,
+    "validation_boundary": "Each process validates its untimed warm-up result against the full C live-outs; all timed checked calls must succeed. Original/decoded numerical equivalence is also covered by the independent maintained regressions.",
+    "balanced_actor_mode_observations_by_partition": {
+      "optimization": {
+        "mech/kernel": 75,
+        "c/kernel": 75,
+        "reference/kernel": 75,
+        "mech/fresh": 75,
+        "c/fresh": 75,
+        "reference/fresh": 75
+      },
+      "holdout": {
+        "mech/kernel": 75,
+        "c/kernel": 75,
+        "reference/kernel": 75,
+        "mech/fresh": 75,
+        "c/fresh": 75,
+        "reference/fresh": 75
+      }
+    }
+  },
+  "regressions_over_five_percent": [],
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round11": 0.9217290468573828,
+      "reference_new_over_round11": 0.984629663773761,
+      "c_new_over_round11": 1.0024276395835061,
+      "mech_over_c_score_new_over_round11": 0.9194968399318554,
+      "mech_new_over_round11_regressions_over_five_percent": 0
+    },
+    "holdout": {
+      "mech_new_over_round11": 0.8665725632256903,
+      "reference_new_over_round11": 0.9988968670253402,
+      "c_new_over_round11": 0.977635079625516,
+      "mech_over_c_score_new_over_round11": 0.8863967560959778,
+      "mech_new_over_round11_regressions_over_five_percent": 0
+    }
+  },
+  "inter_round_regressions_over_five_percent": [],
+  "training_probe": {
+    "receipt_sha256": "866db82fdd80f44eb28b3342e4e4e693bc5a3a826b23d79d697166b03bd39d8a",
+    "reference": "round-11 frozen compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_11_replay": 1.0718890748494774,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.011691833,
+      "sum_reference_median_seconds": 0.013571206
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": []
+  },
+  "training_probe_key_reports": {
+    "deriche": {
+      "map-transpose": {
+        "work": 1167942385891,
+        "comparison_work": 64233632264,
+        "visits": 9760
+      },
+      "round-11": {
+        "work": 21266945251,
+        "comparison_work": 411144,
+        "visits": 9760
+      }
+    },
+    "gramschmidt": {
+      "map-transpose": {
+        "work": 2333576279265,
+        "comparison_work": 4723210230,
+        "visits": 11593
+      },
+      "round-11": {
+        "work": 2266403799207,
+        "comparison_work": 960181500,
+        "visits": 11593
+      }
+    },
+    "durbin": {
+      "map-transpose": {
+        "work": 275253174808,
+        "comparison_work": 4970900767,
+        "visits": 1422
+      },
+      "round-11": {
+        "work": 187956553291,
+        "comparison_work": 80962831,
+        "visits": 1422
+      }
+    },
+    "cholesky": {
+      "round-11": {
+        "work": 3765218215204,
+        "comparison_work": 1618691702,
+        "visits": 16365
+      },
+      "map-transpose": {
+        "work": 3765218215204,
+        "comparison_work": 1618691702,
+        "visits": 16365
+      }
+    }
+  },
+  "resource_accounting_note": "Conservative prepaid bounds fund every elided intermediate and replay. Budget charges can grow substantially while elapsed time falls; these units are not CPU time. Finite policies that cannot admit the full bound keep the original source path. Both fixed Huffman source-work equations are unchanged.",
+  "training_profile": {
+    "cases": [
+      "cholesky",
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d"
+    ],
+    "execution_samples": 7380,
+    "fraction_of_optimization_runtime_profiled": 0.8772132627134459,
+    "scope": "Five largest frozen optimization medians only, sampled after aggregate timing. Profile times do not enter scores."
+  },
+  "scope": [
+    "CPU MINI F64 timing and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "Direct transposed publication currently requires a normal scalar row comprehension recognized by the numeric-map proof, one MatrixTranspose consumer, only exact identity aliases/no-ops and no conflicting scalar group. Escaped rows, blocks, non-native scalar families and broader array-expression fusion remain gaps.",
+    "The fixed split and all previous holdout results were exposed. No holdout was profiled or timed before candidate selection/freeze. Ports, inputs, C binaries, tolerances and timing boundaries are unchanged.",
+    "Conservative complete bounds can increase budget charges and keep ordinary execution under finite caps. Fast direct scalar native entry, checked errors and resource authority remain maintained. No compiler source changes after freeze."
+  ],
+  "selected_checks": 686,
+  "receipts": {
+    "round-12-frozen.json": "ecde50f73cb354bdd6f67aaeac86ebf0b26d3fc3f730630383f1f94b52623798",
+    "round-12-optimization.json": "f08317fae7210646b02e63888d8e7bfff1e678aa256b1cadfe2fb9fde34bae1c",
+    "round-12-holdout.json": "1a142657a8622fdba4a6e67adacd9e05cbf2f2aa7197e508b6484cd524e85ebd",
+    "round-12-progress.json": "e31e6ac2bc0cbb581dc9dfb07a0d4c89c67bfb639a94cfeb82952e0c94f68e95",
+    "round-12-training-probe.json": "866db82fdd80f44eb28b3342e4e4e693bc5a3a826b23d79d697166b03bd39d8a",
+    "round-12-training-profile.json": "b59dcd0a4b644163ee0c155dc22b9b792d85efd8f50b094e28a7a1fd61065577"
+  }
+}

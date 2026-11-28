@@ -143,12 +143,12 @@ fn complementary_cases_refuse_missing_members_and_region_frontiers() {
             assert!(!derive(&facts, &frontier).contains_key(&site));
         }
         for field in ["header", "initialize", "latch", "finish", "exit"] {
-            let mut phase = serde_json::json!({"loops": [{
+            let mut phase = serde_json::json!({"summaries": [], "loops": [{
                 "iteration": 0, "header": 0, "initialize": 0, "latch": 0,
                 "finish": 0, "exit": 0, "parent": null, "counter": 0,
                 "first_visit": null, "compute": 0, "comparison": 0, "trips": null
             }], "cold": [], "boundary_work": 0, "compute_bound": {"Constant": 0},
-                "comparison_bound": {"Constant": 0}, "checked_children": false});
+                "comparison_bound": {"Constant": 0}, "checked_children": false, "replay_credit": 0, "replay_comparison": 0});
             phase["loops"][0][field] = serde_json::json!(member);
             let mut frontier = proof.clone();
             frontier.phase = Some(serde_json::from_value(phase).unwrap());

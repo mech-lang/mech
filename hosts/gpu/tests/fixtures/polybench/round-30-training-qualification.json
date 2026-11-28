@@ -1,0 +1,392 @@
+{
+  "schema": "mech.polybench.training-qualification.v1",
+  "created_at": "2026-11-27T06:52:58.960237+00:00",
+  "scope": "Current candidate correctness/feature qualification before formal timing; source family selected from accepted29 optimization-only profiles and all15 optimization replay. No holdout performance used.",
+  "source_parent": "323ad60aff03e2247a9856d957c63d00404573ff",
+  "compiler_fingerprint": "b35d385dbe179e195cd6bff383c7f565670b523b01c15d7c515b56ad0defd835",
+  "driver_sha256": "c5c82e45891f9362f84be4b745e94ab38841209ff2d6c05944db3de396e5aee6",
+  "versions": {
+    "ir": 389,
+    "work": 156,
+    "abi": 47
+  },
+  "total_unique_selected_checks": 579,
+  "checks": [
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 100.12482533277944,
+      "passed_tests": [
+        408
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.12306762486696,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.77255208324641,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18709008302539587,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16683504078537226,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 12.369462083093822,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.6869057090953,
+      "passed_tests": []
+    }
+  ],
+  "logs": [
+    {
+      "log": "qualification/round-30-sums/numeric-regressions.log.gz",
+      "log_sha256": "227376ec018b67e4fa0259c875cd14549c6d5b9edddad071d1181134cec0d4da",
+      "compressed_sha256": "c92d82ca92ec7b23d5c3db5c0b6abe0c82fed5574d028f1cc06fb8665bb6aed1",
+      "passed_tests": 408
+    },
+    {
+      "log": "qualification/round-30-sums/matrix-polybench.log.gz",
+      "log_sha256": "aff59cdac83148911427203fdcb8cfd121a538b39373fb6e1ebca24883b383c2",
+      "compressed_sha256": "809586ca24f40dac28ea55db5054bb04913ee21bd2003e6c5cdf30ca7892ea55",
+      "passed_tests": 54
+    },
+    {
+      "log": "qualification/round-30-sums/program-regressions.log.gz",
+      "log_sha256": "f3c1ce5cf29a4dcf8bf00d14a572d5d31e9735c3a77448a6f52d3f694d4a72ae",
+      "compressed_sha256": "3204f7c8ab4ab57b0de023f0ea7ed020e25b67e698bd8a1cce41a2d289cf6de8",
+      "passed_tests": 114
+    },
+    {
+      "log": "qualification/round-30-sums/protocol.log.gz",
+      "log_sha256": "4b50d55cf3e8768b172b877c001e169a2988f841d2786ea482d586d2035c6d12",
+      "compressed_sha256": "4024929302260af473a7a6740ae653bc44f14424861dde691172ba234ea8d2a9",
+      "passed_tests": 2
+    },
+    {
+      "log": "qualification/round-30-sums/abi-layout.log.gz",
+      "log_sha256": "88554c5238db2baee2303e6a6d6fe032f4c91861dcc03f2e8fb7b7dfd7d66a80",
+      "compressed_sha256": "aaa9d80e1c1a8242493be0e69e5a33b9098d53aa948752448d622d1ba14383ce",
+      "passed_tests": 1
+    },
+    {
+      "log": "qualification/round-30-sums/runtime-feature.log.gz",
+      "log_sha256": "f55f26b31ef29e9967eb09516cadbab6ac3e386bad36f299e576668cd5545111",
+      "compressed_sha256": "2a8ffdac11b0c9eb376433623680b385fee8c37be81c12209ae6d971ce1cbe8d",
+      "passed_tests": 0
+    },
+    {
+      "log": "qualification/round-30-sums/production-feature.log.gz",
+      "log_sha256": "617cb56ba84a6477a990a4adb791feb20564a7cd97df50bb09ed78e31f6b2480",
+      "compressed_sha256": "67cd46c7649fb06e7936de86dc87d1668f0ce9afce3581a94b97145aee2de09e",
+      "passed_tests": 0
+    }
+  ],
+  "development_archives": {
+    "abi-layout.log": {
+      "path": "qualification/round-30-sums/abi-layout.log.gz",
+      "sha256": "88554c5238db2baee2303e6a6d6fe032f4c91861dcc03f2e8fb7b7dfd7d66a80",
+      "compressed_sha256": "aaa9d80e1c1a8242493be0e69e5a33b9098d53aa948752448d622d1ba14383ce"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-30-sums/audit-results.py.gz",
+      "sha256": "6ae92f3e2485f576d55b26aeaadc1634ab3888c1ebdb0f5bda66fa22585c661b",
+      "compressed_sha256": "6f389dbe3e047084b17caa3c3636216fdb3bb8fad8ec04468e5c240a2024a7d3"
+    },
+    "driver-build.log": {
+      "path": "qualification/round-30-sums/driver-build.log.gz",
+      "sha256": "0d23c868667229a5559367a0bca025a79113c475fa9473483223a43513431a6f",
+      "compressed_sha256": "069965b6b4ec4778bde5c6f617017fbebdfdda1f127ff40c650ff9cca0d07157"
+    },
+    "focused-command.json": {
+      "path": "qualification/round-30-sums/focused-command.json.gz",
+      "sha256": "d10f2b91d044f5f34e8401f16c43e09a68fd88232fc6243a70a4e26aba93a5ba",
+      "compressed_sha256": "d2a9902ee86a5fa5e8d645833815170eb813364512f09a3e3e771dd7e5d0fada"
+    },
+    "focused.log": {
+      "path": "qualification/round-30-sums/focused.log.gz",
+      "sha256": "c869758c7a49f6e99d9ce60d9b70d0b11efeda552f88d08734c5150a4198fdba",
+      "compressed_sha256": "341f367bb6898c20950ee75ade2a3bd55a32bb4a4d369861898d4a7a2cb55d2a"
+    },
+    "matrix-polybench.log": {
+      "path": "qualification/round-30-sums/matrix-polybench.log.gz",
+      "sha256": "aff59cdac83148911427203fdcb8cfd121a538b39373fb6e1ebca24883b383c2",
+      "compressed_sha256": "809586ca24f40dac28ea55db5054bb04913ee21bd2003e6c5cdf30ca7892ea55"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-30-sums/measure-candidate.py.gz",
+      "sha256": "5b6b8c2cfc1c3a9267eefeb8f61fe7147a71f874cfa0b3ab4c2089c3492dfdab",
+      "compressed_sha256": "efd643563ec96c0769a437b9a028ac66c43e0f234d07e7ae817091f68d9a40c7"
+    },
+    "numeric-regressions.log": {
+      "path": "qualification/round-30-sums/numeric-regressions.log.gz",
+      "sha256": "227376ec018b67e4fa0259c875cd14549c6d5b9edddad071d1181134cec0d4da",
+      "compressed_sha256": "c92d82ca92ec7b23d5c3db5c0b6abe0c82fed5574d028f1cc06fb8665bb6aed1"
+    },
+    "prepare-receipts.py": {
+      "path": "qualification/round-30-sums/prepare-receipts.py.gz",
+      "sha256": "c8b190b27e9caa9e716d0441d4782df80fd50d94a171aa5406721d3cfcfb2e8e",
+      "compressed_sha256": "62b71404c1cf261d5dd29f032cafcc4d8b9e862af0b9443802738a7f4a5e304c"
+    },
+    "production-feature.log": {
+      "path": "qualification/round-30-sums/production-feature.log.gz",
+      "sha256": "617cb56ba84a6477a990a4adb791feb20564a7cd97df50bb09ed78e31f6b2480",
+      "compressed_sha256": "67cd46c7649fb06e7936de86dc87d1668f0ce9afce3581a94b97145aee2de09e"
+    },
+    "program-regressions.log": {
+      "path": "qualification/round-30-sums/program-regressions.log.gz",
+      "sha256": "f3c1ce5cf29a4dcf8bf00d14a572d5d31e9735c3a77448a6f52d3f694d4a72ae",
+      "compressed_sha256": "3204f7c8ab4ab57b0de023f0ea7ed020e25b67e698bd8a1cce41a2d289cf6de8"
+    },
+    "protocol.log": {
+      "path": "qualification/round-30-sums/protocol.log.gz",
+      "sha256": "4b50d55cf3e8768b172b877c001e169a2988f841d2786ea482d586d2035c6d12",
+      "compressed_sha256": "4024929302260af473a7a6740ae653bc44f14424861dde691172ba234ea8d2a9"
+    },
+    "qualification-checks.json": {
+      "path": "qualification/round-30-sums/qualification-checks.json.gz",
+      "sha256": "68a903d8aa4f41d5e05f3c08176611fb00442954d9deeafdf6d95f595bb3700b",
+      "compressed_sha256": "bb1f4a68683e970481b40f7332e927c6289b17ecf52fd15ce219fd029af1674a"
+    },
+    "qualification-progress.log": {
+      "path": "qualification/round-30-sums/qualification-progress.log.gz",
+      "sha256": "fcb179d066c4ec6c1d0df43b24931af2a9c4f5f2651cad57d5d8010e105a2980",
+      "compressed_sha256": "688775b9660341beda84b045273962c4ee8b76c12406d5cd27ebaf72d65b9f73"
+    },
+    "qualification.json": {
+      "path": "qualification/round-30-sums/qualification.json.gz",
+      "sha256": "c5b54ce7c9c59693e072ca07830205110210d23d04f563ff00fa1217c490ef3c",
+      "compressed_sha256": "805f5643e2c0ffd392482cf69af1ec9cc9450530e98b6fc99b7659b826a5ab75"
+    },
+    "record-results.py": {
+      "path": "qualification/round-30-sums/record-results.py.gz",
+      "sha256": "53c32f799f68c9204a63781e4e5e32a6a85bdd56c2c0510806a00c7150c8596e",
+      "compressed_sha256": "4253be6b52f601e23eb109e40547c5a75b0f4610ccff4f37bdd84e0381359d03"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-30-sums/run-qualification.py.gz",
+      "sha256": "cf873891da4bc5fe7397183d0684e923986f23b5928b90234b6ce2b6b6227274",
+      "compressed_sha256": "708cdfe1a6a2e5385c506b34f362b048ea64f7e10676bcc1401adfc7ef78236d"
+    },
+    "runtime-feature.log": {
+      "path": "qualification/round-30-sums/runtime-feature.log.gz",
+      "sha256": "f55f26b31ef29e9967eb09516cadbab6ac3e386bad36f299e576668cd5545111",
+      "compressed_sha256": "2a8ffdac11b0c9eb376433623680b385fee8c37be81c12209ae6d971ce1cbe8d"
+    },
+    "selection-policy.json": {
+      "path": "qualification/round-30-sums/selection-policy.json.gz",
+      "sha256": "3200cb97ed9d4c0901d5c3b789601e9391ebb461cfe11c3eab08b5a6240f6b1c",
+      "compressed_sha256": "dd8f690e04b01c00c396813adf6d2e21ce8385bf7c94855a97fe595ed64ee534"
+    },
+    "source-checkpoint.json": {
+      "path": "qualification/round-30-sums/source-checkpoint.json.gz",
+      "sha256": "a5a7045349c7100fcdea1023ceb9851530b705794373635b99f3f86712632600",
+      "compressed_sha256": "7c0059add1002d6ed39e6b7b8a227a6bb312d5ece864b3577d024366c9a5bb03"
+    },
+    "training-probe.json": {
+      "path": "qualification/round-30-sums/training-probe.json.gz",
+      "sha256": "08db3b98bad610608105b4c46645f518789c68c73bb32628e9ba4a53a2449a5b",
+      "compressed_sha256": "0935d4fb5113bde14a6359b7d37e2cbda61edc535e9102b75fca53fec45d8cf5"
+    },
+    "training-probe.log": {
+      "path": "qualification/round-30-sums/training-probe.log.gz",
+      "sha256": "2768f65e916079c4bb6d3464df33b1cf8579b5f00a7eb940279fe24043b7471d",
+      "compressed_sha256": "e48ddd17ebfcdd2dc882cb3747d7be0d5d8ee35c56ad0b2b1ef77e4d7cc1e7a2"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-30-sums/training-probe.py.gz",
+      "sha256": "6af815df0783938fc4576d612fc354599e6fbeb229ebcbdfc32ddd968dbbeff8",
+      "compressed_sha256": "6c73cd2b96ed0b52328c5a5385d8f521807f349bda2a26949ec07f63cb7da1e0"
+    },
+    "training-selection.json": {
+      "path": "qualification/round-30-sums/training-selection.json.gz",
+      "sha256": "9e2b734771c4f1d68ba58a0fb28a02b78b248937c922fc4c9dd842f79d89c343",
+      "compressed_sha256": "2f9cdb1a650d65d996324db4206ff976e5027840b765e0ce71c9bc433b142506"
+    },
+    "baseline-profile/profile-current.py": {
+      "path": "qualification/round-30-sums/baseline-profile/profile-current.py.gz",
+      "sha256": "74e9a689ad0d1a59453b3c787a0fc82346c19744bdd297cb2c8316b80ef9b7fb",
+      "compressed_sha256": "d201870f6d34b10ae9b16cb9f38f8294a3e8fe8c6e8e94836af82b92dd063c6d"
+    },
+    "baseline-profile/profiling.log": {
+      "path": "qualification/round-30-sums/baseline-profile/profiling.log.gz",
+      "sha256": "bab47d5b460cabd77a6d0ea3285af70237bfad8757b6c069033f3f456aeb32c2",
+      "compressed_sha256": "04bf9747d3573a9a2cad5374c39ba385dbe340de5609e4d7942e06f697c21849"
+    },
+    "baseline-profile/profile-analysis.json": {
+      "path": "qualification/round-30-sums/baseline-profile/profile-analysis.json.gz",
+      "sha256": "1faedd48527f8faf513c984559e3990f8a65a857517ea279a0f60e51445ef231",
+      "compressed_sha256": "ffdb830af17df19b27b001c4c6e2bb7c726066679e1d22e775646fd82649c67c"
+    },
+    "baseline-profile/profile-collection.json": {
+      "path": "qualification/round-30-sums/baseline-profile/profile-collection.json.gz",
+      "sha256": "32f4f4c065e3f640aa5ccacb8beacdb38b56702a02a5c5a03208e4b7ccdcfd7c",
+      "compressed_sha256": "5fb9c45524b5222fc0b6de5abb903c490d8d2edc68338b3357604cf138518515"
+    },
+    "baseline-profile/source-checkpoint.json": {
+      "path": "qualification/round-30-sums/baseline-profile/source-checkpoint.json.gz",
+      "sha256": "ca051e31743458c6f66221859690778cb5fddacf93bd94e9138690206127997f",
+      "compressed_sha256": "82cfb36a5ec049ef0b52793572bcb84fc169bad5d0e2518c7dfd532aceb98f61"
+    },
+    "baseline-profile/training-next-action.json": {
+      "path": "qualification/round-30-sums/baseline-profile/training-next-action.json.gz",
+      "sha256": "27e7aa85ca620ec1455826184848509df445393ff90b37239da98e00d3c971ef",
+      "compressed_sha256": "54c8ca3395c9e7f37c71eadd1a92b27308b366869fded85a211e4aefeeff72b9"
+    }
+  },
+  "invariants": [
+    "All30 unchanged ports match29482 finite C live-outs in original/decoded artifacts and emit Objects.",
+    "Exact sealed rank2 F64 SumRows/SumColumns use shared resident geometry, the existing checked numeric-operation loan and maintained source cost envelope. Literal and dynamic axes are checked against the genuine current source owner; pure operation metadata is independently rederived on images.",
+    "Every accumulator starts with positive zero and visits original terms in order. SIMD lanes compute independent outputs; no reassociation, horizontal tree or fused operation is introduced. Empty reduced axes produce typed zero. Input NaNs retain ordinary payload/error behavior through replay; generated NaNs, infinities, cancellation, overflow and signedzero match ordinary bits.",
+    "The same initialized private result storage, immutable input pins, exact argument/frame/shadow/site/shape/schema checks, pointer spans/alignment/overflow/disjointness, finite work/memory/node coexistence, complete source fees,128x general replay and atomic publication remain mandatory. Row/column sums add explicit per-input native term funding.",
+    "Original/decoded/restored fixed/dynamic empty/vector/rectangular shapes and odd SIMD tails are covered. Existing finite byte/node caps, physical byte refusal, malformed finish frames, callback interleaving, source errors, old output aliases, cleanup and retry tests include both sum axes.",
+    "Shared unary span checking is used by transpose and sums. Existing transpose, elementwise, product, scalar, phase, generator and compression checks remain selected. No generic per-cell dispatch or allocation. IR389/work156/ABI47 preserve the144-byte root frame,80-byte numeric frame and original scalar prefix.",
+    "All unrelated optimization replay counters match accepted29. Work/comparison/visit/transport deltas remain in full; conservative source envelopes are charged and ordinary prices/replay are retained.",
+    "No benchmark-name dispatch, port/input changes, C changes, tolerances/limits/split/objective changes or holdout diagnosis. Commit and freeze source+driver before both formal sets; promotion requires both scores strictly improve vs accepted29."
+  ],
+  "limitations": [
+    "Rank2 F64 sums only; other numeric families retain their maintained source paths. Input NaNs conservatively retain ordinary execution.",
+    "CPU MINI/F64, source correctness and Object emission are qualified; larger datasets, accelerators, linked Object execution, full compression/AOT and a fresh application remain unqualified.",
+    "This qualification is not a performance acceptance result."
+  ]
+}

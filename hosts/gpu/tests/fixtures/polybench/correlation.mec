@@ -1,0 +1,12 @@
++> stats
++> math
+-- Center columns, guard their deviations, and form the correlation matrix.
+observations := data<[f64]>
+mean := stats/sum/row(observations) / float-n<f64>
+centered := observations - mean
+deviations := math/sqrt(stats/sum/row(centered * centered) / float-n)
+scale(value<f64>) => <f64> := (value <= 0.1? | true => 1.0 | false => value)
+guarded := [scale(value) | value <- deviations]
+normalized := centered / (math/sqrt(float-n) * guarded)
+products := normalized' ** normalized
+[[((i == j)? | true => 1.0 | false => products[i,j]) | i <- 1u64..=m<u64>]' | j <- 1u64..=m]

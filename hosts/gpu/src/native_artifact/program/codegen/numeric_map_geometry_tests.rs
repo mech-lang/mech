@@ -1,0 +1,478 @@
+//! Actual map-read emission, fixed guards, machine divisions and axis order.
+use super::*;
+use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
+use cranelift_codegen::ir::{AbiParam, Function, Opcode};
+use cranelift_frontend::FunctionBuilderContext;
+use cranelift_module::{Linkage, Module, default_libcall_names};
+use mech_syntax::document::{
+    AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+    parse_canonical_document,
+};
+
+const BAD: u64 = 0xbad0_bad0_bad0_bad0;
+type Read = unsafe extern "C" fn(u64, u64, u64, u64) -> u64;
+fn source(kind: &str, dimensions: &str) -> JitProgramArtifact {
+    let source = format!("data := input<[{kind}]{dimensions}>\n[data[i] | i <- 1u64..=6u64]\n");
+    compile_source(source)
+}
+fn compile_source(source: String) -> JitProgramArtifact {
+    let parsed = parse_canonical_document(
+        TextSnapshot::new(DocumentId(0x4d415047), Revision(1), source.as_str()).unwrap(),
+        ParseConfig::default(),
+    );
+    assert!(parsed.is_strictly_clean(), "{source}");
+    let catalog = mech_stdlib::source_catalog();
+    let artifact = mech_engine::CanonicalSourceFrontend
+        .compile_document_with_catalog(
+            &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+            catalog.clone(),
+        )
+        .unwrap()
+        .compile_artifact()
+        .unwrap();
+    JitProgramArtifact::compile_with_limits(
+        &artifact,
+        &catalog,
+        NativeProgramLimitMode::NoLimits.compilation(),
+    )
+    .unwrap()
+}
+fn read_function(jit: &JitProgramArtifact) -> Function {
+    let metadata = jit.descriptor().metadata();
+    let [region] = &metadata.numeric_maps.regions[..] else {
+        panic!("one actual map read")
+    };
+    let [read] = &region.reads[..] else {
+        panic!("one actual matrix read")
+    };
+    assert_eq!(read.indices.len(), 1);
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 4];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let bad = b.create_block();
+        // The complete production caller already checks overflow, backing and
+        // pointer geometry. This arithmetic-only wrapper supplies tiny bounds.
+        let count = b.ins().imul(args[1], args[2]);
+        let (count, rows, columns) = guard_fixed_geometry(
+            &mut b,
+            metadata.plan.values()[region.matrices[0].value as usize]
+                .definition()
+                .body(),
+            count,
+            args[1],
+            args[2],
+            bad,
+        );
+        let index = b.declare_var(types::I64);
+        b.def_var(index, args[0]);
+        let words = BTreeMap::from([(read.indices[0], index)]);
+        let value = emit_read(
+            &mut b,
+            read,
+            region,
+            &metadata.plan,
+            &[(args[3], count, rows, columns)],
+            &words,
+            bad,
+        )
+        .unwrap();
+        b.ins().return_(&[value]);
+        b.switch_to_block(bad);
+        let sentinel = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[sentinel]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+fn compile(jit: &JitProgramArtifact) -> (cranelift_jit::JITModule, Read, String) {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func = read_function(jit);
+    context.func.signature.call_conv = module.make_signature().call_conv;
+    context.set_disasm(true);
+    let id = module
+        .declare_function("map_read_geometry", Linkage::Local, &context.func.signature)
+        .unwrap();
+    module.define_function(id, &mut context).unwrap();
+    let assembly = context.compiled_code().unwrap().vcode.clone().unwrap();
+    module.finalize_definitions().unwrap();
+    // SAFETY: the retained function has four word inputs and a word result.
+    let read =
+        unsafe { core::mem::transmute::<*const u8, Read>(module.get_finalized_function(id)) };
+    (module, read, assembly)
+}
+#[test]
+fn numeric_map_read_geometry_uses_shared_vector_lowering_and_one_general_division() {
+    for kind in ["bool", "u8", "u16", "u32", "u64", "i64", "f64"] {
+        for (dimensions, vector) in [(":1,6", true), (":6,1", true), ("", false), (":2,3", false)] {
+            let jit = source(kind, dimensions);
+            let function = read_function(&jit);
+            let divisions = function
+                .layout
+                .blocks()
+                .flat_map(|b| function.layout.block_insts(b))
+                .filter(|&i| matches!(function.dfg.insts[i].opcode(), Opcode::Udiv | Opcode::Urem))
+                .count();
+            assert_eq!(
+                divisions,
+                usize::from(!vector),
+                "{kind} {dimensions}: {}",
+                function.display()
+            );
+            let (_module, _, assembly) = compile(&jit);
+            if cfg!(target_arch = "aarch64") {
+                let machine = assembly.split(";; REGALLOC_INPUT_BEGIN").next().unwrap();
+                let divisions = machine.lines().filter(|s| s.contains("udiv ")).count();
+                // A fixed2-row matrix uses a shift; generic matrices need one
+                // checked divide, and vectors need no divide at all.
+                assert_eq!(
+                    divisions,
+                    usize::from(dimensions.is_empty()),
+                    "{kind} {dimensions}\n{machine}"
+                );
+            }
+        }
+    }
+}
+#[test]
+fn numeric_map_read_geometry_keeps_exact_bits_bounds_axes_and_refuses_mismatched_fixed_views() {
+    for (kind, width) in [
+        ("bool", 1),
+        ("u8", 1),
+        ("u16", 2),
+        ("u32", 4),
+        ("u64", 8),
+        ("i64", 8),
+        ("f64", 8),
+    ] {
+        let values = if kind == "bool" {
+            vec![1, 0, 1, 1, 0, 0]
+        } else {
+            vec![
+                0,
+                1,
+                0x8000_0000_0000_0000,
+                0x7ff8_0000_0000_1234,
+                0x7ff0_0000_0000_0000,
+                u64::MAX,
+            ]
+        };
+        let mask = if width == 8 {
+            u64::MAX
+        } else {
+            (1u64 << (width * 8)) - 1
+        };
+        let bytes = values
+            .iter()
+            .flat_map(|v| u64::to_ne_bytes(*v).into_iter().take(width))
+            .collect::<Vec<_>>();
+        for dimensions in ["", ":1,6", ":6,1", ":2,3", ":0,6"] {
+            let jit = source(kind, dimensions);
+            let (_module, read, _) = compile(&jit);
+            for (rows, columns) in [(1u64, 6u64), (6, 1), (2, 3), (3, 2), (0, 6), (6, 0)] {
+                let fixed = fixed_geometry(
+                    jit.descriptor().plan().values()[jit
+                        .descriptor()
+                        .metadata()
+                        .numeric_maps
+                        .regions[0]
+                        .matrices[0]
+                        .value as usize]
+                        .definition()
+                        .body(),
+                );
+                for index in 0..=7u64 {
+                    let valid = index > 0
+                        && index <= rows * columns
+                        && fixed.is_none_or(|[_, r, c]| (r, c) == (rows, columns));
+                    let expected = if valid {
+                        let ordinal = index - 1;
+                        let physical = (ordinal % rows) * columns + ordinal / rows;
+                        values[physical as usize] & mask
+                    } else {
+                        BAD
+                    };
+                    // SAFETY: all accepted views contain exactly six packed
+                    // cells. Invalid/empty indexes must branch before a load.
+                    let actual = unsafe { read(index, rows, columns, bytes.as_ptr() as u64) };
+                    assert_eq!(
+                        actual, expected,
+                        "{kind} {dimensions} ({rows},{columns}) index={index}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+type CellRead = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
+fn cell_read_function(jit: &JitProgramArtifact) -> Function {
+    let metadata = jit.descriptor().metadata();
+    let [region] = &metadata.numeric_maps.regions[..] else {
+        panic!("one actual cell map")
+    };
+    let [read] = &region.reads[..] else {
+        panic!("one actual two-axis map read")
+    };
+    assert_eq!(read.indices.len(), 2);
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 5];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let bad = b.create_block();
+        // As in the production caller, geometry is checked before a fixed
+        // schema becomes constants. Physical backing is this test's tiny bank.
+        let cells = b.ins().imul(args[2], args[3]);
+        let (cells, rows, columns) = guard_fixed_geometry(
+            &mut b,
+            metadata.plan.values()[region.matrices[0].value as usize]
+                .definition()
+                .body(),
+            cells,
+            args[2],
+            args[3],
+            bad,
+        );
+        let mut words = BTreeMap::new();
+        for (word, value) in read.indices.iter().zip(&args[..2]) {
+            let var = b.declare_var(types::I64);
+            b.def_var(var, *value);
+            words.insert(*word, var);
+        }
+        let value = emit_read(
+            &mut b,
+            read,
+            region,
+            &metadata.plan,
+            &[(args[4], cells, rows, columns)],
+            &words,
+            bad,
+        )
+        .unwrap();
+        b.ins().return_(&[value]);
+        b.switch_to_block(bad);
+        let rejected = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[rejected]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+
+#[test]
+fn numeric_map_cell_reads_share_one_bounds_branch_and_keep_non_square_bits_and_empty_axes() {
+    for (kind, width) in [
+        ("bool", 1usize),
+        ("u8", 1),
+        ("u16", 2),
+        ("u32", 4),
+        ("u64", 8),
+        ("i64", 8),
+        ("f64", 8),
+    ] {
+        for dimensions in ["", ":2,3"] {
+            let jit = compile_source(format!(
+                "data := input<[{kind}]{dimensions}>\n[data[row<u64>,j] | j <- 1u64..=3u64]\n"
+            ));
+            let function = cell_read_function(&jit);
+            if dimensions.is_empty() {
+                let branches = function
+                    .layout
+                    .blocks()
+                    .flat_map(|block| function.layout.block_insts(block))
+                    .filter(|&i| function.dfg.insts[i].opcode() == Opcode::Brif)
+                    .count();
+                assert_eq!(
+                    branches,
+                    1,
+                    "one actual two-axis map guard: {}",
+                    function.display()
+                );
+            }
+            let mut module = cranelift_jit::JITModule::new(
+                cranelift_jit::JITBuilder::with_flags(
+                    &[("opt_level", "speed")],
+                    default_libcall_names(),
+                )
+                .unwrap(),
+            );
+            let mut context = module.make_context();
+            context.func = function;
+            context.func.signature.call_conv = module.make_signature().call_conv;
+            let id = module
+                .declare_function(
+                    "checked_map_cell_read",
+                    Linkage::Local,
+                    &context.func.signature,
+                )
+                .unwrap();
+            module.define_function(id, &mut context).unwrap();
+            module.finalize_definitions().unwrap();
+            // SAFETY: retained generated function has five word inputs and a
+            // word result. Valid cases below borrow a live exact-width bank.
+            let read = unsafe {
+                core::mem::transmute::<*const u8, CellRead>(module.get_finalized_function(id))
+            };
+            let values: [u64; 6] = if kind == "bool" {
+                [0, 1, 1, 0, 1, 0]
+            } else {
+                [
+                    0,
+                    1 << 63,
+                    0x7ff8_0000_0000_0037,
+                    0x7ff0_0000_0000_0000,
+                    0xfff0_0000_0000_0000,
+                    u64::MAX,
+                ]
+            };
+            let bytes = values
+                .iter()
+                .flat_map(|word| word.to_le_bytes()[..width].to_vec())
+                .collect::<Vec<_>>();
+            let mask = u64::MAX >> (64 - width * 8);
+            for row in 1..=2 {
+                for column in 1..=3 {
+                    // SAFETY: row and column are inside this live2x3 bank.
+                    assert_eq!(
+                        unsafe { read(row, column, 2, 3, bytes.as_ptr() as u64) },
+                        values[((row - 1) * 3 + column - 1) as usize] & mask,
+                        "{kind} ({row},{column})"
+                    );
+                }
+            }
+            for (rows, columns, row, column) in [
+                (2, 3, 0, 1),
+                (2, 3, 1, 0),
+                (2, 3, 3, 1),
+                (2, 3, 1, 4),
+                (2, 3, 0, 0),
+                (2, 3, u64::MAX, u64::MAX),
+                (0, u64::MAX, 1, 1),
+                (u64::MAX, 0, 1, 1),
+            ] {
+                // SAFETY: every case rejects before dereferencing this bank.
+                assert_eq!(
+                    unsafe { read(row, column, rows, columns, bytes.as_ptr() as u64) },
+                    BAD
+                );
+            }
+            if !dimensions.is_empty() {
+                // SAFETY: the fixed-shape guard rejects before any bank read.
+                assert_eq!(unsafe { read(1, 1, 3, 2, bytes.as_ptr() as u64) }, BAD);
+            }
+        }
+    }
+}
+
+fn fold_function(typed: bool) -> Function {
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 2];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let zero = b.ins().iconst(types::I64, 0);
+        let fold = Fold::new(&mut b, zero, typed);
+        let cursor = b.declare_var(types::I64);
+        b.def_var(cursor, zero);
+        let head = b.create_block();
+        let body = b.create_block();
+        let done = b.create_block();
+        let bad = b.create_block();
+        b.append_block_param(bad, types::I64);
+        b.ins().jump(head, &[]);
+        b.switch_to_block(head);
+        let at = b.use_var(cursor);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, at, args[1]);
+        b.ins().brif(more, body, &[], done, &[]);
+        b.switch_to_block(body);
+        let bytes = b.ins().imul_imm(at, 8);
+        let address = b.ins().iadd(args[0], bytes);
+        let term = b.ins().load(types::I64, MemFlags::new(), address, 0);
+        fold.push(&mut b, term, bad);
+        let next = b.ins().iadd_imm(at, 1);
+        b.def_var(cursor, next);
+        b.ins().jump(head, &[]);
+        b.switch_to_block(done);
+        let result = fold.word(&mut b);
+        b.ins().return_(&[result]);
+        b.switch_to_block(bad);
+        let sentinel = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[sentinel]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+#[test]
+fn typed_map_folds_runtime_shaped_ssa_keeps_float_phi_and_exact_word_boundary() {
+    type Sum = unsafe extern "C" fn(*const u64, u64) -> u64;
+    let mut modules = Vec::new();
+    let mut sums = Vec::new();
+    for typed in [false, true] {
+        let function = fold_function(typed);
+        let text = function.display().to_string();
+        let float_phi = function.layout.blocks().any(|block| {
+            function
+                .dfg
+                .block_params(block)
+                .iter()
+                .any(|&p| function.dfg.value_type(p) == types::F64)
+        });
+        assert_eq!(float_phi, typed, "{text}");
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func = function;
+        context.func.signature.call_conv = module.make_signature().call_conv;
+        let id = module
+            .declare_function("ordered_map_fold", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: exact two-word signature; all inputs remain live for each call.
+        let sum =
+            unsafe { core::mem::transmute::<*const u8, Sum>(module.get_finalized_function(id)) };
+        sums.push(sum);
+        modules.push(module);
+    }
+    for bits in [
+        vec![],
+        vec![1u64 << 63; 3],
+        vec![1, 2, 0x8000_0000_0000_0001],
+        vec![1e16f64.to_bits(), 1f64.to_bits(), (-1e16f64).to_bits()],
+        vec![0x7ff0_0000_0000_0000, 0xfff0_0000_0000_0000],
+        vec![0x7ff0_0000_0000_0037, 0x7ff8_0000_0000_0041],
+    ] {
+        // SAFETY: checked extent exactly matches this immutable backing slice.
+        let a = unsafe { sums[0](bits.as_ptr(), bits.len() as u64) };
+        let b = unsafe { sums[1](bits.as_ptr(), bits.len() as u64) };
+        assert_eq!(a, b, "raw words {bits:x?}");
+    }
+}

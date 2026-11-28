@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T01:25:31.782234+00:00",
+  "compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+  "source_parent": "ca9f5de99e50eeab4f472e6dfef1cc878ca33786",
+  "policy_sha256": "d802cfccad90a172431e4a25072ebfda067fadcdec1e631af936faab0d73d6a7",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted45": 1.04914904960503,
+    "regressions_over_five_percent": 0,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted45/candidate medians on optimization15; one prospective fresh-process probe, all samples/regressions retained.",
+  "formal_gate": "Commit/push and freeze exact clean selected source/driver before both sets. Retain all900 observations/29482 finite liveouts and append-only history. Promote only BOTH primary kernel GM Mech/C scores strictly improve accepted45 (9.784192694066512 /25.86144806723818); otherwise restore every candidate Rust path exactly to source_parent. Controls cannot override either score."
+}

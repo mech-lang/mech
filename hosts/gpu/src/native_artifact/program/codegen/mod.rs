@@ -84,7 +84,16 @@ pub(in crate::native_artifact) mod utf8_lookup;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod constant_fill;
 #[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_generator;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_map;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_map_dots;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_phase_maps;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_phase_reductions;
+mod numeric_phase_summary;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_histogram;
@@ -125,3 +134,18 @@ mod prefetch_base_tests;
 
 #[cfg(all(test, feature = "jit"))]
 mod fp_spill_tests;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_binary;
+mod numeric_dot_core;
+mod numeric_product;
+mod numeric_sum;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_transpose;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_product_epilogues;
+mod numeric_reduction_producers;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_cell_prefix;

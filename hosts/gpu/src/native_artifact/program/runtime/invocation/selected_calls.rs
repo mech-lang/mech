@@ -11,6 +11,9 @@ impl Invocation<'_, '_, '_> {
         let metadata = self.descriptor.metadata();
         match metadata.call_routes[site] {
             LibraryCallRoute::Canonical => Ok(None),
+            LibraryCallRoute::NumericComposite => {
+                Ok(self.numeric_composite_call(site, words)?.then_some(None))
+            }
             LibraryCallRoute::BorrowedMapKeysLength => {
                 Ok(self.borrowed_keys_length_call(site, words)?.map(Some))
             }
@@ -44,11 +47,17 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixElement => {
                 Ok(self.unsigned_matrix_element_call(site, words)?.map(Some))
             }
+            LibraryCallRoute::ScalarMatrixElement => {
+                Ok(self.scalar_matrix_element_call(site, words)?.map(Some))
+            }
             LibraryCallRoute::StringMatrixElement => Ok(self
                 .string_matrix_element_call(site, words)?
                 .then_some(None)),
             LibraryCallRoute::UnsignedMatrixReplace => Ok(self
                 .unsigned_matrix_replace_call(site, words)?
+                .then_some(None)),
+            LibraryCallRoute::ScalarMatrixReplace => Ok(self
+                .scalar_matrix_replace_call(site, words)?
                 .then_some(None)),
         }
     }

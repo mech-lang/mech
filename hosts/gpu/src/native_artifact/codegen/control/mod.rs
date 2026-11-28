@@ -908,6 +908,31 @@ impl<'plan> CfgDefinition<'plan> {
             .iter()
             .map(|&used| used.then(|| b.create_block()))
             .collect::<Vec<_>>();
+        #[cfg(feature = "canonical-native-program")]
+        let mut projection_continuations = std::collections::BTreeMap::new();
+        #[cfg(feature = "canonical-native-program")]
+        if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericCollections)
+            && let plan::CodePlan::Program(program) = plan
+        {
+            for region in &program.metadata().numeric_maps.regions {
+                let site = region
+                    .reduction
+                    .as_ref()
+                    .map(|p| p.select)
+                    .or_else(|| region.transpose.as_ref().map(|p| p.transpose));
+                if let Some(site) = site {
+                    let block = b.create_block();
+                    b.append_block_param(block, types::I64);
+                    if projection_continuations
+                        .insert(site as usize, block)
+                        .is_some()
+                    {
+                        return Err(backend("numeric reductions share an extraction site"));
+                    }
+                }
+            }
+        }
         b.ins()
             .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
         if let Some(resume) = resume_block {
@@ -1280,6 +1305,35 @@ impl<'plan> CfgDefinition<'plan> {
                     )?;
             }
             #[cfg(feature = "canonical-native-program")]
+            let generator_ir = if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericGenerators,
+                )
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops,
+                )
+                && let Some(selected) = prepared.metadata().numeric_generators.at_header(index)
+            {
+                crate::native_artifact::program::codegen::numeric_generator::emit_entry(
+                    b,
+                    plan,
+                    selected,
+                    locals,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("numeric generator lacks owner hooks"))?,
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable numeric generator exit"),
+                    error,
+                )?
+            } else { 0 };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let generator_ir = 0;
+            #[cfg(feature = "canonical-native-program")]
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
                 plan
                 && let NativeIterationTerminator::Header {
@@ -1300,6 +1354,15 @@ impl<'plan> CfgDefinition<'plan> {
                     region,
                     prepared.plan(),
                     plan.value_count() + iteration as usize,
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::TypedMapFolds,
+                    ),
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::OrderedMapDots,
+                    ),
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::AffineMapCells,
+                    ),
                     blocks[exit as usize].expect("reachable numeric map exit"),
                     error,
                 )?;
@@ -1552,6 +1615,31 @@ impl<'plan> CfgDefinition<'plan> {
                     } else {
                         None
                     };
+                    #[cfg(feature = "canonical-native-program")]
+                    let numeric_binary_done = if controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::NumericMatrixArithmetic,
+                    ) && operation == GlobalHelper::Library.raw() {
+                        if let plan::CodePlan::Program(program) = plan
+                            && let Some(proof) = program.metadata().numeric_binary.at(index)
+                        {
+                            if let Some(recipe)=program.metadata().numeric_binary.epilogue(index)
+                                && controls.enabled(if recipe.transposed_left() {crate::native_artifact::codegen::options::OptimizationPass::TransposeProductEpilogues} else if recipe.reduction_axis().is_some() {crate::native_artifact::codegen::options::OptimizationPass::ReductionProducers} else {crate::native_artifact::codegen::options::OptimizationPass::ProductEpilogues})
+                                && let Some(target)=blocks.get(recipe.resume as usize).copied().flatten() {
+                                crate::native_artifact::program::codegen::numeric_product_epilogues::emit_entry(b,hooks,index,recipe,locals,|operand|plan.kind(operand).is_some(),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowQuartets),target,error)?;
+                                let record = codegen_report::ProductEpilogue {entry:recipe.entry,end:recipe.end,resume:recipe.resume,parent:recipe.parent,operators:recipe.nodes.iter().map(|n|n.site).collect(),sites:recipe.steps.iter().map(|s|s.site()).collect(),external:recipe.external.iter().map(|v|v.get()).collect(),elided_values:recipe.elided_values.clone()};
+                                if let Some(axis) = recipe.reduction_axis() {
+                                    report.reduction_producers.push(codegen_report::ReductionProducer {axis,expression:record});
+                                } else { report.product_epilogues.push(record); }
+                            }
+                            Some(crate::native_artifact::program::codegen::numeric_binary::emit_entry(
+                                b, hooks, index, proof, operands, locals,
+                                |operand| plan.kind(operand).is_some(),
+                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),
+                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowQuartets),
+                                error,
+                            )?)
+                        } else { None }
+                    } else { None };
                     hooks.library_operation(
                         b,
                         index,
@@ -1561,6 +1649,12 @@ impl<'plan> CfgDefinition<'plan> {
                         |operand| plan.kind(operand).is_some(),
                         error,
                     )?;
+                    #[cfg(feature = "canonical-native-program")]
+                    if let Some(done) = numeric_binary_done {
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                    }
+
                     #[cfg(feature = "canonical-native-program")]
                     if let Some((_, function)) =
                         joined_maps.iter().find(|(site, _)| *site as usize == index)
@@ -1790,6 +1884,26 @@ impl<'plan> CfgDefinition<'plan> {
                         }
                         _ => zero,
                     };
+                    #[cfg(feature = "canonical-native-program")]
+                    if let plan::CodePlan::Program(program) = plan
+                        && let Some(region) =
+                            program.metadata().numeric_maps.at_reduction_finish(index)
+                        && let Some(reduction) = &region.reduction
+                        && let Some(&continuation) =
+                            projection_continuations.get(&(reduction.select as usize))
+                    {
+                        crate::native_artifact::program::codegen::numeric_map::emit_reduction_finish(b,locals,index,hooks,reduction,continuation,error)?;
+                    }
+                    #[cfg(feature = "canonical-native-program")]
+                    if let plan::CodePlan::Program(program) = plan
+                        && let Some(region) =
+                            program.metadata().numeric_maps.at_transpose_finish(index)
+                        && let Some(projection) = &region.transpose
+                        && let Some(&continuation) =
+                            projection_continuations.get(&(projection.transpose as usize))
+                    {
+                        crate::native_artifact::program::codegen::numeric_map::emit_projection_finish(b,locals,index,hooks,GlobalHelper::NumericTransposeFinish,projection.output,continuation,error)?;
+                    }
                     hooks.collection(b, index, [value, zero], error)?;
                     #[cfg(feature = "canonical-native-program")]
                     if let NativeIterationAction::HistogramQueryStep { collection, step } =
@@ -1854,6 +1968,25 @@ impl<'plan> CfgDefinition<'plan> {
             if let Some(joined) = borrowed_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            let locals = if let Some(&joined) = projection_continuations.get(&index) {
+                b.ins().jump(joined, &[locals.into()]);
+                b.switch_to_block(joined);
+                b.block_params(joined)[0]
+            } else {
+                locals
+            };
+            #[cfg(feature = "canonical-native-program")]
+            if controls
+                .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericTrees,
+                )
+            {
+                crate::native_artifact::program::codegen::tail::tagged_transition(
+                    *options, b, locals, &closed, plan, index,
+                )?;
             }
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
@@ -1979,7 +2112,7 @@ impl<'plan> CfgDefinition<'plan> {
             // entry guard in this unchanged ordinary visit audit.
             // The entry-pointer reload precedes specialized region emission;
             // include it in this visit's unchanged conservative template.
-            let emitted = (b.func.dfg.num_insts() - before - segment_ir
+            let emitted = (b.func.dfg.num_insts() - before - segment_ir - generator_ir
                 + usize::from(locals_home.is_some())) as u64;
             let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
@@ -2180,8 +2313,22 @@ fn emission_template_bound(
                 )
                 .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
                 .and_then(|n| {
-                    n.checked_add(if metadata.utf8_reads.at_header(index).is_some() {
+                    n.checked_add(if metadata.numeric_generators.at_header(index).is_some() {
+                        crate::native_artifact::program::prepare::numeric_generators::HEADER_WORK
+                    } else {
+                        0
+                    })
+                })
+                .and_then(|n| {
+                    n.checked_add(if metadata.numeric_binary.at(index).is_some() {
+                        crate::native_artifact::program::prepare::numeric_binary::HEADER_WORK
+                    } else if metadata.utf8_reads.at_header(index).is_some() {
                         crate::native_artifact::program::prepare::utf8_reads::HEADER_WORK
+                    } else if metadata.numeric_maps.at_header(index).is_some() {
+                        // The same header debit is already present in both
+                        // visit tables. Audit the native map's emitted guards
+                        // and body against that admitted instruction envelope.
+                        crate::native_artifact::program::prepare::numeric_maps::HEADER_WORK
                     } else {
                         0
                     })

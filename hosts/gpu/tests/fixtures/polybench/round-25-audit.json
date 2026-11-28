@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "compiler_fingerprint": "adaa1a58f8fbe152446b0e8904ef10d779f484f3eee1c3cd6f7155a0fca70ff1",
+  "driver_sha256": "096ed05c75e455eda80a91127fe6fff53955806a8bf6c4e498c3e21863da8789",
+  "observations": 900,
+  "history_entries": 26,
+  "unique_selected_checks": 553,
+  "profile_samples": 2826,
+  "profile_fraction_of_optimization_sum": 0.8112239626491997,
+  "performance_gate": "accepted",
+  "accepted_index": 25,
+  "scores": {
+    "optimization": 27.796394538392843,
+    "holdout": 56.601226943851046
+  },
+  "controls": {
+    "optimization": {
+      "raw_mech_speedup": 1.113545831889549,
+      "original_reference_runtime_multiplier": 1.00949685094367,
+      "reference_adjusted_speedup": 1.124121010673949,
+      "c_runtime_multiplier": 0.994081455858076,
+      "raw_regressions_over_five_percent_vs_accepted23": 4
+    },
+    "holdout": {
+      "raw_mech_speedup": 1.126854488238172,
+      "original_reference_runtime_multiplier": 1.0073722211362153,
+      "reference_adjusted_speedup": 1.1351619087138003,
+      "c_runtime_multiplier": 0.999105681634644,
+      "raw_regressions_over_five_percent_vs_accepted23": 0
+    }
+  },
+  "goal_achieved": false,
+  "holdout_use": "Aggregate acceptance only after training selection/freeze; no holdout per-case profiling or tuning."
+}

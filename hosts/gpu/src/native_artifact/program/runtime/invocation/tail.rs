@@ -64,10 +64,10 @@ impl Invocation<'_, '_, '_> {
                 layout.sites.get(site).copied().flatten().filter(|&id| {
                     let region = &layout.regions[id];
                     region.tail.header() as usize == site
-                        && region
-                            .numeric
-                            .as_ref()
-                            .is_some_and(|proof| !proof.exits.is_empty())
+                        && region.numeric.as_ref().is_some_and(|proof| {
+                            !proof.exits.is_empty()
+                                || proof.tagged.as_ref().is_some_and(|v| v.prefix.is_some())
+                        })
                         && self.state.control.previous == Some(region.tail.latch())
                         && self.numeric_prepaid.is_none()
                 })
@@ -283,39 +283,51 @@ impl Invocation<'_, '_, '_> {
                 .1
                 .checked_sub(args[1])
                 .ok_or_else(|| invalid("closed Tail comparison fuel was renewed"))?;
-            let traversals =
-                if let Some(phase) = proof.numeric.as_ref().and_then(|p| p.phase.as_ref()) {
-                    let mut expected = (0u64, 0u64);
-                    let mut root = 0;
-                    for (index, debit) in phase.loops.iter().enumerate() {
-                        let count = self.read_borrowed_word(2 + debit.counter)?;
-                        if index == 0 {
-                            root = count;
-                        }
-                        expected.0 = count
-                            .checked_mul(debit.compute)
-                            .and_then(|n| expected.0.checked_add(n))
-                            .ok_or_else(|| invalid("phase compute settlement overflows"))?;
-                        expected.1 = count
-                            .checked_mul(debit.comparison)
-                            .and_then(|n| expected.1.checked_add(n))
-                            .ok_or_else(|| invalid("phase comparison settlement overflows"))?;
+            let traversals = if let Some(phase) =
+                proof.numeric.as_ref().and_then(|p| p.phase.as_ref())
+            {
+                let mut expected = (0u64, 0u64);
+                let mut root = 0;
+                for (index, debit) in phase.loops.iter().enumerate() {
+                    let count = self.read_borrowed_word(2 + debit.counter)?;
+                    if index == 0 {
+                        root = count;
                     }
-                    if expected != (compute, comparison) {
-                        return Err(invalid("phase fuel differs from actual traversal debits"));
-                    }
-                    root
-                } else {
-                    let traversals = compute / proof.compute;
-                    if compute % proof.compute != 0
-                        || traversals.checked_mul(proof.comparison) != Some(comparison)
-                    {
-                        return Err(invalid(
-                            "closed Tail fuel differs from proved body envelope",
-                        ));
-                    }
-                    traversals
-                };
+                    expected.0 = count
+                        .checked_mul(debit.compute)
+                        .and_then(|n| expected.0.checked_add(n))
+                        .ok_or_else(|| invalid("phase compute settlement overflows"))?;
+                    expected.1 = count
+                        .checked_mul(debit.comparison)
+                        .and_then(|n| expected.1.checked_add(n))
+                        .ok_or_else(|| invalid("phase comparison settlement overflows"))?;
+                }
+                for debit in &phase.summaries {
+                    let count = self.read_borrowed_word(2 + debit.counter)?;
+                    expected.0 = count
+                        .checked_mul(debit.compute)
+                        .and_then(|n| expected.0.checked_add(n))
+                        .ok_or_else(|| invalid("phase summary compute settlement overflows"))?;
+                    expected.1 = count
+                        .checked_mul(debit.comparison)
+                        .and_then(|n| expected.1.checked_add(n))
+                        .ok_or_else(|| invalid("phase summary comparison settlement overflows"))?;
+                }
+                if expected != (compute, comparison) {
+                    return Err(invalid("phase fuel differs from actual traversal debits"));
+                }
+                root
+            } else {
+                let traversals = compute / proof.compute;
+                if compute % proof.compute != 0
+                    || traversals.checked_mul(proof.comparison) != Some(comparison)
+                {
+                    return Err(invalid(
+                        "closed Tail fuel differs from proved body envelope",
+                    ));
+                }
+                traversals
+            };
             (compute, comparison, traversals)
         };
         let previous = match args[2] {
@@ -342,15 +354,16 @@ impl Invocation<'_, '_, '_> {
             ) => site as u32,
             5 if proof.numeric.as_ref().and_then(|p| p.action(site)).is_some_and(|a| matches!(a,
                 crate::native_artifact::program::prepare::readonly_numeric::Operation::Write { .. }
+                | crate::native_artifact::program::prepare::readonly_numeric::Operation::CellWrite { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::AppendLeBytes { .. })) => site as u32,
             6 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
-                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported)))
-                .map(|exit| exit.from as u32)
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported))
+                    .map(|exit| exit.source_predecessor(&proof.actions) as u32))
                 .ok_or_else(|| invalid("numeric cold exit is outside its exact source edge"))?,
             7 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
-                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && !matches!(exit.kind, ExitKind::Unsupported)))
-                .map(|exit| exit.from as u32)
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && !matches!(exit.kind, ExitKind::Unsupported))
+                    .map(|exit| exit.source_predecessor(&proof.actions) as u32))
                 .ok_or_else(|| invalid("numeric fuel exit is outside its exact source edge"))?,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };
@@ -528,8 +541,8 @@ impl Invocation<'_, '_, '_> {
             .as_ref()
             .and_then(|p| p.phase.as_ref())
         {
-            for debit in &phase.loops {
-                self.write_borrowed_word(2 + debit.counter, 0)?;
+            for counter in phase.counters() {
+                self.write_borrowed_word(2 + counter, 0)?;
             }
         }
         self.closed_tail = Some(State {

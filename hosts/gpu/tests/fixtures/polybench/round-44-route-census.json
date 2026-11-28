@@ -1,0 +1,348 @@
+{
+  "scope": "MVT/BiCG qualified candidate callback admission only; zero kernel timing samples; actual Cranelift JIT entry and current numeric composite construction.",
+  "driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "cases": {
+    "mvt": {
+      "breakpoint_locations": {
+        "native": 1,
+        "generic": 1,
+        "composite": 1
+      },
+      "hits": [
+        {
+          "kind": "native",
+          "site": 2,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 2,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 3,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 3,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 4,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 4,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 5,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 5,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 6,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 6,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "composite",
+          "site": 7,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_composite_call"
+        }
+      ],
+      "launch_error": null,
+      "state": 10,
+      "exit_code": 0,
+      "driver_values": [
+        0.0,
+        11.475000000000001,
+        9.700000000000001,
+        9.549999999999999,
+        8.649999999999997,
+        8.375,
+        9.350000000000001,
+        9.75,
+        7.799999999999999,
+        10.075000000000001,
+        7.499999999999999,
+        10.350000000000001,
+        9.450000000000001,
+        9.674999999999997,
+        9.75,
+        8.750000000000002,
+        8.0,
+        9.875000000000004,
+        9.899999999999999,
+        9.95,
+        5.25,
+        10.475000000000001,
+        9.950000000000005,
+        10.549999999999997,
+        8.399999999999999,
+        9.375000000000002,
+        10.1,
+        10.749999999999998,
+        9.25,
+        10.074999999999998,
+        7.75,
+        10.350000000000001,
+        8.6,
+        10.674999999999999,
+        10.500000000000002,
+        9.75,
+        10.050000000000002,
+        10.875000000000002,
+        10.149999999999999,
+        8.950000000000001,
+        0.025,
+        11.087499999999999,
+        9.399999999999999,
+        9.362500000000002,
+        8.525,
+        8.337500000000002,
+        9.450000000000003,
+        9.962499999999999,
+        8.025,
+        10.487499999999999,
+        7.9,
+        9.962500000000002,
+        9.124999999999998,
+        9.487499999999999,
+        9.650000000000002,
+        8.712499999999999,
+        8.024999999999999,
+        10.0875,
+        10.2,
+        10.362500000000002,
+        5.525,
+        10.087499999999997,
+        9.649999999999997,
+        10.362499999999999,
+        8.225000000000001,
+        9.3375,
+        10.200000000000001,
+        10.962499999999999,
+        9.525,
+        10.487500000000002,
+        8.15,
+        9.9625,
+        8.225,
+        10.4875,
+        10.4,
+        9.712500000000002,
+        10.125000000000002,
+        11.0875,
+        10.450000000000003,
+        8.362499999999999
+      ],
+      "execution_report": "NativeProgramExecutionReport { work: 22713761056, comparison_work: 953986874, visits: 9, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timing_samples": 0,
+      "counts_by_site": {
+        "native": {
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 2,
+          "6": 2
+        },
+        "generic": {},
+        "composite": {
+          "7": 1
+        }
+      },
+      "validation": {
+        "count": 80,
+        "finite": true,
+        "max_absolute_error": 3.552713678800501e-15
+      }
+    },
+    "bicg": {
+      "breakpoint_locations": {
+        "native": 1,
+        "generic": 1,
+        "composite": 1
+      },
+      "hits": [
+        {
+          "kind": "native",
+          "site": 2,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 2,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 3,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 3,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 4,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "native",
+          "site": 4,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+        },
+        {
+          "kind": "composite",
+          "site": 5,
+          "site_register": "x2",
+          "function": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_composite_call"
+        }
+      ],
+      "launch_error": null,
+      "state": 10,
+      "exit_code": 0,
+      "driver_values": [
+        13.503968253968253,
+        11.507936507936506,
+        10.678571428571427,
+        10.634920634920636,
+        10.710317460317462,
+        9.357142857142856,
+        9.027777777777779,
+        10.07936507936508,
+        9.964285714285715,
+        9.920634920634921,
+        10.567460317460316,
+        9.071428571428571,
+        10.218253968253965,
+        7.055555555555555,
+        9.964285714285715,
+        10.063492063492061,
+        10.71031746031746,
+        8.928571428571425,
+        9.932539682539682,
+        9.365079365079364,
+        5.25,
+        10.634920634920634,
+        10.567460317460316,
+        9.071428571428573,
+        9.78968253968254,
+        9.936507936507939,
+        9.535714285714286,
+        6.944444444444444,
+        10.281746031746033,
+        8.928571428571429,
+        9.932539682539685,
+        10.07936507936508,
+        9.535714285714286,
+        9.92063492063492,
+        8.472222222222223,
+        8.642857142857144,
+        9.789682539682538,
+        9.365079365079366,
+        0.0,
+        11.452380952380953,
+        9.404761904761903,
+        8.646616541353383,
+        8.730576441102757,
+        8.94611528822055,
+        7.661654135338346,
+        7.456140350877193,
+        8.697994987468672,
+        8.729323308270676,
+        8.813283208020051,
+        9.660401002506267,
+        8.218045112781954,
+        9.56516290726817,
+        6.385964912280702,
+        8.601503759398497,
+        8.843358395989974,
+        9.69047619047619,
+        7.932330827067669,
+        9.121553884711778,
+        8.652882205513784,
+        4.5,
+        9.32080200501253,
+        9.37844611528822,
+        7.93609022556391,
+        8.80952380952381,
+        9.130325814536342,
+        8.845864661654137,
+        6.271929824561404,
+        8.934837092731827,
+        7.650375939849623,
+        8.839598997493733,
+        9.160401002506266,
+        8.718045112781954,
+        9.275689223057643,
+        7.8859649122807,
+        8.206766917293232,
+        9.55388471177945,
+        9.243107769423558,
+        8.800751879699249,
+        8.56892230576441,
+        7.0476190476190474
+      ],
+      "execution_report": "NativeProgramExecutionReport { work: 15085010616, comparison_work: 635036028, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timing_samples": 0,
+      "counts_by_site": {
+        "native": {
+          "2": 2,
+          "3": 2,
+          "4": 2
+        },
+        "generic": {},
+        "composite": {
+          "5": 1
+        }
+      },
+      "validation": {
+        "count": 80,
+        "finite": true,
+        "max_absolute_error": 1.7763568394002505e-15
+      }
+    }
+  },
+  "complete": true,
+  "finite_liveouts": 160,
+  "performance_observations": 0,
+  "prospective_gate_passed": true,
+  "actual_generic_planner_bypass": true,
+  "source_visits_preserved_by_differential_tests": true,
+  "limitations": "Callback-site census establishes actual selected path, not a timing score or allocation count."
+}

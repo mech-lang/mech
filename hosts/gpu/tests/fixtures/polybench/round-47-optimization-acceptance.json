@@ -1,0 +1,116 @@
+{
+  "schema": "mech.polybench.optimization-only-acceptance.v1",
+  "created_at": "2026-11-28T01:44:58.182055+00:00",
+  "history_index": 47,
+  "decision": {
+    "history_index": 47,
+    "label": "round-47-masked-matrix-maps",
+    "source_commit": "44236f0be9ab3713b8b577927ddc172427fb10de",
+    "history_entry_sha256": "32240990c3abcbb7ff6cab7e700259a8325e089710bfc984e75915f6ba16737c",
+    "scores": {
+      "optimization": 9.575943659594117,
+      "holdout": 27.506517683644883
+    },
+    "previous_measured_index": 46,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 45,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9787157672601149,
+      "holdout": 1.0636108856754511
+    },
+    "performance_gate": "accepted",
+    "selection_partition": "optimization",
+    "selection_outcome": "optimization_improved",
+    "holdout_use": "reported_only",
+    "selection_policy": "optimization-only-v4",
+    "accepted_index_after_run": 47
+  },
+  "amendment_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "prior_decision_preserved": {
+    "history_index": 47,
+    "label": "round-47-masked-matrix-maps",
+    "source_commit": "44236f0be9ab3713b8b577927ddc172427fb10de",
+    "history_entry_sha256": "32240990c3abcbb7ff6cab7e700259a8325e089710bfc984e75915f6ba16737c",
+    "scores": {
+      "optimization": 9.575943659594117,
+      "holdout": 27.506517683644883
+    },
+    "previous_measured_index": 46,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 45,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9787157672601149,
+      "holdout": 1.0636108856754511
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 45
+  },
+  "original_qualification": "round-47-training-qualification.json",
+  "original_audit": "round-47-audit.json",
+  "original_measurement_qualification": "round-47-qualification.json",
+  "measurements_unchanged": true,
+  "new_observations": 0,
+  "formal_observations": 900,
+  "finite_liveouts": 29482,
+  "history_entries": 48,
+  "earlier_decisions_exact": true,
+  "restored_source_from": "44236f0be9ab3713b8b577927ddc172427fb10de",
+  "compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+  "source_files_match_qualified_sha256": true,
+  "policy_validation": {
+    "holdout_invariance_and_optimization_improvement_cases": [
+      {
+        "optimization": 9.575943659594117,
+        "holdout": 0.01,
+        "accepted": true
+      },
+      {
+        "optimization": 9.575943659594117,
+        "holdout": 27.506517683644883,
+        "accepted": true
+      },
+      {
+        "optimization": 9.575943659594117,
+        "holdout": 1000000.0,
+        "accepted": true
+      },
+      {
+        "optimization": 9.784192694066512,
+        "holdout": 0.01,
+        "accepted": false
+      },
+      {
+        "optimization": 9.784192694066512,
+        "holdout": 27.506517683644883,
+        "accepted": false
+      },
+      {
+        "optimization": 9.784192694066512,
+        "holdout": 1000000.0,
+        "accepted": false
+      },
+      {
+        "optimization": 20.0,
+        "holdout": 0.01,
+        "accepted": false
+      },
+      {
+        "optimization": 20.0,
+        "holdout": 27.506517683644883,
+        "accepted": false
+      },
+      {
+        "optimization": 20.0,
+        "holdout": 1000000.0,
+        "accepted": false
+      }
+    ],
+    "cli_record_and_check_pass": true
+  },
+  "current_accepted_scores": {
+    "optimization": 9.575943659594117,
+    "holdout": 27.506517683644883
+  },
+  "holdout_use": "Report only for optimization selection. Final below1.0x C goal remains unachieved."
+}

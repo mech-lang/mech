@@ -1,0 +1,331 @@
+{
+  "schema": "mech.polybench.deferred-compiler-prototype.v1",
+  "created_at": "2026-11-28T20:41:57.900784+00:00",
+  "compiler_fingerprint": "7bb735c961d240fa935813b0b04ac15e4d29c8ddcd5d0b75125590f78d2b4e64",
+  "reason": "The new user brief explicitly prioritizes a larger optimization unit: exact counted children in the enclosing generator. The R87 local repeated-bound proof passed23 focused tests but does not remove per-iteration traversal/tag structure. Preserve its source and all checks unmeasured, then recover exact round62 as the counted-loop foundation.",
+  "focused": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "cell_prefix",
+      "numeric_generator",
+      "--test-threads=1"
+    ],
+    "compiler_fingerprint": "7bb735c961d240fa935813b0b04ac15e4d29c8ddcd5d0b75125590f78d2b4e64",
+    "exit_code": 0,
+    "source_unchanged": true,
+    "wall_seconds": 114.2820575828664,
+    "passed_tests": [
+      23
+    ]
+  },
+  "performance_observations": 0,
+  "holdout_observations": 0,
+  "next": "Exact counted generator children, preserving round62 Seidel and original source accounting/error/replay semantics. Existing O-only gates remain.",
+  "effective_plan": {
+    "schema": "mech.polybench.prospective-compiler-experiment.v1",
+    "created_at": "2026-11-28T20:30:58.686205+00:00",
+    "name": "generator-linear-bounds",
+    "source_parent": "c38c4b1dc561290409509b3f3c3ba9fc604f239f",
+    "foundation_commit": "4ee57953f7d800197f2b1d7ffcef33b3e858fbad",
+    "foundation_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+    "accepted_round": 59,
+    "accepted_scores": {
+      "optimization": 7.852513248471486,
+      "holdout": 23.989161547848273
+    },
+    "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+    "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+    "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+    "formal_history_index": 63,
+    "versions": {
+      "ir": 440,
+      "work": 157,
+      "abi": 48
+    },
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs"
+    ],
+    "active_target": {
+      "case": "seidel-2d",
+      "mech_over_c": 1.7111946615974802,
+      "mech_median_seconds": 0.000184667,
+      "c_median_seconds": 0.00010791700333356857
+    },
+    "user_direction": "Keep exact round62 Seidel1.62x foundation and fix other optimization regressors; ignore unrelated pasted library brief.",
+    "profiling_basis": "R84 exact round62 O-only profiles plus R86 selected enclosing-generator evidence. Actual hot Deriche main function contains inline generator children; standalone R85 prefix changes failed the sole O probe and are not retained. Current source linear Read80,Write88,Read90 share actual selector59 and fixed equal bank lengths; each emits its own bound. Production rule uses source recipes/types/CFG, never names/extents/data.",
+    "transformation": "Omit a later linear selector guard inside the current fixed-bank generator only when an earlier successful selected F64 linear read/write in its current unique-predecessor Jump-only source chain has the identical actual U64 selector and equal positive fixed source length. Walk at most128 source edges, same iteration, reject cycles, header/latch/initialize/frame/structural/opaque/control boundaries and selector redefinition; validate exact selected recipes/operands/types and fixed F64 matrix schemas through the current selected generator inventory. No whole-graph dominance permission or facts from prior visits. Keep address conversion/loads/stores/F64 arithmetic/order/source fees/counters exactly. Use shared numeric_words::linear_address for column-major indexing. Earlier guard and unsupported paths remain. No read-value reuse, alias/global memory claims, new runtime storage/helper/frame/ABI or source-work reduction.",
+    "invariants": [
+      "Unchanged30 idiomatic source ports,inputs,C flags/binaries,tolerance/caps,split,timers/cache and objective. O15 only selects/tunes/promotes; H report-only. No benchmark names,fixed MINI extents or data assumptions in compiler rules.",
+      "Cranelift sole Mech generator. Reuse current source facts, selected generator inventory, admitted current private banks, canonical typed layout, shared scalar and linear-address emitters, original loan/fee/replay/publication machinery. No runtime allocation/cache/helper/frame/ABI/mode/serialized authority or weaker accounting. Efficient scalar/compression code remains.",
+      "All generator banks have fixed exact source extents validated by current entry and bank construction. Earlier successful1..length bound proves identical unchanged actual selector valid in an equal-length bank, even when contents differ. No read-value or alias reuse. Preserve every first guard and current geometry/pointer/span/owner/epoch check.",
+      "Every backward chain edge has one actual predecessor and exact Jump successor in the same iteration. Stop before source headers/latches/initializers, structural/frame/opaque/other library actions, branch/join/cycle or redefinition of the actual selector. Bound128 and require same-plan unique scalar definition. Descriptive facts alone are not permission; no previous-iteration or whole-graph dominance shortcut.",
+      "Source strict IEEE F64 tree/operation order/rounding stays; no extra finite guard,FMA,reassociation or SIMD of dependent outputs. Current generator private writes,whole-source miss replay, exact original first errors/payloads, old external output atomicity, finite cap refusal, no-op/alias and cleanup/retry remain.",
+      "Retain exact round62 point-prefix,host matrix-preflight and original dot source. Do not carry failed R85 single-read prefix changes. Seidel native functions/code/stack must exactly match1.62 foundation. All O counters exactly match accepted59; no visit/source bill reduction or padding.",
+      "No Rust edits during any owned build/test/profile/timing; preserve failed scripts/logs/snapshots and every observation. One210 probe per fully qualified materially changed FP; one900 formal63 if selected. No retries/exclusions."
+    ],
+    "qualification": "Focused private positive/negative source-proof checks and actual generator kernels; original-decoded-restored ablation of only this rule with rectangular/row/column shapes,distinct cells,NaN/Infinity/signedzero/subnormal,late source bounds,prior private writes,first errors,no body callbacks,finite denials,atomic output,retry/cleanup,canary/null bank and exact traversal tallies. Full all30/restored/both features and17002 finite O C outputs/all counters. Actual hot main code loses proved checks while standalone helpers and Seidel match exact round62. One210 probe then frozen formal63 if selected.",
+    "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts; zero timing samples.",
+    "training_probe": {
+      "actors": [
+        "accepted59",
+        "candidate"
+      ],
+      "samples_per_actor_case": 7,
+      "observations": 210,
+      "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+    },
+    "formal_acceptance": "If selected commit/push exact clean source/driver, one frozen900-observation formal63/29482 finite C values. Promote iff O15 Mech/C<7.852513248471486; H report-only. Preserve all sources/attempts/observations; accepted59 until strict gate passes.",
+    "performance_observations": 0,
+    "static_gate": "Prove actual repeated linear read/write guards in Deriche and inspect emitted hot main code; floating arithmetic/nativehelper/Seidel code unchanged. Record all collateral O changes and exact counters; no latency forecast.",
+    "scope_correction": {
+      "created_at": "2026-11-28T19:08:52.004892+00:00",
+      "basis": "Verified SchemaTable::clone_allocation_bound_bytes returns an already cached bound. The duplicate resource methods read that cached scalar; they do not walk schemas.",
+      "work_removed": "The second pure checked-arithmetic/template-classification pass and duplicate geometry reconstruction disappear. The exact final output ShapeInstance also moves into the loan instead of being constructed again. No claim of schema-traversal removal or speedup forecast.",
+      "source": "src/core/src/schema/table.rs:1046 and src/engine/src/resident/general/native_collection_numeric_binary.rs:297"
+    }
+  },
+  "archives": {
+    "add-tests.py": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/add-tests.py.gz",
+      "sha256": "906479b355fd1f096eaca10fda66da75de1cdfdbf5cf6229a1bab07b56f2b7ad",
+      "compressed_sha256": "432281712136612e6260e56035640c5abd78b8b5ea9605134a75fff9ba1bc2ce"
+    },
+    "attempt-01/focused-result.json": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/focused-result.json.gz",
+      "sha256": "fb814c1641bffea383a889898fde3e61cab24c8c0ece643a24a241187ad547cd",
+      "compressed_sha256": "3d152f6a43f3baa922894c4b5e5c2a7b1e3168b9dfa9e2c90827fea34f133644"
+    },
+    "attempt-01/focused.log": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/focused.log.gz",
+      "sha256": "ffbc9079f2897b2a53c703f7d6f1e1b4339fd50334494af938db01411840fdf7",
+      "compressed_sha256": "41e34e6dc61a365d40126f1120ac79c3f2ad255f444244f62886b2c1545a00c9"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+      "sha256": "b6009f0f3c7e6eed1ac955bd67085418953daaa3d86503b32752f62e926276e2",
+      "compressed_sha256": "1bd0510fc0a6e80d78e566cb7820cc060a7615b22f6aeb41aa99545b737d089d"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "d8a7898c0a1afd7cc374dec7ddf5f8479b4370c19e6b13f84cd9c8a62333cb7c",
+      "compressed_sha256": "178c4398c6af2f40d7833a312e9c303e249182537cbdd0df4f2d1ded5f33f6d5"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+      "compressed_sha256": "63b59090a0bdfd3f186f3a20ad69877d3d73651c786a98499349a39cc27ffebf"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+      "compressed_sha256": "390c3baee9c6bde2c43d9dba844edd18cafde6be3ce3df6892530f85fa129e47"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs.gz",
+      "sha256": "3127a18b3cf82a8c118eed9009493c437cb64fdc9e4f735b6e034566d060aab8",
+      "compressed_sha256": "8f79332c1751b72dd387a741a4edb2cb34cf5a5789b2c5ba5a0008980f677cdb"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs.gz",
+      "sha256": "5fcba03e6982aa246f13f65f5854d8f2411615da16af138a54648091963aa212",
+      "compressed_sha256": "9e06b8ccda29886819ed0201b9e16a41eff9fec61c876c79246d1b5562719fe8"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs.gz",
+      "sha256": "5bf85741aa044b5ab4a7521eed76a8c5c2800206d47e34d6f20b1db831139f4d",
+      "compressed_sha256": "e4c50099698e0dcb093256fae5cee5e31842c8b214bd2da681ae9ed67154e494"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+      "compressed_sha256": "000f6c27844c10008f2a01342b636316d711f40bb33a4b55ae21e12334e25502"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "9b10ff755e275641e606e906fecf454cfdfba59c3de48f33c30f497c8ebb41b0",
+      "compressed_sha256": "2b7eee4e7a6d4b02476a4498c6453fbe610523440b6547c7f490b65ab65e2927"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+      "compressed_sha256": "9aed8a7c5fff3c0c63d787384b92317a24a6c50937ce5b5bf8cb7c1c284d84fb"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs.gz",
+      "sha256": "e8ebd5857d54e366f675a4feae45e50f2ef57dd259cfd2b542da8329e06f0b20",
+      "compressed_sha256": "8af8e52b90c128c901e545a0d782817430781024d8d3c8fe562197f7b18b3e58"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs.gz",
+      "sha256": "691355efaa48afa35ed4f1c85ed9d6060ad23f51a47e228ea399d616e3565b79",
+      "compressed_sha256": "ba5cb86147a00f21a59718d4cebd3e4d60dc65ef07de4ab338190968b66de504"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz",
+      "sha256": "2cca365d2c9b2d03fe8eb55204ac0dff544bbb7ffd3d52ec53d0821cadb52d5a",
+      "compressed_sha256": "054775687e3f220aaa448075482f512cd900a051ec5fa4771612359bfbdd9d63"
+    },
+    "bounds-source.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/bounds-source.rs.gz",
+      "sha256": "a8bd73d29aa66ebf22746476214174f5e5acaa16578a50c0a367ffae013f9ac1",
+      "compressed_sha256": "0f1eed56bf58b443ed86a574f25b834b3ba8a5f6a32d94ac277eb6feab9c6513"
+    },
+    "current-work.json": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/current-work.json.gz",
+      "sha256": "b11665c8f99830f6712e23b0f6310d4d76173fa5361468022dc2c2f8fa70f1b0",
+      "compressed_sha256": "b16cf86a30c141e04f154d436960ed8d87a9a75b1b2a31e46f939225b54d2c88"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/codegen/control/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+      "sha256": "b6009f0f3c7e6eed1ac955bd67085418953daaa3d86503b32752f62e926276e2",
+      "compressed_sha256": "1bd0510fc0a6e80d78e566cb7820cc060a7615b22f6aeb41aa99545b737d089d"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "d8a7898c0a1afd7cc374dec7ddf5f8479b4370c19e6b13f84cd9c8a62333cb7c",
+      "compressed_sha256": "178c4398c6af2f40d7833a312e9c303e249182537cbdd0df4f2d1ded5f33f6d5"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+      "compressed_sha256": "63b59090a0bdfd3f186f3a20ad69877d3d73651c786a98499349a39cc27ffebf"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+      "compressed_sha256": "390c3baee9c6bde2c43d9dba844edd18cafde6be3ce3df6892530f85fa129e47"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator.rs.gz",
+      "sha256": "3127a18b3cf82a8c118eed9009493c437cb64fdc9e4f735b6e034566d060aab8",
+      "compressed_sha256": "8f79332c1751b72dd387a741a4edb2cb34cf5a5789b2c5ba5a0008980f677cdb"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_arrays.rs.gz",
+      "sha256": "5fcba03e6982aa246f13f65f5854d8f2411615da16af138a54648091963aa212",
+      "compressed_sha256": "9e06b8ccda29886819ed0201b9e16a41eff9fec61c876c79246d1b5562719fe8"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_generator_bounds.rs.gz",
+      "sha256": "5bf85741aa044b5ab4a7521eed76a8c5c2800206d47e34d6f20b1db831139f4d",
+      "compressed_sha256": "e4c50099698e0dcb093256fae5cee5e31842c8b214bd2da681ae9ed67154e494"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+      "compressed_sha256": "000f6c27844c10008f2a01342b636316d711f40bb33a4b55ae21e12334e25502"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "9b10ff755e275641e606e906fecf454cfdfba59c3de48f33c30f497c8ebb41b0",
+      "compressed_sha256": "2b7eee4e7a6d4b02476a4498c6453fbe610523440b6547c7f490b65ab65e2927"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+      "compressed_sha256": "9aed8a7c5fff3c0c63d787384b92317a24a6c50937ce5b5bf8cb7c1c284d84fb"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_execution.rs.gz",
+      "sha256": "e8ebd5857d54e366f675a4feae45e50f2ef57dd259cfd2b542da8329e06f0b20",
+      "compressed_sha256": "8af8e52b90c128c901e545a0d782817430781024d8d3c8fe562197f7b18b3e58"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_generator_kernel.rs.gz",
+      "sha256": "691355efaa48afa35ed4f1c85ed9d6060ad23f51a47e228ea399d616e3565b79",
+      "compressed_sha256": "ba5cb86147a00f21a59718d4cebd3e4d60dc65ef07de4ab338190968b66de504"
+    },
+    "deferred-source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred-source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz",
+      "sha256": "2cca365d2c9b2d03fe8eb55204ac0dff544bbb7ffd3d52ec53d0821cadb52d5a",
+      "compressed_sha256": "054775687e3f220aaa448075482f512cd900a051ec5fa4771612359bfbdd9d63"
+    },
+    "deferred.json": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/deferred.json.gz",
+      "sha256": "e493334109b482411a038091d5cf501ede83116caaad7619accbf4521fcc1ee3",
+      "compressed_sha256": "6c70aaffc8ce1a8f5e67c4ec58489d39532fdf2539a41b0fced888984f924335"
+    },
+    "focused-result.json": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/focused-result.json.gz",
+      "sha256": "fb814c1641bffea383a889898fde3e61cab24c8c0ece643a24a241187ad547cd",
+      "compressed_sha256": "3d152f6a43f3baa922894c4b5e5c2a7b1e3168b9dfa9e2c90827fea34f133644"
+    },
+    "implement.py": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/implement.py.gz",
+      "sha256": "f875d7e84b7f7471d552592b9910ea340949d359f7f5a10c76efeaf60e319638",
+      "compressed_sha256": "c08e4dbb8021bb84eedc974025246fe0bd32de8b9bbde51c6589936d62f1b014"
+    },
+    "plan.json": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/plan.json.gz",
+      "sha256": "675e9711a8a1ceab12689930532cd5679855fe08302ef51d52524a58df8ff376",
+      "compressed_sha256": "b12bfd4261528bb340d7aaadd61c6d4cdb8d927ba39da4034c7241051424aeca"
+    },
+    "preserve-deferred.py": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/preserve-deferred.py.gz",
+      "sha256": "e857a5db7dbe325ccd8f6a83948a400646831c4177dee44489a9e2283770186c",
+      "compressed_sha256": "7a4b6420b955a4691f3e931df3875dfc1bcdc60c21469375c3ba9d09ea6cc1bf"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-87-generator-linear-bounds-deferred/run-focused.py.gz",
+      "sha256": "ffa7d908e687e468804a0a0ee566bd5f8b892111412ec74fe8b8a0e4913c1a4a",
+      "compressed_sha256": "cfec96f0e4a28e5d2d98e37b642e326c497c11ba7755292dfecf0c8b0ef971c0"
+    }
+  },
+  "restored_compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "accepted_round_unchanged": 59,
+  "formal_history_entries_unchanged": 63
+}

@@ -1,0 +1,57 @@
+{
+  "schema": "mech.polybench.optimization-profile-plan.v1",
+  "created_at": "2026-11-28T16:50:47.236223+00:00",
+  "accepted_round": 59,
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_source_parent": "24b833daa88e01711c19a42c27af401717bc90f9",
+  "profiled_status": "Fully qualified but unselected rolling-cell compiler; single210-observation probe rejected. No new official timing or retry.",
+  "qualified_source_commit": "ad4f318c5646c2b75ded6abf1a448602c536c67a",
+  "compiler_fingerprint": "79c3fe81054cca8609c54af49a01a6eb78d9967e283a6977dabc9dd916ae6d4a",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "a161c1b7dfade5819681aa4a19328a93b60c76d9a5b26ee53c7f789298603045",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "f7de3a4190f8f0f87ebad5646f44b83648316a9787fbc04a612817edd174cf31",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "b8d7d611fd5d531a7cd97acd85a30f01632bc4dea78bed4c323f34ce7c29a35e",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "e619b4d8bff5144d33f36508c654dff774f7f8f94ae73b8b8841e5cd56c5946f",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "d9095852a7e5929510f3abadd85f5c0bd6c20c3fa77efcfd1b48865314f42641",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": "35afe52dabceafd192fdf07b2c981a4771fdf148ebbbafd79ae0f3aecb00ee7c",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": "79aa29638d54c06f22f2fa45e081087b130a3ba45cf3ecb2618f262fcc606325",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d"
+  },
+  "introduced_source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs"
+  ],
+  "existing_source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs"
+  ],
+  "cases": [
+    "seidel-2d"
+  ],
+  "selection": "Active closest-parity optimization target only. Rejected rolling candidateexact79c3 fingerprint slowed Seidel188.5us to249.166us, raw speedup0.7565237632742831; aggregate0.9962806821997101. Inspect actual generated code and SSA live ranges around cold call/state boundaries. Holdout is not diagnosed.",
+  "method": "Temporarily restore exact qualified compiler source, use unchanged public-API host with Cranelift sole Mech generator, sample one owned warm process3s at1ms, capture only named executable JIT ranges from that same PID after sampling, resume child to real terminal0, validate finite warm/final C outputs and exact frozen counters, bind every code byte/local BL to genuine frozen Objects, then restore exact accepted59 source. No source edits during build/profile and no timing observations.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/private/tmp/mech-polybench-optimization/round-73/rolling-cell-prefixes/emission-census.json",
+  "counter_gate": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/training-experiments/rolling-cell-prefixes-route-census.json",
+  "profiled_driver": "/private/tmp/mech-polybench-optimization/round-73/rolling-cell-prefixes/rolling-cell-prefixes-complete-driver",
+  "profiled_driver_sha256": "445b1a20033c1482d09bea25e1fcc17c9185095e69c096fafa873ae00d6dcb95",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "hypothesis_to_check": "Nine-to-three source reads coexist with stack288-to384B and vector cache spills. Determine hot sampled PCs in actual same-PID generated function, then inspect whether cache values unnecessarily survive original first-change/COW and other cold state edges. A bounded cache may safely be discarded on any such edge; preserve original source, complete fresh admission, F64 order, COW/no-op/first errors, exact counters and all policies. No global F64-home or private-first retry.",
+  "holdout_profiling": false,
+  "official_performance_observations": 0,
+  "history_entries_unchanged": 61,
+  "scope_limit": "Warm residence includes output reset/drop and is not an official cache-flushed timing sample. PC samples are locations in dependency chains, not exclusive instruction cost, hardware retirement/IPC/cache/traffic/RSS or speedup forecasts."
+}

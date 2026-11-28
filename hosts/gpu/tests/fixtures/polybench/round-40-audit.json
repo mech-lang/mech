@@ -1,0 +1,77 @@
+{
+  "schema": "mech.polybench.frozen-audit.v1",
+  "created_at": "2026-11-27T18:56:02.222483+00:00",
+  "candidate_label": "round-40-native-map-memory",
+  "source_commit": "b30c003638df3e28e0dfd90481462f4772a72114",
+  "compiler_fingerprint": "aff69a1ec36d1da319824a4e5218f4a07d92658da026722018060cf3ca2136ef",
+  "driver_sha256": "e1cc3d5cb1d3daaa04c897176668f8790377b732aa7f58becc08d905c7c4d062",
+  "source_frozen_for_both_sets": true,
+  "partitions": {
+    "optimization": {
+      "programs": 15,
+      "liveouts": 17002,
+      "observations": 450
+    },
+    "holdout": {
+      "programs": 15,
+      "liveouts": 12480,
+      "observations": 450
+    }
+  },
+  "observations": 900,
+  "counts_by_actor_mode": {
+    "optimization/kernel/mech": 75,
+    "optimization/kernel/c": 75,
+    "optimization/kernel/reference": 75,
+    "optimization/fresh/mech": 75,
+    "optimization/fresh/c": 75,
+    "optimization/fresh/reference": 75,
+    "holdout/kernel/mech": 75,
+    "holdout/kernel/c": 75,
+    "holdout/kernel/reference": 75,
+    "holdout/fresh/mech": 75,
+    "holdout/fresh/c": 75,
+    "holdout/fresh/reference": 75
+  },
+  "finite_liveouts": 29482,
+  "qualification_checks": 686,
+  "both_feature_checks_passed": true,
+  "history_append_only": true,
+  "history_entries": 41,
+  "performance_acceptance": {
+    "history_index": 40,
+    "label": "round-40-native-map-memory",
+    "source_commit": "b30c003638df3e28e0dfd90481462f4772a72114",
+    "history_entry_sha256": "2600b06afb8d02a77273e4688bfc9fb512a59c1d8e58f773e8a87c231f47d5b4",
+    "scores": {
+      "optimization": 12.176723368206272,
+      "holdout": 39.59330423517927
+    },
+    "previous_measured_index": 39,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 31,
+    "multipliers_vs_accepted": {
+      "optimization": 1.0647378643273016,
+      "holdout": 1.0070610157718543
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 31
+  },
+  "aggregate_controls_vs_accepted31": {
+    "optimization": {
+      "raw_mech_speedup": 0.9790668712460893,
+      "original_reference_runtime_multiplier": 1.0149474884046035,
+      "reference_adjusted_speedup": 0.9937014619513717,
+      "c_runtime_multiplier": 0.9592790186065783,
+      "raw_regressions_over_five_percent_vs_accepted31": 5
+    },
+    "holdout": {
+      "raw_mech_speedup": 1.0020593979682038,
+      "original_reference_runtime_multiplier": 1.0159202400825418,
+      "reference_adjusted_speedup": 1.0180124241608248,
+      "c_runtime_multiplier": 0.9909477368366971,
+      "raw_regressions_over_five_percent_vs_accepted31": 5
+    }
+  },
+  "holdout_use": "Aggregate gate only; no per-case performance diagnosis or source tuning."
+}

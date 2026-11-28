@@ -1,0 +1,84 @@
+{
+  "schema": "mech.polybench.selected-map-spans-plan.v1",
+  "created_at": "2026-11-28T10:32:30.870308+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "0d93c94d09266f1664852c92d39e04f35c5a63f9",
+  "accepted_round": 54,
+  "accepted_scores": {
+    "optimization": 8.365861893301812,
+    "holdout": 24.599383003745523
+  },
+  "accepted_compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+  "accepted_driver_sha256": "6b4a671cdf6dea29e05264c091d79a8a706a6e3e8203cbb25302a6ad84d04fd2",
+  "formal_history_entries": 55,
+  "formal_history_next_index": 55,
+  "private_trial": 60,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_publication.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_publication_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/selected_map_spans.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": "439fe615822a90b30761b14c9a719a841efc795ed6e69b2e08085f3f7375228d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_publication.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_publication_tests.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "9232662f455de400f14fa77577b9f9b3e0d20bc1b4617c3144ebc0afe7d2d618",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "7f7c7ca3fc2b381a192dfcefafbe8977e18c4711c6d9f85841c0d4d29f8902d9",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "00fd4e61d913d4a04a4d249d60a58478ebed098e806789a0a1c9499068126f37",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "496fc990b9cd54f52cf3d7d0617f657a6f81d2b130d7199253d9b80448304115",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f17186abe51a60665c31d76bc6213fde478ac5b835e96b63ba8d9239b0a3d06a",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/selected_map_spans.rs": null
+  },
+  "versions": {
+    "ir": 424,
+    "work": 157,
+    "abi": 48
+  },
+  "profiling_basis": [
+    "accepted54-phase-profile.json: source/outputs/counters/history unchanged; same-PID entire numeric functions19428B/7604B Object-identical and complete callers independently bound through their only ordinary BL relocations. Gram generated80.45%/1790samples, Durbin44.56%/2280samples.",
+    "At least234 Gram execution samples(13.0726%) identify one selected-publication header/store pair0x28e4/0x29ac. Its body recomputes per-cell division/remainder, mask coordinate and physical index. Durbin publication header0xe2c has124samples(5.4386%). These warm diagnostic shares are not exact frozen timer shares or hardware counters. No holdout diagnosis or tuning."
+  ],
+  "transformation": "After the original checked map completes, decompose existing source-proved selected axes into at most two disjoint clipped intervals each. Publish exactly their selected Cartesian set through contiguous physical row spans, using bounded integer I8x16 copies and exact scalar-width tails. Coalesce full-column row bands and specialize singleton axes. Keep original scalar per-cell publication as private SelectedMapSpans emission ablation. Existing source evaluation/map order, full scratch/fallback/initialization, guards and all arithmetic remain unchanged.",
+  "invariants": [
+    "All30 ports, inputs, C flags/binaries, tolerance, limits, timing/cache boundaries and split remain fixed. No benchmark names or MINI dimensions in compiler rules.",
+    "Intervals are clipped and disjoint; their Cartesian product equals exactly the old Selection::output_index set. Only private completed publication order changes. Original source evaluation, arithmetic/FP order, every checked read/first failure and simultaneous old-value semantics remain.",
+    "Every vector load/store stays wholly within one initialized selected span. Exact scalar tails never touch holes/complement/padding/canaries. Empty bands/spans access no memory. Singleton and full axes use source-derived geometry, not data-specific bounds.",
+    "The existing base==identity-source branch, full current spans, scratch disjointness, complete checked evaluation and all admission/ownership/epoch/context checks remain. No fallible operation/helper is introduced after first publication. Existing full publication and scratch initialization paths remain byte-for-byte source identical.",
+    "All execution counters exactly accepted54, including source work/comparison and physical source visits. No runtime frame/helper/ABI/state/data buffer/per-op allocation, accounting or cross-invocation cache change.",
+    "Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles. Direct efficient Bool/U64/I64/F64 and scalar/compression paths remain. IR424/work157/ABI48."
+  ],
+  "qualification": "Four focused groups: runtime-bound actual Cranelift selected-set/copy coverage across all comparators, row/column/linear/compound/disjoint intervals, widths1/2/4/8, odd/empty/unaligned/tail/boundary shapes, zero/MAX bounds, poisoned holes/canaries/source immutability; actual new/old production-emitter SSA/native code witnesses; original/decoded/restored public source JIT ablation with finite/nonfinite exact words and same-bank/other-bank paths; partial errors/finite caps/aliases/atomic outputs/cleanup/retry. Maintained broad matrix/numeric/scalar/compression/type/image/source/protocol checks, both features, all30 finite C cases. Preserve every attempted source/failure.",
+  "untimed_gate": "All17002 optimization15 finite C outputs and exact equality of every execution counter against accepted54. Genuine Objects plus runtime-shaped emission must verify actual selected row-span copy path and removal of per-cell publication coordinate reconstruction, with bounded vector/tail accesses and no new FMA. Report code/instruction/stack effects without predicting runtime.",
+  "training_probe": {
+    "actors": [
+      "accepted54",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fully qualified fresh-process prospective probe per materially changed fingerprint. Select iff raw equal-weight GM accepted54/candidate median runtime speedup>1; preserve all210 observations and regressions, no retries/exclusions."
+  },
+  "formal_acceptance": "If selected and fully qualified, commit/push clean exact source+driver and freeze before one900-observation formal run,29482 finite C liveouts, immutable history index55. Promote solely optimization15 Mech/C strictly below8.365861893301812. Holdout independently reported; cannot select/veto/diagnose/tune/trigger rollback or retry.",
+  "prior_related_work": "Rejected32/40 packed completed full-bank copies/source constants predate selected/compound masks; they did not lower selected Cartesian publication to physical row spans. Existing full publication and initialization are unchanged. This removes per-cell selected-coordinate reconstruction and changes only nonfallible completed private-store traversal, never source evaluation or arithmetic. No exact retry of bounds/read-reuse/SSA-frame/copy-removal fingerprints.",
+  "performance_observations": 0,
+  "implementation": {
+    "transformation": "After the original checked map completes, decompose existing source-proved selected axes into at most two disjoint clipped intervals each. Publish exactly their selected Cartesian set through contiguous physical row spans, using bounded integer I8x16 copies and exact scalar-width tails. Coalesce full-column row bands and specialize singleton axes. Keep original scalar per-cell publication as private SelectedMapSpans emission ablation. Existing source evaluation/map order, full scratch/fallback/initialization, guards and all arithmetic remain unchanged.",
+    "invariants": [
+      "All30 ports, inputs, C flags/binaries, tolerance, limits, timing/cache boundaries and split remain fixed. No benchmark names or MINI dimensions in compiler rules.",
+      "Intervals are clipped and disjoint; their Cartesian product equals exactly the old Selection::output_index set. Only private completed publication order changes. Original source evaluation, arithmetic/FP order, every checked read/first failure and simultaneous old-value semantics remain.",
+      "Every vector load/store stays wholly within one initialized selected span. Exact scalar tails never touch holes/complement/padding/canaries. Empty bands/spans access no memory. Singleton and full axes use source-derived geometry, not data-specific bounds.",
+      "The existing base==identity-source branch, full current spans, scratch disjointness, complete checked evaluation and all admission/ownership/epoch/context checks remain. No fallible operation/helper is introduced after first publication. Existing full publication and scratch initialization paths remain byte-for-byte source identical.",
+      "All execution counters exactly accepted54, including source work/comparison and physical source visits. No runtime frame/helper/ABI/state/data buffer/per-op allocation, accounting or cross-invocation cache change.",
+      "Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles. Direct efficient Bool/U64/I64/F64 and scalar/compression paths remain. IR424/work157/ABI48."
+    ]
+  }
+}

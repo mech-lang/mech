@@ -1,0 +1,42 @@
++> stats
+-- Lower entries depend on their solved prefix; the upper row is independent.
+#LU(initial<[f64]:40,40>, size<u64>) => <[f64]:40,40>
+  | :Lower(a<[f64]:40,40>, i<u64>, j<u64>)
+  | :Upper(a<[f64]:40,40>, i<u64>)
+  | :Done(a<[f64]:40,40>).
+#LU(initial, size) -> :Lower(initial, 1u64, 1u64)
+  :Lower(a, i, j)
+    | i > size -> :Done(a)
+    | j < i -> {
+        total := (j == 1u64? | true => 0.0 | false => stats/sum/column([a[i,k] * a[k,j] | k <- 1u64..j])[1u64])
+        ~next := a
+        next[i,j] = (a[i,j] - total) / a[j,j]
+      } -> :Lower(next, i, j + 1u64)
+    | * -> :Upper(a, i)
+  :Upper(a, i) -> {
+      next := [[((row == i && col >= i)? | true => a[row,col] - (i == 1u64? | true => 0.0 | false => stats/sum/column([a[i,k] * a[k,col] | k <- 1u64..i])[1u64]) | false => a[row,col]) | row <- 1u64..=40u64]' | col <- 1u64..=40u64]
+    } -> :Lower(next, i + 1u64, 1u64)
+  :Done(a) => a.
+-- Unit-lower forward substitution, followed by upper backward substitution.
+#Solve(a<[f64]:40,40>, rhs<[f64]:40,1>, initial-y<[f64]:40,1>, initial-x<[f64]:40,1>, size<u64>) => <[f64]:40,1>
+  | :Forward(y<[f64]:40,1>, x<[f64]:40,1>, i<u64>)
+  | :Backward(y<[f64]:40,1>, x<[f64]:40,1>, i<u64>)
+  | :Done(x<[f64]:40,1>).
+#Solve(a, rhs, initial-y, initial-x, size) -> :Forward(initial-y, initial-x, 1u64)
+  :Forward(y, x, i)
+    | i <= size -> {
+        total := (i == 1u64? | true => 0.0 | false => stats/sum/column([a[i,j] * y[j] | j <- 1u64..i])[1u64])
+        ~next := y
+        next[i] = rhs[i] - total
+      } -> :Forward(next, x, i + 1u64)
+    | * -> :Backward(y, x, size)
+  :Backward(y, x, i)
+    | i > 0u64 -> {
+        total := (i == size? | true => 0.0 | false => stats/sum/column([a[i,j] * x[j] | j <- (i + 1u64)..=size])[1u64])
+        ~next := x
+        next[i] = (y[i] - total) / a[i,i]
+      } -> :Backward(y, next, i - 1u64)
+    | * -> :Done(x)
+  :Done(x) => x.
+factors := #LU(A<[f64]:40,40>, n<u64>)
+#Solve(factors, b<[f64]:40,1>, y<[f64]:40,1>, x<[f64]:40,1>, n)

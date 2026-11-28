@@ -1,0 +1,5 @@
+-- The unit lower triangle transposes into an upper triangular product.
+size := m<u64>
+a := A<[f64]>
+upper := [[((i == j)? | true => 1.0 | false => ((i < j)? | true => a[j,i] | false => 0.0)) | i <- 1u64..=size]' | j <- 1u64..=size]
+alpha<f64> * (upper ** B<[f64]>)

@@ -1,0 +1,29 @@
+{
+  "selected_at": "2026-11-27T07:53:06.379595+00:00",
+  "prospective_rule": {
+    "scope": "Optimization15 only. Written before candidate timing probe. No holdout diagnosis or tuning.",
+    "candidate": "round31 inverse scalar bitcasts on the existing ordered matrix sum source",
+    "prerequisites": [
+      "582 checks and both standalone features pass on the same source fingerprint",
+      "Real emitted optimization-set functions record at least one inverse scalar bitcast removal",
+      "All15 optimization warmups match full C liveouts",
+      "All execution counters match base30 exactly"
+    ],
+    "training_selection": "One seven-sample, rotating three-actor probe. Select only if raw geometric-mean speedup is strictly greater than1 versus BOTH accepted29 and base30. Preserve every case, regression and actor observation; no timing exclusions or post-hoc retry.",
+    "formal_promotion": "Separate frozen900-observation full protocol. Both formal Mech/C scores must strictly improve versus accepted29; no tolerance. No promotion based on training probe."
+  },
+  "probe_sha256": "c6ebb63e4e376e9e59d12dfd3f6ca768fc79c5f6711ef616e940dd295cac95c8",
+  "emission_census_sha256": "f0c5711ecc56764bd2c8035c065f69a58d35d12632ed63013586529a76fef04d",
+  "selected_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "selected_driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "decision": "Select unchanged qualified inverse scalar bitcast cleanup on ordered-sum source for frozen formal both-set evaluation",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_base30": 1.0720879740128553,
+    "geomean_raw_speedup_vs_accepted29": 1.1999188977946826,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.001021335,
+    "sum_reference_median_seconds": 0.001300957
+  },
+  "holdout_performance_used": false
+}

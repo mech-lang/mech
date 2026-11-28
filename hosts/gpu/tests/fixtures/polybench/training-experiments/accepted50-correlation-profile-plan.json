@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+  "created_at": "2026-11-28T07:08:36.991754+00:00",
+  "accepted_round": 50,
+  "source_commit": "6a415339d2e78024f32fde16c3af4ca5bbdb204e",
+  "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+  "cases": [
+    "correlation"
+  ],
+  "selection": "Next highest accepted50 optimization15 Mech/C margin after the already sampled Gram-Schmidt, Durbin and MVT. No holdout diagnosis or selection.",
+  "optimization_rank": 4,
+  "recorded_mech_over_c": 17.86051305960265,
+  "method": "Reuse the byte-pinned accepted50 public-API residence host wrapper. Sample one owned warm checked-call process3s at1ms, then stop only after sampling, capture its named native executable ranges and resume the same PID to real terminal exit. Compare sampled instructions/full code with genuine accepted50 Objects and validate warmup/final finite C values and frozen counters. No Rust source/build changes or timing samples.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "driver": "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence-driver",
+  "driver_sha256": "cd509ac753b94a39fede1c65d4980a66d1373bdf5e2304e7658228b4d5d86e85",
+  "source_native_generator": "Maintained Cranelift public JIT/Object APIs; Rust compiled only the existing host wrapper.",
+  "hypothesis_to_check": "The ordinary centered*centered matrix materializes before ordered sum. Profile whether preparation/ownership and/or the complete intermediate pass justify general producer-to-reduction fusion; preserve +0 and each output term order, full original source fees and fallback. No speedup is inferred.",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "scope_limit": "Warm residence includes output reset/drop outside the formal kernel timer; sample shares are not exact timer shares or retired instruction counts."
+}

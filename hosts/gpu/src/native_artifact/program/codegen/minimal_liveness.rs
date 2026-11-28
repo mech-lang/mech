@@ -66,17 +66,66 @@ pub(super) fn required(
     for &site in &proof.sites {
         let mut e = Effects::default();
         match proof.action(site) {
+            Some(Operation::Reduce { fold }) => {
+                e.used(fold.source.first as usize);
+                e.used(fold.source.last as usize);
+                for &value in &fold.source.region.captures {
+                    e.used(value as usize);
+                }
+                for &array in &fold.arrays {
+                    for at in 0..4 {
+                        e.used(shadow + proof.view(array) + at);
+                    }
+                }
+                e.writes.insert(
+                    fold.source
+                        .region
+                        .reduction
+                        .as_ref()
+                        .ok_or_else(|| backend("fold liveness lost its scalar output"))?
+                        .scalar as usize,
+                );
+            }
+            Some(Operation::Map { replacement }) => {
+                for value in replacement.source.scalar_values() {
+                    e.used(value as usize);
+                }
+                for &array in replacement
+                    .arrays
+                    .iter()
+                    .chain(std::iter::once(&replacement.target))
+                {
+                    for at in 0..4 {
+                        e.used(shadow + proof.view(array) + at);
+                    }
+                }
+                e.used(shadow + proof.private_flag(replacement.target));
+                if let Some(bank) = proof.map_bank(replacement.target) {
+                    e.used(shadow + bank);
+                    e.writes.insert(shadow + proof.view(replacement.target));
+                    e.writes
+                        .insert(shadow + proof.private_flag(replacement.target));
+                }
+            }
             Some(Operation::Frame) => {
-                let moves = super::super::numeric_words::frame_word_moves(
+                let moves = super::super::numeric_words::frame_word_moves_for(
                     shadow,
                     code,
                     site,
                     &proof.frames,
+                    proof.tagged.as_deref(),
                 )?;
                 for &(_, from) in &moves.assignments {
                     e.used(from)
                 }
                 for (to, _) in moves.assignments {
+                    e.writes.insert(to);
+                }
+                for (to, _) in moves.constants {
+                    e.writes.insert(to);
+                }
+                for (to, from, _) in moves.comparisons {
+                    e.used(from);
                     e.writes.insert(to);
                 }
             }
@@ -115,6 +164,32 @@ pub(super) fn required(
                 incoming,
             }) => {
                 e.used(*index as usize);
+                e.used(*incoming as usize);
+                for at in 0..4 {
+                    e.used(shadow + proof.view(*array) + at)
+                }
+            }
+            Some(Operation::CellRead {
+                array,
+                row,
+                column,
+                output,
+            }) => {
+                e.used(*row as usize);
+                e.used(*column as usize);
+                for at in 0..4 {
+                    e.used(shadow + proof.view(*array) + at)
+                }
+                e.writes.insert(*output as usize);
+            }
+            Some(Operation::CellWrite {
+                array,
+                row,
+                column,
+                incoming,
+            }) => {
+                e.used(*row as usize);
+                e.used(*column as usize);
                 e.used(*incoming as usize);
                 for at in 0..4 {
                     e.used(shadow + proof.view(*array) + at)
@@ -175,13 +250,20 @@ pub(super) fn required(
             }
             _ => {}
         }
-        let successors = NativeProgramFacts::control_successors(code.blocks()[site].terminator());
-        if successors.into_iter().flatten().any(|n| n as usize == exit) {
+        let successors = if let Some(after) = proof.action(site).and_then(Operation::summary_after)
+        {
+            vec![after]
+        } else {
+            NativeProgramFacts::control_successors(code.blocks()[site].terminator())
+                .into_iter()
+                .flatten()
+                .collect()
+        };
+        if successors.iter().any(|&n| n as usize == exit) {
             exits.insert(site);
         }
         let next = successors
             .into_iter()
-            .flatten()
             .map(|n| n as usize)
             .filter(|n| proof.sites.binary_search(n).is_ok())
             .collect::<Vec<_>>();

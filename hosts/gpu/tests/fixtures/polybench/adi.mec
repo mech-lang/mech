@@ -1,0 +1,45 @@
+-- A Thomas recurrence advances across all independent lines in one state.
+-- The row sweep reuses the same column solver through transposition.
+#Sweep(source<[f64]:20,20>, initial<[f64]:20,20>, cross<f64>, left<f64>, center<f64>) => <[f64]:20,20>
+  | :Forward(p<[f64]:20,1>, q<[f64]:20,20>, j<u64>)
+  | :Backward(p<[f64]:20,1>, q<[f64]:20,20>, values<[f64]:20,20>, j<u64>)
+  | :Done(values<[f64]:20,20>).
+#Sweep(source, initial, cross, left, center) -> :Forward([0.0 | j <- 1u64..=20u64]', [[1.0 | row <- 1u64..=20u64]' | col <- 1u64..=20u64], 2u64)
+  :Forward(p, q, j)
+    | j < 20u64 -> {
+        denominator := left * p[j - 1u64] + center
+        ~next-p := p
+        next-p[j] = (0.0 - left) / denominator
+        next-q := [[((row == j && col > 1u64 && col < 20u64)? | true => ((0.0 - cross) * source[row,col - 1u64] + (1.0 + 2.0 * cross) * source[row,col] - cross * source[row,col + 1u64] - left * q[row - 1u64,col]) / denominator | false => q[row,col]) | row <- 1u64..=20u64]' | col <- 1u64..=20u64]
+      } -> :Forward(next-p, next-q, j + 1u64)
+    | * -> {
+        boundary := [[(((row == 1u64 || row == 20u64) && col > 1u64 && col < 20u64)? | true => 1.0 | false => initial[row,col]) | row <- 1u64..=20u64]' | col <- 1u64..=20u64]
+      } -> :Backward(p, q, boundary, 19u64)
+  :Backward(p, q, values, j)
+    | j > 1u64 -> {
+        next := [[((row == j && col > 1u64 && col < 20u64)? | true => p[row] * values[row + 1u64,col] + q[row,col] | false => values[row,col]) | row <- 1u64..=20u64]' | col <- 1u64..=20u64]
+      } -> :Backward(p, q, next, j - 1u64)
+    | * -> :Done(values)
+  :Done(values) => values.
+#ADI(initial-u<[f64]:20,20>, initial-v<[f64]:20,20>, steps<u64>, a<f64>, b<f64>, d<f64>, e<f64>) => <[f64]:20,20>
+  | :Columns(u<[f64]:20,20>, v<[f64]:20,20>, remaining<u64>)
+  | :Rows(u<[f64]:20,20>, v<[f64]:20,20>, remaining<u64>)
+  | :Done(u<[f64]:20,20>).
+#ADI(initial-u, initial-v, steps, a, b, d, e) -> :Columns(initial-u, initial-v, steps)
+  :Columns(u, v, remaining)
+    | remaining > 0u64 -> :Rows(u, #Sweep(u, v, d, a, b), remaining)
+    | * -> :Done(u)
+  :Rows(u, v, remaining) -> {
+      transposed-v := v'
+      transposed-u := u'
+      solved := #Sweep(transposed-v, transposed-u, a, d, e)
+      next := solved'
+    } -> :Columns(next, v, remaining - 1u64)
+  :Done(u) => u.
+size-f<f64> := n<u64>
+steps-f<f64> := tsteps<u64>
+dx := 1.0 / size-f
+dt := 1.0 / steps-f
+mul1 := 2.0 * dt / (dx * dx)
+mul2 := 1.0 * dt / (dx * dx)
+#ADI(u<[f64]:20,20>, v<[f64]:20,20>, tsteps, (0.0 - mul1) / 2.0, 1.0 + mul1, (0.0 - mul2) / 2.0, 1.0 + mul2)

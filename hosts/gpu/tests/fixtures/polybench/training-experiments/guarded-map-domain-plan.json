@@ -1,0 +1,51 @@
+{
+  "schema": "mech.polybench.guarded-map-domain-plan.v1",
+  "created_at": "2026-11-27T20:19:54.807587+00:00",
+  "source_parent": "da94feef8bfd54a0d3e514db9c711e9a229733aa",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "accepted_driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "scope": "Optimization15 source diagnosis, profiling and selection only. Holdout is an aggregate gate after freeze. All30 ports, C binaries/flags/inputs, F64 MINI CPU, limits, finite tolerances, split, objective and timing/cache boundaries remain fixed.",
+  "profiling_basis": {
+    "receipt": "training-experiments/native-map-memory-profile.json",
+    "receipt_sha256": "b7b00cffd3009f1ca1b3bba3d23f72ff509a5f2922b34c532d39ef17490aa5d1",
+    "target": "gramschmidt",
+    "mech_over_c": 54.480156773281955,
+    "execution_samples": 225,
+    "jit_self_samples": 174,
+    "main_map_samples": 110,
+    "copy_samples": 31,
+    "native_function": "mech_canonical_program_entry_v1_numeric_5",
+    "round42_source": "a1a29a7d8d81f0d9daa86e33be1cb4ffc20beb23",
+    "round42_probe_speedup": 1.0991009013214195,
+    "round42_formal_raw_speedup": 1.0957004160887658,
+    "round42_static_instructions": 4574,
+    "round42_conditional_branches": 342,
+    "caution": "Round42 was rejected by both primary scores. Its copy removal delivered only a modest Gram gain. Remaining map iteration/control and checked read work is the next optimization-only hypothesis."
+  },
+  "implementation": "Reuse the retained total private-map source as a foundation, then add private source-proved read bounds to suppress redundant per-cell axis guards after the existing complete current-view preflight. For rectangular identity tails, prove every path from the cell entry to that tail is independent of the inner row and contains no FP operation or memory read; when the current view already is the private bank, advance to the next source column while retaining all existing cell bits. Keep ordinary checks and iteration for every unproved site.",
+  "invariants": [
+    "Cranelift remains the sole Mech native generator. Reuse existing scalar/map/address emission, Core private banks and totality/pointwise/alias checks. No benchmark-name checks or source-port edits.",
+    "Read-bound and retained-column witnesses are private compiler facts rederived from the sealed source; no serialized authority, runtime ABI fields, per-op interpretation or allocation.",
+    "Current source range/capture words, full fixed geometry, backing, width, epochs, pointer overflow and alias separation are checked before any selected load/store. Unknown or unproved reads retain checked addressing.",
+    "Only already initialized current private-bank identity cells can be retained. An invariant integer/Boolean control prefix and a pure same-cell read/copy/push tail establish the entire remaining column has the same identity result. Inner-dependent, memory-dependent and FP prefixes keep normal iteration.",
+    "Preserve every source FP operation, operand/order and exact bits, including signaling NaNs, signed zeros and unfused arithmetic. Never skip an FP computation or comparison as part of column retention.",
+    "Keep all original source visits and full work/comparison bills despite suppressed machine guards/identity iterations. Preserve finite/physical admission, aliases, exact cold boundaries, ordinary replay, atomic publication, cleanup and retry.",
+    "Only optimization15 informs implementation or selection. No per-case holdout diagnosis or profiling."
+  ],
+  "prospective_emission_gate": {
+    "target": "mech_canonical_program_entry_v1_numeric_5",
+    "must_change_profiled_function": true,
+    "conditional_branches_strictly_below_round42": 342,
+    "combined_stack_bytes_below_accepted31": 22944,
+    "large_payload_copy_loops_before_accepted31": 3,
+    "large_payload_copy_loops_after": 0,
+    "source_witness_tests_require_two_training_column_retention_sites": true,
+    "no_new_fma_on_optimization15": true,
+    "no_Object_execution_or_timing": true
+  },
+  "qualification": "Retained123 focused tests plus proof tests for per-read bounds and inner-row-invariant identity domains, rejected inner/FP/memory-dependent prefixes, all scalar bits and rectangular boundaries, recurrent updates/aliases, cold failures after completed maps, finite denial/cleanup/retry, all30 finite C liveouts original/decoded/restored and both feature builds. No Rust edits while Cargo is live.",
+  "training_selection": "Exactly one v2 prospective probe per exact qualified fingerprint: seven fresh processes per actor/case, accepted31/candidate interleaved with alternating pair/case order. Keep all210 observations and regressions. Select raw geomean speedup >1, equal visits and no reduced work/comparison bills. No retries or exclusions.",
+  "formal_acceptance": "Commit/push and freeze exact clean qualified source and driver before both formal sets. Preserve all900 observations/29482 finite liveouts. Promote only if both primary kernel geomean Mech/C scores strictly improve on accepted31 (11.43635797708715 /39.31569548924827); otherwise restore exact accepted31.",
+  "performance_observations": 0
+}

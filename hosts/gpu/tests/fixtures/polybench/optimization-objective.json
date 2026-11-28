@@ -1,0 +1,25 @@
+{
+  "schema": "mech.polybench.optimization-objective.v1",
+  "primary": {
+    "partition": "holdout",
+    "aggregate": "geomean_mech_over_c_kernel",
+    "formula": "exp(mean(log(median(Mech_seconds) / median(C_kernel_seconds))))",
+    "weighting": "Each of the fixed fifteen programs has equal weight.",
+    "direction": "minimize",
+    "target_strictly_below": 1.0
+  },
+  "secondary": [
+    "sum_mech_median_seconds",
+    "geomean_mech_over_c_fresh",
+    "geomean_speedup_from_recorded_baseline",
+    "geomean_speedup_from_contemporaneous_baseline",
+    "regressions_over_five_percent",
+    "contemporaneous_regressions_over_five_percent",
+    "worst_mech_over_c_kernel"
+  ],
+  "measurement_protocol": "optimization-protocol.json",
+  "precedence": "This objective sets the primary optimization score. The original protocol's baseline speedup aggregates remain secondary progress measures; its split, correctness requirements and measurement boundaries stay fixed.",
+  "initial_receipt": "round-01-progress.json",
+  "initial_holdout_score": 1610.2738988969445,
+  "initial_holdout_sum_median_seconds": 1.634172837
+}

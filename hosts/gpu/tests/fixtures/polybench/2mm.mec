@@ -1,0 +1,7 @@
+-- Keep the two matrix products and their intermediate explicit.
+a := A<[f64]>
+b := B<[f64]>
+c := C<[f64]>
+d := D<[f64]>
+temporary := alpha<f64> * (a ** b)
+temporary ** c + beta<f64> * d

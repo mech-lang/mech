@@ -1,0 +1,85 @@
+{
+  "schema": "mech.polybench.transpose-product-views-plan.v1",
+  "created_at": "2026-11-28T01:36:28.215149+00:00",
+  "status": "Prospective before compiler edits or candidate performance",
+  "source_parent": "0c952a8bea96be6f0339d366ac6b463dbd2b3de7",
+  "accepted_round": 45,
+  "accepted_scores": {
+    "optimization": 9.784192694066512,
+    "holdout": 25.86144806723818
+  },
+  "accepted_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+  "accepted_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "formal_history_entries": 48,
+  "scope": "One nonescaping F64 transpose consumed directly by one ordered matrix product, derived from actual operators/liveness/geometry/ownership. Optimization15 selection/diagnosis only. No benchmark-specific compiler names/dimensions or port changes.",
+  "physical_work_removed": [
+    "No transpose payload bank or initialized transpose output allocation.",
+    "No transpose load/store traversal or intermediate canonical result.",
+    "No separate transpose kernel or prepare/finish execution boundary; one admitted fused loan and product kernel."
+  ],
+  "initial_proof": [
+    "One genuine selected transpose factory and one genuine selected product factory, complete same-plan operand/output schemas, sole consumer through exact copy aliases.",
+    "A bounded straight-line source continuation with only total identity copies/None between the producer and consumer; identical iteration/context, no activation boundary, outside predecessor or escaping intermediate. Other required product operands must already dominate the producer. Unsupported/intervening operators remain ordinary; extend only with an independently justified complete region.",
+    "Start with either operand transposed; exchange logical row/column strides over the retained original owner. Source matrix views remain private, nonserialized and reconstructed from exact source on independent image loading."
+  ],
+  "implementation": [
+    "Reuse maintained numeric-product scalar/SIMD emission and exact synchronous NumericBinaryFrame loan. Preserve +0.0 and each dot product k order, independent SIMD outputs, scalar tails and no FMA/reassociation.",
+    "Admit both original transpose and product demands and the full old coexistence/replay envelope before mutation. Retain original selected schema/shape/current owner checks, NaN fallback, finite limits, source work/comparison charges and clone/publication/retirement obligations. Extra preflight may decline to the exact ordinary producer path.",
+    "Pin actual original operands; validate physical spans, logical geometry and all source-bound arithmetic before native access. Publish only the final product after complete success. One private source-proved bulk control transition replaces skipped callbacks; report physical visits honestly and do not pad counters.",
+    "IR413/work157/ABI47 intended; record a prospective refinement before emission if the existing frame cannot express the checked geometry. No serialized authority or benchmark/timing changes."
+  ],
+  "required_qualification": [
+    "Positive/negative source proof in original/decoded forms, aliases, either side, dynamic and fixed shapes; extra use/escape, branches, activation/iteration/context changes, missing dominance and wrong factories must decline.",
+    "Differential enabled/ablated/ordinary execution for rectangular/odd/empty axes, zero inner extent, exact F64 signed-zero/subnormal/Inf/NaN behavior, retained aliases, repeat calls, checked shape/failure behavior and restored helpers.",
+    "Finite source demand/spent budgets, coexistence/clone/output/node/physical denials, malformed/tampered images/loans, atomic outputs, cleanup/retry, scalar/compression maintained native regressions, all30 finite C cases, Object emission and both features."
+  ],
+  "untimed_gate": "Before timing: optimization15 finite C outputs, original work AND comparison fees nondecreasing and all other counters equal except independently source-proved physical visit reductions. Census actual callbacks and prove each visit delta from the exact eligible path. Object/source diagnostics must show missing transpose kernel/bank and one fused product loan; no FMA.",
+  "training_probe": {
+    "observations": 210,
+    "actors": [
+      "accepted45",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "method": "One new driver process per actor/case/sample; alternate/interleave, fixed formal cache/warmup/checked-call boundaries. Exactly one prospective probe per qualified fingerprint; no retry/exclusion.",
+    "selection": "Raw equal-weight GM accepted45/candidate median runtime speedup strictly>1 after full qualification and the source/fee/census gate."
+  },
+  "formal_acceptance": "Commit/push and freeze exact clean selected source and driver before both sets once. Retain all900 observations/29482 finite liveouts and append-only history. Promote only BOTH primary scores strictly improve accepted45. Otherwise restore every candidate Rust path exactly to source_parent. Controls cannot waive either score.",
+  "prior_related_work": "Rejected36 grouped operator kernels and retained each physical intermediate; this plan actually removes the transpose computation/storage. Rejected47 conditional maps remain restored, with all measurements preserved and its observed fingerprint ineligible for exact retry.",
+  "profiling_basis": [
+    "training-experiments/accepted44-long-training-profile.json",
+    "training-experiments/accepted45-gramschmidt-profile.json",
+    "User review of ordinary transpose/product source and optimization15 operator graphs"
+  ],
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "32645075fd02a2d6d1a849bbff1657cbf355c67c83dd0d8cd7d3446c91cc50df",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "9976fd622538419ba41ccb797a8097ce3b00af2f032de34e295f42871cf874b6",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "740ef8759493dcedda7d97b7eb3c0fa8b374c17f7036b965673457ff8715a4fd",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "5942bf5d9980c5cfe9ecf8399ed39d76a8c5edf537811bf04a79dabaca6f73ac",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "c19df2cab342c02aece792763b813a9f3e9452db38591aee8045af3874bc74aa",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "59c1cbeba27e6587a1846f9faedf62e1eff0f46ceef1d3e2faab646afe003378",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f051cd94d4fd364b49f3993fbda5c64f58d1496251d69a180be86249027ad934",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "d16cfaf23f1c68e5b64a718c6a7507ecf9cbc5bd0f58e19ae3d94bd58ee2aa98",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "e14a48bd76587bbc55d097fb66f2f4a1c4095f15b0ecc8b401d9ed25bfd522e9"
+  },
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "performance_observations": 0
+}

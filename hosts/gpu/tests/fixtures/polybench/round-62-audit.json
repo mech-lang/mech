@@ -1,0 +1,81 @@
+{
+  "schema": "mech.polybench.frozen-audit.v1",
+  "created_at": "2026-11-28T19:27:58.272089+00:00",
+  "candidate_label": "round-62-single-pass-matrix-preflight",
+  "source_commit": "705d1cc791148e496e11076d9ec348d450442853",
+  "compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "driver_sha256": "a4124616f98754541862071cec15ca5cb7d9b4af95a8a4fc8d4077243f9bdc3d",
+  "source_frozen_for_both_sets": true,
+  "partitions": {
+    "optimization": {
+      "programs": 15,
+      "liveouts": 17002,
+      "observations": 450
+    },
+    "holdout": {
+      "programs": 15,
+      "liveouts": 12480,
+      "observations": 450
+    }
+  },
+  "observations": 900,
+  "counts_by_actor_mode": {
+    "optimization/kernel/mech": 75,
+    "optimization/kernel/c": 75,
+    "optimization/kernel/reference": 75,
+    "optimization/fresh/mech": 75,
+    "optimization/fresh/c": 75,
+    "optimization/fresh/reference": 75,
+    "holdout/kernel/mech": 75,
+    "holdout/kernel/c": 75,
+    "holdout/kernel/reference": 75,
+    "holdout/fresh/mech": 75,
+    "holdout/fresh/c": 75,
+    "holdout/fresh/reference": 75
+  },
+  "finite_liveouts": 29482,
+  "qualification_checks": 782,
+  "both_feature_checks_passed": true,
+  "history_append_only": true,
+  "history_entries": 63,
+  "performance_acceptance": {
+    "history_index": 62,
+    "label": "round-62-single-pass-matrix-preflight",
+    "source_commit": "705d1cc791148e496e11076d9ec348d450442853",
+    "history_entry_sha256": "304c9da90580310f76d0ff4545c2c641a5f1d7cfe70ee1cb6e8189ebedafb040",
+    "scores": {
+      "optimization": 8.164896734823678,
+      "holdout": 24.39039668116209
+    },
+    "previous_measured_index": 61,
+    "run_outcome": "improved_both",
+    "compared_to_accepted_index": 59,
+    "multipliers_vs_accepted": {
+      "optimization": 1.039781338339416,
+      "holdout": 1.0167256839099408
+    },
+    "performance_gate": "not_promoted",
+    "selection_partition": "optimization",
+    "selection_outcome": "optimization_not_improved",
+    "holdout_use": "reported_only",
+    "selection_policy": "optimization-only-v4",
+    "accepted_index_after_run": 59
+  },
+  "aggregate_controls_vs_accepted59": {
+    "optimization": {
+      "raw_mech_speedup": 0.9971831444782419,
+      "original_reference_runtime_multiplier": 1.0007692609209635,
+      "reference_adjusted_speedup": 0.9979502385023326,
+      "c_runtime_multiplier": 0.9644574062199663,
+      "raw_regressions_over_five_percent_vs_accepted59": 1
+    },
+    "holdout": {
+      "raw_mech_speedup": 0.9968583223176625,
+      "original_reference_runtime_multiplier": 1.0092904437876293,
+      "reference_adjusted_speedup": 1.0061195785253851,
+      "c_runtime_multiplier": 0.9866491963395455,
+      "raw_regressions_over_five_percent_vs_accepted59": 3
+    }
+  },
+  "holdout_use": "Reported independently; cannot veto, select, tune or trigger rollback/retry. No per-case holdout diagnosis."
+}

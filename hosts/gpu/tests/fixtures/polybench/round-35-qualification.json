@@ -1,0 +1,444 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-35-matrix-expression-regions",
+  "compiler_commit": "54990a49aca3be73a44c10cdb753b8f810f06c22",
+  "compiler_fingerprint": "e67d25a85462246a2155df75ccf285175adc51a41867a1003def23cd981e11cd",
+  "driver_sha256": "5a217e14700cf5429dc6c1a5a22014b8b2af2b3f7c8bf1aed5e46f02e8946de8",
+  "frozen_candidate_sha256": "fa92ec0fab88afd33b3734f7a9ee5ae965b616f556efc25bc85a301c6917c515",
+  "native_typed_ir_version": 398,
+  "native_work_policy_version": 156,
+  "native_abi_version": 47,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 1.4954467080533504,
+      "passed_tests": [
+        28,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 7.8701424999162555,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 126.31191279087216,
+      "passed_tests": [
+        25,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 101.26333283400163,
+      "passed_tests": [
+        424
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 65.64657324971631,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.154847291763872,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18535004137083888,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18151400005444884,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.31668945821002,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 20.50599154084921,
+      "passed_tests": []
+    }
+  ],
+  "total_unique_selected_checks": 697,
+  "source_invariants": [
+    "Source-closed root matrix-expression DAGs derive from actual same-plan canonical calls, dominance, all semantic reads, alias escapes and disjoint bank lifetimes. All image paths independently rederive recipes; no cached pointer, live owner, permit or work credit is accepted from an image.",
+    "Current admission checks genuine current arena generations, type/key/account/shape, resident operation geometry, overflow and every original resource cap. It pins inputs and reserves complete coexisting source byte/node peaks, temporary metadata/data backings, prospective escaping output nodes and full ordinary replay.",
+    "Existing Cranelift scalar/SIMD elementwise, product, sum and transpose emitters run in source order. FP terms remain unfused and ordered. Produced1x1 bank broadcasts load the current bank. Integer magnitude bounds admit only finite intermediates; nonfinite and uncertain bounds preserve existing individual/ordinary execution.",
+    "Original source visits, work/comparison charges, canonical publication/retirement prices and managed copy bills are preserved. Private banks use real arena-issued virtual generations, are checked at every source read and never masquerade as canonical Values. Every training-probe execution counter matches accepted31 exactly.",
+    "Only escaping results receive canonical owners after arithmetic. Logical banks reuse storage only across strictly disjoint lifetimes. Ordinary terminal publication remains atomic, and all staging claims release on denial, error, malformed finish, completion and retry.",
+    "Only scalar captures use the native argument lane; managed captures come from checked current arena owners. The existing individual mode remains a fallback, fast scalar Bool/U64/I64/F64 execution is maintained, and invocation fields retain their charged layout envelope.",
+    "Core prospective F64 owner pricing validates actual schemas/shapes/counts without constructing owners or granting views. The unchanged exact generic traversal remains for rebound/nested owners. Prior independent owner tests remain applicable; current Core source hashes match their qualified stage.",
+    "A general singleton-matrix numeric broadcast scheme preserves both live axes of its peer and rigid input metadata. The actual failing produced1x1 source now compiles and executes without port annotations or rewrites; catalog/solver and source regressions pass.",
+    "697 distinct selected checks pass, including24 matrix and30 original/decoded finite C-liveout programs and Object emission. Runtime-only and compiler features pass. All15 optimization Object exports are inspected; code changes in8 programs, and no fused FP instructions are introduced.",
+    "No benchmark-name dispatch, Mech port/input/C binary/flag/limit/tolerance/split/objective/timing-boundary change. One prospective seven-sample optimization-only probe retains all cases and regressions. Commit/freeze source+driver before BOTH formal sets; promote only if BOTH scores strictly improve over accepted31."
+  ],
+  "profiling_basis": {
+    "receipt": "training-experiments/root-operator-profile.json",
+    "sha256": "92cde7455d744873ba3126f73778cfba305eb85572c0e1ba452b98197f96bcf6",
+    "partition": "optimization",
+    "observation": "Root matrix-operator paths repeatedly prepare calls and create canonical intermediate owners; optimization-only source census found37 operators and25 private intermediates in8 programs.",
+    "limitation": "Coarse source/profile evidence is not a timing estimate."
+  },
+  "emission_census": {
+    "receipt_sha256": "7fabb2b8c18c8c9ae5f211c1dd2386da763a552b5eaf36a11682d98d9d01f8f1",
+    "cases": 15,
+    "native_code_changed_cases": [
+      "2mm",
+      "3mm",
+      "atax",
+      "bicg",
+      "correlation",
+      "covariance",
+      "gemm",
+      "mvt"
+    ],
+    "scope": "Optimization15 Object inspection only; no FMA introduced."
+  },
+  "training_probe": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0355198615575052,
+    "regressions_over_five_percent": 1,
+    "sum_candidate_median_seconds": 0.000998331,
+    "sum_reference_median_seconds": 0.000993167,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "performance_acceptance": {
+    "history_index": 35,
+    "label": "round-35-matrix-expression-regions",
+    "source_commit": "54990a49aca3be73a44c10cdb753b8f810f06c22",
+    "history_entry_sha256": "b585e9f2179c972eba52ab8d5b1a90aeacbd253872264491f3ad062129234471",
+    "scores": {
+      "optimization": 12.020652207931867,
+      "holdout": 40.93922854820974
+    },
+    "previous_measured_index": 34,
+    "run_outcome": "failed_both_regressed",
+    "compared_to_accepted_index": 31,
+    "multipliers_vs_accepted": {
+      "optimization": 1.0510909357695306,
+      "holdout": 1.0412947816071436
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 31
+  },
+  "aggregate_controls_vs_accepted31": {
+    "optimization": {
+      "raw_mech_speedup": 0.9673378966722463,
+      "original_reference_runtime_multiplier": 1.0034500054760462,
+      "reference_adjusted_speedup": 0.9706752177129527,
+      "c_runtime_multiplier": 0.983516175447213,
+      "raw_regressions_over_five_percent_vs_accepted31": 7
+    },
+    "holdout": {
+      "raw_mech_speedup": 0.9638093586499155,
+      "original_reference_runtime_multiplier": 1.0109818651343232,
+      "reference_adjusted_speedup": 0.9743937830418075,
+      "c_runtime_multiplier": 0.9964033271241977,
+      "raw_regressions_over_five_percent_vs_accepted31": 5
+    }
+  },
+  "scope": [
+    "MINI/F64 CPU evidence; no larger dataset, GPU execution, linked Object or application speed claim.",
+    "This finite-bound version may decline expressions whose intermediate finiteness is unproved. Existing execution remains available; no source behavior or source fees are weakened.",
+    "One existing explicit source-plan diagnostic remains ignored because it requires an output directory; it is not a correctness or timing case.",
+    "Training improvement is not formal performance acceptance. Holdout may reject this exact candidate; no per-case holdout diagnosis or tuning."
+  ],
+  "holdout_use": "Aggregate acceptance only; no per-case diagnosis, profiling or source tuning.",
+  "compiler_restored_to_accepted31": {
+    "restored_from_commit": "f60baf055a39497400f9392e0294911becf1a697",
+    "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/hooks/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_regions.rs",
+      "hosts/gpu/src/native_artifact/program/compiler.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_regions.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_regions.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_regions.rs",
+      "hosts/gpu/src/native_artifact/values/mod.rs",
+      "src/core/src/snapshot/numeric_matrix.rs",
+      "src/core/src/snapshot/numeric_matrix_tests.rs",
+      "src/core/src/snapshot/validation.rs",
+      "src/core/src/type_system/scheme.rs",
+      "src/core/tests/type_system_catalog.rs"
+    ],
+    "versions": {
+      "ir": 390,
+      "work": 156,
+      "abi": 47
+    },
+    "accepted_driver_unchanged": true,
+    "reason": "Both formal Mech/C scores regress against accepted31. The prospective training improvement does not override the fixed formal gate."
+  },
+  "formal_run_archives": {
+    "formal-measurement.log": {
+      "path": "qualification/round-35-matrix-regions/formal-run/formal-measurement.log.gz",
+      "sha256": "39f77825db3ea0e628a10262188ed301860c44ac4f62e6344339261526afa93e",
+      "compressed_sha256": "091f9f0b540b79ede01a4b8c129ecebb99adfc6cc9b086d698bf7df206940b46"
+    },
+    "frozen-source-checkpoint.json": {
+      "path": "qualification/round-35-matrix-regions/formal-run/frozen-source-checkpoint.json.gz",
+      "sha256": "83c4534eb0ca628fb2c9cdaccf05d40aa326e7650ff2d75e3c65404199dd4247",
+      "compressed_sha256": "8bce260b96a66f0564783d92aef24f64b8c07d51a20eaa9c8ecffb2f2d4feb85"
+    },
+    "execution-source-commit.log": {
+      "path": "qualification/round-35-matrix-regions/formal-run/execution-source-commit.log.gz",
+      "sha256": "97aea4f1e8cadc9deb76c06cfcfa2d968e99c6be38fd5abd8fc3738cc7354d5d",
+      "compressed_sha256": "ee46a503a14cc05ee0bafed8e81bf83af108fd8ceba72f512e999428ac46898e"
+    },
+    "experiment-source-commit.json": {
+      "path": "qualification/round-35-matrix-regions/formal-run/experiment-source-commit.json.gz",
+      "sha256": "b1981cb9b3221ca24cc31699942f5e247ec1cba799a53fb40b324c0c3491b339",
+      "compressed_sha256": "cc385f4f29bf9d138159e95b216f68100ba846fbdb43a0e33b5652b227cf7419"
+    },
+    "full-candidate-source-paths.json": {
+      "path": "qualification/round-35-matrix-regions/formal-run/full-candidate-source-paths.json.gz",
+      "sha256": "6bdd11527a3bc33061f92422f5450c1a177ce0005d9b176f65f50adeafae8ae3",
+      "compressed_sha256": "52ae1522708ecd49d56eb227ba23a51fcda748e9b4ea52e7bacbb3d84aa421a7"
+    },
+    "inter-round-aggregates.json": {
+      "path": "qualification/round-35-matrix-regions/formal-run/inter-round-aggregates.json.gz",
+      "sha256": "cc35cd3e94f8b6ae731a6eeeb0706a85e3962159129a25dd684d085505500664",
+      "compressed_sha256": "db17d310aea90d352467d365af9732d81dce6fefa8b0abc1b36f7441dadcb4d0"
+    },
+    "formal-report-rows.json": {
+      "path": "qualification/round-35-matrix-regions/formal-run/formal-report-rows.json.gz",
+      "sha256": "f2b3b3c4e99629cde167ab360d17a95ef93ab7580114952e9dd5cd80af0c199e",
+      "compressed_sha256": "d42081ca8ab5fa81df9634ccd5995b70dac86eed1c243effc455c8e6fefb883e"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-35-matrix-regions/formal-run/measure-candidate.py.gz",
+      "sha256": "86d3b7429461d2cf3a9ea0423b094a2b0efbf69d1543cd050debb5bba45133ee",
+      "compressed_sha256": "95b1c4c195a9142a3b43ac3f453e2caf696efe365f14b2fb756c48f314037803"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-35-matrix-regions/formal-run/audit-results.py.gz",
+      "sha256": "6147c6365933b2503bc1c4351434448bd6528ec923b59c60fc31ce218f6f68f1",
+      "compressed_sha256": "fa4a4350493e2d51896fd5d5b2ae327a5c039c061a19191ae4a167ecad21f4e0"
+    },
+    "record-and-restore.py": {
+      "path": "qualification/round-35-matrix-regions/formal-run/record-and-restore.py.gz",
+      "sha256": "bd7049077af6c5c5cc5e30e3352f9604e562269668ef232a865915355dd69180",
+      "compressed_sha256": "95dec2864f9aecaa927f1b754c833d4b0e637022f19efc1cd806b0355c467b37"
+    }
+  }
+}

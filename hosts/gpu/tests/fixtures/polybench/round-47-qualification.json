@@ -1,0 +1,475 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v3",
+  "label": "round-47-masked-matrix-maps",
+  "compiler_commit": "44236f0be9ab3713b8b577927ddc172427fb10de",
+  "compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+  "frozen_candidate_sha256": "446279572fce6203dc308205e980253f846a3d8994d26a23fecf83b3568ae28c",
+  "native_typed_ir_version": 412,
+  "native_work_policy_version": 157,
+  "native_abi_version": 47,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "corpus_liveouts": 29482
+  },
+  "checks": [
+    {
+      "name": "shared-constructor-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "baselib,compiler,serde",
+        "--lib",
+        "--",
+        "composite_constructor",
+        "prepared_composite",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3101655002683401,
+      "passed_tests": [
+        11
+      ]
+    },
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.2650405000895262,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3292357921600342,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.34655125020071864,
+      "passed_tests": [
+        31,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 111.20962870912626,
+      "passed_tests": [
+        431
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.89653987484053,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.870786833111197,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18612933298572898,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18643016694113612,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.385414332617074,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.615482500288635,
+      "passed_tests": []
+    }
+  ],
+  "broad_selected_checks": 720,
+  "focused_selected_checks": 8,
+  "restored_corpus": {
+    "programs": 30,
+    "forms": 60,
+    "finite_liveouts": 58964
+  },
+  "source_invariants": [
+    "Derive one row/column U64 comparison mask from the actual sealed acyclic comprehension CFG. Its pure prefix must have no fallible/effectful work, and its skipped branch must yield precisely the destination matrix current cell through only safe identity reads/copies and path-proved Boolean pattern branches.",
+    "Require exact fixed rectangular source ranges beginning at1 and matching the destination extents; unknown, shifted, neighbour-reading, effectful or uncertain identity paths keep existing complete evaluation. Support Eq/Ne/Lt/Le/Gt/Ge with reversed operands and captured bounds; clip selected intervals without introducing unsigned overflow.",
+    "Keep scratch-before-publication. Copy the complete current destination into the same pre-admitted scratch bank, evaluate only selected coordinates in original column/row order through the existing checked scalar/map emitter, and copy the complete result only after success. A miss preserves the exact pre-map state including earlier completed maps. No partial in-place updates.",
+    "Reuse unchanged full source range/builder/transpose/read/clone/native-step/scratch/publication/replay envelopes and finite owner/coexistence/currentness checks. Validate the source span before scratch initialization; scratch remains disjoint and private. No new runtime cache, wire selector, owner, helper or ABI field.",
+    "A private compile-only selected-iteration argument leaves all ordinary/runtime numeric map emission unchanged. Full output cardinality is genuinely initialized by scratch copy; active-body checks/errors/bits retain exact source order. Scalar Bool/U64/I64/F64 native instructions remain maintained. IR412/work157/ABI47."
+  ],
+  "prospective_refinements": {
+    "masked-matrix-maps-publication-refinement.json": {
+      "schema": "mech.polybench.masked-publication-refinement.v1",
+      "created_at": "2026-11-28T00:34:27.678761+00:00",
+      "status": "Prospective before selected-iteration emission or any candidate timing",
+      "plan": "training-experiments/masked-matrix-maps-plan.json",
+      "source_parent": "53d423809bab602f9e70efbfb4c5843b31b01f4c",
+      "source_proof_result": "attempt-02: original/decoded Gram source yields all three masks; no emission changes or performance samples yet",
+      "implementation": "Initialize complete private scratch from the old destination; evaluate selected coordinates in original order through the original checked DAG. After success, use the original full publication copy if the private destination bank differs from the old current view. When their exact pointers match, identity proof establishes every skipped cell already has the final bits, so publish only selected coordinates. Source views remain immutable throughout checked evaluation, and no fallible operation/helper follows the first publication store.",
+      "correctness": [
+        "The full scratch bank is genuinely initialized before any active evaluation. A selected check/error discards it and resumes at the exact pre-map boundary, preserving earlier completed maps.",
+        "The current target view and full private bank geometry/span/owner guarantees are checked before copying. Pointer equality selects partial publication only after the complete selected body succeeds; a fresh bank always receives the full result.",
+        "Source mask proves every skipped prefix/path is total, effect-free and yields the destination exact same cell. Selected source order and arithmetic/checked errors/FP bits remain unchanged.",
+        "Retain every original source work/comparison fee, visit and finite/physical/clone/temporary/output/node/replay envelope. No credits for skipped native evaluations/stores, no fabricated visits.",
+        "This differs from rejected direct in-place/total-map work: checked source evaluation still completes entirely in disjoint scratch before destination mutation."
+      ],
+      "performance_observations": 0
+    },
+    "masked-matrix-maps-base-view-refinement.json": {
+      "schema": "mech.polybench.masked-base-view-refinement.v1",
+      "created_at": "2026-11-28T01:05:36.429606+00:00",
+      "status": "Refined during untimed implementation; no candidate performance observations",
+      "plan": "training-experiments/masked-matrix-maps-plan.json",
+      "refinement": "The identity branch may refer to one exact source array that differs from the destination, including an earlier completed phase-local map. Derive that base array from the actual read sites and checked enclosing phase binding. Validate its complete current dimensions/span against the output before initializing scratch. The enclosing phase retains all destination ownership authority. Partial publication requires exact destination-bank/base-view pointer equality after successful checked evaluation; otherwise copy the full result.",
+      "source_lowering": "Selected source axes remain in native SSA. The proven selector takes its certified active CFG edge, while all active checked operations keep their original order. The complete original source body/fees remain in the descriptor; no wire mask or extra runtime authority is accepted.",
+      "evidence": "Attempt04: 48 original/decoded comparison forms passed dense ablation and exact counters. Attempt05 caught a missing selected inner-row definition through counter inequality despite equal outputs. Attempt06 fixes that definition and passes both predicate checks and all scalar kinds/packed tails, exact FP bits, aliases and restored descriptors. All failures remain.",
+      "performance_observations": 0
+    }
+  },
+  "profiling_basis": "training-experiments/accepted45-gramschmidt-profile.json",
+  "development_attempts": [
+    "All nine development attempts are archived, including compiler errors and the counter-parity failure that exposed missing selected-row SSA. Final eight focused groups and 720 broad checks pass; no candidate timing preceded the optimization15 source/counter/Object gate."
+  ],
+  "counter_gate": {
+    "receipt_sha256": "f5a568646fe50afa262e8d7fdef9c87dadb56fdd333dc8c3397ee21100a18c7e",
+    "scope": "Optimization15 finite C outputs and every execution counter match accepted45 before timing; actual Object emission changes precisely the profiled kernel through three source-derived masks, with no new FMA."
+  },
+  "training_probe": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted45": 1.04914904960503,
+    "regressions_over_five_percent": 0,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "performance_acceptance": {
+    "history_index": 47,
+    "label": "round-47-masked-matrix-maps",
+    "source_commit": "44236f0be9ab3713b8b577927ddc172427fb10de",
+    "history_entry_sha256": "32240990c3abcbb7ff6cab7e700259a8325e089710bfc984e75915f6ba16737c",
+    "scores": {
+      "optimization": 9.575943659594117,
+      "holdout": 27.506517683644883
+    },
+    "previous_measured_index": 46,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 45,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9787157672601149,
+      "holdout": 1.0636108856754511
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 45
+  },
+  "aggregate_controls_vs_accepted45": {
+    "optimization": {
+      "raw_mech_speedup": 1.0542683121826288,
+      "original_reference_runtime_multiplier": 0.9979559843416942,
+      "reference_adjusted_speedup": 1.052113371244472,
+      "c_runtime_multiplier": 0.9691528155952378,
+      "raw_regressions_over_five_percent_vs_accepted45": 2
+    },
+    "holdout": {
+      "raw_mech_speedup": 0.9049552381836982,
+      "original_reference_runtime_multiplier": 1.0320912378788616,
+      "reference_adjusted_speedup": 0.933996372001973,
+      "c_runtime_multiplier": 1.0389391889837825,
+      "raw_regressions_over_five_percent_vs_accepted45": 6
+    }
+  },
+  "scope": "Optimization15 diagnosis/selection only. Holdout aggregate acceptance only. All original observations remain; no retry of an observed fingerprint. Broad/focused totals count selected test invocations and may overlap.",
+  "holdout_use": "Aggregate acceptance only; no per-case diagnosis/profiling/tuning.",
+  "compiler_restored_to_accepted45": {
+    "restored_from_commit": "71b48ec19b214e8810ff5aa8e2c97a2368b8d297",
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs"
+    ],
+    "versions": {
+      "ir": 410,
+      "work": 157,
+      "abi": 47
+    },
+    "accepted_driver_unchanged": true,
+    "reason": "Both primary scores must strictly improve; no training result or control adjustment overrides the gate."
+  },
+  "formal_run_archives": {
+    "formal-measurement.log": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/formal-measurement.log.gz",
+      "sha256": "38e59870c35f7ff0c73fe08aa10e3762aebee7872463fd5b38e1bca46606137c",
+      "compressed_sha256": "bde015753b40e73ef5487d337591a0b014dcd61ee63f93d1b3b40766813a8f7d"
+    },
+    "formal-exit.json": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/formal-exit.json.gz",
+      "sha256": "81a03db61abb1596d5c1581703afdc41a559cd7ff0da94b4f4ba19e54a0fee8d",
+      "compressed_sha256": "5364b3fe412fb54e8b1f09445b7a780aa9bfdbabb042cc818aa4a350e9f49834"
+    },
+    "frozen-source-checkpoint.json": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/frozen-source-checkpoint.json.gz",
+      "sha256": "55fa141f0cbd3be114384f70fc93152c980dec5d2e661d11fe9553944386dbf4",
+      "compressed_sha256": "6143545f4bc0f85a12e5b51d15a6cc70cc8f8c8b6e562aa3c334460a8f479a68"
+    },
+    "source-commit.log": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/source-commit.log.gz",
+      "sha256": "244bf6c761020a65336df9ed20f6d568ebbcfe905117b803a83c3b88835931bb",
+      "compressed_sha256": "9ba75cd63b5337bf34718e78e8f28d65482718cc5dc8ddc7f52992c184ec34c8"
+    },
+    "experiment-source-commit.json": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/experiment-source-commit.json.gz",
+      "sha256": "2798dae334f1cf5f6c4c69b0cafa0bceeb2a2b0f2306a0d881a458d9b73a6c21",
+      "compressed_sha256": "54a195120d28c10b5ed15802a7ca304e22438b835a813b2d63eba8bddb81b1e8"
+    },
+    "inter-round-aggregates.json": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/inter-round-aggregates.json.gz",
+      "sha256": "16faac98c3ca136dcf3c779589604e8d5f28c41b6447f8770ab08d29f19d27cd",
+      "compressed_sha256": "91fdf06accc6048e8926af2ccbc5dd218973ef81b0c7c75eae2dc3ad92bf92ce"
+    },
+    "formal-report-rows.json": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/formal-report-rows.json.gz",
+      "sha256": "24c2e44fa3dfb4de8d3c672032b17eca2a043fe2ff46aeff68cb248066372cfc",
+      "compressed_sha256": "a38d2d207ba21d76ebf003782126ef32782cfcd885bd6ace9c1c33daef698360"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/measure-candidate.py.gz",
+      "sha256": "0b3af8f8c5fbfc43a934b480eb82b210fafb0fb9ae272b29dad4114f4fd56e18",
+      "compressed_sha256": "29f720ddec338279afe9aede9eea0e54f7587682e16db7e809ced606d80659a1"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/audit-results.py.gz",
+      "sha256": "067ec2305be884f7b5d863503915b01ebc34d8ff457e4bb486baddcb290d379b",
+      "compressed_sha256": "fbf3b627e43f295a50dc6456727e84913428e82b3309a56f6dacf9131babb538"
+    },
+    "finalize-results.py": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/finalize-results.py.gz",
+      "sha256": "7b0905d4eb8ed6add45e266fc81eb0901e9eaa9f0017a09899e0f6dd799e3ee9",
+      "compressed_sha256": "b1d8d982c73da775ab65fafac76395586547fa65d4b73caec2d876b44ba4d787"
+    },
+    "commit-qualified.py": {
+      "path": "qualification/round-47-masked-matrix-maps/formal-run/commit-qualified.py.gz",
+      "sha256": "e11afa0fa3c69bb6a585b3deaf0751982e41f4a73bfc92b2942eab7fe585a7d5",
+      "compressed_sha256": "358474045794aa1d732bb52e0d13fc51a21bd449dbe50e17573e83da4da5d034"
+    }
+  }
+}

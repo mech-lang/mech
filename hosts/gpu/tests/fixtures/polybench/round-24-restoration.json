@@ -1,0 +1,38 @@
+{
+  "schema": "mech.polybench.performance-restoration.v1",
+  "restored_at": "2026-11-27T00:06:26.536797+00:00",
+  "reason": "Round24 was mixed and not promoted: both aggregate scores must beat last accepted23. Selection/tuning used optimization-only evidence; this is an aggregate acceptance decision.",
+  "rejected_source_commit": "f1f701bcb14b7c4d76737177cd2dec46d68bb2ae",
+  "rejected_compiler_fingerprint": "86d2492951277e34975b4a9aaeddeba8e688652c90ed09f90df719970183284b",
+  "rejected_driver_sha256": "7d2a90bdbb3b0d556cc7161ff7528695f956055eb2af6937eb5ff6ebaef02d93",
+  "qualification_receipt_sha256": "ae71d87f9b0b7ce0e6a707bfcf66751a20807c5a9f3fb0daa63b998dfde2c667",
+  "performance_acceptance_snapshot_sha256": "33e94ac595a6d35bc4a68e3eb45e52950c936f9473fee653dfaaeab2ce896ec7",
+  "restored_from_repo_commit": "a9d3efc15ec176502de5309b969789e66befd2f3",
+  "accepted_history_index": 23,
+  "accepted_source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+  "accepted_frozen_sha256": "bfdb7874d28ed24466a1a1c6ebd20e06597a434a038be60c23334848dd6f093b",
+  "restored_compiler_fingerprint": "0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2",
+  "changes": [
+    {
+      "path": "src/engine/src/resident/numeric/direct_float_sum.rs",
+      "candidate_sha256": "10c06a6c24483d3f1592bb6575d76c187f55d4454c1c5fd1b4fccbe90be0cbd9",
+      "restored_sha256": null
+    },
+    {
+      "path": "src/engine/src/resident/numeric/direct_float_sum_tests.rs",
+      "candidate_sha256": "7f047c39b36aa1f7a37240f4053d0b1caf3b3bc00f41a0d832e0e230e29c067d",
+      "restored_sha256": null
+    },
+    {
+      "path": "src/engine/src/resident/numeric/mod.rs",
+      "candidate_sha256": "56259bab469054b1aa69d85afab902cbf4c2f7e7db017f61df7d3580cef6d823",
+      "restored_sha256": "3ab913d31a942bd2dc16b3b02b0289c16f1b78290e1a2cdfc2454d4c308540dc"
+    },
+    {
+      "path": "src/engine/src/resident/numeric/packed_snapshot_output_tests.rs",
+      "candidate_sha256": "e81c916d9d50b9b7c24443b3c5ed888b00f5aabbe250e7a08d88e3d7a38e1c93",
+      "restored_sha256": "9dd6ba424c02579e7b315696e0544ac2ec5143e36b2ded6d9ee065c14a318814"
+    }
+  ],
+  "verification": "All Rust source index bytes equal a9d3; complete compiler fingerprint equals accepted23. The measured f1 source and executable stayed frozen through the900-observation qualification and profile audit, then these4 source changes were restored. The rejected source commit remains in Git history. No new measurement claims are made for the restoration."
+}

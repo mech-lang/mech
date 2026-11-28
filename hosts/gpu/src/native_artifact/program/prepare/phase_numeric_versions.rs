@@ -44,13 +44,11 @@ fn summaries<'a>(
             let changed = actions
                 .iter()
                 .filter_map(|(site, operation)| {
-                    let Operation::Write { array, .. } = operation else {
-                        return None;
-                    };
+                    let array = operation.replacement_array()?;
                     plan.blocks()[*site]
                         .iteration()
                         .is_some_and(|iteration| descendants.contains(&iteration))
-                        .then_some(arrays[*array].field)
+                        .then_some(arrays[array].root)
                 })
                 .collect();
             // A cold continuation inside a child can also need a caller's still-
@@ -271,8 +269,7 @@ pub(super) fn validate(
 ) -> Result<(), &'static str> {
     let summaries = summaries(plan, frames, provenance, forest, actions, arrays, exits);
     if actions.iter().any(|(site, operation)| {
-        matches!(operation, Operation::Write { .. })
-            && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
+        operation.replaces() && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
     }) {
         // Prove each call's carried/returned versions locally, then use that
         // exact summary at its caller. Independent loop guards do not require
@@ -402,6 +399,10 @@ fn pass(
         managed_keys(frames, provenance, tail.carrier().get())
             .into_iter()
             .chain(outer.outer.iter().copied().filter(|_| traversal.local))
+            // Strict ancestor definitions cannot run during this synchronous
+            // phase. Each capture has a distinct immutable functional root,
+            // even when it aliases a carrier's original backing.
+            .chain(provenance.captures.keys().map(|&value| (value, None)))
             .map(|key| (key, true))
             .collect(),
     );
@@ -436,6 +437,13 @@ fn pass(
         }
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => match frames.action(site).unwrap().operation() {
+                Frame::Observe {
+                    path, observation, ..
+                } if path.is_empty()
+                    && matches!(
+                        observation,
+                        mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                    ) => {}
                 Frame::EnumPack { .. } | Frame::Observe { .. } => {
                     return Err("tagged frame outside flat phase version proof");
                 }
@@ -449,6 +457,14 @@ fn pass(
                             state.insert((output.get(), Some(ordinal)), current);
                         }
                     }
+                }
+                Frame::Copy { source, output }
+                    if super::super::readonly_numeric::numeric_fields::direct_pack(
+                        plan, frames, *source, *output,
+                    ) =>
+                {
+                    let current = fresh(&state, (source.get(), None));
+                    state.insert((output.get(), Some(0)), current);
                 }
                 Frame::Copy { source, output } => {
                     let copied = frames
@@ -477,6 +493,35 @@ fn pass(
                     }
                 }
             },
+            Some(Operation::Reduce { fold }) => {
+                if fold
+                    .source
+                    .region
+                    .matrices
+                    .iter()
+                    .any(|m| !fresh(&state, (m.value, None)))
+                {
+                    return Err("reduction reads an older array version");
+                }
+            }
+            Some(Operation::Map { replacement }) => {
+                if replacement
+                    .source
+                    .region
+                    .matrices
+                    .iter()
+                    .any(|m| !fresh(&state, (m.value, None)))
+                {
+                    return Err("matrix map reads an older array version");
+                }
+                let root = arrays[replacement.target].root;
+                for (&(value, field), current) in &mut state {
+                    if provenance.array(value, field) == Some(root) {
+                        *current = false;
+                    }
+                }
+                state.insert((replacement.source.output, None), true);
+            }
             Some(Operation::ArrayCopy) => {
                 let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()
                 else {
@@ -487,7 +532,9 @@ fn pass(
             }
             Some(
                 operation @ (Operation::Read { array, .. }
+                | Operation::CellRead { array, .. }
                 | Operation::Write { array, .. }
+                | Operation::CellWrite { array, .. }
                 | Operation::Append { array, .. }
                 | Operation::AppendLeBytes { array, .. }
                 | Operation::Length { array, .. }),
@@ -506,10 +553,11 @@ fn pass(
                 if matches!(
                     operation,
                     Operation::Write { .. }
+                        | Operation::CellWrite { .. }
                         | Operation::Append { .. }
                         | Operation::AppendLeBytes { .. }
                 ) {
-                    let root = arrays[*array].field;
+                    let root = arrays[*array].root;
                     for (&(value, field), current) in &mut state {
                         if provenance.array(value, field) == Some(root) {
                             *current = false;

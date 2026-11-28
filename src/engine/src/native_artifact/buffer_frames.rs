@@ -500,6 +500,17 @@ fn field_shape(plan: &Plan, value: Value) -> Option<(usize, bool)> {
             {
                 eligible = true
             }
+            // Retain the canonical packed owner just like an unsigned buffer.
+            // The frame transports it; numeric access/mutation still uses its
+            // independently witnessed leaf and never an unsigned array view.
+            SchemaBody::Matrix {
+                element,
+                dimensions,
+            } if dimensions.len() == 2
+                && super::NativeScalarKind::from_schema_body(element).is_some() =>
+            {
+                eligible = true
+            }
             // Immutable Strings retain their canonical typed owner. They do
             // not enter the unsigned packed bank, but an invariant String
             // matrix must not force its whole recursive frame to be rebuilt.

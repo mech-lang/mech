@@ -9,6 +9,7 @@ impl Invocation<'_, '_, '_> {
         site: usize,
     ) -> Result<(), Error> {
         let metadata = self.descriptor.metadata();
+        let region_id = region;
         let region = &metadata.closed_tails.regions[region];
         let proof = region
             .numeric
@@ -25,6 +26,53 @@ impl Invocation<'_, '_, '_> {
                 .iter()
                 .find(|frame| frame.value == value)
                 .ok_or_else(|| invalid("cold frame lacks its current lanes"))?;
+            if let Some(variant) = &proof.tagged
+                && variant.contains(value)
+            {
+                if variant.prefix.is_some() {
+                    self.export_numeric_prefix(region_id, value)?;
+                    continue;
+                }
+                let (_, bindings) = variant
+                    .scalars
+                    .iter()
+                    .find(|(v, _)| *v == value)
+                    .ok_or_else(|| invalid("numeric enum lost physical scalar bindings"))?;
+                for binding in bindings {
+                    self.state.control.work.charge(
+                        crate::native_artifact::NativeExecutionPhase::Setup,
+                        super::super::amount(binding.steps + 2, 64, 64)?,
+                    )?;
+                    let bits = self.read_borrowed_word(2 + binding.word)?;
+                    self.state.buffer_frames.synchronize_scalar_binding(
+                        binding.physical,
+                        binding.kind,
+                        bits,
+                    )?;
+                }
+                for &(physical, array) in &frame.array_bindings {
+                    let owner = self
+                        .numeric_array_owner(&proof.arrays[array])?
+                        .ok_or_else(|| invalid("numeric enum lost current array"))?
+                        .clone();
+                    self.state
+                        .control
+                        .work
+                        .charge(crate::native_artifact::NativeExecutionPhase::Setup, 256)?;
+                    self.state.buffer_frames.synchronize_numeric_owner(
+                        physical,
+                        proof.arrays[array].schema,
+                        owner,
+                    )?;
+                }
+                self.state.buffer_frames.synchronize_numeric_tag(
+                    &metadata.buffer_frames,
+                    value,
+                    variant.ordinal,
+                    &mut self.state.control.work,
+                )?;
+                continue;
+            }
             for (ordinal, (word, array)) in frame.fields.iter().zip(&frame.arrays).enumerate() {
                 if let Some(word) = word {
                     let bits = self.read_borrowed_word(2 + word)?;

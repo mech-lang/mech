@@ -1,7 +1,8 @@
 //! Whole nested Tail inventory for one native numeric phase.
 //! This uses canonical loop ancestry and the actual CFG, without source names.
 //! Every declared backedge is cut for per-traversal validation; any remaining
-//! cycle, collection, activation, or external edge declines the phase.
+//! cycle, unsupported child, activation, or external edge declines the phase.
+//! Proved synchronous collection summaries retain their exact cold entry.
 use mech_engine::native_artifact::NativeScalarOp;
 use mech_engine::native_artifact::{
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
@@ -15,10 +16,18 @@ mod bounds;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod captured_windows;
 mod cold;
+mod fixed_state;
 mod flow;
+pub(in crate::native_artifact) use fixed_state::{StateTrips, fixed_state_trips};
 mod homes;
 mod intervals;
+pub(in crate::native_artifact) mod map_banks;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod masks;
+pub(in crate::native_artifact) mod matrix_maps;
+mod reductions;
 mod schedule;
+pub(in crate::native_artifact) use reductions::{Fold, FoldBudget, Reduction};
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
 #[cfg(feature = "canonical-native-program")]
@@ -71,6 +80,8 @@ pub(in crate::native_artifact) struct Loop {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Forest {
     pub loops: Vec<Loop>,
+    pub reductions: Vec<Reduction>,
+    pub maps: Vec<matrix_maps::MatrixMap>,
     pub cold: Vec<ColdChild>,
     pub sites: BTreeSet<usize>,
     /// A current traversal order, cutting each declared latch backedge.
@@ -231,6 +242,14 @@ impl Forest {
                 if self.stops.contains(&site) {
                     continue;
                 }
+                if let Some(reduction) = self.reductions.iter().find(|r| r.entry as usize == site) {
+                    reads += reduction.region.reads.len();
+                    continue;
+                }
+                if let Some(map) = self.maps.iter().find(|r| r.entry as usize == site) {
+                    reads += map.region.reads.len();
+                    continue;
+                }
                 if frames.action(site).is_some() || aggregates.action(site).is_some() {
                     continue;
                 }
@@ -246,10 +265,10 @@ impl Forest {
                             .and_then(Option::as_ref)
                             .filter(|call| call.template() == template)
                             .ok_or("numeric child lacks its exact selected factory")?;
-                        if call.supports_unsigned_matrix_element() {
+                        if super::readonly_numeric::scalar_read(call) {
                             reads += 1;
                         } else if !call.supports_unsigned_matrix_length()
-                            && !call.supports_unsigned_matrix_replace()
+                            && !super::readonly_numeric::scalar_write(call)
                         {
                             return Err("numeric child has a mutation or unsupported effect");
                         }
@@ -265,50 +284,84 @@ impl Forest {
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Complete)
+        Self::derive_inventory(plan, root, None, Coverage::Complete)
     }
 
     pub(in crate::native_artifact) fn with_cold_children(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::ScalarCold)
+        Self::derive_inventory(plan, root, None, Coverage::ScalarCold)
     }
 
     pub(in crate::native_artifact) fn intervals(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Intervals)
+        Self::derive_inventory(plan, root, None, Coverage::Intervals)
     }
 
     pub(in crate::native_artifact) fn fueled(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Fueled)
+        Self::derive_inventory(plan, root, None, Coverage::Fueled)
     }
 
     pub(in crate::native_artifact) fn hybrid(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Hybrid)
+        Self::derive_inventory(plan, root, None, Coverage::Hybrid)
     }
 
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
         if self.stops.contains(&site) {
             Vec::new()
+        } else if let Some(reduction) = self.reductions.iter().find(|r| r.entry as usize == site) {
+            vec![reduction.after as usize]
+        } else if let Some(map) = self.maps.iter().find(|r| r.entry as usize == site) {
+            vec![map.after as usize]
         } else {
             cold::successors(&self.cold, plan, site)
         }
     }
 
+    /// Exact synchronous source stops supplied by another same-plan proof.
+    pub(super) fn guarded_intervals(
+        plan: &Plan,
+        root: &NativeTailLoop,
+        stops: BTreeSet<usize>,
+    ) -> Result<Self, &'static str> {
+        if stops.is_empty() {
+            // A closed FSM may cover every state. Keep complete reachability,
+            // finish/backedge validation and ordinary child inventory intact.
+            Self::derive(plan, root)
+        } else {
+            Self::derive_inventory(plan, root, Some(stops), Coverage::Intervals)
+        }
+    }
+
+    /// Complete summary inventory, ending before exact ordinary terminal
+    /// constructors. No descendant map/fold becomes an unproved cold child.
+    pub(super) fn terminal_constructors(
+        plan: &Plan,
+        root: &NativeTailLoop,
+        stops: BTreeSet<usize>,
+    ) -> Result<Self, &'static str> {
+        if stops.is_empty() {
+            return Err("terminal phase lacks an exact constructor stop");
+        }
+        Self::derive_inventory(plan, root, Some(stops), Coverage::Complete)
+    }
+
     fn derive_inventory(
         plan: &Plan,
         root: &NativeTailLoop,
+        guarded_stops: Option<BTreeSet<usize>>,
         mode: Coverage,
     ) -> Result<Self, &'static str> {
+        let terminal = mode == Coverage::Complete && guarded_stops.is_some();
         let root_id = plan
             .iterations()
             .iter()
@@ -317,12 +370,41 @@ impl Forest {
             })
             .ok_or("numeric phase root is absent")? as u32;
         let mut members = BTreeSet::from([root_id]);
+        let candidates = if matches!(
+            mode,
+            Coverage::Complete | Coverage::Fueled | Coverage::Hybrid
+        ) {
+            reductions::inventory(plan)?
+        } else {
+            Vec::new()
+        };
+        let map_candidates = if matches!(
+            mode,
+            Coverage::Complete | Coverage::Fueled | Coverage::Hybrid
+        ) {
+            matrix_maps::inventory(plan)?
+        } else {
+            Vec::new()
+        };
         let cold = if mode == Coverage::ScalarCold {
             cold::children(plan, root_id)?
         } else {
             Vec::new()
         };
-        let (mut stops, prepaid_sites) = if mode == Coverage::Intervals {
+        let (mut stops, prepaid_sites) = if let Some(stops) = guarded_stops {
+            let prepaid = if terminal {
+                BTreeSet::new()
+            } else {
+                plan.blocks()
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(site, block)| {
+                        (block.iteration() == Some(root_id)).then_some(site)
+                    })
+                    .collect()
+            };
+            (stops, prepaid)
+        } else if mode == Coverage::Intervals {
             intervals::boundaries(plan, root_id)?
         } else {
             (BTreeSet::new(), BTreeSet::new())
@@ -339,6 +421,13 @@ impl Forest {
                     .is_some_and(|p| members.contains(&p))
                 {
                     if !matches!(loop_, NativeControlLoop::Tail(_)) {
+                        if candidates.iter().any(|r| r.region.iteration == id as u32)
+                            || map_candidates
+                                .iter()
+                                .any(|r| r.region.iteration == id as u32)
+                        {
+                            continue;
+                        }
                         if mode == Coverage::Hybrid {
                             continue;
                         }
@@ -351,6 +440,24 @@ impl Forest {
                 break;
             }
         }
+        let mut reductions = candidates
+            .into_iter()
+            .filter(|r| {
+                plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    .is_some_and(|p| members.contains(&p))
+            })
+            .collect::<Vec<_>>();
+        let mut maps = map_candidates
+            .into_iter()
+            .filter(|r| {
+                plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    .is_some_and(|p| members.contains(&p))
+            })
+            .collect::<Vec<_>>();
         if mode == Coverage::Hybrid {
             // Keep synchronous Tail calls inside the same owner/fuel region.
             // A Collection owns hidden builder/progress state and must begin
@@ -376,7 +483,11 @@ impl Forest {
                         .map(|n| n as u32),
                     _ => None,
                 };
-                if child.is_some_and(|child| !members.contains(&child)) {
+                if child.is_some_and(|child| {
+                    !members.contains(&child)
+                        && !reductions.iter().any(|r| r.region.iteration == child)
+                        && !maps.iter().any(|r| r.region.iteration == child)
+                }) {
                     stops.insert(site);
                 }
             }
@@ -384,6 +495,10 @@ impl Forest {
         let successors = |site| {
             if stops.contains(&site) {
                 Vec::new()
+            } else if let Some(reduction) = reductions.iter().find(|r| r.entry as usize == site) {
+                vec![reduction.after as usize]
+            } else if let Some(map) = maps.iter().find(|r| r.entry as usize == site) {
+                vec![map.after as usize]
             } else {
                 cold::successors(&cold, plan, site)
             }
@@ -424,7 +539,7 @@ impl Forest {
                 .iter()
                 .any(|s| {
                     !sites.contains(&(*s as usize))
-                        && (mode != Coverage::Intervals || *s == tail.header())
+                        && ((mode != Coverage::Intervals && !terminal) || *s == tail.header())
                 })
                 || (iteration != root_id
                     && [tail.initialize(), tail.exit()]
@@ -491,11 +606,15 @@ impl Forest {
             return Err("numeric phase has an undeclared cycle");
         }
         stops.retain(|site| sites.contains(site));
+        reductions.retain(|r| sites.contains(&(r.entry as usize)));
+        maps.retain(|r| sites.contains(&(r.entry as usize)));
         if mode == Coverage::Intervals && stops.is_empty() {
             return Err("numeric interval has no reachable cold boundary");
         }
         Ok(Self {
             loops,
+            reductions,
+            maps,
             cold,
             sites,
             order,
@@ -513,7 +632,6 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
     forest: &Forest,
     actions: &[(usize, super::numeric_plan::Operation)],
 ) -> Result<bool, &'static str> {
-    use super::numeric_plan::Operation;
     let latches = forest
         .loops
         .iter()
@@ -527,7 +645,7 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
         .collect::<BTreeSet<_>>();
     let mut funding = false;
     for &(site, ref action) in actions {
-        if !matches!(action, Operation::Write { .. }) && !action.grows() {
+        if !action.replaces() && !action.grows() {
             continue;
         }
         if plan.blocks()[site].iteration() != Some(forest.loops[0].iteration) {
@@ -549,10 +667,9 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
                 continue;
             }
             pending.extend(
-                NativeProgramFacts::control_successors(plan.blocks()[at].terminator())
+                forest
+                    .successors(plan, at)
                     .into_iter()
-                    .flatten()
-                    .map(|s| s as usize)
                     .filter(|s| forest.sites.contains(s)),
             );
         }

@@ -1,0 +1,53 @@
+{
+  "schema": "mech.polybench.fusion-selection-plan.v3",
+  "created_at": "2026-11-27T23:17:29.048634+00:00",
+  "source_parent": "2eda9054706e49710a6b3f146e44a23d9f71d74c",
+  "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "candidate_driver": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+  "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-44/prepared-composite-binding/prepared-composite-driver",
+  "accepted_driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "policy_sha256": "1ef6095941b99d094b0773c67ede92a86b41aab4c5b049db9cc4ca98ad9f5899",
+  "policy": {
+    "schema": "mech.polybench.training-selection-policy.v3",
+    "created_at": "2026-11-27T23:13:57.754430+00:00",
+    "status": "Adopted prospectively before any candidate timing samples.",
+    "source_parent": "5e449f323bb0a3e7dbe976cd7a5f2ee82a7a167c",
+    "candidate_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+    "accepted_round": 44,
+    "authorization_basis": "The user explicitly requested general compiler optimizations and filling compiler gaps. The identical-visit guard was an assistant-added v2 selection condition, absent from the fixed optimization-protocol.json. Treating its revision as requiring new permission unnecessarily blocked authorized work. General source-proved fusion may change actual control visits while preserving the benchmark protocol and original source resource fees. The earlier approval question is not a prerequisite; this is not assumed approval from silence.",
+    "counter_gate": [
+      "Before timing, collect an untimed optimization15 C-liveout/counter census against accepted44 and preserve every actual counter/delta. No fabricated or padded visits.",
+      "Require unchanged visits for unchanged source paths. Permit fewer actual visits only when an independently rederived private descriptor and actual callback census prove complete source-derived fusion with unchanged ordered numeric body, reads, branches, checked errors and required effects.",
+      "Keep original source work and comparison fees nondecreasing. No exception for lower work/comparison counters. Preserve full original selected-factory, range/builder/transpose/publication, clone, finite/physical/coexistence and failed-attempt replay envelopes on the same current account.",
+      "Reject unexplained counter changes, missing fees, omitted checks/effects, changed liveouts/errors or weakened owner/publication/resource guarantees. All other execution/transport counters must match.",
+      "Require all30 finite C checks for original/decoded artifacts, Object emission and restored helper descriptors, plus the focused bit/shape/currentness/finite/cold/replay/alias/tamper/cleanup/retry checks and both feature builds."
+    ],
+    "measurement": "Exactly one prospective optimization15 probe per qualified fingerprint:7 fresh processes per actor/case, interleaved accepted44/candidate with alternating order;210 observations, no retries/exclusions. Select only raw equal-weight GM accepted44/candidate median-runtime speedup >1 after the counter proof gate.",
+    "formal_acceptance": "Commit/push and freeze exact clean selected source and driver before BOTH formal sets. All900 observations and29482 finite liveouts retained. Accept only if BOTH primary kernel GM Mech/C scores strictly improve accepted44:10.24618089248072 /38.46047945936111. Restore exact accepted44 on rejection. Controls cannot override either score.",
+    "benchmark_protocol_unchanged": "No change to all30 ports/inputs, C binaries/flags, MINI F64 CPU, finite limits/tolerances, fixed15/15 split, profiling/selection on optimization15 only, cache/timing boundaries, metric/goal or prior history. No prior rejected candidate is reclassified or remeasured.",
+    "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "prospective_required_evidence": [
+      "Before the one fresh-process probe, run an untimed optimization15 C-liveout and execution-counter census against accepted44. Actual visits must match unless a rederived private rectangular source proof and actual callback evidence explain a reduction.",
+      "All original work/comparison bills must be nondecreasing; every other counter/transport field must match. No fee exceptions.",
+      "For each visit reduction, preserve the selected current-bound rectangle metadata, complete ordinary source sites/body/read/branch inventories, actual prepare/finish/transpose callback census and finite C liveouts. Unexplained changes reject before timing.",
+      "No overlapping profiles/builds/tests/timings. Complete the current accepted44 long profiles before this census or any candidate trial."
+    ],
+    "qualification": {
+      "broad": 712,
+      "focused": 102,
+      "restored_forms": 60,
+      "restored_finite_liveouts": 58964,
+      "both_features": true
+    },
+    "formal_history_entries": 45,
+    "performance_observations": 0,
+    "no_prior_candidate_reclassified_or_retried": true
+  },
+  "qualification": "training-experiments/current-bound-rectangles-shared-comparison.json",
+  "scope": "Optimization15 untimed counter/C-liveout gate, then one prospective210-observation fresh-process probe only after the current accepted44 profiles finish. No holdout diagnosis/timing before compiler selection and freeze.",
+  "formal_history_entries": 45,
+  "performance_observations": 0
+}

@@ -1,0 +1,5 @@
+-- Reflect the stored lower triangle, then use the symmetric matrix product.
+size := m<u64>
+a := A<[f64]>
+symmetric := [[((i >= j)? | true => a[i,j] | false => a[j,i]) | i <- 1u64..=size]' | j <- 1u64..=size]
+alpha<f64> * (symmetric ** B<[f64]>) + beta<f64> * C<[f64]>

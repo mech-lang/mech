@@ -1,8 +1,8 @@
 //! Bounded and partial numeric phases over flat private frames.
-//! Recursive/captured-owner trees retain their independent must-current proof;
-//! both proofs convert to the same native representation before code emission.
+//! Immutable numeric ancestor captures share the maintained leaf view runtime.
+//! Recursive owner trees retain their independent must-current proof.
 use super::numeric_phase::Coverage;
-use mech_core::{IntegerWidth, SchemaBody};
+use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
@@ -46,23 +46,7 @@ pub(in crate::native_artifact) use super::numeric_plan::{
 };
 
 pub(super) fn width(body: &SchemaBody) -> Option<u8> {
-    let SchemaBody::Matrix {
-        element,
-        dimensions,
-    } = body
-    else {
-        return None;
-    };
-    if dimensions.len() != 2 {
-        return None;
-    }
-    Some(match element.as_ref() {
-        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
-        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
-        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
-        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
-        _ => return None,
-    })
+    super::readonly_numeric::width(body)
 }
 
 // A key denotes either an array Value or one managed field in a private frame.
@@ -76,11 +60,25 @@ struct Provenance<'a, 'p> {
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
     children: BTreeMap<(u32, usize), usize>,
+    /// Disjoint read-only roots whose exact owners remain in ancestor slots.
+    captures: BTreeMap<u32, usize>,
+    /// Complete-map results constrained by their exact next-state destination.
+    mapped: BTreeMap<u32, usize>,
     native_sites: Option<&'a BTreeSet<usize>>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
         let key = (value, field);
+        if field.is_none()
+            && let Some(root) = self.captures.get(&value)
+        {
+            return Some(*root);
+        }
+        if field.is_none()
+            && let Some(root) = self.mapped.get(&value)
+        {
+            return Some(*root);
+        }
         if value == self.tail.carrier().get() {
             let ordinal = field?;
             return matches!(
@@ -133,7 +131,19 @@ impl Provenance<'_, '_> {
                         self.array(operands.get(ordinal)?.get(), None)?
                     }
                     (Frame::Copy { source, output }, Some(ordinal)) if output.get() == value => {
-                        self.array(source.get(), Some(ordinal))?
+                        if super::readonly_numeric::numeric_fields::direct_pack(
+                            self.facts.plan(),
+                            self.frames,
+                            *source,
+                            *output,
+                        ) {
+                            if ordinal != 0 {
+                                return None;
+                            }
+                            self.array(source.get(), None)?
+                        } else {
+                            self.array(source.get(), Some(ordinal))?
+                        }
                     }
                     (
                         Frame::Project {
@@ -160,7 +170,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(call.supports_unsigned_matrix_replace()
+                    || !(super::readonly_numeric::scalar_write(call)
                         || call.supports_unsigned_matrix_append()
                         || call.supports_unsigned_matrix_append_le_bytes())
                 {
@@ -313,6 +323,48 @@ pub(in crate::native_artifact) fn derive_complete(
     )
 }
 
+pub(super) fn derive_terminal_constructors(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    stops: BTreeSet<usize>,
+) -> Result<Proof, &'static str> {
+    derive_inventory(
+        facts,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Complete,
+        Some(stops),
+    )
+}
+
+pub(super) fn derive_guarded(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    stops: BTreeSet<usize>,
+) -> Result<Proof, &'static str> {
+    derive_inventory(
+        facts,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Intervals,
+        Some(stops),
+    )
+}
+
 fn derive_with_children(
     facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
@@ -322,7 +374,21 @@ fn derive_with_children(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
     mode: Coverage,
 ) -> Result<Proof, &'static str> {
+    derive_inventory(facts, tail, frames, aggregates, calls, visits, mode, None)
+}
+
+fn derive_inventory(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    mode: Coverage,
+    stops: Option<BTreeSet<usize>>,
+) -> Result<Proof, &'static str> {
     let plan = facts.plan();
+    let guarded = stops.is_some();
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
@@ -332,12 +398,20 @@ fn derive_with_children(
     {
         return Err("numeric carrier requires flat fields");
     }
-    let forest = match mode {
-        Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
-        Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
-        Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
-        Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
-        Coverage::Hybrid => super::numeric_phase::Forest::hybrid(plan, tail)?,
+    let forest = if let Some(stops) = stops {
+        if mode == Coverage::Complete {
+            super::numeric_phase::Forest::terminal_constructors(plan, tail, stops)?
+        } else {
+            super::numeric_phase::Forest::guarded_intervals(plan, tail, stops)?
+        }
+    } else {
+        match mode {
+            Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
+            Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
+            Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
+            Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
+            Coverage::Hybrid => super::numeric_phase::Forest::hybrid(plan, tail)?,
+        }
     };
     if mode == Coverage::Fueled && forest.loops.len() < 2 {
         return Err("checked child funding requires a nested Tail");
@@ -345,7 +419,15 @@ fn derive_with_children(
     if mode == Coverage::Hybrid && (forest.loops.len() < 2 || forest.stops.is_empty()) {
         return Err("nested cold selection requires both Tail children and a cold boundary");
     }
-    let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
+    // A guarded complete FSM still owns one synchronous phase account even
+    // when it has no ordinary cold transition. Its tag transport is funded by
+    // the same per-traversal and boundary schedule as a partial tagged phase.
+    let nested = guarded
+        || forest.loops.len() > 1
+        || !forest.reductions.is_empty()
+        || !forest.maps.is_empty()
+        || !forest.cold.is_empty()
+        || !forest.stops.is_empty();
     #[cfg(all(test, feature = "canonical-native-program-runtime"))]
     if nested && test_decline_nested_phase() {
         return Err("test declines nested phases to exercise ordinary parent segments");
@@ -361,6 +443,106 @@ fn derive_with_children(
         Vec::new()
     };
     let sites = forest.sites.clone();
+    let mut captures = BTreeMap::new();
+    let mut captured = Vec::new();
+    let mut capture_sources = Vec::new();
+    for &site in &sites {
+        if forest.stops.contains(&site) || forest.cold.iter().any(|c| c.initialize == site) {
+            continue;
+        }
+        if let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() {
+            capture_sources.extend(operands.iter().map(|source| source.get()));
+        }
+    }
+    capture_sources.extend(
+        forest
+            .reductions
+            .iter()
+            .flat_map(|r| r.region.matrices.iter().map(|m| m.value)),
+    );
+    capture_sources.extend(
+        forest
+            .maps
+            .iter()
+            .flat_map(|r| r.region.matrices.iter().map(|m| m.value)),
+    );
+    for source in capture_sources {
+        if captures.contains_key(&source)
+            || width(plan.values()[source as usize].definition().body()).is_none()
+            || super::captured_numeric::immutable_source_id(plan, tail, source).is_err()
+        {
+            continue;
+        }
+        let root = fields.len() + captured.len();
+        captures.insert(source, root);
+        captured.push(Array {
+            root,
+            storage: super::readonly_numeric::ArrayStorage::Capture { value: source },
+            schema: plan.values()[source as usize].schema(),
+            width: 0,
+            witness: usize::MAX,
+            writable: false,
+            appends: false,
+        });
+    }
+    let mut mapped = if forest.maps.is_empty() {
+        BTreeMap::new()
+    } else {
+        super::numeric_phase::matrix_maps::destinations(facts, tail, frames, calls, &forest.maps)?
+    };
+    // A map that does not flow into a next-state field is a distinct local
+    // result, never an alias inferred from its read operands. Its producer and
+    // every read must belong to this exact composed source traversal.
+    let mut covered = sites.iter().map(|&s| s as u32).collect::<BTreeSet<_>>();
+    covered.extend(forest.maps.iter().flat_map(|map| map.source_sites()));
+    covered.extend(
+        forest
+            .reductions
+            .iter()
+            .flat_map(|fold| fold.source_sites()),
+    );
+    let mut local_arrays = Vec::new();
+    for map in &forest.maps {
+        if mapped.contains_key(&map.output) {
+            continue;
+        }
+        use mech_engine::native_artifact::{
+            NativeIterationValueScope as Scope, NativeProgramReadRole as Read,
+        };
+        let sealed = if let Some(transpose) = &map.region.transpose {
+            let Action::LibraryCall { output, .. } =
+                plan.blocks()[transpose.transpose as usize].action()
+            else {
+                return Err("local map lost its selected source output");
+            };
+            *output
+        } else {
+            plan.collections()[map.region.collection as usize].output()
+        };
+        if sealed.get() != map.output {
+            return Err("local map output differs from canonical source");
+        }
+        if !matches!(plan.value_scopes()[map.output as usize], Scope::Immutable { iteration: Some(owner) }
+            if forest.loops.iter().any(|loop_| loop_.iteration == owner))
+            || facts.read_roles(sealed).map_err(|_| "local map lacks exact reads")?
+                .iter().any(|read| !matches!(read, Read::Action(at) | Read::Terminator(at) if covered.contains(at))) {
+            return Err("local map output escapes its exact phase source");
+        }
+        let root = fields.len() + captured.len() + local_arrays.len();
+        mapped.insert(map.output, root);
+        local_arrays.push(Array {
+            root,
+            storage: super::readonly_numeric::ArrayStorage::PhaseLocal {
+                value: map.output,
+                extents: map.extents,
+            },
+            schema: plan.values()[map.output as usize].schema(),
+            width: map.region.output_width,
+            witness: usize::MAX,
+            writable: true,
+            appends: false,
+        });
+    }
     let mut provenance = Provenance {
         facts,
         frames,
@@ -369,7 +551,11 @@ fn derive_with_children(
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         children: BTreeMap::new(),
-        native_sites: matches!(mode, Coverage::Intervals | Coverage::Hybrid).then_some(&sites),
+        captures,
+        mapped,
+        native_sites: (matches!(mode, Coverage::Intervals | Coverage::Hybrid)
+            || (guarded && !forest.stops.is_empty()))
+        .then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
         let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
@@ -424,7 +610,15 @@ fn derive_with_children(
                 return Err("array field changes, swaps, or has unknown recursive forwarding");
             }
             arrays.push(Array {
-                field: ordinal,
+                root: ordinal,
+                storage: super::readonly_numeric::ArrayStorage::Carrier {
+                    field: ordinal,
+                    physical: match field.lane() {
+                        Lane::Managed { at } => at,
+                        _ => unreachable!(),
+                    },
+                },
+                schema: field.schema(),
                 width: 0,
                 witness: usize::MAX,
                 writable: false,
@@ -432,19 +626,15 @@ fn derive_with_children(
             });
         }
     }
+    arrays.extend(captured);
+    arrays.extend(local_arrays);
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
-    let result = if sites.contains(&(tail.finish() as usize)) {
-        results::derive(
-            plan,
-            tail,
-            frames,
-            aggregates,
-            fields,
-            &arrays,
-            &mut provenance,
-        )?
+    let result = if sites.contains(&(tail.finish() as usize))
+        && !forest.stops.contains(&(tail.finish() as usize))
+    {
+        results::derive(plan, tail, frames, aggregates, &arrays, &mut provenance)?
     } else {
         ResultRecipe::Unreachable
     };
@@ -457,6 +647,95 @@ fn derive_with_children(
         if forest.stops.contains(&site) || forest.cold.iter().any(|child| child.initialize == site)
         {
             actions.push((site, Operation::Fallback));
+            continue;
+        }
+        if let Some(reduction) = forest.reductions.iter().find(|r| r.entry as usize == site) {
+            let budget = reduction
+                .budget(plan, calls, visits)
+                .ok_or("reduction lost its selected factories or finite source budget")?;
+            let mut roots = Vec::new();
+            for matrix in &reduction.region.matrices {
+                let root = provenance
+                    .array(matrix.value, None)
+                    .ok_or("reduction matrix has no invariant phase root")?;
+                let at = arrays
+                    .iter()
+                    .position(|a| a.root == root)
+                    .ok_or("reduction matrix is outside the phase")?;
+                if plan.values()[matrix.value as usize].schema() != arrays[at].schema
+                    || (arrays[at].width != 0 && arrays[at].width != matrix.width)
+                    || arrays[at].appends
+                {
+                    return Err("reduction matrix schema, width or extent changes");
+                }
+                arrays[at].width = matrix.width;
+                arrays[at].witness = arrays[at].witness.min(matrix.witness as usize);
+                roots.push(at);
+            }
+            actions.push((
+                site,
+                Operation::Reduce {
+                    fold: Box::new(super::numeric_phase::Fold {
+                        source: reduction.clone(),
+                        arrays: roots,
+                        budget,
+                    }),
+                },
+            ));
+            continue;
+        }
+        if let Some(map) = forest.maps.iter().find(|r| r.entry as usize == site) {
+            let budget = map
+                .budget(plan, calls, visits)
+                .ok_or("matrix map lost its exact factories or finite source budget")?;
+            let root = provenance
+                .array(map.output, None)
+                .ok_or("matrix map lacks an exact state destination")?;
+            let target = arrays
+                .iter()
+                .position(|a| a.root == root)
+                .ok_or("matrix map destination is outside the phase")?;
+            if (root >= fields.len()
+                && !matches!(arrays[target].storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { value, .. } if value == map.output))
+                || arrays[target].schema != plan.values()[map.output as usize].schema()
+                || (arrays[target].width != 0 && arrays[target].width != map.region.output_width)
+                || arrays[target].appends
+            {
+                return Err("matrix map changes its destination schema, width or extent");
+            }
+            arrays[target].width = map.region.output_width;
+            arrays[target].writable = true;
+            let mut roots = Vec::new();
+            for matrix in &map.region.matrices {
+                let root = provenance
+                    .array(matrix.value, None)
+                    .ok_or("matrix map input has no invariant phase root")?;
+                let at = arrays
+                    .iter()
+                    .position(|a| a.root == root)
+                    .ok_or("matrix map input is outside the phase")?;
+                if plan.values()[matrix.value as usize].schema() != arrays[at].schema
+                    || (arrays[at].width != 0 && arrays[at].width != matrix.width)
+                    || arrays[at].appends
+                {
+                    return Err("matrix map input schema, width or extent changes");
+                }
+                arrays[at].width = matrix.width;
+                arrays[at].witness = arrays[at].witness.min(matrix.witness as usize);
+                roots.push(at);
+            }
+            actions.push((
+                site,
+                Operation::Map {
+                    replacement: Box::new(super::numeric_phase::matrix_maps::Replacement {
+                        source: map.clone(),
+                        arrays: roots,
+                        target,
+                        budget,
+                    }),
+                },
+            ));
             continue;
         }
         let action = plan.blocks()[site].action();
@@ -484,7 +763,7 @@ fn derive_with_children(
                     if matches!(field.lane(), Lane::Managed { .. })
                         && !arrays
                             .iter()
-                            .any(|a| provenance.array(value, Some(ordinal)) == Some(a.field))
+                            .any(|a| provenance.array(value, Some(ordinal)) == Some(a.root))
                     {
                         return Err("frame has an unknown managed field");
                     }
@@ -493,6 +772,20 @@ fn derive_with_children(
                 Ok(())
             };
             match frame.operation() {
+                Frame::Observe {
+                    source,
+                    path,
+                    observation,
+                    ..
+                } if guarded
+                    && path.is_empty()
+                    && matches!(
+                        observation,
+                        mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                    ) =>
+                {
+                    remember(source.get())?;
+                }
                 Frame::EnumPack { .. } | Frame::Observe { .. } => {
                     return Err("tagged frame outside flat numeric phase");
                 }
@@ -507,7 +800,13 @@ fn derive_with_children(
                     remember(output.get())?;
                 }
                 Frame::Copy { source, output } => {
-                    remember(source.get())?;
+                    if frames.fields(*source).is_some() {
+                        remember(source.get())?;
+                    } else if !super::readonly_numeric::numeric_fields::direct_pack(
+                        plan, frames, *source, *output,
+                    ) {
+                        return Err("projected direct payload lacks its exact matrix field");
+                    }
                     remember(output.get())?;
                 }
                 Frame::Project { source, .. } => remember(source.get())?,
@@ -549,24 +848,32 @@ fn derive_with_children(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = call.supports_unsigned_matrix_element();
-            let is_write = call.supports_unsigned_matrix_replace();
+            let is_read = super::readonly_numeric::scalar_read(call);
+            let is_write = super::readonly_numeric::scalar_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             let is_bulk = call.supports_unsigned_matrix_append_le_bytes();
             if !(is_length || is_read || is_write || is_append || is_bulk) {
                 return Err("unsupported selected library effect or operation");
             }
             let source = operands.first().ok_or("missing selected array")?;
-            let field = provenance
+            let root = provenance
                 .array(source.get(), None)
-                .ok_or("array read is not an invariant carrier field")?;
-            if plan.values()[source.get() as usize].schema() != fields[field].schema() {
-                return Err("array field schema differs from its selected use");
-            }
+                .ok_or("array use lacks an invariant carrier or immutable capture root")?;
             let at = arrays
                 .iter()
-                .position(|a| a.field == field)
-                .ok_or("array outside carrier")?;
+                .position(|a| a.root == root)
+                .ok_or("array outside selected phase")?;
+            if plan.values()[source.get() as usize].schema() != arrays[at].schema {
+                return Err("array root schema differs from its selected use");
+            }
+            if (is_write || is_append || is_bulk)
+                && !matches!(
+                    arrays[at].storage,
+                    super::readonly_numeric::ArrayStorage::Carrier { .. }
+                )
+            {
+                return Err("immutable captured array cannot be written");
+            }
             let w =
                 width(template.inputs()[0].body()).ok_or("unsupported numeric shape or width")?;
             if arrays[at].width != 0 && arrays[at].width != w {
@@ -617,34 +924,8 @@ fn derive_with_children(
                     array: at,
                     incoming: operands[1].get(),
                 }
-            } else if is_write {
-                if operands.len() != 3
-                    || plan.values()[operands[2].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize]
-                        .scalar_kind()
-                        .and_then(|k| k.unsigned_maximum())
-                        .is_none()
-                {
-                    return Err("unsupported write operands");
-                }
-                Operation::Write {
-                    array: at,
-                    incoming: operands[1].get(),
-                    index: operands[2].get(),
-                }
             } else {
-                if operands.len() != 2
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                {
-                    return Err("unsupported read selector");
-                }
-                Operation::Read {
-                    array: at,
-                    index: operands[1].get(),
-                    output: output.get(),
-                }
+                super::readonly_numeric::scalar_access(plan, call, operands, at, *output)?
             }
         } else {
             match action {
@@ -666,16 +947,35 @@ fn derive_with_children(
         };
         actions.push((site, operation));
     }
-    if arrays.iter().any(|array| array.witness == usize::MAX)
-        && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Read { array, .. }
+    if actions.iter().any(|(_, action)| matches!(action, Operation::Map { replacement }
+        if arrays[replacement.target].appends || replacement.arrays.iter().any(|&a| arrays[a].appends))) {
+        return Err("matrix map shares a growing phase root");
+    }
+    let map_banks = super::numeric_phase::map_banks::derive(&actions, &arrays)?;
+    // A local result obtains its type, geometry and owner from its complete
+    // map producer. It has no entry owner and needs no scalar-read witness.
+    // Opaque retained roots continue to require their existing read proof.
+    if arrays.iter().any(|array| {
+        array.witness == usize::MAX
+            && !matches!(
+                array.storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { .. }
+            )
+    }) && !actions.iter().any(|(_, action)| {
+        matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty())
+            || matches!(action, Operation::Map { replacement } if !replacement.arrays.is_empty())
+            || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
-        })
-    {
+    }) {
         return Err("unwitnessed retained array");
     }
     if arrays.iter().any(|array| {
-        array.witness == usize::MAX && (array.width != 0 || array.writable || array.appends)
+        array.witness == usize::MAX
+            && !matches!(
+                array.storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { .. }
+            )
+            && (array.width != 0 || array.writable || array.appends)
     }) {
         return Err("unwitnessed retained array has content effects");
     }
@@ -736,7 +1036,7 @@ fn derive_with_children(
                 .map(|(ordinal, field)| {
                     if matches!(field.lane(), Lane::Managed { .. }) {
                         let origin = provenance.array(value, Some(ordinal)).unwrap();
-                        Some(arrays.iter().position(|a| a.field == origin).unwrap())
+                        Some(arrays.iter().position(|a| a.root == origin).unwrap())
                     } else {
                         None
                     }
@@ -764,6 +1064,7 @@ fn derive_with_children(
             })
         })
         .and_then(|n| n.checked_add(arrays.iter().filter(|a| a.appends).count()))
+        .and_then(|n| n.checked_add(map_banks.len()))
         .ok_or("numeric word count overflows")?;
     let phase = if nested {
         let fields = result
@@ -782,6 +1083,14 @@ fn derive_with_children(
                     } else {
                         0
                     })
+                })
+                .and_then(|n| {
+                    n.checked_add(
+                        actions
+                            .iter()
+                            .filter(|(_, action)| action.summary_budget().is_some())
+                            .count(),
+                    )
                 })
                 .and_then(|n| n.checked_add(usize::from(!exits.is_empty())))
                 .ok_or("phase counter size overflows")?,
@@ -819,6 +1128,7 @@ fn derive_with_children(
     )?;
     Ok(Proof {
         arrays,
+        map_banks,
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),

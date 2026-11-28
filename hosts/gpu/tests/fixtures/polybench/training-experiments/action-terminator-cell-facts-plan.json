@@ -1,0 +1,75 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T19:42:42.764299+00:00",
+  "name": "action-terminator-cell-facts",
+  "source_parent": "36d74e84d2aae3cb6aa60f28a45c82eac9d499a2",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 63,
+  "versions": {
+    "ir": 438,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_stability.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "foundation": "Previously deferred source-stable context prototype fe772dcce342d033edf49fdd1b0a250b37ffcf27cece3d1516ae1c1489b19392; no performance observations ever. Restore original shared dot kernel/runtime, retain recovered round60 point-expression lowering plus the qualified productive-prefix rule and source tests from round82. No failed paired-dot or matrix-preflight transformation included.",
+  "profiling_basis": "Optimization target remains Seidel; exact accepted59 same-PID profile96.59percent generated, admitted CFG cache c256 qualification/probe and deferred R79 source/focused failure. Exact same-source CFG shows U64Eq at20 and row comparison at34 each branch on its own action output in the same block. Deferred availability excludes producer==consumer. Raw graph also admits inconsistent repeated root EnumOrdinal outcomes which bypass guards; success at the raw-mandatory actual EnumPayload0 projections52..55 proves the prior carrier variant0.",
+  "transformation": "Separate before-action availability from before-terminator availability: a branch may use its own actual action-produced Bool, while scalar operands still require prior current-visit definitions. Derive previous root enum facts only from raw-CFG-mandatory, current-visit-available actual successful canonical/U64 projection chains whose path starts with an EnumPayload of the exact nominal carrier Enum. Conflicts decline. Use those prior enum truths only in previous-success reachability/dominance/outcome proofs, never as current operand availability or post-constructor authority. Current enum folding remains independently based on exact same-nominal post-store constructor. Inherit stable comparison outcome only after mandatory prior action/branch, exactly one successful successor, unchanged actual source field transfer. Current changed column/matrix/library values and branches with both outcomes reaching the point decline. Fold/prune reusable graph only; all original fresh/reset/COW/error/source fees remain.",
+  "invariants": [
+    "Unchanged30 idiomatic ports,inputs,C binaries/flags,arithmetic/tolerance,finite caps,split,cache/timing/protocol/objective. Compiler admission uses source operations,types,CFG,current loans; no benchmark names,MINI dimensions or input-value assumptions.",
+    "Cranelift sole Mech generator. Reuse native scalar/F64 emission, same-plan facts and exact frame recipes, current numeric loan/provenance, original word bank and COW/no-op/error machinery. Cache is bounded compiler SSA within one synchronous loan, with no serialized authority, pointer persistence, new helper/frame/ABI/mode/cache across invocations or per-operation runtime allocation. Efficient scalar/compression paths remain.",
+    "Rolling eligibility requires source-proved same-row checked column+1 post-store continuation of this exact updated matrix, single tracked matrix mutation, fixed affine offsets in both source axes, bounded source steps/keys and a single source-observed F64 result. Every other latch entry invalidates; any cold numeric reentry starts empty. Read reuse cannot cross an unproved mutation, phase/owner boundary or reshape. Only the last successfully completed store result can replace the overwritten center.",
+    "A fresh point retains complete checked U64 intermediate/row/column admission before any load. Consecutive-point reuse proves unchanged row expressions and shifted-by-one column expressions; retain upper/overflow guards for all source checked subexpressions, including unused ones. Current full geometry/epoch/span/capacity/schema/owner admission stays. Static axes only from the existing exact source witness and never appending views. No global readonly/alias/alignment claims.",
+    "Original separate scalar F64 operands/tree/term order/rounding remain; no reassociation,FMA,reciprocal substitution or independent SIMD of dependent outputs. Nonfinite final results invalidate and replay the exact original prefix at current state before exports/store. Prior completed in-place updates cannot be rewound. Preserve source first failures, no-op/COW order, aliases, atomic previous external output, finite denials and cleanup/retry.",
+    "All execution counters exactly match accepted59; no source work/comparison/visit/bill reduction or padding. Actual compiled stack/code envelopes remain checked; cache auxiliary initialization/emission counts remain within existing independently priced bounds. No Rust edits while build/test/profile/timing live.",
+    "Closest-parity-first target stays Seidel until accepted<=1.0x C. Maintain attained optimization parity wins; current set empty. Optimization only diagnoses/selects/promotes. Holdout independently reports and cannot tune/veto/rollback/retry.",
+    "Cache is an optional derived representation. Discarding its full SSA state at a cold COW/state edge cannot change source values or completed writes; every later reuse requires a newly staged finite point and completed original store/no-op. Preserve current source word outputs/address/input before discarding private fields. No cache float must survive the original first-change helper solely to populate an invalid cache.",
+    "Induction for private token: entry/invalidation is0. Fresh staged token is the exact maximum admitted one-based read column in1..columns. A reused point has prior token<columns, so exact source unit-column continuation stages previous+1 in1..columns. No observer can reenter prefix between staging and the sole store; source errors exit the native loan, and COW clears token before its original call. Thus early private staging cannot authorize an uncompleted source write. Source source/read/CFG witnesses remain private and rederived; no new external authority.",
+    "Control-flow context is compiler-private and rederived from same-plan facts. Reusable entries are reachable only from successful finite producer plus completed original private/no-op write along the exact same-bank/same-row/checked unit-column source tail. COW, original lexical evaluation, every other latch, loan entry/reentry and source errors cannot enter reusable context. Fresh source still runs complete original preflight. Reusable bounds inherit prior complete row/lower validity and guard every advancing column checked intermediate against overflow plus current maximum read column against current columns before any load. F64 cache values are defined on each finite producer and never needed across COW/fresh edges. No integer cache word is read or updated in the CFG path.",
+    "Descriptive Boolean/definition/CFG inventories are not permission. Inheritance additionally proves previous mandatory execution, unique successful outcome, exact scalar stability through the actual next-carrier recipes, and exclusive reusable entry after completed source write. No source ordinal is cast into a NativeMatchValue. Enum facts require actual same-nominal source schema and actual constructor ordinal. Mutable reads/changed fields cannot be stable. Every failure remains at original source origin; constant folding does not reduce logical fees or pad counters.",
+    "Before-action definitions cannot self-supply operands. Same-block after-action availability additionally checks the actual action output handle; no u32 ordinal is cast to a source handle.",
+    "Previous root variant requires exact root nominal enum type and raw-mandatory successful source projection with an actual EnumPayload path. It is independent of the post-store constructor. Prior-feasible CFG is used only to reason about the previous successful point; every current projection/input availability proof stays on the raw CFG. Distinct/unknown variants, conflicting mandatory paths, changed fields and nonmandatory outcomes decline. No generic definition/CFG inventory is execution authority.",
+    "Retain the productive-prefix minimum of one eliminated floating classification per escaping F64 word, source only. No paired reduction unroll or matrix-preflight caching; no benchmark names, fixed MINI values or port/input/C/timer/cap changes."
+  ],
+  "qualification": "18 focused groups: retain16 deferred groups, add qualified raw/weakly closed prefix public test and a nonmandatory stable U64 branch whose two outcomes reach the point. Verify actual retained same-block comparisons, unchanged row/remaining, rejection of changing column/matrix predicates, exact nominal enum facts, and original/decoded/restored errors/caps/COW/noops/aliases/cleanup/retry. Genuine Object must retain at least2 source scalar guard facts and smaller reusable graph than62sites,9-to3 read reuse, zero vector stack accesses and register-held work credit. Full broad all30/restored/both features, exact17002 O liveouts/all counters; commit/push then one210 probe; formal63 once if selected.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts, zero samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push clean exact source/driver and perform one900-observation formal evaluation/29482 finite C liveouts, append immutable history63. Promote strictly on O15 Mech/C<7.852513248471486 and maintained parity wins (none currently). H report-only; no tuning/veto/rollback/retry. Restore accepted59 if O gate fails.",
+  "performance_observations": 0,
+  "static_gate": "At least2 actual retained scalar predicates including same-block producers/terminators, previous root enum proof from raw-mandatory projections, reusable source graph smaller than62,9-to3 reuse, no FP vector stack accesses and direct register credit. Static evidence is not a latency forecast."
+}

@@ -1,0 +1,1568 @@
+{
+  "schema": "mech.polybench.affine-map-cell-static-telemetry.v1",
+  "scope": "Optimization15 genuine checked Object export/static instructions and unchanged source recipes. No Object execution/timing, hardware retired counts, traffic or RSS claims. Typed kernel direct tests verify fast status, current dynamic geometry, independent two-lane FP, scalar tails, inactive null inputs, alias/bounds refusal and late partial cancellation.",
+  "compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "cases": {
+    "2mm": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 9768,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 20026,
+          "object_file_bytes": 31400,
+          "static_instruction_count": 2442,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2442,
+              "disassembly_sha256": "fb20ced0e7263f8d8bd2159349221c70aa75e34a5de7a6bbe881e72b0bd1d33a"
+            }
+          },
+          "object_sha256": "ea69a2f864a58298ec98f36a18cac74408f03df8d78051bcedd7bdbf188211a1",
+          "metadata_sha256": "4329a08e7d457da0affd3a5e922e9b4ecaa13d9fbe5c43b69b8fc58a1af1a4da",
+          "disassembly_sha256": "17feca4ba75ebb4a93c1f0cf0225e2af76889160da8e8337fdc102be2ddad556",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 9768,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 20026,
+          "object_file_bytes": 31400,
+          "static_instruction_count": 2442,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2442,
+              "disassembly_sha256": "fb20ced0e7263f8d8bd2159349221c70aa75e34a5de7a6bbe881e72b0bd1d33a"
+            }
+          },
+          "object_sha256": "0de0c2958e25386ef0c6141d429272df1c41b319bf63e1f446d40c71547b2b5f",
+          "metadata_sha256": "ff9a8e7847042938c473fba3498c52677ef995021fcefdf48810db888d54902e",
+          "disassembly_sha256": "69e3fe6760cb5763428a9b6e779aba392ad7b4d75015ce047f53595ba72bae37",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "3mm": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 4256,
+          "reported_native_stack_bytes": 96,
+          "metadata_bound_bytes": 13310,
+          "object_file_bytes": 19168,
+          "static_instruction_count": 1064,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1064,
+              "disassembly_sha256": "76df42accc90d8e5ea1702a498ee441e2ce2f45dd30911178d6ae1e8fa8bd164"
+            }
+          },
+          "object_sha256": "edd143a002d4ead4dd3cd2c335075efae62f10a38dfef73a634e60138afc028c",
+          "metadata_sha256": "1ba6f4636b2eef1cebb06e448fbeda8e3ee3016594714b4b279d03c6a55c3d78",
+          "disassembly_sha256": "ecf39a4fd23c2119f0450513d41c6813b3ee42d458536326322c82a6553c5890",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 4256,
+          "reported_native_stack_bytes": 96,
+          "metadata_bound_bytes": 13310,
+          "object_file_bytes": 19168,
+          "static_instruction_count": 1064,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1064,
+              "disassembly_sha256": "76df42accc90d8e5ea1702a498ee441e2ce2f45dd30911178d6ae1e8fa8bd164"
+            }
+          },
+          "object_sha256": "ba65565b504f2ec588560a75f0fcf580b68f448ff5cd2d0067e86d40c3729d90",
+          "metadata_sha256": "5acfcff79cb8a003828a000466d828b67d5132d9da61e2bf274ae1505234d49e",
+          "disassembly_sha256": "75f3172b13d950031ceda4c1249ce0317ad158a9799a402d2316dc28bb311afb",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "atax": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 3732,
+          "reported_native_stack_bytes": 96,
+          "metadata_bound_bytes": 13253,
+          "object_file_bytes": 18592,
+          "static_instruction_count": 933,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 933,
+              "disassembly_sha256": "dee1b4e0d69404cb923e0a3413cfe32236f05d9527f5b11522be1c68f49c607e"
+            }
+          },
+          "object_sha256": "576a23b4dee27b5e43274792e7680d9f9368211817b3ed346bd93d75dc9e354d",
+          "metadata_sha256": "fe1cf959e365ec60f13c9de8a263ae78e9faf3b1904dce22bc5a539d8c6ce2d1",
+          "disassembly_sha256": "d3b8edf50b4cca1214f9d964b9567a84bfbf1e4d7a0219c4afa27a206ed1f08c",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 3732,
+          "reported_native_stack_bytes": 96,
+          "metadata_bound_bytes": 13253,
+          "object_file_bytes": 18592,
+          "static_instruction_count": 933,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 933,
+              "disassembly_sha256": "dee1b4e0d69404cb923e0a3413cfe32236f05d9527f5b11522be1c68f49c607e"
+            }
+          },
+          "object_sha256": "2a28bbedb2a4a18b81ad3960ac6c293a7c7a252acff7058f2166c6b59e4a8c0e",
+          "metadata_sha256": "7f0340880539b08552dfee4cd862dcff9a928fa2d33b7c5cd2898d46a9e6ec1a",
+          "disassembly_sha256": "84e4af6a97af53edf121ffc01ea46d63c1652e09f0e77b7c83af7a10fbec1dfd",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "bicg": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 5232,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 20339,
+          "object_file_bytes": 27176,
+          "static_instruction_count": 1308,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1308,
+              "disassembly_sha256": "fae62c36acceb39f9fd772b617565302f3b72cf0150275650deff64c61de2430"
+            }
+          },
+          "object_sha256": "53b86c31730d83ac33b7c600b6a5932123cb0c8c022308e8d9c38a946426915f",
+          "metadata_sha256": "87af13df1d7e2d6cd82a709aac727aa012bc2e93f992cfcababf2dcbbdd1361d",
+          "disassembly_sha256": "973f2318f3b124b2339066c9e8312c248c231911f018ec2b51f20cd0efce20cd",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                3
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 5232,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 20339,
+          "object_file_bytes": 27176,
+          "static_instruction_count": 1308,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1308,
+              "disassembly_sha256": "fae62c36acceb39f9fd772b617565302f3b72cf0150275650deff64c61de2430"
+            }
+          },
+          "object_sha256": "8a7dd696deb3d29edb7252e69721116967b8c60f5e38e0f45e4b77b148b244e2",
+          "metadata_sha256": "eedd12f6bae1cdb75914d0bce02570a9e5ab5a9851bd5244fddf28ca1a4cc615",
+          "disassembly_sha256": "ea008f5d0a4390de03f7b9273852b7941496baf7d2255497d3d5e00fd4220311",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                3
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "cholesky": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 21672,
+          "reported_native_stack_bytes": 1696,
+          "metadata_bound_bytes": 112746,
+          "object_file_bytes": 136144,
+          "static_instruction_count": 5418,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1939,
+              "disassembly_sha256": "63b1c05eafafa9d27fcd76d7f3f5f1a40a8b7c4d4c53b7deb831929d9a3497ba"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3479,
+              "disassembly_sha256": "291b88f31109ad5d31d9242c4f7c9e8b8d5963519feed095cd468306d831e28f"
+            }
+          },
+          "object_sha256": "c03ac909890cb1b14a94b31318417b0a556f6d3ed01bbb99eaf83bd0642336f8",
+          "metadata_sha256": "12ab679d7829e87ddfbab9d5866ef5614ca7ad8a9b2fe7e1d58c78606e5e8921",
+          "disassembly_sha256": "6f0e605ad7937161953a9d5827af953495c14851e1ea66b6d885a498c9917610",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 21672,
+          "reported_native_stack_bytes": 1696,
+          "metadata_bound_bytes": 112746,
+          "object_file_bytes": 136144,
+          "static_instruction_count": 5418,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1939,
+              "disassembly_sha256": "63b1c05eafafa9d27fcd76d7f3f5f1a40a8b7c4d4c53b7deb831929d9a3497ba"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3479,
+              "disassembly_sha256": "291b88f31109ad5d31d9242c4f7c9e8b8d5963519feed095cd468306d831e28f"
+            }
+          },
+          "object_sha256": "e01e19c65ab048fc672ff7fce615d86d68f214bc18564c3393d96275a9fef3b5",
+          "metadata_sha256": "221cc6fed27d6a759080b69b832771eca6f7214c8159def1f6aecf807f9fed50",
+          "disassembly_sha256": "3211d98250f4e84ea0bec024e2b6b84f1634daec62da5897ad876b656cbe5af9",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "correlation": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 16500,
+          "reported_native_stack_bytes": 128,
+          "metadata_bound_bytes": 67263,
+          "object_file_bytes": 85368,
+          "static_instruction_count": 4125,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 4125,
+              "disassembly_sha256": "f3261ffb971ef40b791a6fd2dad50081414bf7f288bc862da25068b5236dd5a0"
+            }
+          },
+          "object_sha256": "6c1a2ad7aba068b3e6e431c0836a3f3bf2061b0ab4ee1b05855663842fee1586",
+          "metadata_sha256": "1c58e0459f23756c60710e8c060adc2b815bf1e661607814e309b2af286f7495",
+          "disassembly_sha256": "4f0c8bebc366bcdc1a18cb9c6be076bfe6cf9fc28bc55b0f895d7d12f402e0b4",
+          "object_executed": false,
+          "packed_f64_subtractions": 4,
+          "packed_f64_divisions": 12,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                22
+              ],
+              "end": 32,
+              "entry": 31,
+              "external": [
+                21
+              ],
+              "operators": [
+                31,
+                32
+              ],
+              "parent": null,
+              "resume": 33,
+              "sites": [
+                31,
+                32
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 17400,
+          "reported_native_stack_bytes": 192,
+          "metadata_bound_bytes": 67263,
+          "object_file_bytes": 86264,
+          "static_instruction_count": 4350,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 4350,
+              "disassembly_sha256": "2eccb9b9bd24ba8f9e2d2f4938b904a8449adace79e8d6f8e39237889bf77795"
+            }
+          },
+          "object_sha256": "778b7841e73a2deac3da4d9ec0e4d5f563094c643f5702e44a301fbb86ace5fe",
+          "metadata_sha256": "df7941c411c4c65cf41dcf0092deb567f1fd3f071dd0209205461920bfc44dd6",
+          "disassembly_sha256": "5dc3d260a92b4724d6f0d05cf906497766f3a088cf30074d90450ebfca03cc19",
+          "object_executed": false,
+          "packed_f64_subtractions": 4,
+          "packed_f64_divisions": 12,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                22
+              ],
+              "end": 32,
+              "entry": 31,
+              "external": [
+                21
+              ],
+              "operators": [
+                31,
+                32
+              ],
+              "parent": null,
+              "resume": 33,
+              "sites": [
+                31,
+                32
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "covariance": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 7040,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 23888,
+          "object_file_bytes": 32528,
+          "static_instruction_count": 1760,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1760,
+              "disassembly_sha256": "b0ec4e28f7d6e722d52bfe969104bbd718f772a2986e9821559ca9e5bba821f6"
+            }
+          },
+          "object_sha256": "b23d5c3973453c40e985b7da0977db87351583afda22ce73a13ff221d875d72b",
+          "metadata_sha256": "436a5d39b74bc1c98f64162614114be149e572e0b5b7e999540af2fdbb299c10",
+          "disassembly_sha256": "c7100175eb99d2c9425c8902b00596e13ce6b0681b3abcf098ada9223e29a2d4",
+          "object_executed": false,
+          "packed_f64_subtractions": 4,
+          "packed_f64_divisions": 8,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                5
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 7040,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 23888,
+          "object_file_bytes": 32528,
+          "static_instruction_count": 1760,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1760,
+              "disassembly_sha256": "b0ec4e28f7d6e722d52bfe969104bbd718f772a2986e9821559ca9e5bba821f6"
+            }
+          },
+          "object_sha256": "bf4a3b8ed0d321bce42414966bcb9674a8b793f81acd58a4ee588bdff604599f",
+          "metadata_sha256": "9708eb6d7e42ee3a8e52b4f47081470f9f4d7fe086ec9b9ee1ce306edd55d057",
+          "disassembly_sha256": "a677286980ebdde2ec1933fea3b020cea4c8e04a5fab60ce4c620f444750cae2",
+          "object_executed": false,
+          "packed_f64_subtractions": 4,
+          "packed_f64_divisions": 8,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                5
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "deriche": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 62308,
+          "reported_native_stack_bytes": 496,
+          "metadata_bound_bytes": 340388,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "eafcd6e5b7d54013e9e681287766e7a4e414ced5f1daf23aea650e92018b5e3a",
+          "metadata_sha256": "8884b16e68743750987116c802272a0c346d252dc84b7b522cd086a502122d1f",
+          "disassembly_sha256": "e61029c5bf455c60cd94320610038c51c99500d54f0d01a8b01b1899aabc00fd",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 64568,
+          "reported_native_stack_bytes": 528,
+          "metadata_bound_bytes": 340388,
+          "object_file_bytes": 407096,
+          "static_instruction_count": 16142,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 13264,
+              "disassembly_sha256": "f45e770b917eef51ef44ac9eb43b01b05a3f34f4ec12b35a98a8a28df2da8542"
+            }
+          },
+          "object_sha256": "60fb29291dc76776b6cca1b3a95e04ae499e46769663d436841fd63a4c49f247",
+          "metadata_sha256": "1fac81ade4395eec386f0dbc16545598629325e898ffccaf7f028597c090c2cd",
+          "disassembly_sha256": "3a3f1fb7328d25c517b2c144c73c026c107046cff0e392b92f4dff40bf418522",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "doitgen": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 1948,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 9934,
+          "object_file_bytes": 13488,
+          "static_instruction_count": 487,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 487,
+              "disassembly_sha256": "042e139b30bfc43eb1101ed5f4334ac1682447988b049b54c1301c4396da1b19"
+            }
+          },
+          "object_sha256": "7d300d555755f5036646f6765f36fad035f87f546b65dcc1327fe5575e62fa33",
+          "metadata_sha256": "21ec3f1477ef9db498078df415794575d02e9c6d1945c95900d62f3e55f551d2",
+          "disassembly_sha256": "70d2b09b325d47ffed6fc0de6d74f42884ff0baf3d872d1f8f951831bd530326",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 1948,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 9934,
+          "object_file_bytes": 13488,
+          "static_instruction_count": 487,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 487,
+              "disassembly_sha256": "042e139b30bfc43eb1101ed5f4334ac1682447988b049b54c1301c4396da1b19"
+            }
+          },
+          "object_sha256": "02bc2809322706aa1bd20fa6ab3e0702b56b5cdea681d72e1529713d879c6fac",
+          "metadata_sha256": "a5296c4027aed7c2e2856da6807beb8e72a94c8d2d9017f7724b97044983cf2f",
+          "disassembly_sha256": "2f7fe9f1989c546e22314c4be281d8e8235e0c31303a4d2312711c45005e47e9",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "durbin": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 21236,
+          "reported_native_stack_bytes": 2032,
+          "metadata_bound_bytes": 122089,
+          "object_file_bytes": 145080,
+          "static_instruction_count": 5309,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1867,
+              "disassembly_sha256": "74e56fea300a52725eed567806bcbd1454bd6c769ed02204435ff143c4c95a4c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3442,
+              "disassembly_sha256": "667aef55f57f0409a77fdfafa37cd73b1f5eb005557aafd2cd45097fe7c038c1"
+            }
+          },
+          "object_sha256": "efcf98819269bca24e908c5f1a6e0e0f324f7d49eafc76f144334cd65004ddaf",
+          "metadata_sha256": "aea219c19added0e947a9fa5e510db4971873c90afa619f3231d802c09d4a0f4",
+          "disassembly_sha256": "8c158690e44590b9ecafd8d5fe4275ccabe9a565328645a34734e6b6caf872c7",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ]
+        },
+        "candidate": {
+          "code_bytes": 24252,
+          "reported_native_stack_bytes": 2192,
+          "metadata_bound_bytes": 122089,
+          "object_file_bytes": 148032,
+          "static_instruction_count": 6063,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 2172,
+              "disassembly_sha256": "aed80f2431d2d729c9502d400988a6527a5bb05a2e1159d0fddd83181ecfa4a6"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3891,
+              "disassembly_sha256": "6ac5dcf5f7cdb72860ec82f584c2088b64c6270beb6719e819dbb69d84c3394d"
+            }
+          },
+          "object_sha256": "acdd4515a9c88b13631bab04caf0bc4f2216bd01633936599e73b91af12b1c89",
+          "metadata_sha256": "0ed0f679f6b56e97e8bc32844704ff201233c1ef7c1ef5b79af27bd830673b2f",
+          "disassembly_sha256": "8d09f9a505781c084820edff2e534cd7870680bb9d0fa4fb558517047520d055",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "gemm": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 7360,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 18337,
+          "object_file_bytes": 27304,
+          "static_instruction_count": 1840,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1840,
+              "disassembly_sha256": "9de588143b8e5af40b4ee43e4fdc796cacb74ba4d1c5595aa5e9783c49e55b1f"
+            }
+          },
+          "object_sha256": "e12e91f5634bc9d0ba9218d3dd79c00edec11766e156c45caadfe6c857223c85",
+          "metadata_sha256": "b4aa1498be4299c335dc6c0bc91d0e1c6c2f060793366b79938a72f826a3c095",
+          "disassembly_sha256": "5a960a4837e356d6577ac52fddd86685f1d964d4c1b6ed7e9f81d44452041257",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 7360,
+          "reported_native_stack_bytes": 112,
+          "metadata_bound_bytes": 18337,
+          "object_file_bytes": 27304,
+          "static_instruction_count": 1840,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1840,
+              "disassembly_sha256": "9de588143b8e5af40b4ee43e4fdc796cacb74ba4d1c5595aa5e9783c49e55b1f"
+            }
+          },
+          "object_sha256": "9613bf32d2cd964500206e28ff0c4b5c5571821eabb2cef439f007f7e397b7f6",
+          "metadata_sha256": "47bb000e0684c941e9be3c5f2a298bb80917b48bfe9236f880e93b3b8919c086",
+          "disassembly_sha256": "3bc0f6671b27d6a0ba77768387f1de23322bbc7a6bb77070b0adf80f8d341d4f",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "gramschmidt": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 55676,
+          "reported_native_stack_bytes": 23168,
+          "metadata_bound_bytes": 215124,
+          "object_file_bytes": 272576,
+          "static_instruction_count": 13919,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 5030,
+              "disassembly_sha256": "b5620aa6c931c4eacae351a6dd7f42610ac25fe86cfcb73de024969611323f96"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8889,
+              "disassembly_sha256": "4c2558cf78259f46202ca53f9a211469c386476a7e449656ad5d377b4cbff8fe"
+            }
+          },
+          "object_sha256": "c9b6ff744baca47d1773b2f4265b03f79f4b143426667257aa5f5ff6d3d153f5",
+          "metadata_sha256": "b03ac36eb7db0028ac4726b4724df68cfe8ebc6ebea15e663a2b6f581aa7907c",
+          "disassembly_sha256": "5a0d8dff88f5bdd60bedccbccda01b3e4def18fda8cb45cd86e3171810489cee",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ]
+        },
+        "candidate": {
+          "code_bytes": 64448,
+          "reported_native_stack_bytes": 23552,
+          "metadata_bound_bytes": 215124,
+          "object_file_bytes": 281368,
+          "static_instruction_count": 16112,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 6049,
+              "disassembly_sha256": "777a84ca30bb3be15b2c0f75c3b8cf67e1b498309331970c7260c59ce0ff1f89"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 10063,
+              "disassembly_sha256": "2d4c0cc56a2ef60b81f8bc8111244e1f8d4c7de9582437a3be0d637604a0ff6d"
+            }
+          },
+          "object_sha256": "f39207aaef817e777e2ca54200f2c546d28f925d8331f782427734e98c036e02",
+          "metadata_sha256": "09816f6e4f116f4b464b3d2d1fb83dd3170829ec85e8895c8cae77db0ceee13b",
+          "disassembly_sha256": "f26c42a3903bdda0da83c0ec5539167d6bc7b4deaf645ffe307f4306a9054009",
+          "object_executed": false,
+          "packed_f64_subtractions": 2,
+          "packed_f64_divisions": 2,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "mvt": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 12688,
+          "reported_native_stack_bytes": 128,
+          "metadata_bound_bytes": 25699,
+          "object_file_bytes": 39992,
+          "static_instruction_count": 3172,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3172,
+              "disassembly_sha256": "29caa0eefd919d0ea4be0c8b643974f29401f7ddde47fc55247f1b0e2c111629"
+            }
+          },
+          "object_sha256": "35bf25463364dc331cbdef81ea2050675698fe57fbc6d7f70c158ca89a52dcac",
+          "metadata_sha256": "3a35bef88c575844f4bc6b7385758c2b5258d4ae38ea4579d0677f8e2046e0fd",
+          "disassembly_sha256": "7c839c36089ed3b331301f2790c70ef4773b62157d1f645d904757ce1431f5eb",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                7,
+                8
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                0,
+                4,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 12688,
+          "reported_native_stack_bytes": 128,
+          "metadata_bound_bytes": 25699,
+          "object_file_bytes": 39992,
+          "static_instruction_count": 3172,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3172,
+              "disassembly_sha256": "29caa0eefd919d0ea4be0c8b643974f29401f7ddde47fc55247f1b0e2c111629"
+            }
+          },
+          "object_sha256": "6ca6b2c7e40467bdd88ae05de94c858e040dd0bd23e52a8ba1dfcb12462aa052",
+          "metadata_sha256": "261174fb75bf1a10abc0d08c24f313c12dce22a907aa2277d9a7d0352beaf605",
+          "disassembly_sha256": "cd45b05e9ab584756ff1d89517af1ab088e4a4bd28e4d5c67146b286ab2c8c79",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                7,
+                8
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                0,
+                4,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "nussinov": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "metadata_bound_bytes": 147460,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "847c68194a1d4a59efacec04cc569a5387c58afa43c0d379009a15741e7d9869",
+          "metadata_sha256": "1a8ff3a413e1c12b5feb03a1cd28d30bf9634ba102279c0db5929a3051612019",
+          "disassembly_sha256": "cc90f02bf18cc15ca3538d3bbc508e719b529c1d80036a35be831022da538da7",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "metadata_bound_bytes": 147460,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "533585c32b828170155a4a0eedd1446caf5e81277c8faab685fabfbba2a76529",
+          "metadata_sha256": "ef43464df47ca7a6cf8733dfd05eacc499b709b7464fe3d840e474cd3dd9570b",
+          "disassembly_sha256": "bb6b4c026a5737fab5c5f66b9713711af823b02c12afea6e54883164ea812d9c",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    },
+    "seidel-2d": {
+      "actors": {
+        "accepted58": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "metadata_bound_bytes": 109395,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "fd4a289542258ddcf33b4b8917fc1b1d7c16e68175770f52f5a925ce9e4e0ec0",
+          "metadata_sha256": "5644508131b5437cb903a8a96709c0f1452567fd4671eae84e52f95dd5100161",
+          "disassembly_sha256": "7ca411f436abd4c7fd86459ed3e8565c190e93ef278e1b9df85a15ea5e47065a",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "metadata_bound_bytes": 109395,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "b7f2c1e5857b39c61e5dd2d5e8dea100ff578dd752082623e08ec700486050ff",
+          "metadata_sha256": "4aa6ba78d792d01c4badb8496e4ab81c3d2563e4dbfc2594d5423b0f92b51c12",
+          "disassembly_sha256": "aa0817620c9fa22c1468a6b780ddc92d6422f13da90a02427de64a47e99c2a9f",
+          "object_executed": false,
+          "packed_f64_subtractions": 0,
+          "packed_f64_divisions": 0,
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "source_recipes_unchanged": true,
+      "expected_visit_delta": 0
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "native_code_changed_cases": [
+    "correlation",
+    "deriche",
+    "durbin",
+    "gramschmidt"
+  ],
+  "no_new_fma": true,
+  "typed_cells_emitted": true,
+  "source_unchanged": true,
+  "passed": true
+}

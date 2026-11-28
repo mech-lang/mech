@@ -357,6 +357,16 @@ impl<'a> ByteHistogram<'a> {
             .iter()
             .position(|&(base, writable)| base == bins && writable)?;
         let numeric = region.numeric.as_ref()?;
+        // The histogram rewrite proves one linear coordinate. A cell effect
+        // must not disappear from its write inventory or alias barriers.
+        if numeric
+            .actions
+            .iter()
+            .any(|(_, a)| matches!(a, Operation::CellRead { .. } | Operation::CellWrite { .. }))
+        {
+            return None;
+        }
+
         let mut writes = numeric
             .actions
             .iter()

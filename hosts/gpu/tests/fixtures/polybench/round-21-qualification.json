@@ -1,0 +1,755 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-21-owned-maps",
+  "compiler_commit": "3789f44d051a5749daf5c5cfb2e8cd3b81bdbf88",
+  "compiler_fingerprint": "c22105d92619204aa02495a0f49900689fe037898ed0600a5c125b95d71a05c1",
+  "driver_sha256": "7908d2e7daf98566039cf417674f021c2c88658f72366943741e917209f5d10b",
+  "frozen_candidate_sha256": "d86598cb2166bfc6a1ce7f0f0f803c498e74529615d2973a0daff424321cba77",
+  "native_typed_ir_version": 380,
+  "native_work_policy_version": 149,
+  "native_abi_version": 42,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric/phase/row-block, owned maps, private publication and exact Huffman work equations",
+      "passed_by_target": [
+        370
+      ],
+      "log": "numeric-regressions-3.log",
+      "log_sha256": "ca7b00c97a9be01822aedadf0d6bd20af93eb0ce5ee9331d5d960b4a0510548e"
+    },
+    {
+      "suite": "Core private numeric publication metadata and ownership",
+      "passed_by_target": [
+        3
+      ],
+      "log": "core-private-publication.log",
+      "log_sha256": "1d96e850529f07870c874636c3a1ec120f84c56485ff4b304c4112a0b9324ad8"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "matrix-polybench.log",
+      "log_sha256": "4b0e1a9de2d15d36c6a70b0b57bdb8addbdaaa67d2ebcdeb9642bd781bfb6631"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collections and range/cursor regressions",
+      "passed_by_target": [
+        114
+      ],
+      "log": "program-regressions.log",
+      "log_sha256": "e7d1e927e40016af3ce5c66f9778534479552a21c42c3a8a1dee3e6ebe18f58d"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "passed_by_target": [
+        1
+      ],
+      "log": "protocol.log",
+      "log_sha256": "dd96014da6c50926deac5ce5ca2088b018edc01dc92c5dac778ed87b7c77efac"
+    }
+  ],
+  "total_selected_checks": 542,
+  "feature_checks": [
+    {
+      "feature": "canonical-native-program-runtime",
+      "status": "passed",
+      "log": "runtime-feature.log",
+      "log_sha256": "1192e7344c1978c91f7c267309e0ba452a217a7d9c70a4bf5b2e91ba40906b2d"
+    },
+    {
+      "feature": "canonical-native-program",
+      "status": "passed",
+      "log": "production-feature.log",
+      "log_sha256": "c546f5061e0bc329c9bd1f03cfbc13af0f25f627113435309390d8de23d104af"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 116.81341366363743,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.094824043
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 21.160349261477663,
+      "median_speedup": 1.4209671373235038,
+      "minimum_speedup": 0.786533730625898,
+      "maximum_speedup": 19537.272033487745,
+      "regressions_over_five_percent": 3,
+      "geomean_mech_over_c_kernel": 35.08102837485539,
+      "geomean_mech_over_c_fresh": 20.81577403335889,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 107.16326303294046,
+      "sum_mech_median_seconds": 0.005224209,
+      "geomean_speedup_from_contemporaneous_baseline": 23.14035933161665,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0206386450916234
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 16.941708814345656,
+      "median_speedup": 6.326317339206587,
+      "minimum_speedup": 1.0727410594625097,
+      "maximum_speedup": 321.7498327492479,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 116.81341366363743,
+      "geomean_mech_over_c_fresh": 67.18389316943951,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 3257.4823549724374,
+      "sum_mech_median_seconds": 0.094824043,
+      "geomean_speedup_from_contemporaneous_baseline": 17.02043531816646,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0613581857938914
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 18.933897527920887,
+      "median_speedup": 6.075993619222066,
+      "minimum_speedup": 0.786533730625898,
+      "maximum_speedup": 19537.272033487745,
+      "regressions_over_five_percent": 3,
+      "geomean_mech_over_c_kernel": 64.01511289764147,
+      "geomean_mech_over_c_fresh": 37.39631985765948,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 3257.4823549724374,
+      "sum_mech_median_seconds": 0.100048252,
+      "geomean_speedup_from_contemporaneous_baseline": 19.84588091375414,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0206386450916234
+    }
+  },
+  "cases": {
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.038139,
+      "c_median_seconds": 1.1708121746778488e-05,
+      "mech_over_c_kernel": 3257.4823549724374,
+      "starting_mech_over_c_kernel": 20830.730988440668,
+      "speedup_from_recorded_baseline": 6.326317339206587,
+      "speedup_from_paired_original": 6.311956474999344,
+      "runtime_multiplier_from_round20": 9.962406211438417,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.040952,
+      "c_median_seconds": 1.2791715562343597e-05,
+      "mech_over_c_kernel": 3201.447045973644,
+      "starting_mech_over_c_kernel": 20723.719650259725,
+      "speedup_from_recorded_baseline": 6.093371508107052,
+      "speedup_from_paired_original": 6.100968817151787,
+      "runtime_multiplier_from_round20": 9.738108792309959,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003565167,
+      "c_median_seconds": 7.790978997945786e-06,
+      "mech_over_c_kernel": 457.60192665645906,
+      "starting_mech_over_c_kernel": 9612.11646057087,
+      "speedup_from_recorded_baseline": 20.670198058043283,
+      "speedup_from_paired_original": 20.638771479709085,
+      "runtime_multiplier_from_round20": 0.9781650318951918,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000183458,
+      "c_median_seconds": 4.577450454235077e-07,
+      "mech_over_c_kernel": 400.78642430802034,
+      "starting_mech_over_c_kernel": 7168.140899468677,
+      "speedup_from_recorded_baseline": 22.779508116299098,
+      "speedup_from_paired_original": 22.675489757873734,
+      "runtime_multiplier_from_round20": 1.003187969924812,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008881,
+      "c_median_seconds": 4.5750290155410767e-05,
+      "mech_over_c_kernel": 194.11898743880792,
+      "starting_mech_over_c_kernel": 21631.38022675036,
+      "speedup_from_recorded_baseline": 108.79431280261231,
+      "speedup_from_paired_original": 108.32766580340052,
+      "runtime_multiplier_from_round20": 0.9886269495632163,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000305959,
+      "c_median_seconds": 1.875218003988266e-06,
+      "mech_over_c_kernel": 163.15916301426174,
+      "starting_mech_over_c_kernel": 260.7344433964597,
+      "speedup_from_recorded_baseline": 1.5262110282750303,
+      "speedup_from_paired_original": 1.5189943750633255,
+      "runtime_multiplier_from_round20": 1.0303072141272027,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000113416,
+      "c_median_seconds": 1.000240445137024e-06,
+      "mech_over_c_kernel": 113.38873622978026,
+      "starting_mech_over_c_kernel": 112.37666473873892,
+      "speedup_from_recorded_baseline": 1.0727410594625097,
+      "speedup_from_paired_original": 1.0613581857938914,
+      "runtime_multiplier_from_round20": 1.073344311320576,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000165125,
+      "c_median_seconds": 1.5408731997013092e-06,
+      "mech_over_c_kernel": 107.16326303294046,
+      "starting_mech_over_c_kernel": 138.9627991919192,
+      "speedup_from_recorded_baseline": 1.0862982588947767,
+      "speedup_from_paired_original": 1.089326267978804,
+      "runtime_multiplier_from_round20": 0.9858208955223879,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000162917,
+      "c_median_seconds": 1.6670674085617065e-06,
+      "mech_over_c_kernel": 97.72670208972514,
+      "starting_mech_over_c_kernel": 87.93647372142229,
+      "speedup_from_recorded_baseline": 0.7874684655376665,
+      "speedup_from_paired_original": 1.076977847615657,
+      "runtime_multiplier_from_round20": 1.4233655719515286,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002870208,
+      "c_median_seconds": 2.9916875064373016e-05,
+      "mech_over_c_kernel": 95.93943197022047,
+      "starting_mech_over_c_kernel": 43560.74017727218,
+      "speedup_from_recorded_baseline": 438.8707341070751,
+      "speedup_from_paired_original": 438.2354285821794,
+      "runtime_multiplier_from_round20": 1.0093039120879121,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.0001205,
+      "c_median_seconds": 1.2922100722789764e-06,
+      "mech_over_c_kernel": 93.25109174198198,
+      "starting_mech_over_c_kernel": 79.13415176878613,
+      "speedup_from_recorded_baseline": 0.7935684647302904,
+      "speedup_from_paired_original": 1.1583651452282158,
+      "runtime_multiplier_from_round20": 1.4672754946727549,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000152083,
+      "c_median_seconds": 1.8333084881305695e-06,
+      "mech_over_c_kernel": 82.95548784322682,
+      "starting_mech_over_c_kernel": 77.03124240848712,
+      "speedup_from_recorded_baseline": 1.0342510339748692,
+      "speedup_from_paired_original": 1.2624685204789492,
+      "runtime_multiplier_from_round20": 1.3119991028063183,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000389166,
+      "c_median_seconds": 4.833098500967026e-06,
+      "mech_over_c_kernel": 80.52101564289121,
+      "starting_mech_over_c_kernel": 327.9356878116524,
+      "speedup_from_recorded_baseline": 3.6167085511067256,
+      "speedup_from_paired_original": 3.7507541768808172,
+      "runtime_multiplier_from_round20": 1.2099992226972405,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000243959,
+      "c_median_seconds": 3.4999102354049683e-06,
+      "mech_over_c_kernel": 69.70435913816286,
+      "starting_mech_over_c_kernel": 27896.336343602026,
+      "speedup_from_recorded_baseline": 409.79392848798364,
+      "speedup_from_paired_original": 410.0221061735784,
+      "runtime_multiplier_from_round20": 0.43880832724774177,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000174,
+      "c_median_seconds": 3.4170225262641907e-06,
+      "mech_over_c_kernel": 50.921525586263286,
+      "starting_mech_over_c_kernel": 219.61129772332706,
+      "speedup_from_recorded_baseline": 4.0488505747126435,
+      "speedup_from_paired_original": 4.374764367816092,
+      "runtime_multiplier_from_round20": 1.4238020424194815,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000168209,
+      "c_median_seconds": 3.7080608308315277e-06,
+      "mech_over_c_kernel": 45.363063788325,
+      "starting_mech_over_c_kernel": 218.1017246501925,
+      "speedup_from_recorded_baseline": 4.862254695051989,
+      "speedup_from_paired_original": 4.849621601697887,
+      "runtime_multiplier_from_round20": 1.011023290758828,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000208292,
+      "c_median_seconds": 4.9578957259655e-06,
+      "mech_over_c_kernel": 42.012178454890204,
+      "starting_mech_over_c_kernel": 50.45658200493294,
+      "speedup_from_recorded_baseline": 1.0698106504330458,
+      "speedup_from_paired_original": 1.3196618209052675,
+      "runtime_multiplier_from_round20": 1.3680919540229886,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000309458,
+      "c_median_seconds": 8.082948625087738e-06,
+      "mech_over_c_kernel": 38.285286020439216,
+      "starting_mech_over_c_kernel": 224.54405071064102,
+      "speedup_from_recorded_baseline": 4.8672453127726545,
+      "speedup_from_paired_original": 4.85714701187237,
+      "runtime_multiplier_from_round20": 1.0172545848413426,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.0002225,
+      "c_median_seconds": 5.9157609939575195e-06,
+      "mech_over_c_kernel": 37.61139103274559,
+      "starting_mech_over_c_kernel": 245.10186705759173,
+      "speedup_from_recorded_baseline": 6.058615730337079,
+      "speedup_from_paired_original": 6.19681797752809,
+      "runtime_multiplier_from_round20": 1.0578463674268896,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000123167,
+      "c_median_seconds": 3.375113010406494e-06,
+      "mech_over_c_kernel": 36.492703983611484,
+      "starting_mech_over_c_kernel": 38.12304900128275,
+      "speedup_from_recorded_baseline": 0.786533730625898,
+      "speedup_from_paired_original": 1.0206386450916234,
+      "runtime_multiplier_from_round20": 1.431491963133855,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 3.9583e-05,
+      "c_median_seconds": 1.2079253792762756e-06,
+      "mech_over_c_kernel": 32.76940834185967,
+      "starting_mech_over_c_kernel": 3606.1591485281647,
+      "speedup_from_recorded_baseline": 98.76186746835762,
+      "speedup_from_paired_original": 101.05138569587956,
+      "runtime_multiplier_from_round20": 1.437239025452961,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000225709,
+      "c_median_seconds": 7.082708179950714e-06,
+      "mech_over_c_kernel": 31.867612538226954,
+      "starting_mech_over_c_kernel": 10500.55203711869,
+      "speedup_from_recorded_baseline": 321.7498327492479,
+      "speedup_from_paired_original": 319.90767758485487,
+      "runtime_multiplier_from_round20": 0.5509585857747531,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000489167,
+      "c_median_seconds": 1.7834361642599106e-05,
+      "mech_over_c_kernel": 27.428343654957466,
+      "starting_mech_over_c_kernel": 4178.378618335307,
+      "speedup_from_recorded_baseline": 151.61804046470837,
+      "speedup_from_paired_original": 150.2262172223392,
+      "runtime_multiplier_from_round20": 1.0030758693944843,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000112042,
+      "c_median_seconds": 4.208646714687347e-06,
+      "mech_over_c_kernel": 26.6218591379969,
+      "starting_mech_over_c_kernel": 36.05363035229189,
+      "speedup_from_recorded_baseline": 1.4209671373235038,
+      "speedup_from_paired_original": 1.444020992127952,
+      "runtime_multiplier_from_round20": 1.1486539131861147,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 3.05e-05,
+      "c_median_seconds": 1.3331882655620575e-06,
+      "mech_over_c_kernel": 22.87748908976598,
+      "starting_mech_over_c_kernel": 3899.393007189661,
+      "speedup_from_recorded_baseline": 170.44672131147541,
+      "speedup_from_paired_original": 169.71855737704917,
+      "runtime_multiplier_from_round20": 1.059322033898305,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.8708e-05,
+      "c_median_seconds": 2.959277480840683e-06,
+      "mech_over_c_kernel": 19.838626279588357,
+      "starting_mech_over_c_kernel": 22.47169074801,
+      "speedup_from_recorded_baseline": 1.2122197996865844,
+      "speedup_from_paired_original": 1.1149758124957416,
+      "runtime_multiplier_from_round20": 1.0593861089557355,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001055417,
+      "c_median_seconds": 6.712507456541061e-05,
+      "mech_over_c_kernel": 15.723140820820088,
+      "starting_mech_over_c_kernel": 4841.308551231542,
+      "speedup_from_recorded_baseline": 300.64937176490434,
+      "speedup_from_paired_original": 298.58908848350944,
+      "runtime_multiplier_from_round20": 1.33999936518013,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 7.7833e-05,
+      "c_median_seconds": 7.207971066236496e-06,
+      "mech_over_c_kernel": 10.798184299682408,
+      "starting_mech_over_c_kernel": 23662.233271603498,
+      "speedup_from_recorded_baseline": 2039.4145156938575,
+      "speedup_from_paired_original": 2074.6459342438297,
+      "runtime_multiplier_from_round20": 1.3615022652929138,
+      "runtime_regression_over_five_percent_from_round20": true,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000183709,
+      "c_median_seconds": 3.154110163450241e-05,
+      "mech_over_c_kernel": 5.824431946886822,
+      "starting_mech_over_c_kernel": 119638.17928254372,
+      "speedup_from_recorded_baseline": 19537.272033487745,
+      "speedup_from_paired_original": 19532.31219482987,
+      "runtime_multiplier_from_round20": 1.005016630924767,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000326,
+      "c_median_seconds": 0.00011045904830098152,
+      "mech_over_c_kernel": 2.9513200141984495,
+      "starting_mech_over_c_kernel": 50168.862826898156,
+      "speedup_from_recorded_baseline": 16985.817101226992,
+      "speedup_from_paired_original": 16938.959996932517,
+      "runtime_multiplier_from_round20": 1.0025617605722599,
+      "runtime_regression_over_five_percent_from_round20": false,
+      "observations": 30
+    }
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round20": 1.113460122771107,
+      "reference_new_over_round20": 1.1152480340353195,
+      "c_new_over_round20": 1.0541241623460549,
+      "mech_over_c_score_new_over_round20": 1.0562893466866314,
+      "reference_adjusted_mech_speedup_from_round20": 1.0016057254567527,
+      "mech_new_over_round20_regressions_over_five_percent": 10
+    },
+    "holdout": {
+      "mech_new_over_round20": 1.4091851610824548,
+      "reference_new_over_round20": 1.0203931263055286,
+      "c_new_over_round20": 1.0449592373229233,
+      "mech_over_c_score_new_over_round20": 1.3485551500483792,
+      "reference_adjusted_mech_speedup_from_round20": 0.7241015265316315,
+      "mech_new_over_round20_regressions_over_five_percent": 7
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "2mm",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.3119991028063183
+    },
+    {
+      "partition": "optimization",
+      "case": "3mm",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.431491963133855
+    },
+    {
+      "partition": "optimization",
+      "case": "atax",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.4672754946727549
+    },
+    {
+      "partition": "optimization",
+      "case": "bicg",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.4233655719515286
+    },
+    {
+      "partition": "optimization",
+      "case": "cholesky",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.3615022652929138
+    },
+    {
+      "partition": "optimization",
+      "case": "correlation",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.2099992226972405
+    },
+    {
+      "partition": "optimization",
+      "case": "covariance",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.3680919540229886
+    },
+    {
+      "partition": "optimization",
+      "case": "doitgen",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.0593861089557355
+    },
+    {
+      "partition": "optimization",
+      "case": "durbin",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.059322033898305
+    },
+    {
+      "partition": "optimization",
+      "case": "gemm",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.1486539131861147
+    },
+    {
+      "partition": "holdout",
+      "case": "floyd-warshall",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.33999936518013
+    },
+    {
+      "partition": "holdout",
+      "case": "gesummv",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.073344311320576
+    },
+    {
+      "partition": "holdout",
+      "case": "lu",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 9.962406211438417
+    },
+    {
+      "partition": "holdout",
+      "case": "ludcmp",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 9.738108792309959
+    },
+    {
+      "partition": "holdout",
+      "case": "syrk",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.0578463674268896
+    },
+    {
+      "partition": "holdout",
+      "case": "trisolv",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.437239025452961
+    },
+    {
+      "partition": "holdout",
+      "case": "trmm",
+      "reference": "frozen round20 Mech",
+      "runtime_multiplier": 1.4238020424194815
+    }
+  ],
+  "implementation": [
+    "Compose complete fixed rectangular and nested-fold matrix maps in numeric phases using the existing resident/JIT scalar DAG emitter. Keep ordered folds, lazy checked arithmetic and all seven scalar kinds.",
+    "Derive disjoint phase-local outputs and exact state destinations from canonical source. Locals start unavailable; must-current version analysis rejects stale observable aliases, conflicting bindings and escapes. Images independently reconstruct source, roots, banks, geometry, views and funding.",
+    "Map-only outputs preallocate admitted Core private numeric owners; scalar-write roots retain their established first-change path. Keep input owners, fill finite scratch, copy only after full success, then update the native current view and commit flag. Export that flag/pointer on every exit and before fallible first-change helpers.",
+    "Prepay publication from exact same-account private-owner type/envelope metadata without exposing a Value or immutable alias. Freeze committed local owners only during synchronous cold export and clear them afterward. Roll back every speculative bank on admission failure before source execution.",
+    "Normalize native summarized-map predecessor and exact original predecessor separately for cold replay. Stop before the original proved terminal tuple/record constructor, export current fields/locals, then execute that existing factory once. Retain native backedge and complete source inventory.",
+    "Prefer additional terminal numeric work only when recurring numeric coverage ties. Preserve candidates with greater recurring coverage. Opaque retained owners keep their scalar-read witness requirement; complete-map local producers use their exact source proof.",
+    "Fund original ranges, rows, transpose, nested fold/collections, schemas, clones, nodes, replay, coexistence, scratch/copy and publication through existing finite accounting. IR380/work149 identify the path; ABI42 is unchanged.",
+    "No benchmark source, input, pinned C executable, tolerance, objective, split or timing boundary changed."
+  ],
+  "interpretation": "The frozen round regresses holdout: 116.813414x C versus 86.621162x C in round20, with LU and LUDCMP each about 10x slower in raw Mech time. Training 35.081028x C is also worse than 33.211571x C in round20; its original-reference-adjusted speedup is 1.001606x. The training-only seven-sample probe favored the candidate, but the complete formal round does not establish an aggregate optimization gain. Every observation/regression and the frozen source are retained. No holdout profiling or compiler retuning follows these results.",
+  "case_order": "Descending current Mech/C kernel ratio (largest first), as requested by the user.",
+  "correctness_plan": {
+    "user_approval": "The user explicitly approved compiler integration and requested a staged plan addressing the concern.",
+    "plan_log_sha256": "ce41501728879a0d44bd3269f74c2d95aa541730f9b3a685da71820c6f44ed45",
+    "gates": [
+      "Exact source/destination/current-version and ownership proofs before selection.",
+      "Scratch-first complete maps; no fallible work after the first destination store.",
+      "Original/decoded/restored execution and Object emission; forged images rejected.",
+      "All typed kinds and F64 payload bits, vectors/rectangles/nested folds, retained aliases, snapshots/stale arrays, zero/repeated/initially-terminal FSMs, exact source errors and cleanup/retry.",
+      "Nine finite work dimensions, low native stack, physical same-account byte/node denial, ordinary fallback and subsequent native retry.",
+      "Full C outputs on all thirty cases; selected scalar/compression/collection regressions and both runtime-only/codegen builds.",
+      "All fifteen training programs select the candidate; immutable source/executable freeze before final timing of either set."
+    ]
+  },
+  "development_checks": {
+    "source_gate_log_sha256": "10c9b8ac73d118577ecc8c46e569e053d9cea6c8da88c4a47aba1f035fd1649e",
+    "development_failures_retained": {
+      "integrated-production-check.log": "6503bd9d1d2acbab012dba6dfa706a1a569fec2fc50c50fe350ebb90b50d5b8d",
+      "integrated-map-gates-2.log": "89b6a148423292617ba4eee69504f90f9f8503405a8e433fd9ded8e37527e527",
+      "owned-pipeline-gates.log": "168a25a7e328bd35c416220a1a00bab0bd215543114f71e7735eeb83212a6d35",
+      "owned-pipeline-gates-2.log": "a7fd9a358682430a33d06f802ce613380b60a6bae064110f6a7e2a9618ec9082",
+      "complete-map-gates.log": "9b42d12f628ca521a63087aa17a392ac9d33359e688e0d2b04dfe4390d895ec5",
+      "complete-map-gates-2.log": "e2f915e530eebce012132fb7601812d6fffd105e6646717dba740d7fb3abc04f",
+      "numeric-regressions.log": "64563e167586a63787a3c86b273579bf1a612038fab09f1d9beaaccb16ee3bae",
+      "numeric-regressions-2.log": "cfbe1aa25e3b041554350a7bce191d967c13dedae39b978b92f17e41bc601181"
+    },
+    "corrections": [
+      "Export owned-map commit pointer/flag across native exits and fallible scalar first changes.",
+      "Preserve canonical predecessor and live local outputs across adjacent summaries.",
+      "Allow exact terminal constructor handoff without requiring native finish.",
+      "Treat unconsumed local map outputs by their complete producer proof and initialize them before opaque retained-owner checks.",
+      "Training route assertion accepts the exact emitted parent phase rectangle, still requires absent per-map/per-read callbacks and full finite C live-outs.",
+      "Historical Huffman source bills remain: add exactly sizeof optional local-owner pointer *8 setup units (64 on qualified64-bit layouts). No golden source constants or equality checks were weakened.",
+      "Extend physical-admission sweep to reach the conservative finite native envelope; require failures, successful ordinary fallback, successful native execution and retry."
+    ],
+    "removed_development_fixture": "Ignored training-only source inventory removed before source commit."
+  },
+  "training_probe": {
+    "receipt_sha256": "344948a466147100d056b9cb25f65b0c0dc8ef645b43d3b28d4522d45fac1ded",
+    "reference": "frozen round20 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_20_replay": 1.0836605917608388,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.004657789,
+      "sum_reference_median_seconds": 0.005040997
+    },
+    "frozen_aggregate_qualification": false,
+    "completed_at_from_private_receipt_mtime": "2026-11-26T21:25:01.701054+00:00",
+    "selection": "One seven-sample replay over all fifteen optimization programs. No compiler/source/driver change after selection. No new holdout timing selected or refined the candidate."
+  },
+  "profiling": {
+    "receipt_sha256": "d4456ac30b69f4e458b937dede7b06c79983253463863968a9aaf085add3a529",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "correlation",
+      "seidel-2d",
+      "gramschmidt",
+      "covariance"
+    ],
+    "canonical_execution_samples": 2774,
+    "coverage_of_training_sum": 0.7728681988029192,
+    "weighted_categories": [
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.26747424423648225,
+        "estimated_seconds_in_training_sum": 0.0010799606953853266
+      },
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.24302121665430104,
+        "estimated_seconds_in_training_sum": 0.0009812285398938221
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.1944213221474623,
+        "estimated_seconds_in_training_sum": 0.0007850003908356474
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.1020274112989517,
+        "estimated_seconds_in_training_sum": 0.0004119484265459298
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.09513391021606768,
+        "estimated_seconds_in_training_sum": 0.0003841150542361502
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.09267416660653015,
+        "estimated_seconds_in_training_sum": 0.00037418353194469125
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.004036714492465384,
+        "estimated_seconds_in_training_sum": 1.6298739352640545e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0012110143477396152,
+        "estimated_seconds_in_training_sum": 4.889621805792163e-06
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regression checks are qualified. Larger datasets, GPU/SIMD selection, linked Object execution, full compression/AOT and an external application remain unqualified.",
+    "Complete map summaries require fixed finite source geometry and exact confined bindings. Dynamic counts, unsupported constructors/escapes and larger scratch retain the ordinary route.",
+    "Prior split/holdout results were exposed. No new holdout timing or profile selected or refined this candidate.",
+    "Source work units are conservative finite prices. Every process checks all finite warm-up live-outs; timed checked calls must succeed but timed outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only PR1001 is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-21-frozen.json": "d86598cb2166bfc6a1ce7f0f0f803c498e74529615d2973a0daff424321cba77",
+    "round-21-optimization.json": "927a664bc5d346ed3573dca802f68a843bfc5858172692f6b3f29ea1d65b28c5",
+    "round-21-holdout.json": "dc7316240ebcf6904e0d2d81a2c0910f66a9dc5f8dc36e7f5b454715575d1668",
+    "round-21-progress.json": "c00992476661f53f74ca8093780ecb7fcf6e43b323b5fe881561cdb89378ff1d",
+    "round-21-training-probe.json": "344948a466147100d056b9cb25f65b0c0dc8ef645b43d3b28d4522d45fac1ded",
+    "round-21-training-profile.json": "d4456ac30b69f4e458b937dede7b06c79983253463863968a9aaf085add3a529"
+  }
+}

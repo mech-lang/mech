@@ -28,7 +28,13 @@ impl Invocation<'_, '_, '_> {
     pub(in crate::native_artifact::program::runtime) fn has_uninventoried_private_owners(
         &self,
     ) -> bool {
-        self.histogram.is_some()
+        self.state
+            .collections
+            .as_ref()
+            .is_some_and(|c| c.has_numeric_generator())
+            || self.numeric_binary.is_some()
+            || self.numeric_product.is_some()
+            || self.histogram.is_some()
             || self.line_window.is_some()
             || self.window_region.is_some()
             || self.window_hashes.is_some()

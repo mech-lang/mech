@@ -1,0 +1,6 @@
+{
+  "created_at": "2026-11-28T19:08:52.004892+00:00",
+  "basis": "Verified SchemaTable::clone_allocation_bound_bytes returns an already cached bound. The duplicate resource methods read that cached scalar; they do not walk schemas.",
+  "work_removed": "The second pure checked-arithmetic/template-classification pass and duplicate geometry reconstruction disappear. The exact final output ShapeInstance also moves into the loan instead of being constructed again. No claim of schema-traversal removal or speedup forecast.",
+  "source": "src/core/src/schema/table.rs:1046 and src/engine/src/resident/general/native_collection_numeric_binary.rs:297"
+}

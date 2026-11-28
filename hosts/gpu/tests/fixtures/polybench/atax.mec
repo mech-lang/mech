@@ -1,0 +1,3 @@
+-- PolyBench/C 4.2.1 ATAX: transpose matrix-vector composition.
+a := A<[f64]>
+a' ** (a ** x<[f64]>)

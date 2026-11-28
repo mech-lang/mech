@@ -1,0 +1,126 @@
+{
+  "schema": "mech.polybench.ordered-product-epilogues-plan.v1",
+  "created_at": "2026-11-28T02:55:49.335199+00:00",
+  "status": "Prospective before source edits or timing",
+  "source_parent": "7817aeee10e425a43455f4503677110f54039ea2",
+  "accepted_round": 47,
+  "accepted_scores": {
+    "optimization": 9.575943659594117,
+    "holdout": 27.506517683644883
+  },
+  "accepted_compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-47/masked-matrix-maps/masked-matrix-maps-driver",
+  "accepted_driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+  "formal_history_entries": 48,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+    "hosts/gpu/src/native_artifact/program/protocol/abi.rs",
+    "hosts/gpu/src/native_artifact/program/protocol/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+    "hosts/gpu/src/native_artifact/program/compiler.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/tests.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "9976fd622538419ba41ccb797a8097ce3b00af2f032de34e295f42871cf874b6",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "32645075fd02a2d6d1a849bbff1657cbf355c67c83dd0d8cd7d3446c91cc50df",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "7297be93c784f5b9ceddfd6dfedceee5d909c8522cb0ad7986d929e6c30d12ab",
+    "hosts/gpu/src/native_artifact/program/protocol/abi.rs": "58a035644615df4e92a8c4c3c5c7b3c3b88b711c33521298babddfe745e7bcc7",
+    "hosts/gpu/src/native_artifact/program/protocol/mod.rs": "e26fa599792a06406d40f448d7effe3611ee6ad64326a8adc4c16eeb791e5772",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs": "5a2ccb90965cc9b335f0d2b58bb4d7cfec5a9d3750d9ba2f2e2d917538c224c7",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "6ca7599155803d52a308dea68fb08acd8de5d1cc74c229c24e981ed7303bf683",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "740ef8759493dcedda7d97b7eb3c0fa8b374c17f7036b965673457ff8715a4fd",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "7bd5157eb7b2676b06cf228d743a152102fe5a52606daa2d58c46ec9b2fbcf4d",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "c19df2cab342c02aece792763b813a9f3e9452db38591aee8045af3874bc74aa",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "ee6c0c8c38441d6cbf7ea2e8b545a6ca4f6fba59a46f304426c702983899746e",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "1e734f74445394245d696e94c3a5dab0bc5c5f497bd44e01257f434ec69f162a",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f4007038c261259c8d59aa27a0d8ab593345ee22eab7d2af8c895c27cee2a8fc",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "c293ea9bfa7b8f66faac3bf562ccfe9460be24a6b5f94858b183d5bb685ec0ab",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f87ce2044ec3772051b71a596723709002b040daf5a69549dcb18c751b0cfd1b",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "bf73902193406b331709f07f90e2e248693383d3eb28ca7fb66ab54680f392ba",
+    "hosts/gpu/src/native_artifact/program/runtime/tests.rs": "e48dd28bd3473732664277b08a278cb677b7fd2dd8a877b54a0de133eefedda4"
+  },
+  "versions": {
+    "ir": 415,
+    "work": 157,
+    "abi": 48
+  },
+  "scope": "General source-closed sole-output elementwise expression DAG with exactly one ordered F64 product. Reuse resident source factories/bounds and maintained Cranelift product scalar/SIMD emission. Optimize optimization15 only; unchanged ports, input shapes/data, C binaries, limits, tolerance, timing/cache boundaries.",
+  "physical_work_removed": [
+    "Product accumulator feeds its original scalar/exact/broadcast arithmetic consumers before the final store.",
+    "No product-result or elementwise intermediate payload buffers, initialization, complete write/read passes, canonical Values or separate per-operator prepare/finish boundaries on the admitted path.",
+    "Retain a materialized result for later products or other consumers; never recompute a product across downstream reductions."
+  ],
+  "source_proof": [
+    "Private nonserialized recipe rederived from exact same-plan selected product/elementwise factories, genuine operands, liveness and same-context straight-line CFG. Bounded nodes/leaves/steps, no activation boundary or outside predecessor.",
+    "All external operands must be immutable and available before entry. Total same-schema aliases may be substituted only with complete read-role accounting. Intermediates must be private; the only escaping matrix expression is the final output. Unsupported scalar definitions, branches, extra products, captures or escaping intermediates decline until independently proved.",
+    "Every current epilogue output must have the admitted product shape; source factories derive all scalar/exact/row/column broadcast modes. Intermediate node arithmetic and term order remain exactly the Mech source tree, independent of algebraic C equivalence."
+  ],
+  "implementation": [
+    "A new paired exact synchronous product-epilogue loan and frame; preserve ordinary NumericBinaryFrame/Pending layout and the frozen scalar root prefix. Pin current original owners; only final output cells allocate. No interpreter, generic per-element operation dispatch or per-operation allocation.",
+    "Use existing numeric_product scalar/SIMD ordered +0/k accumulation; add a compile-time epilogue emitter with direct maintained f64_arithmetic instructions and independent output lanes. Ordinary no-epilogue emission remains the accepted form.",
+    "Prove/admit complete original factory geometries, shapes, demands, current owners, alias/publication/retirement obligations, skipped source visit fees, all logical work/comparison fees, full coexistence/metadata/node/clone bounds and replay credit before mutation. Overflow or caps decline to the original entry.",
+    "Retain intermediate rounding. Any nonfinite intermediate before a consumer cancels the private result and replays the original source, with adequate prepaid admission, no partial publication and no reassociation/FMA. Final nonfinite arithmetic follows the maintained emitted operation; NaN inputs decline.",
+    "Finish binds issued frame, pointer/count, exact entry visit epoch/context/source proof, current budget and final output. Interleaved helper/visit and forged images/lanes/loans must reject. A genuine fused transition reports honest physical visits; no padded counters."
+  ],
+  "required_qualification": [
+    "Original/decoded source proof, positive scalar/exact/broadcast epilogues and DAGs, negative escapes/extra products/non-dominating leaves/branches/contexts/activation/source mutations. Inspect optimization graphs untimed before runtime implementation if needed.",
+    "Native versus ablated and ordinary exact bits over rectangular/odd/empty axes, zero inner dimension, scalar/row/column/1x1 leaves, alias repeats and genuine restored helpers. Test intermediate overflow/NaNs and cancellation/replay, atomic shape/cap failure, cleanup and retry.",
+    "Finite/missing/zero/spent source budgets, physical bytes/nodes, clone/coexistence limits, complete logical fee preservation, full-frame/epoch/context/interleaving/metadata corruption tests.",
+    "Maintained scalar/compression/general numeric regressions, both feature configurations, all30 C cases and restored forms. Actual checked Object census certifies actual fused regions, only final bank/publication, and no new FMA."
+  ],
+  "untimed_gate": "All optimization15 C liveouts; source work and comparison never decrease, all other counters equal except exact independently source-proved physical visit reductions. Actual Object/loan/bank census establishes which buffers and operator boundaries disappear.",
+  "training_probe": {
+    "actors": [
+      "accepted47",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "One prospective probe per fully qualified fingerprint; raw equal-weight geometric mean accepted47/candidate medians must strictly exceed1. No retries/exclusions. Preserve all samples/regressions."
+  },
+  "formal_acceptance": "Only optimization15 kernel Mech/C geometric mean strictly below9.575943659594117 promotes. Holdout is reported independently and cannot veto, select, tune or trigger rollback. Selected source must be qualified, committed, pushed, clean and frozen before one900-observation formal evaluation; append immutable history.",
+  "prior_evidence": [
+    {
+      "candidate": "initial transpose views",
+      "fingerprint": "95bb12a9533b8bfc1d4c882997c028de7b38af122dae318f1c89ffe3bf6b1c15",
+      "probe_speedup": 0.9957168176603722,
+      "selected": false
+    },
+    {
+      "candidate": "hoisted transpose views",
+      "fingerprint": "742a83d252fd83fc130fc030ed9f7b120e3d2406878a33010c0b51a93d092c55",
+      "probe_speedup": 0.9883820880980985,
+      "selected": false
+    },
+    "Rejected36 grouped kernels retained all physical matrices; this experiment removes genuine producer/consumer intermediates."
+  ],
+  "profiling_basis": [
+    "Accepted44 optimization profiles: allocation/planning around MVT/BiCG small operators",
+    "User review: product epilogues in GEMM/2mm",
+    "Current shared resident factory/source-bound/product emitter inspection"
+  ],
+  "performance_observations": 0
+}

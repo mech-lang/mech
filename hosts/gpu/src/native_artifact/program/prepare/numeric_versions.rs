@@ -560,7 +560,9 @@ fn verify_tree(
     for (&site, state) in &analysis.inputs {
         if let Some(
             operation @ (Operation::Read { array, .. }
+            | Operation::CellRead { array, .. }
             | Operation::Write { array, .. }
+            | Operation::CellWrite { array, .. }
             | Operation::Append { array, .. }
             | Operation::Length { array, .. }),
         ) = actions.iter().find(|(s, _)| *s == site).map(|(_, a)| a)
@@ -892,7 +894,11 @@ fn transfer(
             let current = fresh(state, (source.get(), None));
             state.insert((output.get(), None), current);
         }
-        Some(Operation::Write { array, .. } | Operation::Append { array, .. }) => {
+        Some(
+            Operation::Write { array, .. }
+            | Operation::CellWrite { array, .. }
+            | Operation::Append { array, .. },
+        ) => {
             let Action::LibraryCall { output, .. } = plan.blocks()[site].action() else {
                 return Err("tree write lost output");
             };
@@ -959,7 +965,9 @@ fn pass(
             }
             Some(
                 operation @ (Operation::Read { array, .. }
+                | Operation::CellRead { array, .. }
                 | Operation::Write { array, .. }
+                | Operation::CellWrite { array, .. }
                 | Operation::Append { array, .. }
                 | Operation::Length { array, .. }),
             ) => {
@@ -976,7 +984,9 @@ fn pass(
                 }
                 if matches!(
                     operation,
-                    Operation::Write { .. } | Operation::Append { .. }
+                    Operation::Write { .. }
+                        | Operation::CellWrite { .. }
+                        | Operation::Append { .. }
                 ) {
                     let root = arrays[*array].root;
                     state.clear_where(|&(value, field)| {
@@ -990,7 +1000,13 @@ fn pass(
         if site == tail.latch() as usize {
             for array in arrays {
                 let key = match array.storage {
-                    super::ArrayStorage::Carrier { field, .. } => (tail.next().get(), Some(field)),
+                    super::ArrayStorage::Carrier { field, .. }
+                    | super::ArrayStorage::TaggedCarrier { field, .. } => {
+                        (tail.next().get(), Some(field))
+                    }
+                    super::ArrayStorage::PhaseLocal { .. } => {
+                        return Err("local maps require the complete phase current-version proof");
+                    }
                     super::ArrayStorage::Capture { value } => (value, None),
                     super::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
                 };
