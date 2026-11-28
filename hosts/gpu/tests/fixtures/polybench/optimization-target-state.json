@@ -1,0 +1,113 @@
+{
+  "schema": "mech.polybench.optimization-target-state.v1",
+  "created_at": "2026-11-28T15:12:22.997557+00:00",
+  "policy": "optimization-target-policy-v1.json",
+  "accepted_history_index": 59,
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_source_commit": "1fc9f28e254cf688fc5cbec8b926f5c0f568c0ea",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "accepted_optimization_receipt": "round-59-optimization.json",
+  "accepted_optimization_receipt_sha256": "aa81c0d49649912206d04b9d436c0aa2929387fd59e08fcfd971ffa737046ed5",
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "target_lock_until": "Accepted complete formal run records active target<=1.0x C.",
+  "maintained_parity_wins": [],
+  "remaining_cases_by_closeness": [
+    {
+      "case": "seidel-2d",
+      "mech_over_c": 1.7111946615974802,
+      "mech_median_seconds": 0.000184667,
+      "c_median_seconds": 0.00010791700333356857
+    },
+    {
+      "case": "gemm",
+      "mech_over_c": 3.892823781141803,
+      "mech_median_seconds": 1.6708e-05,
+      "c_median_seconds": 4.292000085115433e-06
+    },
+    {
+      "case": "doitgen",
+      "mech_over_c": 4.166961392923914,
+      "mech_median_seconds": 1.3542e-05,
+      "c_median_seconds": 3.2498501241207123e-06
+    },
+    {
+      "case": "3mm",
+      "mech_over_c": 5.573025661386977,
+      "mech_median_seconds": 1.7416e-05,
+      "c_median_seconds": 3.125052899122238e-06
+    },
+    {
+      "case": "covariance",
+      "mech_over_c": 5.8618773967603035,
+      "mech_median_seconds": 2.6625e-05,
+      "c_median_seconds": 4.542060196399689e-06
+    },
+    {
+      "case": "nussinov",
+      "mech_over_c": 5.914713941655955,
+      "mech_median_seconds": 0.000182125,
+      "c_median_seconds": 3.079185262322426e-05
+    },
+    {
+      "case": "cholesky",
+      "mech_over_c": 6.097893544507162,
+      "mech_median_seconds": 4.4209e-05,
+      "c_median_seconds": 7.2498805820941925e-06
+    },
+    {
+      "case": "deriche",
+      "mech_over_c": 7.067010828526914,
+      "mech_median_seconds": 0.000207,
+      "c_median_seconds": 2.9291026294231415e-05
+    },
+    {
+      "case": "2mm",
+      "mech_over_c": 9.524244268551358,
+      "mech_median_seconds": 1.6667e-05,
+      "c_median_seconds": 1.7499551177024841e-06
+    },
+    {
+      "case": "bicg",
+      "mech_over_c": 12.659933942760778,
+      "mech_median_seconds": 1.8458e-05,
+      "c_median_seconds": 1.4579854905605316e-06
+    },
+    {
+      "case": "mvt",
+      "mech_over_c": 12.860210284254231,
+      "mech_median_seconds": 1.875e-05,
+      "c_median_seconds": 1.4579854905605316e-06
+    },
+    {
+      "case": "atax",
+      "mech_over_c": 13.384104910260602,
+      "mech_median_seconds": 1.6167e-05,
+      "c_median_seconds": 1.2079253792762756e-06
+    },
+    {
+      "case": "gramschmidt",
+      "mech_over_c": 16.383946719530083,
+      "mech_median_seconds": 5.8708e-05,
+      "c_median_seconds": 3.5832636058330536e-06
+    },
+    {
+      "case": "correlation",
+      "mech_over_c": 16.66475005424868,
+      "mech_median_seconds": 7.2208e-05,
+      "c_median_seconds": 4.332978278398514e-06
+    },
+    {
+      "case": "durbin",
+      "mech_over_c": 20.321357519826964,
+      "mech_median_seconds": 2.625e-05,
+      "c_median_seconds": 1.2917444109916687e-06
+    }
+  ],
+  "holdout_used_for_target_selection": false,
+  "new_performance_observations": 0
+}

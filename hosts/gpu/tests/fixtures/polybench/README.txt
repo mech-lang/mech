@@ -2951,3 +2951,9 @@ Complete source-closed pure F64 cells over checked affine streams use independen
 One210-observation prospective optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history59. Optimization7.8525132484714861x C; independent holdout23.9891615478482727x C. V4 optimization-only decision: accepted. Raw Mech and C/reference drift are separate in round-59-audit.json. All measurements/regressions retained; no fingerprint retry/exclusion. Compiler promoted to accepted59.
 
 [Qualification](round-59-qualification.json) · [Audit](round-59-audit.json) · [Progress](round-59-progress.json) · [Complete experiment](training-experiments/closed-map-result-validation-formal.json)
+
+Closest parity first: user-directed procedure after formal59
+
+Optimization target selection now starts with the smallest accepted Mech/C ratio above1.0x and stays on that case until an accepted complete formal run reaches<=1.0x C. First target: seidel-2d, 1.711195x C in accepted59. Recompute the next closest unfinished case only after reaching the current target. Every attained optimization parity case becomes a maintained win for subsequent promotion. Current maintained parity set is empty. Continue the strict optimization-only aggregate gate, source/correctness qualification and immutable single-run sampling; report both aggregates and controls independently. Holdout never selects, tunes, vetoes or triggers retries. Compiler rules remain source-derived and ports/inputs/timing unchanged.
+
+[Target policy](optimization-target-policy-v1.json) · [Current target and parity wins](optimization-target-state.json) · [Prospective profile](training-experiments/closest-parity-first-profile-plan.json)
