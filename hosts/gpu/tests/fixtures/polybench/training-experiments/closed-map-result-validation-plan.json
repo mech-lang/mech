@@ -1,0 +1,71 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T14:46:04.225858+00:00",
+  "name": "closed-map-result-validation",
+  "source_parent": "44f9895af671ab41746f0867de09fa87e9a67843",
+  "accepted_round": 58,
+  "accepted_scores": {
+    "optimization": 8.144951071643966,
+    "holdout": 24.70557552923209
+  },
+  "accepted_compiler_fingerprint": "3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-65/transpose-epilogue-views/transpose-epilogue-views-complete-driver",
+  "accepted_driver_sha256": "54620ba908ef66de2458ba051deb2276c99aebc669776498348379b97dbeb0f1",
+  "formal_history_index": 59,
+  "versions": {
+    "ir": 429,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cells.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/cell_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/windows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/cells.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/affine_map_cells.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs"
+  ],
+  "profiling_basis": "training-experiments/unselected-affine-map-profile.json: same-PID c946 code matches its frozen Objects;301/2289 Gram-Schmidt samples at five per-value SIMD finite-classification decision PCs,149/1732 Durbin samples at four scalar classification PCs. Both exact counter/C-validated processes reach terminal0. The previous probe0.9727125x remains rejected; no holdout diagnosis or retiming.",
+  "foundation": "Reuse the complete source-closed affine F64 map proof and existing original checked-DAG fallback from qualified unselected source7635c09c5630492e839efc2937bc5d6daa3ea82d. That fingerprint is not rerun. Materially replace its per-input/per-intermediate finite guard control and repeated inner-invariant loads.",
+  "transformation": "For a complete pure scalar F64 cell expression whose only FP observation is its final cell, keep every original arithmetic operation and intermediate rounding but classify only the final result. OR scalar/packed result masks in native SSA across every private selected window; reduce/test once before Frame.next completion/publication. Hoist only source-proved inner-coordinate-independent immutable matrix reads to the current row. Reuse checked affine corners, exact selected domains, original current loans/scratch/fees and unchanged original-DAG replay.",
+  "proof_obligation": "Every supported F64 add/subtract/multiply/divide/negate/sqrt is NaN-propagating. Source branches are only proved U64 axis predicates; conversions, FP predicates, effects and other result observers are rejected by closure. For a finite final result, every used operation has unchanged strict operands/tree/rounding, so intermediate Infinity can legitimately produce finite zero without an eligibility failure. A used NaN cannot produce a finite final result. A nonfinite final result replays the exact original scalar DAG before publication, preserving NaN payloads and source errors. Unused FP actions/reads and checked integer subexpressions are still evaluated/admitted; none is deleted. The maintained scalar emitter returns raw F64 bits and does not raise a language error for nonfinite arithmetic.",
+  "invariants": [
+    "All30 ports/inputs/C binaries/flags/limits/tolerance/cache/timing/split remain fixed. Source CFG/types/observers/affine geometry/ownership determine admission; no benchmark names or MINI extents.",
+    "Cranelift sole Mech generator. Share existing F64 arithmetic/nonfinite-mask emission, current map loans/affine streams and private scratch. No owner/helper/frame/ABI/mode/cache/per-operation allocation or interpreter changes. Preserve efficient Bool/U64/I64/F64 scalar and compression paths.",
+    "Use only complete bounded pure F64 source cells with U64-only control and no conversion/reduction/effect. Preserve every source read, checked integer action and F64 operation in the exact source arithmetic tree, all intermediate rounding and all original source bills. SIMD lanes remain independent outputs; no reassociation/FMA/horizontal sums.",
+    "Every current full frame/view/range/epoch/span/capacity guard remains. All affine intermediates/corners are checked before their nonempty window. Empty or inactive windows evaluate no matrix loads. Source/output full-span disjointness remains required for speculative stores.",
+    "Final-result masks carry across all scalar/vector cells, rows and piecewise selected windows; no reset can discard an earlier nonfinite result. No lane-reduction/guard branch inside the cell expression. Test before granting the original complete-prefix certificate; nonfinite or bounds/arithmetic failure restarts unchanged original DAG from ordinal0 over immutable source banks.",
+    "Private scratch may contain nonfinite partial results before a failed aggregate check, and cannot publish. Selected-only holes retain the original whole_output_initialized certificate and identity-complement rules. Keep simultaneous reads, exact first source failures, aliases, atomic outputs and cleanup/retry.",
+    "Only reads whose source affine indices do not depend on the inner coordinate may move to the current row. Their full window was proved, their source is pinned immutable through scratch evaluation, and hoisting never crosses an outer phase update/publication. Do not mark the source globally readonly.",
+    "All execution counters must exactly match accepted58; no source step/visit/bill elimination or counter padding is proposed. Logical/physical cap admission, complete replay and cleanup remain.",
+    "Optimization15 only for diagnosis/tuning/probe/promotion. Holdout independently reported and cannot select/veto/diagnose/tune/retry. No Rust edits during builds/tests/profiles/timing."
+  ],
+  "prior_related_work": "This replaces observed c946 per-node SIMD reductions/moves/branches with a source-result-observer proof, one aggregate validation boundary and row-local immutable reuse. It is not a retry of c946, rejected55 publication spans, or rejected36 grouped matrix operator banks/passes. Ordinary product-epilogue guards retain their old semantics; the new final-only rule applies solely to proved pure scalar cell DAGs.",
+  "qualification": "Retain all seven complete affine-map proof/direct/public differential groups and broad suite. Add direct fast-status tests for intermediate Infinity yielding a finite result, early/middle/late final NaNs across rows/windows/scalar/vector tails with full private fill but no Frame.next certificate, single aggregate SIMD reduction and noFMA, plus distinct NaN payloads/all supported operators versus original/decoded/restored checked DAG. Verify row-invariant load scope, resource denial, aliases, source errors, replay/cleanup/retry and genuine image source reconstruction. All30 C cases and both feature configurations; retain every attempted source/build/test result.",
+  "untimed_gate": "Optimization15 exact counters and17002 finite C values. Genuine Objects must show new G/D typed kernels, noFMA, and the direct kernel must show one aggregate SIMD mask reduction rather than per-node decisions. Record static code/stack changes without hardware claims.",
+  "training_probe": {
+    "actors": [
+      "accepted58",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted58/candidate medians>1 and exact counters/resources pass; keep every observation/regression, no retries/exclusions."
+  },
+  "formal_acceptance": "If selected, commit/push clean exact source and driver then freeze one900-observation formal run,29482 finite C liveouts and immutable history59. Promote solely optimization Mech/C<8.144951071643966. Holdout independently reported, never selection/tuning/veto/rollback/retry. Report raw Mech and C/reference drift separately. On failed gate restore exact accepted58.",
+  "performance_observations": 0
+}
