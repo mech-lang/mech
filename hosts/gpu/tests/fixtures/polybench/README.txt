@@ -2937,3 +2937,9 @@ Source-closed affine F64 map kernels: unselected probe
 The bounded piecewise typed kernel passed779 broad invocations,7 focused groups, both features, all30 source forms, and an exact17002-value optimization counter gate. Genuine Objects show typed SIMD updates and complete source-fee conservation. Its single210-observation optimization-only probe returned0.9727125117859827x raw speedup, with4 regressions over5%. It was not selected. All observations and attempted sources are retained. Exact accepted58 fingerprint3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241 is restored; no formal history append or holdout observation. The recorded accepted scores remain8.144951071643966x /24.70557552923209x C.
 
 [Full probe and source restoration](training-experiments/affine-map-cells-probe.json) · [Selection](training-experiments/affine-map-cells-selection.json)
+
+Frozen unselected affine-map candidate: optimization-only CPU diagnosis
+
+Same-PID CPU samples and complete code binding confirm the new typed kernels execute. Gram-Schmidt has301/2289 samples at five per-value SIMD finite-classification decision PCs; its selected-publication header/store separately have445 samples. Durbin has149/1732 samples at four scalar classification PCs. These identify physical work, not exclusive cost or a speedup forecast. Both processes terminate0 with exact frozen counters and finite warm/final C outputs. No performance probe was rerun and no holdout was profiled. Exact accepted58 source was restored before further work.
+
+[Profiles, code binding and restoration](training-experiments/unselected-affine-map-profile.json)
