@@ -2887,3 +2887,11 @@ Accepted54 phase profiles
 Owned Gram-Schmidt/Durbin warm checked-call samples attribute80.45%/44.56% self time to generated code. Complete numeric code is Object-identical; every caller byte matches except verified same-PID call relocations. C outputs and frozen counters match. Selected publication still enumerates individual cells and reconstructs masked coordinates;234 identified Gram samples(13.07% of1790) fall on one publication header/store pair, and124 Durbin samples(5.44% of2280) on its publication header. The next proposed source-derived row-span publication removes per-cell selected-coordinate reconstruction only after checked evaluation succeeds, retaining source evaluation order, full scratch/fallback, logical fees and visits. No benchmark observation/history entry or speedup claim was added.
 
 [CPU telemetry](round-54-phase-cpu-telemetry.json) · [Profile and code binding](training-experiments/accepted54-phase-profile.json)
+
+Completed selected map spans: formal evaluation
+
+After complete checked evaluation, source-proved selected domains publish exact physical row spans with bounded integer vectors and scalar tails. All source order, arithmetic, original errors, guards, complete scratch/fallback, owners and accounting remain. Original errors, arithmetic, source fees, current owners, bounds, full buffers and atomic completion remain. All760 broad/4 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.6619113663216076x C, independent holdout24.8693352575657372x C. V4 optimization-only decision: not_promoted. Raw runtime and C/reference drift controls remain in round-55-audit.json. All observations and regressions are preserved, no retries/exclusions. Exact accepted54 compiler restored solely because optimization failed its strict formal score gate.
+
+[Qualification](round-55-qualification.json) · [Audit](round-55-audit.json) · [Progress](round-55-progress.json) · [Complete experiment](training-experiments/selected-map-spans-formal.json)

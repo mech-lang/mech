@@ -662,7 +662,6 @@ mod numeric_maps;
 mod numeric_phase_maps;
 mod numeric_phase_reductions;
 mod rectangular_numeric_maps;
-mod selected_map_spans;
 mod typed_map_folds;
 
 #[test]

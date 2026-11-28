@@ -1,0 +1,2127 @@
+{
+  "schema": "mech.polybench.selected-map-span-static-telemetry.v1",
+  "scope": "Optimization15 genuine checked Object exports and emitted static instructions only. No linked Object execution, timing samples, retired hardware instructions or measured memory traffic.",
+  "compiler_fingerprint": "753588da2d93b2045dcdadd8c66a23756d34cd839ef5024dbc3833e351548f24",
+  "driver_sha256": "9094a424db75d9edd4819b565ec7f1897f9a3afdbc2b6d278a96696860c90379",
+  "cases": {
+    "2mm": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 9476,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31112,
+          "static_instruction_count": 2369,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2369,
+              "disassembly_sha256": "503cd7e3db41cf37fe8cef58b7ba6daaf180ce0e0b2d7fb0d6f550672156d903"
+            }
+          },
+          "object_sha256": "b8f53680584f39bc96cca94e7ba82a02c194ff1cfb7f5e60c003857fdf6754ad",
+          "metadata_sha256": "dd29814055540ec564d897b561f6c20d74d7aaa8f1c1ac3afbe2912f0e843e98",
+          "disassembly_sha256": "400058fc2c6c59e21364ee03a093d32fbbf3cbe8157fa0fe3866576191ea75cb",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "958",
+              "load": "     958:      \tldr\tq7, [x2, x7]",
+              "store": "     964:      \tstr\tq7, [x0, x7]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "9a0",
+              "load": "     9a0:      \tldr\tq17, [x2, x5]",
+              "store": "     9b0:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "9f4",
+              "load": "     9f4:      \tldr\tq29, [x1, x5]",
+              "store": "     a04:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1748",
+              "load": "    1748:      \tldr\tq0, [x8, x1]",
+              "store": "    1754:      \tstr\tq0, [x6, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1790",
+              "load": "    1790:      \tldr\tq0, [x8, x0]",
+              "store": "    17a0:      \tstr\tq0, [x6, x0]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "17e4",
+              "load": "    17e4:      \tldr\tq2, [x7, x2]",
+              "store": "    17f4:      \tstr\tq2, [x6, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "19e8",
+              "load": "    19e8:      \tldr\tq16, [x2, x12]",
+              "store": "    19f4:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a30",
+              "load": "    1a30:      \tldr\tq22, [x2, x5]",
+              "store": "    1a40:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a84",
+              "load": "    1a84:      \tldr\tq0, [x1, x5]",
+              "store": "    1a94:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 0,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 16,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 9476,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31112,
+          "static_instruction_count": 2369,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2369,
+              "disassembly_sha256": "503cd7e3db41cf37fe8cef58b7ba6daaf180ce0e0b2d7fb0d6f550672156d903"
+            }
+          },
+          "object_sha256": "db864a2d255671ff67b326710b9e7b7b8658343f8418277128458f40f5eef67e",
+          "metadata_sha256": "17a4728bc154af00e16152da27bce4ab1aef737082c142f43e386b4f3534da0f",
+          "disassembly_sha256": "bf37e53c463df4df96ccfac87f83265559e3e21635d1414746abd40a53b5d656",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "958",
+              "load": "     958:      \tldr\tq7, [x2, x7]",
+              "store": "     964:      \tstr\tq7, [x0, x7]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "9a0",
+              "load": "     9a0:      \tldr\tq17, [x2, x5]",
+              "store": "     9b0:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "9f4",
+              "load": "     9f4:      \tldr\tq29, [x1, x5]",
+              "store": "     a04:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1748",
+              "load": "    1748:      \tldr\tq0, [x8, x1]",
+              "store": "    1754:      \tstr\tq0, [x6, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1790",
+              "load": "    1790:      \tldr\tq0, [x8, x0]",
+              "store": "    17a0:      \tstr\tq0, [x6, x0]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "17e4",
+              "load": "    17e4:      \tldr\tq2, [x7, x2]",
+              "store": "    17f4:      \tstr\tq2, [x6, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "19e8",
+              "load": "    19e8:      \tldr\tq16, [x2, x12]",
+              "store": "    19f4:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a30",
+              "load": "    1a30:      \tldr\tq22, [x2, x5]",
+              "store": "    1a40:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a84",
+              "load": "    1a84:      \tldr\tq0, [x1, x5]",
+              "store": "    1a94:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 0,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 16,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "3mm": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 4060,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 18976,
+          "static_instruction_count": 1015,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1015,
+              "disassembly_sha256": "580fce2623597b7e5d41d6c8050a9e6aea089f29ae6472ff86b11bd6dfc76ff5"
+            }
+          },
+          "object_sha256": "24b944111c0b14634e2f03c6af0934e6ec7d71a5df2c79cb904c9afb646468fe",
+          "metadata_sha256": "4cfef28f2f425bfe2030a7f4332fdb031f914702d4e2232005aa7ee26ad33988",
+          "disassembly_sha256": "0672a8dcfbb1bb8b7d93088cbb56de821e332bbd9a2d33468e41c19f24f1a300",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 4060,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 18976,
+          "static_instruction_count": 1015,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1015,
+              "disassembly_sha256": "580fce2623597b7e5d41d6c8050a9e6aea089f29ae6472ff86b11bd6dfc76ff5"
+            }
+          },
+          "object_sha256": "5a604f65f0b01cc3a954b54ea9552ccd3215f133b525f10a97da23502a8a57c8",
+          "metadata_sha256": "95828b4fbc8d49fa49bfe58139f896751b2960e058431bf5b4255d212b9f65e1",
+          "disassembly_sha256": "5e196f94e6d8c199a38c4ef74f1cbd2ce73773bb0fe4b3941f1962317a3e88d2",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "atax": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 3612,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 18472,
+          "static_instruction_count": 903,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 903,
+              "disassembly_sha256": "f7780dce042cc11f81746fd2d2e05a8711358977400bef61a85504964b9ab796"
+            }
+          },
+          "object_sha256": "72840bc0158ff19bd5b0286024fdd0bc2eb6f126ba5c3581da45768b1c6bcca8",
+          "metadata_sha256": "97571a2f4c16df769a22b4c7eceaa6a4751e292103d4e24f6fd2de612e930714",
+          "disassembly_sha256": "d2487ccaf41f0a61e21b79340f18303273f5c5808f9a2f5488baf09ceec10833",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 1,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 3612,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 18472,
+          "static_instruction_count": 903,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 903,
+              "disassembly_sha256": "f7780dce042cc11f81746fd2d2e05a8711358977400bef61a85504964b9ab796"
+            }
+          },
+          "object_sha256": "316699a3058a38032debb2fa91ba1dd0622a16c2f642a568b707f073a48eff76",
+          "metadata_sha256": "52d39743e77950949afc5f8aaade9fa13a01718641c5da990b9cc8398877b4a9",
+          "disassembly_sha256": "477bbdd93a5daecb54a2cf95c64b7f5ea1e382d06dd2018d48cdbe08811fb911",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 1,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "bicg": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 3560,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 25504,
+          "static_instruction_count": 890,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 890,
+              "disassembly_sha256": "fe37da0ff53d4fe61378b128f1a3c07a653493f27ba7cea8d794c6187717a492"
+            }
+          },
+          "object_sha256": "e6d79f12782071ee83126c88fac2fb6d79d37305a914f033a35e19fa18c0ee52",
+          "metadata_sha256": "a27f039dda4c72a17e36dd3488378a09a4c98f90d442fcb55aac8875dd111c22",
+          "disassembly_sha256": "04153d6d25234eb5d967c9ec96be83f054b5d3602bfbb9717e9c6d3eb86e48d0",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 1,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 3560,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 25504,
+          "static_instruction_count": 890,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 890,
+              "disassembly_sha256": "fe37da0ff53d4fe61378b128f1a3c07a653493f27ba7cea8d794c6187717a492"
+            }
+          },
+          "object_sha256": "ef5e0eb89d1479fbe7675b8c0146cbe508615546088ef828f7bb6556be8226f7",
+          "metadata_sha256": "14d4b3fbec33b8b893f94e90a80890f7311e8636d1847d5fd1a98eef88261cf7",
+          "disassembly_sha256": "23816dc230ca00d20d46c95755ebd13880f24fd2f175b69f18725edf9a6c617a",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 1,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "cholesky": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 19904,
+          "reported_native_stack_bytes": 1648,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4976,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1641,
+              "disassembly_sha256": "43e5d97ed5eba0909496c3c58feb415f755f9ef001755f4eda3d45f901e2a8e6"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3335,
+              "disassembly_sha256": "251e29a56316fb47bb63f81323daceab1a96cb37a9ccdef7bc4816082770e360"
+            }
+          },
+          "object_sha256": "c47081454d1d9d3a9fb9a262b9c1fa87383cc7869b81fdb43db6585e3675aa77",
+          "metadata_sha256": "780b3fe20adba18066a79118930c65275cbd7cbf7645617f837af8831183b2b7",
+          "disassembly_sha256": "a3f8cb566991e48befcf978119b63d830dec65efab8d32458e6dfbf5d4629e8e",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 10,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19904,
+          "reported_native_stack_bytes": 1648,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4976,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1641,
+              "disassembly_sha256": "43e5d97ed5eba0909496c3c58feb415f755f9ef001755f4eda3d45f901e2a8e6"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3335,
+              "disassembly_sha256": "251e29a56316fb47bb63f81323daceab1a96cb37a9ccdef7bc4816082770e360"
+            }
+          },
+          "object_sha256": "d7445075cd6fa5ab7b44a34041e5c2195f879978c0961a5c0fc128ddc96e6387",
+          "metadata_sha256": "e09ec604caa0d639988e401591ccba4acca751facba2f15900919ae09628b6d1",
+          "disassembly_sha256": "76f7aaf8c6ac7931148dd16aa315e6e1c9d5103cc86c6114b9fc9933df6b096c",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 10,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "correlation": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 15016,
+          "reported_native_stack_bytes": 128,
+          "object_file_bytes": 83880,
+          "static_instruction_count": 3754,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3754,
+              "disassembly_sha256": "921b2053265be03dbfe3986c9a27bc37735f7db25ff19d9cd029f2e50a9017fa"
+            }
+          },
+          "object_sha256": "9647fe4899996df39b3e4a0a44e32a4f12ec7a60978d5a825f4dcbe3ca96b3b4",
+          "metadata_sha256": "44f0cd66a74bf36e416752efbada68eb165169415979d458463ec764cf7deb4b",
+          "disassembly_sha256": "c21cc193eb8a8ed2ea02e995ef5a96d37f1bc4ab96c6444d44b340207ae08851",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "534",
+              "load": "     534:      \tldr\tq0, [x15, x1]",
+              "store": "     540:      \tstr\tq0, [x13, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "57c",
+              "load": "     57c:      \tldr\tq0, [x15, x1]",
+              "store": "     58c:      \tstr\tq0, [x13, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "5d0",
+              "load": "     5d0:      \tldr\tq16, [x14, x9]",
+              "store": "     5e0:      \tstr\tq16, [x13, x9]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7d4",
+              "load": "     7d4:      \tldr\tq19, [x2, x6]",
+              "store": "     7e0:      \tstr\tq19, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "81c",
+              "load": "     81c:      \tldr\tq29, [x2, x5]",
+              "store": "     82c:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "870",
+              "load": "     870:      \tldr\tq0, [x1, x5]",
+              "store": "     880:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "c5c",
+              "load": "     c5c:      \tldr\tq0, [x12, x1]",
+              "store": "     c68:      \tstr\tq0, [x10, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "ca4",
+              "load": "     ca4:      \tldr\tq0, [x12, x2]",
+              "store": "     cb4:      \tstr\tq0, [x10, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "cf8",
+              "load": "     cf8:      \tldr\tq6, [x11, x6]",
+              "store": "     d08:      \tstr\tq6, [x10, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "10cc",
+              "load": "    10cc:      \tldr\tq17, [x2, x5]",
+              "store": "    10d8:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1114",
+              "load": "    1114:      \tldr\tq27, [x2, x5]",
+              "store": "    1124:      \tstr\tq27, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1168",
+              "load": "    1168:      \tldr\tq0, [x1, x5]",
+              "store": "    1178:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "19d4",
+              "load": "    19d4:      \tldr\tq0, [x2, x6]",
+              "store": "    19e0:      \tstr\tq0, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a1c",
+              "load": "    1a1c:      \tldr\tq1, [x2, x1]",
+              "store": "    1a2c:      \tstr\tq1, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a70",
+              "load": "    1a70:      \tldr\tq16, [x1, x13]",
+              "store": "    1a80:      \tstr\tq16, [x0, x13]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1c70",
+              "load": "    1c70:      \tldr\tq23, [x2, x6]",
+              "store": "    1c7c:      \tstr\tq23, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1cb8",
+              "load": "    1cb8:      \tldr\tq0, [x2, x1]",
+              "store": "    1cc8:      \tstr\tq0, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1d0c",
+              "load": "    1d0c:      \tldr\tq0, [x1, x5]",
+              "store": "    1d1c:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 9,
+          "product_epilogues": [],
+          "reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 28,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 15016,
+          "reported_native_stack_bytes": 128,
+          "object_file_bytes": 83880,
+          "static_instruction_count": 3754,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3754,
+              "disassembly_sha256": "921b2053265be03dbfe3986c9a27bc37735f7db25ff19d9cd029f2e50a9017fa"
+            }
+          },
+          "object_sha256": "b20aef833b411a4b216380f3c6ff4e883908980c1fef257be4511767dc99a3e5",
+          "metadata_sha256": "736f8f34b865f0d2295ef79dcc9c825affa17ec34d132eb7e49806c581975b59",
+          "disassembly_sha256": "b45f834182db3e8ddfd182d57a4b4b4c8370b96a497cdd5381f80a5acd40f0c7",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "534",
+              "load": "     534:      \tldr\tq0, [x15, x1]",
+              "store": "     540:      \tstr\tq0, [x13, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "57c",
+              "load": "     57c:      \tldr\tq0, [x15, x1]",
+              "store": "     58c:      \tstr\tq0, [x13, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "5d0",
+              "load": "     5d0:      \tldr\tq16, [x14, x9]",
+              "store": "     5e0:      \tstr\tq16, [x13, x9]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7d4",
+              "load": "     7d4:      \tldr\tq19, [x2, x6]",
+              "store": "     7e0:      \tstr\tq19, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "81c",
+              "load": "     81c:      \tldr\tq29, [x2, x5]",
+              "store": "     82c:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "870",
+              "load": "     870:      \tldr\tq0, [x1, x5]",
+              "store": "     880:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "c5c",
+              "load": "     c5c:      \tldr\tq0, [x12, x1]",
+              "store": "     c68:      \tstr\tq0, [x10, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "ca4",
+              "load": "     ca4:      \tldr\tq0, [x12, x2]",
+              "store": "     cb4:      \tstr\tq0, [x10, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "cf8",
+              "load": "     cf8:      \tldr\tq6, [x11, x6]",
+              "store": "     d08:      \tstr\tq6, [x10, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "10cc",
+              "load": "    10cc:      \tldr\tq17, [x2, x5]",
+              "store": "    10d8:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1114",
+              "load": "    1114:      \tldr\tq27, [x2, x5]",
+              "store": "    1124:      \tstr\tq27, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1168",
+              "load": "    1168:      \tldr\tq0, [x1, x5]",
+              "store": "    1178:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "19d4",
+              "load": "    19d4:      \tldr\tq0, [x2, x6]",
+              "store": "    19e0:      \tstr\tq0, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a1c",
+              "load": "    1a1c:      \tldr\tq1, [x2, x1]",
+              "store": "    1a2c:      \tstr\tq1, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1a70",
+              "load": "    1a70:      \tldr\tq16, [x1, x13]",
+              "store": "    1a80:      \tstr\tq16, [x0, x13]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1c70",
+              "load": "    1c70:      \tldr\tq23, [x2, x6]",
+              "store": "    1c7c:      \tstr\tq23, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1cb8",
+              "load": "    1cb8:      \tldr\tq0, [x2, x1]",
+              "store": "    1cc8:      \tstr\tq0, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1d0c",
+              "load": "    1d0c:      \tldr\tq0, [x1, x5]",
+              "store": "    1d1c:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 9,
+          "product_epilogues": [],
+          "reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 28,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "covariance": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 5552,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31040,
+          "static_instruction_count": 1388,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1388,
+              "disassembly_sha256": "cbbae926eeec7a16933d53026187218bdcaf31905c86828221c1d032abae829a"
+            }
+          },
+          "object_sha256": "c963665ce508b6207065b2d304d30566c7c3b97abd44ce31e5e0785517b04bd3",
+          "metadata_sha256": "d23ebe7f09af0ad67a619488b5af0227a920ff0fc4fc888981c9fd986b64dd40",
+          "disassembly_sha256": "a725b270be016c3ffd3369d2bf8f6fa4593ef6008f07623d1afdd26a8bdc3a4b",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "580",
+              "load": "     580:      \tldr\tq16, [x2, x12]",
+              "store": "     58c:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "5c8",
+              "load": "     5c8:      \tldr\tq22, [x2, x5]",
+              "store": "     5d8:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "61c",
+              "load": "     61c:      \tldr\tq0, [x1, x5]",
+              "store": "     62c:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "844",
+              "load": "     844:      \tldr\tq0, [x9, x1]",
+              "store": "     850:      \tstr\tq0, [x7, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "88c",
+              "load": "     88c:      \tldr\tq0, [x9, x1]",
+              "store": "     89c:      \tstr\tq0, [x7, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "8e0",
+              "load": "     8e0:      \tldr\tq3, [x8, x5]",
+              "store": "     8f0:      \tstr\tq3, [x7, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "e40",
+              "load": "     e40:      \tldr\tq0, [x0, x2]",
+              "store": "     e4c:      \tstr\tq0, [x14, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "e88",
+              "load": "     e88:      \tldr\tq0, [x0, x1]",
+              "store": "     e98:      \tstr\tq0, [x14, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "edc",
+              "load": "     edc:      \tldr\tq16, [x15, x10]",
+              "store": "     eec:      \tstr\tq16, [x14, x10]"
+            }
+          ],
+          "multiply_high_sites": 2,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 15,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 5552,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31040,
+          "static_instruction_count": 1388,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1388,
+              "disassembly_sha256": "cbbae926eeec7a16933d53026187218bdcaf31905c86828221c1d032abae829a"
+            }
+          },
+          "object_sha256": "f24ca690775fbc5e4024efaaab26afa976ae500c0e87f9c62ce7d94f4c77359c",
+          "metadata_sha256": "e5f084538422d30d397bd74e11df82880d4f0714a4e4688c758f976484519d47",
+          "disassembly_sha256": "b8d8ac0fa10fb0e682cb072bdbe27135ccad9f9f6ea0c67009900370ba56763c",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "580",
+              "load": "     580:      \tldr\tq16, [x2, x12]",
+              "store": "     58c:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "5c8",
+              "load": "     5c8:      \tldr\tq22, [x2, x5]",
+              "store": "     5d8:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "61c",
+              "load": "     61c:      \tldr\tq0, [x1, x5]",
+              "store": "     62c:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "844",
+              "load": "     844:      \tldr\tq0, [x9, x1]",
+              "store": "     850:      \tstr\tq0, [x7, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "88c",
+              "load": "     88c:      \tldr\tq0, [x9, x1]",
+              "store": "     89c:      \tstr\tq0, [x7, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "8e0",
+              "load": "     8e0:      \tldr\tq3, [x8, x5]",
+              "store": "     8f0:      \tstr\tq3, [x7, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "e40",
+              "load": "     e40:      \tldr\tq0, [x0, x2]",
+              "store": "     e4c:      \tstr\tq0, [x14, x2]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "e88",
+              "load": "     e88:      \tldr\tq0, [x0, x1]",
+              "store": "     e98:      \tstr\tq0, [x14, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "edc",
+              "load": "     edc:      \tldr\tq16, [x15, x10]",
+              "store": "     eec:      \tstr\tq16, [x14, x10]"
+            }
+          ],
+          "multiply_high_sites": 2,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 15,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "deriche": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 62308,
+          "reported_native_stack_bytes": 496,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "a2f493f4b756d8b5ec51382da7bbf1f5e5ae7e49e629d044d40ceeda5f675c22",
+          "metadata_sha256": "e92f5c4321d64144d454d12672a42a12fb7cdb50b7084863fe14a04344e8c55c",
+          "disassembly_sha256": "84d65f60f5fb5680328ce2c43ae19434f4262d7aeda5eedbdfc6412069913a80",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "79f0",
+              "load": "    79f0:      \tldr\tq7, [x2, x7]",
+              "store": "    79fc:      \tstr\tq7, [x0, x7]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7a38",
+              "load": "    7a38:      \tldr\tq17, [x2, x5]",
+              "store": "    7a48:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7a8c",
+              "load": "    7a8c:      \tldr\tq29, [x1, x5]",
+              "store": "    7a9c:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d4d8",
+              "load": "    d4d8:      \tldr\tq16, [x2, x12]",
+              "store": "    d4e4:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d520",
+              "load": "    d520:      \tldr\tq22, [x2, x5]",
+              "store": "    d530:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d574",
+              "load": "    d574:      \tldr\tq0, [x1, x5]",
+              "store": "    d584:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 24,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 62308,
+          "reported_native_stack_bytes": 496,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "97e205d51bb09783de32e5e26cc4df34640a9ebfecc04fab1d7f203ed0a97655",
+          "metadata_sha256": "5d50712796d8841d1fc6fed75efcd9231a1c0fded4922ac56066781f674f2aac",
+          "disassembly_sha256": "19440e704f15abc3d7abec2bd9f816b7308942237f14a19b404d6c61b16284e1",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "79f0",
+              "load": "    79f0:      \tldr\tq7, [x2, x7]",
+              "store": "    79fc:      \tstr\tq7, [x0, x7]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7a38",
+              "load": "    7a38:      \tldr\tq17, [x2, x5]",
+              "store": "    7a48:      \tstr\tq17, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "7a8c",
+              "load": "    7a8c:      \tldr\tq29, [x1, x5]",
+              "store": "    7a9c:      \tstr\tq29, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d4d8",
+              "load": "    d4d8:      \tldr\tq16, [x2, x12]",
+              "store": "    d4e4:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d520",
+              "load": "    d520:      \tldr\tq22, [x2, x5]",
+              "store": "    d530:      \tstr\tq22, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d574",
+              "load": "    d574:      \tldr\tq0, [x1, x5]",
+              "store": "    d584:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 24,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "doitgen": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 1864,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 13400,
+          "static_instruction_count": 466,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 466,
+              "disassembly_sha256": "e805bacdd87c4b00c6b6d7f00814625a9dfe131395bcee7be5fe411f82bf3780"
+            }
+          },
+          "object_sha256": "4a2e3b66f2cbf36510b10124b8d0659d4d62d82e772eebd883ec7571e5afd0e1",
+          "metadata_sha256": "407d7bbc14b2057445717206a6188b9ab4913cb50db24218479bdc0aef9d7afb",
+          "disassembly_sha256": "9dc5862b7713e79539d83218648ca21266da0c72bc6b7784617c71a9ee199230",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 1,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 1864,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 13400,
+          "static_instruction_count": 466,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 466,
+              "disassembly_sha256": "e805bacdd87c4b00c6b6d7f00814625a9dfe131395bcee7be5fe411f82bf3780"
+            }
+          },
+          "object_sha256": "3805e00d04bebf18356f3065f0de59546d2e84f59c236fa8a8e54b487a184837",
+          "metadata_sha256": "336e3ebbd9683286420cf0bad7a241f3cc1014cb3a7d315a00dc913d4fa78976",
+          "disassembly_sha256": "e722f00ffd6a112726e82192d8ddc2d0657daa773417a07296ade8d87b06d9be",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 1,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "durbin": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 20960,
+          "reported_native_stack_bytes": 2032,
+          "object_file_bytes": 144800,
+          "static_instruction_count": 5240,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1901,
+              "disassembly_sha256": "0cea7e3113f8957ca0905f9a03b72539521521e4ad48e4f736cf4c2039f0a13b"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3339,
+              "disassembly_sha256": "30f0e0734ca4f24403009268ba1644b80f12aa3f55785a779a4076c4d8e78f57"
+            }
+          },
+          "object_sha256": "050fa81aad5dc7c94493ce29e3bc1185a7c5fb562fd8acb40a45067f5e44f499",
+          "metadata_sha256": "1be348abf4f6c53af0fbb099e675afc4141b21b5aa513713e0d69973cb273750",
+          "disassembly_sha256": "6aa001e3a5b5aaa7f599f9c4ed6a931e24ddfa45ccb7935b237127943b5024f8",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 12,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 21276,
+          "reported_native_stack_bytes": 2032,
+          "object_file_bytes": 145056,
+          "static_instruction_count": 5319,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1980,
+              "disassembly_sha256": "906977d48e401f44a50d093d3bcb4a3a62b37a9cedeada85750d374ee37d1f5f"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3339,
+              "disassembly_sha256": "b4f6e53a4377b4bd01e493ff2a30e7bfda19669ca35123fc04601264c5ef34ca"
+            }
+          },
+          "object_sha256": "bfbb2948853247580464cb4b6d73f03fd590318d69cd824dace2cbfbb2d4f568",
+          "metadata_sha256": "3cb6927ca499da2edffa04ab1152ba43177ff520a4b7a8353095fd64985ee76a",
+          "disassembly_sha256": "d8c7556eceeabd3e1a31b42b36c9f84df403fa151adf6d8a01dea9711e3dfdb0",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_4",
+              "offset": "f2c",
+              "load": "     f2c:      \tldr\tq31, [x20, x0]",
+              "store": "     f30:      \tstr\tq31, [x7, x0]"
+            }
+          ],
+          "multiply_high_sites": 12,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "gemm": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 7216,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 27160,
+          "static_instruction_count": 1804,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1804,
+              "disassembly_sha256": "bdc5d9d3bb3b1851bb58f77599372b6c1ddaea976b6d101b0e909903638b0829"
+            }
+          },
+          "object_sha256": "c86543a781c09af2f1e8faa7f2b1dfd8a2f1b1300a7c6a471c8dd2546d8e3499",
+          "metadata_sha256": "a8122a658beddbbc5e87b0022fec0c3f526f1e3e7d94dc7e03af90bfc2625d59",
+          "disassembly_sha256": "a5ef3cd5e678bb350b7dd704c991e3892c102e4bb6918f30cc32f31cb2b21f94",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "fac",
+              "load": "     fac:      \tldr\tq1, [x2, x6]",
+              "store": "     fb8:      \tstr\tq1, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "ff4",
+              "load": "     ff4:      \tldr\tq16, [x2, x11]",
+              "store": "    1004:      \tstr\tq16, [x0, x11]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1048",
+              "load": "    1048:      \tldr\tq23, [x1, x5]",
+              "store": "    1058:      \tstr\tq23, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "125c",
+              "load": "    125c:      \tldr\tq0, [x2, x5]",
+              "store": "    1268:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "12a4",
+              "load": "    12a4:      \tldr\tq0, [x2, x5]",
+              "store": "    12b4:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "12f8",
+              "load": "    12f8:      \tldr\tq0, [x1, x5]",
+              "store": "    1308:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "14fc",
+              "load": "    14fc:      \tldr\tq2, [x2, x5]",
+              "store": "    1508:      \tstr\tq2, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1544",
+              "load": "    1544:      \tldr\tq16, [x2, x12]",
+              "store": "    1554:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1598",
+              "load": "    1598:      \tldr\tq24, [x1, x5]",
+              "store": "    15a8:      \tstr\tq24, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 0,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 7216,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 27160,
+          "static_instruction_count": 1804,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1804,
+              "disassembly_sha256": "bdc5d9d3bb3b1851bb58f77599372b6c1ddaea976b6d101b0e909903638b0829"
+            }
+          },
+          "object_sha256": "a9f470abb9b8364238778f1aa8d04b5c0868355dec2b867e11c6cc15ad538e6a",
+          "metadata_sha256": "dfeb371be657c36f980f697675265431d1b4fcc81f5b7c44445be0164e0ed087",
+          "disassembly_sha256": "b89a467d8ad487a38441cbeca5f6abb64a49c06670d445bbf799195b5d81c92b",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "fac",
+              "load": "     fac:      \tldr\tq1, [x2, x6]",
+              "store": "     fb8:      \tstr\tq1, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "ff4",
+              "load": "     ff4:      \tldr\tq16, [x2, x11]",
+              "store": "    1004:      \tstr\tq16, [x0, x11]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1048",
+              "load": "    1048:      \tldr\tq23, [x1, x5]",
+              "store": "    1058:      \tstr\tq23, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "125c",
+              "load": "    125c:      \tldr\tq0, [x2, x5]",
+              "store": "    1268:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "12a4",
+              "load": "    12a4:      \tldr\tq0, [x2, x5]",
+              "store": "    12b4:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "12f8",
+              "load": "    12f8:      \tldr\tq0, [x1, x5]",
+              "store": "    1308:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "14fc",
+              "load": "    14fc:      \tldr\tq2, [x2, x5]",
+              "store": "    1508:      \tstr\tq2, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1544",
+              "load": "    1544:      \tldr\tq16, [x2, x12]",
+              "store": "    1554:      \tstr\tq16, [x0, x12]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1598",
+              "load": "    1598:      \tldr\tq24, [x1, x5]",
+              "store": "    15a8:      \tstr\tq24, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 0,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "gramschmidt": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 52936,
+          "reported_native_stack_bytes": 23104,
+          "object_file_bytes": 269760,
+          "static_instruction_count": 13234,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4857,
+              "disassembly_sha256": "db1dda1d12a660f8f3d13c0ad25d33ae935d1b489efd05302ea9d467637dc7e1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8377,
+              "disassembly_sha256": "11201f7c6fc494c7eec8b6853acf5f2ad7e2c75e9e37865d5e910850ccc63775"
+            }
+          },
+          "object_sha256": "4d5701f2047b6c5f6d161adbb688eba1c9c3068e0c2f1780b928ffdb71fa34ea",
+          "metadata_sha256": "4e66ec5f56310f9e3dbca400f1ccc8de62ebc5ca289e03b4f80a3e8419c8b131",
+          "disassembly_sha256": "6df4fe88543d668b15f6e3871a273001ca87c66bd8e3df7c2ab9801efc1b6f15",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "15f4",
+              "load": "    15f4:      \tldr\tq0, [x2, x1]",
+              "store": "    15f8:      \tstr\tq0, [x10, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "1d94",
+              "load": "    1d94:      \tldr\tq0, [x21, x0]",
+              "store": "    1d98:      \tstr\tq0, [x9, x0]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "2400",
+              "load": "    2400:      \tldr\tq18, [x0, x13]",
+              "store": "    2404:      \tstr\tq18, [x10, x13]"
+            }
+          ],
+          "multiply_high_sites": 69,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 52928,
+          "reported_native_stack_bytes": 23088,
+          "object_file_bytes": 269760,
+          "static_instruction_count": 13232,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4855,
+              "disassembly_sha256": "a787880fffd90da33bc68c0b1c342963bd445b09f7ba4cfc4298f481853ab3ea"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8377,
+              "disassembly_sha256": "11201f7c6fc494c7eec8b6853acf5f2ad7e2c75e9e37865d5e910850ccc63775"
+            }
+          },
+          "object_sha256": "596eb6f10780fa9bccbc7372f75e766869889f873a9ec7a02567dd2676ded396",
+          "metadata_sha256": "9f7ee477be3484635b35fbb42616328a9d17f9c7e126ccb59b78228a8b726a20",
+          "disassembly_sha256": "511705d6165f75f5665d1c16cdf0df58d9621da7750cf40c9eedb146ef009527",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "15f4",
+              "load": "    15f4:      \tldr\tq0, [x14, x0]",
+              "store": "    15f8:      \tstr\tq0, [x10, x0]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "1de4",
+              "load": "    1de4:      \tldr\tq20, [x4, x1]",
+              "store": "    1de8:      \tstr\tq20, [x9, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "2470",
+              "load": "    2470:      \tldr\tq0, [x21, x0]",
+              "store": "    2474:      \tstr\tq0, [x5, x0]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "2a24",
+              "load": "    2a24:      \tldr\tq0, [x0, x7]",
+              "store": "    2a28:      \tstr\tq0, [x1, x7]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1_numeric_5",
+              "offset": "2c54",
+              "load": "    2c54:      \tldr\tq16, [x6, x0]",
+              "store": "    2c60:      \tstr\tq16, [x4, x0]"
+            }
+          ],
+          "multiply_high_sites": 67,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "mvt": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 9980,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 37288,
+          "static_instruction_count": 2495,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2495,
+              "disassembly_sha256": "f87da85c412e0b640fd11aa8d2a206282f1337c8009fd039d09a5653ff7f39fd"
+            }
+          },
+          "object_sha256": "edc2380bdf15dde6ca82f894fbf4eba320308bf3891a0750e3c2267bbc97afd2",
+          "metadata_sha256": "2fbed14fff8c4ae774045f07d3ae8a5e203729c8b41fc4e559ea6df44490f40a",
+          "disassembly_sha256": "038b0336f5a6b779f4635c4d89ee64593726eac5aa8246889f70e337edeb0b1c",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "cc8",
+              "load": "     cc8:      \tldr\tq24, [x2, x6]",
+              "store": "     cd4:      \tstr\tq24, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d10",
+              "load": "     d10:      \tldr\tq0, [x2, x5]",
+              "store": "     d20:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d64",
+              "load": "     d64:      \tldr\tq0, [x1, x5]",
+              "store": "     d74:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1af0",
+              "load": "    1af0:      \tldr\tq24, [x2, x6]",
+              "store": "    1afc:      \tstr\tq24, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1b38",
+              "load": "    1b38:      \tldr\tq0, [x2, x1]",
+              "store": "    1b48:      \tstr\tq0, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1b8c",
+              "load": "    1b8c:      \tldr\tq0, [x1, x5]",
+              "store": "    1b9c:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 1,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 9980,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 37288,
+          "static_instruction_count": 2495,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2495,
+              "disassembly_sha256": "f87da85c412e0b640fd11aa8d2a206282f1337c8009fd039d09a5653ff7f39fd"
+            }
+          },
+          "object_sha256": "c2cf5d9ece97515ffa428d8f4857309eaa41021a759e8a81c329fd78079a28d3",
+          "metadata_sha256": "f22dcbe4fba19027d83fb6468b2bb68a00721e9ecb3770fc7f487f37391d3392",
+          "disassembly_sha256": "158de9311f332d16b0b32316620ed69c45afb43a1da3b46bb58aee6df9f58118",
+          "object_executed": false,
+          "selected_span_vector_copies": [
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "cc8",
+              "load": "     cc8:      \tldr\tq24, [x2, x6]",
+              "store": "     cd4:      \tstr\tq24, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d10",
+              "load": "     d10:      \tldr\tq0, [x2, x5]",
+              "store": "     d20:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "d64",
+              "load": "     d64:      \tldr\tq0, [x1, x5]",
+              "store": "     d74:      \tstr\tq0, [x0, x5]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1af0",
+              "load": "    1af0:      \tldr\tq24, [x2, x6]",
+              "store": "    1afc:      \tstr\tq24, [x0, x6]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1b38",
+              "load": "    1b38:      \tldr\tq0, [x2, x1]",
+              "store": "    1b48:      \tstr\tq0, [x0, x1]"
+            },
+            {
+              "function": "mech_canonical_program_entry_v1",
+              "offset": "1b8c",
+              "load": "    1b8c:      \tldr\tq0, [x1, x5]",
+              "store": "    1b9c:      \tstr\tq0, [x0, x5]"
+            }
+          ],
+          "multiply_high_sites": 1,
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "nussinov": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "17371bc515a807ed7e1accdf714381f1749759edc8a42a7231c1f05286584428",
+          "metadata_sha256": "698a4f52f3e68858aaf470c956891335343de78c6e4a12a9b848c2c09c2b7ac9",
+          "disassembly_sha256": "19d2ef90705b7eb733a4b387905d621f1d56a5d723362cab4b14557d119a7cc8",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "949d13fb6ce00b3b044c89c4effe52c26f60fdc9c26cd1d57fb5eba0081f47e3",
+          "metadata_sha256": "e6b08993fc3d6b991ddc630a189b8f283b8f12dc06751e6d57991b26c8e74c4a",
+          "disassembly_sha256": "cd537ae64bdc9397c340968cbe5ea4a147a962a66956018ad5aedde958b4fb0a",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "seidel-2d": {
+      "actors": {
+        "accepted54": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "ce1cd8054c4c68b053faf5fcc5b07feb564af1ef088ac2dc6cda29cf330a97a3",
+          "metadata_sha256": "429cbd45726afec505830a1eb9bb4dfd8de3566130511ccc2e2405101d72b86a",
+          "disassembly_sha256": "9cb3408ed5c77a75c333fcf37ab98d703682b1f80f6c25e2f7b3144fc9d1a8e3",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "f1ab2f839014ef17b2bdd438e92fbc3619e3b66da8299f1cff948c092b9f12bd",
+          "metadata_sha256": "7d9a63f4837cb6de21c995eb0a52fef9f92e4bcfc6a0aededc1e0775b705f064",
+          "disassembly_sha256": "f28ce25831e65ab1d78163c1cb932ae0378b8a70bddf4a69d882aa2c4ce2a5eb",
+          "object_executed": false,
+          "selected_span_vector_copies": [],
+          "multiply_high_sites": 0,
+          "product_epilogues": [],
+          "reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "native_code_changed_cases": [
+    "durbin",
+    "gramschmidt"
+  ],
+  "no_new_fma": true,
+  "selected_spans_emitted": true,
+  "independent_runtime_shape_kernel": "Focused production old/new selected publication functions have runtime bank pointers and axis bounds. New SSA uses I8x16 span loads/stores without Udiv/Urem coordinate reconstruction; old rectangular publication retains Udiv. Independent selected-set and old-emitter oracles, poisoned holes, canaries, exact bytes, all comparators/kinds and public original/decoded/restored cases qualify exact publication. Every source execution counter is unchanged.",
+  "source_unchanged": true,
+  "passed": true
+}

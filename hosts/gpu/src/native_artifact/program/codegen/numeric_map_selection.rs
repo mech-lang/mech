@@ -10,16 +10,12 @@ use cranelift_codegen::ir::{InstBuilder, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use std::collections::BTreeMap;
 
-#[path = "numeric_map_publication.rs"]
-mod publication;
-
 struct AxisSelection {
     first: Value,
     first_count: Value,
     second: Value,
     selected: Value,
     singleton: bool,
-    split: bool,
     full: bool,
 }
 enum Coordinates {
@@ -90,7 +86,6 @@ impl AxisSelection {
             second,
             selected,
             singleton: comparison == Comparison::Eq,
-            split: comparison == Comparison::Ne,
             full: false,
         }
     }
@@ -114,7 +109,6 @@ impl AxisSelection {
             second: zero,
             selected,
             singleton: false,
-            split: false,
             full: true,
         })
     }
@@ -142,15 +136,6 @@ impl AxisSelection {
     }
 }
 impl Selection {
-    pub(in crate::native_artifact::program::codegen) fn publish_spans(
-        &self,
-        b: &mut FunctionBuilder<'_>,
-        source: Value,
-        destination: Value,
-        width: u8,
-    ) -> Result<(), NativeCompileError> {
-        publication::emit(b, self, source, destination, width)
-    }
     pub(in crate::native_artifact::program::codegen) fn new(
         b: &mut FunctionBuilder<'_>,
         mask: &Mask,
@@ -297,7 +282,3 @@ impl Selection {
         b.ins().iadd(row, column)
     }
 }
-
-#[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "numeric_map_publication_tests.rs"]
-mod publication_tests;
