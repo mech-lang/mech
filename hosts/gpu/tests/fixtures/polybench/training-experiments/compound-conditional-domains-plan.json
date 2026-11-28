@@ -1,0 +1,110 @@
+{
+  "schema": "mech.polybench.compound-conditional-domains-plan.v1",
+  "created_at": "2026-11-28T05:39:58.694283+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "6510175104a0a6f4d55be048fc82ddc4384a2f96",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mask_domains.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_selected_initialization.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_compound_maps.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs": "e76afb0609a38f9b1cc182bc9746c4247620b991ee81db9e0fc822ec11294f27",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mask_domains.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": "a2839221b7154924e56dd1060f7ba8b4ba92e06196b061480cfe5e34ac61ccd0",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "b3f0330854d3a0ba52e0aaba5a40f40e41d00d3449a3c683a10c2bce54ab6e6c",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "7e38cb6b3a36976bf0d780909550aef4b265f5663be2b99acf149612362d4abe",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "cfac5aa7e46f7c8f17ce7657d187c307a456dde5dff089a03437239f9e62fb27",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9277248fc7f7c0554dfe2f4b070a05917713a11d6645b8d23c5f73b374cc4de9",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "15cf9ce560f3239fbe26956fbcc269c9bc6eb1ba9fbaad8985a6bf407ffcea66",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "5a81afc9662af5cf29fd70879cda78d79cb16e856f0305c96986c3b1b8e67717",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "bf22bbf6dcc2d0dabbb737ecc323990c89aadfb582193e0cafabe430672950dd",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs": "f9df4990f3381e6ed44d6d9878550969bb9f3b370883d4cb53c474fb79c2313f",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_selected_initialization.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_compound_maps.rs": null
+  },
+  "accepted_round": 48,
+  "accepted_compiler_fingerprint": "ecc417a8e887b1bac94af3a6b70e447b989edbc1d620668208c25f4cd6847021",
+  "accepted_scores": {
+    "optimization": 9.401799375716326,
+    "holdout": 24.666190246754944
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-48/ordered-product-epilogues/ordered-product-epilogues-driver",
+  "accepted_driver_sha256": "420a7d599f580d491924fae887ebf266441b4ccfcdbf6c5b36b7d8526ac5538d",
+  "formal_history_entries": 50,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "versions": {
+    "ir": 417,
+    "work": 157,
+    "abi": 48
+  },
+  "scope": "General source-proved nested conditional-map domains and selected-only scratch. Source CFG, fixed geometry, immutable views and current exclusive banks only. No benchmark names/dimensions, port/input/arithmetic/C/limits/tolerance/cache/timing-boundary changes.",
+  "profiling_basis": {
+    "optimization_only": true,
+    "sources": [
+      "round-48-cpu-telemetry.json",
+      "round-48-runtime-telemetry.json",
+      "round-49-optimization.json",
+      "training-experiments/selected-scratch-initialization-formal.json"
+    ],
+    "gramschmidt_generated_self_percent": 87.45141588006663,
+    "durbin_generated_self_percent": 53.68512865242042,
+    "previous_candidate": "Round49 source9b47efc19ead56efac0ef027cd6c521d380820fc627b537d455544bcf02d2a78 was not promoted: optimization9.4153094154071 was not strictly below9.401799375716326. No exact retry. Its optimization-only evidence showed Gram-Schmidt raw1.11698x faster, with other regressions retained. Holdout does not inform this candidate.",
+    "source_finding": "Existing one-axis single-branch masks cannot union nested active alternatives or intersect independent row/column restrictions. Durbin therefore evaluates a complete40-cell update each of39 coefficients; R evaluates all30 columns at every pivot.",
+    "structural_body_counts": {
+      "durbin": {
+        "accepted48": 1560,
+        "compound": 819
+      },
+      "gramschmidt_R": {
+        "accepted48": 900,
+        "compound": 465
+      }
+    },
+    "limit": "Counts are derived from unchanged source and fixed inputs, not measured memory traffic, an instruction count or a speedup forecast."
+  },
+  "physical_work_removed": [
+    "Derive a bounded row/column trichotomy truth table from original CFG paths. Skip a coordinate bucket only if all reached work is total, effect-free and yields the exact same-cell identity from one consistent immutable source bank. Unknown/fallible paths remain active.",
+    "Factor the conservative active table into Cartesian axis sets (Lt,Eq,Le,Gt,Ne,Ge,All) with at most one original captured U64 bound per axis. Reject inconsistent bounds, identity bases, cycles or nonfactorable active regions; preserve old narrower proof/fallback.",
+    "Use source-ordered selected row/column coordinates for evaluation and publication. Apply compound proof only if it strictly refines the existing single-axis mask, or adds a proper domain where no single mask was available. Preserve old single-mask emission for equivalent domains.",
+    "Retain original branches for compound domains that span multiple active alternatives (Durbin Lt andEq); force an existing single-mask edge only when the compound domain independently implies it.",
+    "Reuse the qualified49 selected-only initialization mechanism as part of the materially different compound-domain implementation: same-bank selected publication skips dead complement initialization, different-bank complete publication retains it. Raw partial scratch must grant no full initialized-output certificate."
+  ],
+  "implementation": [
+    "Private nonserialized domain proofs rederived from current source Plan; no wire mask or metadata authority. Maximum512 original body blocks and nine relation buckets bound compile-time analysis; no new helper/ABI/root-frame layout.",
+    "Reuse shared checked numeric map/reduction DAG emission, immutable source views, exact spans/capacity/current bank/owner guards, source arithmetic order, complete fees/admission/caps and checked private scratch failure boundary.",
+    "Source evaluation and selected publication share one injective selected-coordinate mapping in original column-outer/row-inner order. No reads of uninitialized complement; Frame.next zero on skipped initialization, full count only when initialized.",
+    "Separate emission ablations for compound domains, selected scratch initialization, and all masked maps. Record actual compound constraints and guarded-copy sites descriptively in checked Object diagnostics. IR417/work157/ABI48."
+  ],
+  "required_qualification": [
+    "Original/decoded private proofs and actual Objects: unchanged Durbin derives a prefix domain; R derives rowEq andcolumnGe; Q/A retain original single-mask routes. Ablation retains old source selection. Forged source bindings/wire domain fields decline.",
+    "Independent expected-value checks across nested prefix/suffix/Ne unions, row/column intersections with independent captured bounds, reversed operands/identity polarity, extreme0/MAX bounds, empty selections, vector orientations and rectangular shapes. Nonfactorable unions, different identity bases/bounds and fallible prefixes must decline conservatively without hiding failures.",
+    "Default versus no-compound, full-initialization and dense variants preserve exact U64/F64 bits including NaNs/signed zero/subnormals, old-vector reversed reads, repeated maps, same/different identity banks, prior results, failure atomicity and cleanup/retry.",
+    "All prior49 initialization/single-mask checks, finite/missing/zero/spent logical and physical caps, malformed images/loans/bindings, maintained broad scalar/compression/numeric regressions and both features; all30 unchanged original/decoded/restored finite C cases.",
+    "Independently inspect actual generated code and completion/publication guards. Structural selected-body counts and Object inventories must demonstrate additional work removed versus rejected49; static footprint growth and every regression remain."
+  ],
+  "untimed_gate": "Optimization15 only, all17002 finite C liveouts, actual checked Objects, source work/comparison nondecreasing and every other execution counter (including visits) identical to accepted48; no padding or fictitious visits.",
+  "training_probe": {
+    "actors": [
+      "accepted48",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "Exactly one prospective fresh-process probe per fully qualified materially changed fingerprint. Raw equal-weight GM accepted48/candidate medians must exceed1; retain all samples/regressions, no retries or exclusions."
+  },
+  "formal_acceptance": "After full qualification, selected probe, clean committed/pushed/frozen source+driver: one900-observation run and29482 finite liveouts, immutable history append. Promote only if optimization15 kernel Mech/C is strictly below9.401799375716326. Holdout independently reported; cannot veto/select/diagnose/tune/trigger rollback or retry.",
+  "restoration": "If unselected or not promoted, preserve all observations/source snapshots, then restore every planned source path exactly from source_parent and stage deletions before fingerprint verification. Accepted48 fingerprint must be exact. Commit/push only PR1001 branch.",
+  "performance_observations": 0
+}
