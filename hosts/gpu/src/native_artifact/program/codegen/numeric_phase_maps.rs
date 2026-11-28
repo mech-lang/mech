@@ -35,6 +35,7 @@ pub(super) fn emit(
     masked_maps: bool,
     selective_initialization: bool,
     compound_domains: bool,
+    reuse: &mut super::numeric_map::read_reuse::Reuse,
     miss: Block,
 ) -> Result<MapEmission, NativeCompileError> {
     let source = &replacement.source;
@@ -199,6 +200,7 @@ pub(super) fn emit(
         Some((scratch, capacity)),
         selection.as_ref(),
         whole_output_initialized,
+        reuse,
         miss,
     )?;
     // The complete checked map succeeded. No fallible source operation or

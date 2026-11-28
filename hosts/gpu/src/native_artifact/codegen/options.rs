@@ -60,6 +60,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericMatrixArithmetic,
     /// Share right loads and loop control across independent ordered product rows.
     ProductRowPairs,
+    /// Reuse a dominating successful immutable matrix read in one map iteration.
+    RepeatedMatrixReads,
     /// Fuse source-closed cell expressions into ordered product accumulators.
     ProductEpilogues,
     /// Evaluate nonidentity matrix regions through the original checked scratch DAG.

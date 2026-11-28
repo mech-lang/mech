@@ -1,5 +1,7 @@
 //! A checked scalar DAG inside a native immutable-source collection loop.
 use super::hooks::Hooks;
+#[path = "numeric_map_read_reuse.rs"]
+pub(super) mod read_reuse;
 #[path = "numeric_map_selection.rs"]
 pub(super) mod selection;
 use crate::native_artifact::NativeCompileError;
@@ -23,6 +25,7 @@ pub(in crate::native_artifact) fn emit_entry(
     hooks: &Hooks,
     region: &Region,
     plan: &Plan,
+    reuse_enabled: bool,
     counter_slot: usize,
     exit: Block,
     error: Block,
@@ -87,7 +90,10 @@ pub(in crate::native_artifact) fn emit_entry(
     let settle = b.create_block();
     b.append_block_param(miss, types::I64);
     b.append_block_param(settle, types::I64);
-    emit(b, frame, region, plan, &captures, complete, miss, malformed)?;
+    let mut reuse = read_reuse::Reuse::new(reuse_enabled);
+    emit(
+        b, frame, region, plan, &captures, &mut reuse, complete, miss, malformed,
+    )?;
     b.switch_to_block(complete);
     b.ins().jump(settle, &[zero.into()]);
     b.switch_to_block(miss);
@@ -141,12 +147,13 @@ pub(super) fn emit(
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    reuse: &mut read_reuse::Reuse,
     complete: Block,
     miss: Block,
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
     emit_with_selection(
-        b, frame, region, plan, captures, None, None, complete, miss, malformed,
+        b, frame, region, plan, captures, None, None, reuse, complete, miss, malformed,
     )
 }
 pub(super) fn emit_with_selection(
@@ -157,6 +164,7 @@ pub(super) fn emit_with_selection(
     captures: &BTreeMap<u32, Value>,
     selection: Option<&selection::Selection>,
     whole_output_initialized: Option<Value>,
+    reuse: &mut read_reuse::Reuse,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -419,6 +427,7 @@ pub(super) fn emit_with_selection(
         as usize]
         .as_ref()
         .latch();
+    let mut read_cache = read_reuse::Cache::default();
     for &site in &region.body {
         b.switch_to_block(source_blocks[&site]);
         if let Some(child) = region.nested.iter().find(|r| r.source.entry == site) {
@@ -447,6 +456,7 @@ pub(super) fn emit_with_selection(
                 last,
                 &views,
                 &captures,
+                reuse,
                 index_miss,
             )?;
             b.def_var(words[&child.output(plan).get()], value);
@@ -461,7 +471,20 @@ pub(super) fn emit_with_selection(
             continue;
         }
         if let Some(read) = region.reads.iter().find(|r| r.site == site) {
-            let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
+            let cached = reuse
+                .enabled
+                .then(|| read_cache.lookup(read, region, plan))
+                .flatten();
+            let value = if let Some((first, value)) = cached {
+                reuse.sites.push((region.header, first, read.site));
+                value
+            } else {
+                let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
+                if reuse.enabled {
+                    read_cache.remember(read, value);
+                }
+                value
+            };
             b.def_var(words[&read.output], value);
         } else {
             match plan.blocks()[site as usize].action() {

@@ -1,0 +1,219 @@
+{
+  "schema": "mech.polybench.immutable-read-emission-refinement.v1",
+  "created_at": "2026-11-28T08:18:22.457658+00:00",
+  "before_any_performance_sample": true,
+  "compiler_fingerprint": "5a4c883e55572c62a893331585ad24e7d130e683446fc1ce93469f8712472090",
+  "source_unchanged_since_qualification": true,
+  "finding": "The accepted backend already combines the two identical raw value loads, as shown by a single reached load and same-register square. It retains duplicate success checks. Source-level successful-read reuse removes those guard/control operations, not another matrix-data load.",
+  "actual_object_path_audit": {
+    "accepted51": {
+      "instructions": 22,
+      "word_loads": 1,
+      "source_register_square": "fmul\td1, d1, d1",
+      "path": [
+        {
+          "offset": "0x3598",
+          "instruction": "str\tx23, [sp, #21824]"
+        },
+        {
+          "offset": "0x359c",
+          "instruction": "add\tx10, x3, x7"
+        },
+        {
+          "offset": "0x35a0",
+          "instruction": "sub\tx10, x10, #1"
+        },
+        {
+          "offset": "0x35a4",
+          "instruction": "cmp\tx10, #20"
+        },
+        {
+          "offset": "0x35a8",
+          "instruction": "cset\tx12, lo"
+        },
+        {
+          "offset": "0x35ac",
+          "instruction": "sub\tx11, x6, #1"
+        },
+        {
+          "offset": "0x35b0",
+          "instruction": "cmp\tx11, #30"
+        },
+        {
+          "offset": "0x35b4",
+          "instruction": "cset\tx13, lo"
+        },
+        {
+          "offset": "0x35b8",
+          "instruction": "and\tw12, w12, w13"
+        },
+        {
+          "offset": "0x35bc",
+          "instruction": "uxtb\tw13, w12"
+        },
+        {
+          "offset": "0x35c0",
+          "instruction": "cbnz\tx13, 0x35cc <_mech_canonical_program_entry_v1_numeric_5+0x35cc>"
+        },
+        {
+          "offset": "0x35cc",
+          "instruction": "madd\tx10, x10, x28, x11"
+        },
+        {
+          "offset": "0x35d0",
+          "instruction": "ldr\tx10, [x0, x10, lsl #3]"
+        },
+        {
+          "offset": "0x35d4",
+          "instruction": "uxtb\tw11, w12"
+        },
+        {
+          "offset": "0x35d8",
+          "instruction": "cbnz\tx11, 0x3708 <_mech_canonical_program_entry_v1_numeric_5+0x3708>"
+        },
+        {
+          "offset": "0x3708",
+          "instruction": "add\tx7, x7, #1"
+        },
+        {
+          "offset": "0x370c",
+          "instruction": "fmov\td0, x5"
+        },
+        {
+          "offset": "0x3710",
+          "instruction": "fmov\td1, x10"
+        },
+        {
+          "offset": "0x3714",
+          "instruction": "fmul\td1, d1, d1"
+        },
+        {
+          "offset": "0x3718",
+          "instruction": "fadd\td0, d0, d1"
+        },
+        {
+          "offset": "0x371c",
+          "instruction": "mov.d\tx5, v0[0]"
+        },
+        {
+          "offset": "0x3720",
+          "instruction": "b\t0xad8 <_mech_canonical_program_entry_v1_numeric_5+0xad8>"
+        }
+      ]
+    },
+    "candidate": {
+      "instructions": 17,
+      "word_loads": 1,
+      "source_register_square": "fmul\td19, d19, d19",
+      "path": [
+        {
+          "offset": "0x35c4",
+          "instruction": "str\tx24, [sp, #21752]"
+        },
+        {
+          "offset": "0x35c8",
+          "instruction": "str\tx21, [sp, #21824]"
+        },
+        {
+          "offset": "0x35cc",
+          "instruction": "add\tx11, x9, x2"
+        },
+        {
+          "offset": "0x35d0",
+          "instruction": "sub\tx11, x11, #1"
+        },
+        {
+          "offset": "0x35d4",
+          "instruction": "sub\tx12, x5, #1"
+        },
+        {
+          "offset": "0x35d8",
+          "instruction": "cmp\tx11, #20"
+        },
+        {
+          "offset": "0x35dc",
+          "instruction": "ccmp\tx12, x28, #2, lo"
+        },
+        {
+          "offset": "0x35e0",
+          "instruction": "b.lo\t0x3710 <_mech_canonical_program_entry_v1_numeric_5+0x3710>"
+        },
+        {
+          "offset": "0x3710",
+          "instruction": "madd\tx14, x11, x28, x12"
+        },
+        {
+          "offset": "0x3714",
+          "instruction": "ldr\tx14, [x0, x14, lsl #3]"
+        },
+        {
+          "offset": "0x3718",
+          "instruction": "add\tx2, x2, #1"
+        },
+        {
+          "offset": "0x371c",
+          "instruction": "fmov\td18, x3"
+        },
+        {
+          "offset": "0x3720",
+          "instruction": "fmov\td19, x14"
+        },
+        {
+          "offset": "0x3724",
+          "instruction": "fmul\td19, d19, d19"
+        },
+        {
+          "offset": "0x3728",
+          "instruction": "fadd\td18, d18, d19"
+        },
+        {
+          "offset": "0x372c",
+          "instruction": "mov.d\tx3, v18[0]"
+        },
+        {
+          "offset": "0x3730",
+          "instruction": "b\t0xad8 <_mech_canonical_program_entry_v1_numeric_5+0xad8>"
+        }
+      ]
+    }
+  },
+  "scope": "Successful norm-body path only; both loop-header instructions excluded equally. Static instructions on an identified reached path, not hardware-retired counts or measured memory traffic.",
+  "whole_object_tradeoffs": {
+    "gramschmidt_bytes": [
+      52992,
+      53308
+    ],
+    "gramschmidt_static_load_sites": [
+      3230,
+      3242
+    ],
+    "cholesky_bytes": [
+      19944,
+      19896
+    ],
+    "cholesky_static_load_sites": [
+      1060,
+      1066
+    ],
+    "interpretation": "Register allocation/cold-code differences and added spill sites remain. They can offset local guard savings; no runtime win is inferred."
+  },
+  "material_work_removed": true,
+  "source_read_pairs": {
+    "gramschmidt": [
+      [
+        22,
+        26,
+        27
+      ]
+    ],
+    "cholesky": [
+      [
+        83,
+        87,
+        88
+      ]
+    ]
+  },
+  "selection_unchanged": "One fully qualified prospective210-observation optimization-only probe; preserve every observation/regression. Formal promotion solely below9.096908651052887x optimization; holdout independent.",
+  "performance_observations": 0
+}
