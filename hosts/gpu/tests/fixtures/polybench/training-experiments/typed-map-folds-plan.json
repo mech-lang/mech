@@ -1,0 +1,84 @@
+{
+  "schema": "mech.polybench.typed-map-folds-plan.v1",
+  "created_at": "2026-11-28T10:02:51.158828+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "2c59edc20818c4120e3d95684dc23ed69702406b",
+  "accepted_round": 53,
+  "accepted_scores": {
+    "optimization": 8.866344202351284,
+    "holdout": 24.816540346717115
+  },
+  "accepted_compiler_fingerprint": "e6af8964dfca9701e21ddf8fb1ca83a6df1a242d25db6e25b2720ab761f2fdbd",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-56/ordered-product-four-rows/ordered-product-four-rows-driver",
+  "accepted_driver_sha256": "c750544edd54907a4f4e0d4bb1c370165550d317d5a8eb0f97ca80e8c05551ad",
+  "formal_history_entries": 54,
+  "formal_history_next_index": 54,
+  "private_trial": 58,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/typed_map_folds.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "ec66b500fae5b27136e5393eef6a944f01505b581755f6e39f8da53cb9456ba9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "a5ab11fca87b245dfb96f7a966d60d7bf089b569fce7db1188a454208254d702",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "e424036f3d01ccb1eb7d277033f061c91aa705880e54b9e356e3eb85b6720b9f",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "f15acf83b3fd3fb945f33d9468e0c82d28345bf2b5dff9c05549278da46e8f91",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "1bd2c90d3c25ab4b96d206bd0739571b922e5f14a8770666799a1786d3644643",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "01f5a6ec1103dc5406e296c4b9f172cf5da84bb8ef8820acb19761f7f1cd20d7",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "6b48d9651f0666aceb1d54355e87290a7f20d5b621b98165d168e31ec8dabd78",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "618e48fef45d9bc971c126fafc5add9abb0fc095afbe494668c0c14ab7c00e0c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/typed_map_folds.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs": "df9b1f95161c796c553ab6d728b5f6ceca5e7c094571d9db0e2af1f947201c0b"
+  },
+  "versions": {
+    "ir": 423,
+    "work": 157,
+    "abi": 48
+  },
+  "profiling_basis": [
+    "accepted53-phase-profile.json: same sampled PID numeric_5 all19464 bytes and numeric_4 all7608 bytes identical to genuine accepted53 Object. Caller four-byte ordinary BL relocation resolves to the same captured numeric function; every other byte identical.",
+    "Gram-Schmidt generated code83.4536% of1801 execution samples; Durbin53.1618% of2293. Their actual ordered fold loops bridge the running sum from an integer register into FP and back on every term. Only optimization-set evidence selected this mechanism."
+  ],
+  "transformation": "Use a compiler-local F64 SSA variable for source-proved ordered F64 map-reduction accumulators in standalone maps, phase folds and nested folds. Seed original +0.0, bitcast each original raw-word term toF64 and call shared strict F64Add in original order, then bitcast final accumulator toI64 only at existing raw-word frame/ABI store. Preserve all map scalar words, input conversions, guards and original stack-frame boundaries. Private TypedMapFolds emission ablation retains original I64 fold variable and word primitive.",
+  "invariants": [
+    "No source/program name/MINI dimension rules; all30 sources, inputs, C flags/binaries, tolerance, limits, timing/cache boundaries and split unchanged.",
+    "No reassociation/FMA, split partial sums, horizontal reduction, arithmetic cast or NaN canonicalization. Preserve +0/-0/subnormal/nonfinite bit behavior against old-word JIT and first failures.",
+    "No runtime frame/helper/ABI/state/ownership/buffer/admission/fallback/publication/accounting change; exact existing checked scratch and raw-word fold boundary remain.",
+    "All execution counters exactly accepted53, including source work/comparisons and physical visits. No accounting exceptions.",
+    "Direct efficient Bool/U64/I64/F64 scalar paths and scalar/compression specialization remain. Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles. IR423/work157/ABI48."
+  ],
+  "qualification": "Focused exact-word old-word/default comparisons across standalone/phase/nested folds, original/decoded/restored public JIT, ordered cancellation/+0/-0/subnormal/nonfinite payloads, bounds/empty/error/alias/cleanup/retry and caps; actual runtime-shaped SSA/Object evidence for F64 sum loop transport. Maintained broad matrix/numeric/scalar/compression/type/image/source/protocol checks, both features, all30 finite C cases. Preserve every source revision/failure.",
+  "untimed_gate": "All17002 optimization15 finite C liveouts and exact equality of every execution counter against accepted53. Actual numeric Objects must remove the per-term running-sum FP/GPR bridges, retain ordered fadd/fmul and no FMA. Report actual code/instruction/stack changes without treating static counts as speedup predictions.",
+  "training_probe": {
+    "actors": [
+      "accepted53",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fully qualified fresh-process prospective probe per materially changed fingerprint. Select iff raw equal-weight GM accepted53/candidate median runtime speedup>1; preserve all210 observations and regressions, no retries/exclusions."
+  },
+  "formal_acceptance": "If selected and qualified, commit/push clean frozen exact source+driver before one900-observation formal run,29482 finite C liveouts, immutable history index54. Promote solely optimization15 Mech/C strictly below8.866344202351284. Holdout independently reported; never select/veto/diagnose/tune/rollback/retry from holdout.",
+  "prior_related_work": "Rejected round41 direct map-SSA composition still declared the fold variable I64 and used word F64Add; this candidate changes accumulator register class while retaining the original frame adapter. Rejected bounds/read reuse work is not repeated. No prior typed-F64 fold fingerprint or timing.",
+  "performance_observations": 0,
+  "implementation": {
+    "transformation": "Use a compiler-local F64 SSA variable for source-proved ordered F64 map-reduction accumulators in standalone maps, phase folds and nested folds. Seed original +0.0, bitcast each original raw-word term toF64 and call shared strict F64Add in original order, then bitcast final accumulator toI64 only at existing raw-word frame/ABI store. Preserve all map scalar words, input conversions, guards and original stack-frame boundaries. Private TypedMapFolds emission ablation retains original I64 fold variable and word primitive.",
+    "invariants": [
+      "No source/program name/MINI dimension rules; all30 sources, inputs, C flags/binaries, tolerance, limits, timing/cache boundaries and split unchanged.",
+      "No reassociation/FMA, split partial sums, horizontal reduction, arithmetic cast or NaN canonicalization. Preserve +0/-0/subnormal/nonfinite bit behavior against old-word JIT and first failures.",
+      "No runtime frame/helper/ABI/state/ownership/buffer/admission/fallback/publication/accounting change; exact existing checked scratch and raw-word fold boundary remain.",
+      "All execution counters exactly accepted53, including source work/comparisons and physical visits. No accounting exceptions.",
+      "Direct efficient Bool/U64/I64/F64 scalar paths and scalar/compression specialization remain. Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles. IR423/work157/ABI48."
+    ]
+  }
+}
