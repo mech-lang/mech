@@ -1,0 +1,50 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T12:22:19.557950+00:00",
+  "name": "transpose-tiles",
+  "source_parent": "6a0d64530e2e28a3faa9cb4b1c44a28e35bb5518",
+  "accepted_round": 56,
+  "accepted_scores": {
+    "optimization": 8.175763531282765,
+    "holdout": 23.016525775215847
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-62/ordered-map-dots/ordered-map-dots-driver",
+  "accepted_driver_sha256": "88268fb43825aa4cdb24deec72d03dbbe4fbd6d9544838a7f2e5269951ecbaaa",
+  "formal_history_index": 57,
+  "versions": {
+    "ir": 426,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+  ],
+  "profiling_basis": "training-experiments/accepted56-profile.json; same-PID MVT code0x215c..0x2184 has two dynamic divisions per transposed cell.373/2258 samples at three exact loop PCs. Existing transpose-view loans were unselected and are not retried.",
+  "transformation": "Emit a materialized exact-bit transpose with dynamic row/column induction and two-by-two integer SIMD tiles. Load two adjacent source words from each of two rows, interleave their lanes into two adjacent output pairs, and use checked-by-geometry odd row/column scalar tails. Empty shapes branch before access. Share maintained transpose emitter with generator lowering. Retain old ordinal loop for a private binary emission ablation.",
+  "invariants": [
+    "Unchanged30 sources, inputs, limits, C binaries/flags, MINI dataset, timing/cache/validation boundaries and15/15 split. No benchmark identifiers or fixed benchmark dimensions in compiler rules.",
+    "Current runtime transpose loan, source-derived shape, product overflow, full aligned disjoint spans, exact owner/epoch/context, source fees/work/comparisons/visits, zeroed private allocation, ordinary decline/fallback, finish/output publication all remain. No new helper/frame/ABI/loan/cache/owner/buffer or allocation.",
+    "Every copied word preserves signed zero, subnormal, infinity, signaling/quiet NaN payloads exactly. Integer SIMD only; no FP arithmetic or source evaluation reordering. Every vector access lies entirely within admitted real cells. Odd tails and empty axes never access padding or null spans.",
+    "All optimization15 execution counters exactly accepted56. Cranelift sole Mech code generator; direct scalar/compression paths unchanged. No Rust source edits during builds/tests/profiles/timing.",
+    "Original/decoded/restored exact outputs, aliases, finite caps and physical refusal/cleanup/retry remain covered. No static or sampled speedup claim."
+  ],
+  "qualification": "Direct dynamic Cranelift kernel differential tests across zero/null, singleton, odd/even, tall/wide dimensions, exact all-bit patterns and canaries; SSA/no-division and emitted SIMD evidence, complete source original/decoded/restored runtime equality and counters versus ordinal ablation. Existing broad numeric/matrix/scalar/compression/type/image/protocol/both-feature/all30 C qualification. All attempts preserved.",
+  "untimed_gate": "17002 optimization15 finite C outputs, exact accepted56 counters, genuine Objects plus emitted loops verify materialized transpose replacement; compare code/instruction/stack with accepted56. No holdout diagnosis.",
+  "training_probe": {
+    "actors": [
+      "accepted56",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fresh-process prospective probe after full qualification. Select iff equal-weight geometric mean accepted56/candidate median raw runtime>1. Retain every observation and regression; no retry/exclusion."
+  },
+  "formal_acceptance": "If selected commit/push clean frozen source+driver; one900-observation formal run with29482 finite C outputs and immutable history57. Promote iff optimization15 Mech/C<8.175763531282765. Holdout reported independently, never select/veto/diagnose/tune/rollback/retry. Report raw Mech and original reference/C drift separately.",
+  "performance_observations": 0
+}
