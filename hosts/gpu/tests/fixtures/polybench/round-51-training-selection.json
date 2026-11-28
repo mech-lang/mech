@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T07:31:07.195874+00:00",
+  "compiler_fingerprint": "c58f49cf83a22b0d2dfbd0d138a8a338b9cd5dde0199cbddd7ffebf7dc3a2800",
+  "driver_sha256": "bd9316769f90230c9bb6e45c74956d20fe6fed2ec6089682fa084696615e0bac",
+  "source_parent": "2d734dddc5a149ca4d525fa2d86f496d885717ab",
+  "policy_sha256": "ba68b824f6d30370be4a79f3f1596eda297b72632e45d2593692e95e18cd65d7",
+  "adopted_selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted50": 1.044289410699357,
+    "regressions_over_five_percent": 1,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted50/candidate medians on optimization15; one prospective fresh-process probe, all samples and regressions retained.",
+  "formal_gate": "After complete qualification, selected probe and clean committed/pushed/frozen source+driver: one900-observation formal run and29482 finite liveouts, immutable history append. Promote only optimization15 kernel Mech/C strictly below9.243502020687457. Holdout independently reported and cannot veto/select/diagnose/tune/trigger rollback or retry. Next formal history index is51; trial52 is distinct from unselected trial51."
+}
