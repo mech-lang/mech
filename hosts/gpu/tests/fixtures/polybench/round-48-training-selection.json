@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T03:58:26.103008+00:00",
+  "compiler_fingerprint": "ecc417a8e887b1bac94af3a6b70e447b989edbc1d620668208c25f4cd6847021",
+  "driver_sha256": "420a7d599f580d491924fae887ebf266441b4ccfcdbf6c5b36b7d8526ac5538d",
+  "source_parent": "1ae6b7808a7924bf8c209072ebcef4793704e591",
+  "policy_sha256": "8af7f00203080aa159c6bdfd5ec1b94b64b6d41b424ab03f28d20de1d84b8b4a",
+  "adopted_selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted47": 1.0093501643084763,
+    "regressions_over_five_percent": 1,
+    "all_visits_match": false,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted47/candidate medians on optimization15; one prospective fresh-process probe, all samples and regressions retained.",
+  "formal_gate": "Only optimization15 kernel Mech/C geometric mean strictly below9.575943659594117 promotes. Holdout is reported independently and cannot veto, select, tune or trigger rollback. Selected source must be qualified, committed, pushed, clean and frozen before one900-observation formal evaluation; append immutable history."
+}
