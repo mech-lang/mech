@@ -1,0 +1,341 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v3",
+  "label": "round-61-ordered-dot-regression-recovery",
+  "compiler_commit": "dbc84c2e495fed3e488882cd16b63a4792cc1fd5",
+  "compiler_fingerprint": "e78ac104271e1d225d68c22bdb427320e2aed736a7561e2dbce270cf37584c1e",
+  "driver_sha256": "333df33f5cb8e15c0f2a8455b10d9cac945c2c39b113469df70746226ef12022",
+  "frozen_candidate_sha256": "55f2a12a39e8027755dfc5821f43ec05a110b7c787b3ba76b48e11ed8e88b961",
+  "native_typed_ir_version": 436,
+  "native_work_policy_version": 157,
+  "native_abi_version": 48,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "corpus_liveouts": 29482
+  },
+  "checks": [
+    {
+      "name": "shared-constructor-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "baselib,compiler,serde",
+        "--lib",
+        "--",
+        "composite_constructor",
+        "prepared_composite",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.32698879204690456,
+      "passed_tests": [
+        11
+      ]
+    },
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.27485554199665785,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3362975833006203,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "closed_constructor",
+        "frame_recipe",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3372055827639997,
+      "passed_tests": [
+        31,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 131.19930216670036,
+      "passed_tests": [
+        492
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 14.816986958030611,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 32.83173604076728,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.22293970780447125,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "ordered_product_frame_preserves_product_and_scalar_prefixes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.21243600035086274,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.481297332793474,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 10.098739416804165,
+      "passed_tests": []
+    }
+  ],
+  "broad_selected_checks": 782,
+  "focused_selected_checks": 9,
+  "restored_corpus": {
+    "programs": 30,
+    "forms": 60,
+    "finite_liveouts": 58964
+  },
+  "both_feature_checks_passed": true,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "321843304f9578d55c59493170b5db9d373823837d0187a3780a727ddc68486a",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": "8570ae402f590f28780840493949d42c86241855b2b220588a5876c90b7af2a2",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": "8f513f82389265e698d200bef1a4c94939a6ce08a8c1dac8b20f5794b54a2c6e"
+  },
+  "training_qualification_sha256": "5da0f70c09b93c92513eebfbd235269d8759c0cf028d2820afc8d30a703edc51",
+  "training_selection_sha256": "d0496817986a5d34d54c68588156cd3d1850d9a77d1f5ca4c666e6547a8d19db",
+  "training_probe_sha256": "4aeb5fe0df9700bbc3e656f9909f85f7ee7549903f5cf1eb2857a0234202a100",
+  "route_census_sha256": "91d08bd8133f3fd102f6cbbee81b6719cdebbf2e87a7b2ff2abd499366942924",
+  "source_work_comparison_never_reduced": true,
+  "physical_visits": "Every execution counter exactly matches accepted59 in the untimed optimization gate and all210 probe observations. No visit or source bill reduction is proposed. All source F64 operations and rounding remain; complete point-read admission and escaping-result classification precede raw-word export, with exact original lexical prefix replay at the same current state on nonfinite results.",
+  "invariants": [
+    "Unchanged30 idiomatic programs,inputs,C binaries/flags,arithmetic/tolerance,finite limits,split,cache,timing and objective. No benchmark-name or MINI-extent compiler rules.",
+    "Cranelift sole Mech generator; reuse current numeric loans, source facts, scalar vocabulary/F64 emission, native memory flags, word bank and existing store/error/ownership/replay machinery. No helper/frame/ABI/image authority/cache/per-operation allocation. Efficient Bool/U64/I64/F64 scalar and compression paths remain.",
+    "Require exact unique produced scalar definitions, single-entry straight-line source CFG, admitted pure operations, source-selected F64 cell reads, same current view identities, no effect/write/append/reduction/unsupported control or loop/phase/debit boundary inside. External reads determine exact exported words; keep every supported source operation/order and all original source fees.",
+    "Every checked U64 arithmetic subexpression and each independent one-based row/column bound is admitted before any speculative load. Current full geometry, owner/epoch/span/capacity admission remains unchanged. No global readonly, alignment, alias or cross-iteration memory claims.",
+    "Scalar F64 tree/operands/rounding unchanged, no reassociation,FMA,reciprocal substitute or independent SIMD across dependent cells. Pure admitted FP operations propagate used NaNs. Guard all escaping F64 outputs for nonfinite results before word-bank exports; decline to original checked prefix at the same current state, preserving exact payloads and first source errors.",
+    "No effect or scalar export precedes successful prefix admission/result guard. A failed prefix replays only its original lexical source at current state; cannot rewind any prior in-place updates. Existing no-op/COW first-change admission, aliases, atomic external output, finite denial, cleanup and retry remain.",
+    "All execution counters must exactly match accepted59. No source step/visit/bill reduction or padding. No Rust edits during build/test/profile/timing.",
+    "Closest-parity-first active target is Seidel2D until accepted<=1.0x C. Retain every attained optimization parity win; current set empty. Optimization only for diagnosis/selection; holdout independently reported and cannot tune/veto/trigger retry.",
+    "Cranelift remains sole Mech generator; source-derived compiler cost rule has no benchmark names, MINI dimensions or runtime-value assumptions. No per-op runtime allocation, new helper/frame/ABI/cache or reassociation/FMA/horizontal/partial reductions. Preserve all exact counters/resources/errors/source boundaries.",
+    "Seidel genuine emitted native functions and code/stack must match exact round60 compiler before timing. Its one9-read single-export prefix remains. Nussinov raw-load-only prefixes must disappear via the general no-work-removed rule, with ordinary source checks restored. New stream loop tests cover empty/null, odd/even lengths, negative/nonunit/zero strides, independent scalar/SIMD outputs and cancellation-sensitive exact bits. No source edits while any build/test/profile/timing lives.",
+    "The single prospective optimization15 probe still requires aggregate raw speedup>1 and active Seidel raw speedup>1 versus accepted59, exact counters, every observation/regression retained. No repeated probe of an observed fingerprint. Holdout cannot select/veto/tune/rollback."
+  ],
+  "formal_observations": 900,
+  "audit_sha256": "3abf4038dba20a1795c383258c75da32dfee60265b3e609899e4abc56862fdc0",
+  "selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "promotion": "Optimization15 strictly below accepted59 only; holdout independently reported and cannot veto/select/tune/trigger rollback/retry."
+}
