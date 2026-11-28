@@ -2925,3 +2925,9 @@ One closed nonescaping left transpose is represented by logical geometry and rea
 One210-observation prospective optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history58. Optimization8.1449510716439661x C; independent holdout24.7055755292320889x C. V4 optimization-only decision: accepted. Raw Mech and C/reference drift are separate in round-58-audit.json. All measurements/regressions retained; no fingerprint retry/exclusion. Compiler promoted to accepted58.
 
 [Qualification](round-58-qualification.json) · [Audit](round-58-audit.json) · [Progress](round-58-progress.json) · [Complete experiment](training-experiments/transpose-epilogue-views-formal.json)
+
+Accepted58 optimization-only CPU profiles
+
+Owned Durbin/Gram-Schmidt processes completed with finite C outputs and exact frozen counters. Their generated self-time fractions are39.66%/74.71%. Complete sampled numeric code is byte-identical to genuine accepted58 Objects; caller BL relocations resolve to same-PID captured numeric functions. Selected map bodies still execute repeated checked selector and word-transport work. This motivates source-closed typed affine cell kernels within the existing scratch/admission/publication boundary. No timing/history change or speedup forecast.
+
+[CPU telemetry](round-58-cpu-telemetry.json) · [Complete profile evidence](training-experiments/accepted58-phase-profile.json)
