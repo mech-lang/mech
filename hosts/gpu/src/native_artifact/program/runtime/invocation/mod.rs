@@ -13,7 +13,6 @@ pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
 mod numeric_binary;
-mod numeric_product_epilogues;
 mod numeric_composite;
 mod numeric_exits;
 mod numeric_generator;
@@ -21,6 +20,7 @@ mod numeric_map;
 mod numeric_map_banks;
 mod numeric_phase_reductions;
 mod numeric_prefix;
+mod numeric_product_epilogues;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
@@ -652,7 +652,10 @@ impl Invocation<'_, '_, '_> {
         ) {
             return self.numeric_binary_helper(site, tag, args);
         }
-        if matches!(tag, GlobalHelper::NumericProductPrepare | GlobalHelper::NumericProductFinish) {
+        if matches!(
+            tag,
+            GlobalHelper::NumericProductPrepare | GlobalHelper::NumericProductFinish
+        ) {
             return self.numeric_product_helper(site, tag, args);
         }
         if tag == GlobalHelper::NumericTransposeFinish {
@@ -864,7 +867,9 @@ impl Invocation<'_, '_, '_> {
             ));
         }
         if self.numeric_product.is_some() {
-            return Err(invalid("source visit while product epilogue loan is active"));
+            return Err(invalid(
+                "source visit while product epilogue loan is active",
+            ));
         }
         if self.numeric_binary.is_some() {
             return Err(invalid(

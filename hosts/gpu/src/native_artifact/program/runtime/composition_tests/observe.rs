@@ -17,7 +17,7 @@ type TailBoundary = (
 );
 #[derive(Default, Debug)]
 pub(in crate::native_artifact::program::runtime) struct Counts {
-    pub product_epilogues: Vec<(usize,usize,usize,bool)>,
+    pub product_epilogues: Vec<(usize, usize, usize, bool)>,
     pub tail_entries: Vec<(u64, usize, Option<(usize, u32)>)>,
     pub tail_funding: Vec<(usize, u64, bool, u64)>,
     pub tail_bailouts: Vec<(usize, bool, Option<(usize, u32)>)>,
@@ -889,4 +889,15 @@ pub(super) fn run_with_unused_exit_poison(
     result
 }
 
-pub(in crate::native_artifact::program::runtime) fn product_epilogue(site:usize,nodes:usize,cells:usize,present:bool){COUNTS.with(|c|c.borrow_mut().product_epilogues.push((site,nodes,cells,present)));}
+pub(in crate::native_artifact::program::runtime) fn product_epilogue(
+    site: usize,
+    nodes: usize,
+    cells: usize,
+    present: bool,
+) {
+    COUNTS.with(|c| {
+        c.borrow_mut()
+            .product_epilogues
+            .push((site, nodes, cells, present))
+    });
+}

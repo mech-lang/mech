@@ -20,10 +20,10 @@ pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
 pub(in crate::native_artifact) mod numeric_binary;
-pub(in crate::native_artifact) mod numeric_product_epilogues;
 pub(in crate::native_artifact) mod numeric_generators;
 pub(in crate::native_artifact) mod numeric_phase;
 pub(in crate::native_artifact) mod numeric_prefix;
+pub(in crate::native_artifact) mod numeric_product_epilogues;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod visit_predecessors;
 pub(in crate::native_artifact) mod worker_values;

@@ -1007,7 +1007,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 47);
+    assert_eq!(VERSION, 48);
     // The new synchronous arithmetic loan is separate from the unchanged
     // 144-byte root frame and frozen scalar prefix checked below.
     assert_eq!(
@@ -1629,12 +1629,14 @@ mod admitted_helper_tests;
 
 #[test]
 fn ordered_product_frame_preserves_product_and_scalar_prefixes() {
-    use crate::native_artifact::program::protocol::abi::{NumericBinaryFrame,NumericProductFrame,NumericProductLeaf};
-    assert_eq!(core::mem::size_of::<NumericBinaryFrame>(),80);
-    assert_eq!(core::mem::size_of::<NumericProductLeaf>(),24);
-    assert_eq!(core::mem::size_of::<NumericProductFrame>(),272);
-    assert_eq!(core::mem::align_of::<NumericProductFrame>(),8);
-    assert_eq!(core::mem::offset_of!(NumericProductFrame,product),0);
-    assert_eq!(core::mem::offset_of!(NumericProductFrame,leaves),80);
-    assert_eq!(core::mem::size_of::<Frame>(),144);
+    use crate::native_artifact::program::protocol::abi::{
+        NumericBinaryFrame, NumericProductFrame, NumericProductLeaf,
+    };
+    assert_eq!(core::mem::size_of::<NumericBinaryFrame>(), 80);
+    assert_eq!(core::mem::size_of::<NumericProductLeaf>(), 24);
+    assert_eq!(core::mem::size_of::<NumericProductFrame>(), 272);
+    assert_eq!(core::mem::align_of::<NumericProductFrame>(), 8);
+    assert_eq!(core::mem::offset_of!(NumericProductFrame, product), 0);
+    assert_eq!(core::mem::offset_of!(NumericProductFrame, leaves), 80);
+    assert_eq!(core::mem::size_of::<Frame>(), 144);
 }

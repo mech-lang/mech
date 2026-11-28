@@ -139,6 +139,9 @@ fn numeric_product_epilogues_ordered_bits_broadcasts_empty_axes_actual_banks_fee
             ([1, 3], [3, 1], [1, 1]),
             ([3, 0], [0, 5], [3, 5]),
             ([0, 3], [3, 5], [0, 5]),
+            ([0, 3], [3, 5], [1, 5]),
+            ([0, 3], [3, 5], [1, 1]),
+            ([2, 3], [3, 0], [2, 1]),
             ([2, 3], [3, 0], [2, 0]),
         ] {
             let mode = NativeProgramLimitMode::NoLimits;
@@ -545,6 +548,58 @@ fn numeric_product_epilogues_finite_caps_spent_comparison_physical_denials_clean
                 assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
             }
         }
+        // An empty final domain does not erase the original nonempty
+        // broadcast producer's source resource demand.
+        for (left, right, extra, cap) in [
+            ([0, 3], [3, 5], [1, 5], 0),
+            ([2, 3], [3, 0], [2, 1], 1),
+            ([0, 3], [3, 5], [1, 1], 0),
+        ] {
+            let empty = gemm_args(
+                &artifact,
+                &memory,
+                left,
+                right,
+                extra,
+                &[1.25f64.to_bits()],
+                1.5,
+                1.2,
+            );
+            let mut valid = vec![None; artifact.outputs().len()];
+            let (r, counts) = observe::run(&native, &empty, &mut valid, mode.execution(), &memory);
+            r.unwrap();
+            assert_eq!(counts.product_epilogues.len(), 1);
+            let empty_baseline = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let mut bounded = mode.execution();
+            bounded.library.max_output_elements = Some(cap);
+            for restored in [false, true] {
+                let mut output = valid.clone();
+                let mut reference = valid.clone();
+                let (a, counts) = if restored {
+                    observe::run_restored(&native, &empty, &mut output, bounded, &memory)
+                } else {
+                    observe::run(&native, &empty, &mut output, bounded, &memory)
+                };
+                let b = materialized.evaluate_into(&empty, &mut reference, bounded, &memory);
+                assert!(
+                    a.is_err() && b.is_err(),
+                    "logical producer {extra:?}, cap{cap}: {a:?}/{b:?}"
+                );
+                assert!(counts.product_epilogues.is_empty());
+                assert!(output.iter().zip(&valid).all(|(a, b)| {
+                    a.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(b.as_ref().unwrap())
+                }));
+                drop((output, reference));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    empty_baseline
+                );
+            }
+            drop((valid, empty));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), baseline);
+        }
         let mut spent = mode.execution();
         spent.library.max_comparison_work = Some(full.comparison_work - 1);
         let mut output = prior.clone();
@@ -622,5 +677,262 @@ fn numeric_product_epilogues_finite_caps_spent_comparison_physical_denials_clean
         assert_eq!(contents(&aliases), before);
         drop((args, aliases, prior));
         assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+}
+mod loan_checks {
+    use super::*;
+    use crate::native_artifact::program::protocol::abi::{Frame, Helper, NumericProductFrame};
+    use std::{cell::Cell, ffi::c_void};
+    thread_local! {static ORIGINAL:Cell<Option<Helper>>=const{Cell::new(None)};static CASE:Cell<u8>=const{Cell::new(0)};static CHECKED:Cell<u64>=const{Cell::new(0)};}
+    unsafe extern "C" fn helper(
+        context: *mut c_void,
+        mut site: u64,
+        op: u64,
+        mut a: u64,
+        mut b: u64,
+        mut c: u64,
+        out: *mut u64,
+    ) -> u64 {
+        let case = CASE.with(Cell::get);
+        if op == GlobalHelper::NumericProductPrepare.raw() && case == 19 {
+            a ^= 1;
+        }
+        if op == GlobalHelper::NumericProductFinish.raw() {
+            CHECKED.with(|n| n.set(n.get() + 1));
+            if case == 1 {
+                a = 1;
+            }
+            if case == 2 {
+                b += 1;
+            }
+            if case == 16 {
+                site += 1;
+            }
+            if case == 17 {
+                c = 2;
+            }
+            if case == 21 {
+                c = 1;
+            }
+            if (3..=11).contains(&case) || case == 20 {
+                // Arithmetic has completed. Generated code never observes the
+                // forged pointer/geometry/word; only sealed finish checks do.
+                let frame = unsafe { &mut *(a as *mut NumericProductFrame) };
+                match case {
+                    3 => frame.product.output ^= 1,
+                    4 => frame.product.left ^= 1,
+                    5 => frame.product.right ^= 1,
+                    6 => frame.product.count += 1,
+                    7 => frame.product.columns += 1,
+                    8 => frame.product.inner += 1,
+                    9 => frame.leaves[2].scalar ^= 1,
+                    10 => frame.leaves[4].pointer ^= 1,
+                    11 => frame.leaves[4].mode = 4,
+                    20 => frame.leaves[7].pointer ^= 1,
+                    _ => unreachable!(),
+                }
+            }
+            let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+            match case {
+                12 => invocation.state.control.visits += 1,
+                13 => invocation.state.control.current = Some(u32::MAX),
+                14 => invocation.state.consumed = true,
+                15 => invocation.state.control.previous = None,
+                18 => {
+                    let visits = invocation.state.control.visits;
+                    assert!(invocation.visit(site).is_err());
+                    assert!(
+                        invocation
+                            .helper(site, GlobalHelper::Move.raw(), [0; 3])
+                            .is_err()
+                    );
+                    assert_eq!(invocation.state.control.visits, visits);
+                }
+                _ => {}
+            }
+        }
+        unsafe { ORIGINAL.with(Cell::get).unwrap()(context, site, op, a, b, c, out) }
+    }
+    #[test]
+    fn numeric_product_epilogues_reject_forged_loans_epochs_context_interleaving_and_retry() {
+        let catalog = mech_stdlib::source_catalog();
+        for artifact in artifacts(EXPRESSION) {
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let args = gemm_args(
+                &artifact,
+                &memory,
+                [2, 3],
+                [3, 5],
+                [2, 5],
+                &[1.25f64.to_bits(), (-2.0f64).to_bits()],
+                1.5,
+                1.2,
+            );
+            let aliases = args.clone();
+            let before = contents(&args);
+            let mut prior = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut prior, mode.execution(), &memory)
+                .unwrap();
+            let baseline = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            for case in 0..=21 {
+                CASE.with(|v| v.set(case));
+                CHECKED.with(|v| v.set(0));
+                let mut output = prior.clone();
+                let entry = jit.test_checked_entry();
+                let result = execute(
+                    jit.descriptor(),
+                    |raw: *mut Frame| unsafe {
+                        let old = (*raw).helper;
+                        ORIGINAL.with(|v| v.set(Some(old)));
+                        (*raw).helper = helper;
+                        let status = entry(raw);
+                        (*raw).helper = old;
+                        ORIGINAL.with(|v| v.set(None));
+                        status
+                    },
+                    &args,
+                    &mut output,
+                    mode.execution(),
+                    &memory,
+                );
+                assert_eq!(
+                    result.is_ok(),
+                    case == 0 || case == 18,
+                    "case{case}: {result:?}"
+                );
+                assert_eq!(CHECKED.with(Cell::get), u64::from(case != 19));
+                if result.is_err() {
+                    assert!(output.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                } else {
+                    assert_eq!(output_data(&output), output_data(&prior));
+                }
+                drop(output);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    baseline
+                );
+                let mut retry = prior.clone();
+                let (result, counts) =
+                    observe::run_restored(&jit, &args, &mut retry, mode.execution(), &memory);
+                result.unwrap();
+                assert_eq!(counts.product_epilogues.len(), 1);
+                drop(retry);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    baseline
+                );
+                assert_eq!(contents(&args), before);
+            }
+            assert_eq!(contents(&aliases), before);
+            drop((prior, args, aliases));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+fn corrupt_product_operand(value: &mut serde_json::Value) -> bool {
+    match value {
+        serde_json::Value::Object(fields) => {
+            if let Some(operands) = fields
+                .get_mut("LibraryCall")
+                .and_then(|c| c.get_mut("operands"))
+                .and_then(|v| v.as_array_mut())
+                && operands.len() == 2
+            {
+                operands[0] = (u32::MAX as u64).into();
+                return true;
+            }
+            fields.values_mut().any(corrupt_product_operand)
+        }
+        serde_json::Value::Array(values) => values.iter_mut().any(corrupt_product_operand),
+        _ => false,
+    }
+}
+#[test]
+fn numeric_product_epilogues_rederive_private_recipes_and_scalar_capacity_from_genuine_images() {
+    let catalog = mech_stdlib::source_catalog();
+    let source =
+        "alpha<f64> * (a<[f64]> ** b<[f64]>) + beta<f64> * c<[f64]> + gamma<f64> * d<[f64]>\n";
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let m = jit.descriptor().metadata();
+        let original = (0..m.plan.blocks().len())
+            .filter_map(|s| m.numeric_binary.epilogue(s).cloned())
+            .collect::<Vec<_>>();
+        assert_eq!(original.len(), 1);
+        assert_eq!(m.numeric_binary.epilogue_arguments(), 3);
+        assert_eq!(m.max_library_inputs, 3);
+        let encoded = jit.descriptor().encode_build_owned_image().unwrap();
+        let image: serde_json::Value = serde_json::from_slice(&encoded).unwrap();
+        for wire in [
+            encoded.clone(),
+            crate::native_artifact::program::image::packing::pack(&encoded).unwrap(),
+        ] {
+            // SAFETY: genuine metadata from this checked JIT, no invented entry.
+            let decoded =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&wire, &catalog) }
+                    .unwrap();
+            assert_eq!(decoded.encode_build_owned_image().unwrap(), encoded);
+            let d = decoded.metadata();
+            assert_eq!(
+                (0..d.plan.blocks().len())
+                    .filter_map(|s| d.numeric_binary.epilogue(s).cloned())
+                    .collect::<Vec<_>>(),
+                original
+            );
+        }
+        let mut identity = image.clone();
+        let byte = identity["descriptor"]["identity"][0].as_u64().unwrap();
+        identity["descriptor"]["identity"][0] = ((byte + 1) % 256).into();
+        // SAFETY: confined metadata-only inspection. The unsafe decoder trusts
+        // caller provenance; this changed descriptor is never executed/bound.
+        let decoded = unsafe {
+            NativeProgramDescriptor::decode_build_owned_image(
+                &serde_json::to_vec(&identity).unwrap(),
+                &catalog,
+            )
+        }
+        .unwrap();
+        let d = decoded.metadata();
+        assert_eq!(
+            (0..d.plan.blocks().len())
+                .filter_map(|s| d.numeric_binary.epilogue(s).cloned())
+                .collect::<Vec<_>>(),
+            original
+        );
+        for which in 0..4 {
+            let mut changed = image.clone();
+            match which {
+                0 => {
+                    changed["descriptor"]["numeric_product_epilogues"] =
+                        serde_json::json!({"owns_source":true,"fees_paid":true})
+                }
+                1 => {
+                    assert!(corrupt_product_operand(&mut changed));
+                }
+                2 => changed["descriptor"]["plan"] = serde_json::Value::Null,
+                _ => changed["descriptor"]["max_library_inputs"] = 2.into(),
+            }
+            let bytes = serde_json::to_vec(&changed).unwrap();
+            for wire in [
+                bytes.clone(),
+                crate::native_artifact::program::image::packing::pack(&bytes).unwrap(),
+            ] {
+                // SAFETY: wire-only negative decode; no candidate execution.
+                assert!(
+                    unsafe { NativeProgramDescriptor::decode_build_owned_image(&wire, &catalog) }
+                        .is_err(),
+                    "forgery{which}"
+                );
+            }
+        }
     }
 }

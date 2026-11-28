@@ -209,6 +209,7 @@ impl Invocation<'_, '_, '_> {
             let mut nodes = 5u64;
             let mut cloned = 0u64;
             let mut max_output = 0u64;
+            let mut max_elements = count;
             let mut replay = 0u64;
             for (index, (node, demand)) in recipe.nodes.iter().zip(&demands).enumerate() {
                 let call = m.calls[node.site as usize].as_ref()?;
@@ -234,6 +235,7 @@ impl Invocation<'_, '_, '_> {
                 nodes = nodes.checked_add(demand.retained_nodes)?;
                 cloned = cloned.checked_add(demand.cloned_bytes)?;
                 max_output = max_output.max(demand.persistent_bytes);
+                max_elements = max_elements.max(demand.output_elements);
                 // Ordinary input copies and canonical puts/retirements remain
                 // source obligations even when their physical owners disappear.
                 let managed = node
@@ -297,6 +299,7 @@ impl Invocation<'_, '_, '_> {
                 nodes,
                 cloned,
                 max_output,
+                max_elements,
                 credit,
             ))
         })();
@@ -311,13 +314,14 @@ impl Invocation<'_, '_, '_> {
             nodes,
             cloned,
             max_output,
+            max_elements,
             credit,
         )) = admitted
         else {
             return Ok(Some(0));
         };
         let caps = self.limits;
-        if !fits(count, caps.max_output_elements)
+        if !fits(max_elements, caps.max_output_elements)
             || !fits(max_output, caps.max_output_bytes)
             || !fits(temporary, caps.max_temporary_bytes)
             || !fits(nodes, caps.max_retained_nodes)
