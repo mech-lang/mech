@@ -1,0 +1,402 @@
+{
+  "schema": "mech.polybench.ordered-map-dot-source-research.v1",
+  "created_at": "2026-11-28T11:09:42.326356+00:00",
+  "accepted_round": 54,
+  "compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+  "workspace_commit": "2754bda8cb372eb1553f00fbd56dd1f9a800c0c6",
+  "provenance": {
+    "accepted_round": 54,
+    "compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+    "cases": {
+      "gramschmidt": {
+        "object": "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/objects/gramschmidt-candidate.o",
+        "object_sha256": "4d5701f2047b6c5f6d161adbb688eba1c9c3068e0c2f1780b928ffdb71fa34ea",
+        "metadata_bytes": 215124,
+        "metadata_sha256": "2de3e7277d67635078e1da1e7e97028253033dfc1c742b8ad980edd5b3fd640d"
+      },
+      "durbin": {
+        "object": "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/objects/durbin-candidate.o",
+        "object_sha256": "050fa81aad5dc7c94493ce29e3bc1185a7c5fb562fd8acb40a45067f5e44f499",
+        "metadata_bytes": 122089,
+        "metadata_sha256": "9f35783b04f24aa8fc897d68cb9d7c810cd959fc3dc29258a1e878a3e245dc64"
+      },
+      "cholesky": {
+        "object": "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/objects/cholesky-candidate.o",
+        "object_sha256": "c47081454d1d9d3a9fb9a262b9c1fa87383cc7869b81fdb43db6585e3675aa77",
+        "metadata_bytes": 112746,
+        "metadata_sha256": "fcb8a25295ae5b8b8fb369269f93ecff9988aa86e579426f1150cd533879e07d"
+      }
+    },
+    "scope": "Optimization-set source proof inspection only; exact previously checked accepted54 Object metadata, no execution, profiling or performance observations.",
+    "initial_inspection": "Typed metadata is MECHTVI4 rather than JSON; use its maintained public reader, no alternate decoder/evaluator."
+  },
+  "interpretation": {
+    "scope": "Optimization15 source/compiler research only; exact accepted54 Objects and maintained public typed-image reader. No native execution, new profile or performance samples.",
+    "profile_basis": "training-experiments/accepted54-phase-profile.json: Gram generated80.45% and projection header9.33% of execution samples; Durbin generated44.56% and ordered-fold header4.69%. Same-PID complete numeric bytes and all caller relocations independently bound. Exact source restored after rejected55, so this accepted54 evidence still identifies the current source mechanisms.",
+    "observed": "Five existing fused F64 map/sum/extraction reductions have exactly two immutable matrix reads, one F64Mul, at most affine checked U64 index arithmetic, and a straight body. Current emitter still executes a generic checked word DAG per term. Gram projection is nested in a pure outer map, enabling independent-output SIMD.",
+    "source_inventory": {
+      "gramschmidt": [
+        {
+          "header": 22,
+          "source_element": 25,
+          "result": 28,
+          "matrices": [
+            {
+              "value": 19,
+              "width": 8,
+              "witness": 26
+            }
+          ],
+          "matrix_reads": [
+            {
+              "indices": [
+                25,
+                22
+              ],
+              "matrix": 0,
+              "output": 26,
+              "site": 26
+            },
+            {
+              "indices": [
+                25,
+                22
+              ],
+              "matrix": 0,
+              "output": 27,
+              "site": 27
+            }
+          ],
+          "captures": [
+            22
+          ],
+          "scalar_ops": [
+            {
+              "op": "F64Mul",
+              "operands": [
+                26,
+                27
+              ],
+              "output": 28
+            }
+          ],
+          "body_sites": [
+            23,
+            25,
+            26,
+            27,
+            28,
+            29
+          ],
+          "every_source_block_straight": true
+        },
+        {
+          "header": 67,
+          "source_element": 45,
+          "result": 48,
+          "matrices": [
+            {
+              "value": 37,
+              "width": 8,
+              "witness": 71
+            },
+            {
+              "value": 19,
+              "width": 8,
+              "witness": 72
+            }
+          ],
+          "matrix_reads": [
+            {
+              "indices": [
+                45
+              ],
+              "matrix": 0,
+              "output": 46,
+              "site": 71
+            },
+            {
+              "indices": [
+                45,
+                40
+              ],
+              "matrix": 1,
+              "output": 47,
+              "site": 72
+            }
+          ],
+          "captures": [
+            40
+          ],
+          "scalar_ops": [
+            {
+              "op": "F64Mul",
+              "operands": [
+                46,
+                47
+              ],
+              "output": 48
+            }
+          ],
+          "body_sites": [
+            68,
+            70,
+            71,
+            72,
+            73,
+            74
+          ],
+          "every_source_block_straight": true
+        }
+      ],
+      "durbin": [
+        {
+          "header": 37,
+          "source_element": 37,
+          "result": 41,
+          "matrices": [
+            {
+              "value": 0,
+              "width": 8,
+              "witness": 42
+            },
+            {
+              "value": 28,
+              "width": 8,
+              "witness": 43
+            }
+          ],
+          "matrix_reads": [
+            {
+              "indices": [
+                38
+              ],
+              "matrix": 0,
+              "output": 39,
+              "site": 42
+            },
+            {
+              "indices": [
+                37
+              ],
+              "matrix": 1,
+              "output": 40,
+              "site": 43
+            }
+          ],
+          "captures": [
+            31
+          ],
+          "scalar_ops": [
+            {
+              "op": "U64Sub",
+              "operands": [
+                31,
+                37
+              ],
+              "output": 38
+            },
+            {
+              "op": "F64Mul",
+              "operands": [
+                39,
+                40
+              ],
+              "output": 41
+            }
+          ],
+          "body_sites": [
+            38,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45
+          ],
+          "every_source_block_straight": true
+        }
+      ],
+      "cholesky": [
+        {
+          "header": 40,
+          "source_element": 28,
+          "result": 31,
+          "matrices": [
+            {
+              "value": 21,
+              "width": 8,
+              "witness": 44
+            }
+          ],
+          "matrix_reads": [
+            {
+              "indices": [
+                22,
+                28
+              ],
+              "matrix": 0,
+              "output": 29,
+              "site": 44
+            },
+            {
+              "indices": [
+                23,
+                28
+              ],
+              "matrix": 0,
+              "output": 30,
+              "site": 45
+            }
+          ],
+          "captures": [
+            22,
+            23
+          ],
+          "scalar_ops": [
+            {
+              "op": "F64Mul",
+              "operands": [
+                29,
+                30
+              ],
+              "output": 31
+            }
+          ],
+          "body_sites": [
+            41,
+            43,
+            44,
+            45,
+            46,
+            47
+          ],
+          "every_source_block_straight": true
+        },
+        {
+          "header": 83,
+          "source_element": 51,
+          "result": 54,
+          "matrices": [
+            {
+              "value": 44,
+              "width": 8,
+              "witness": 87
+            }
+          ],
+          "matrix_reads": [
+            {
+              "indices": [
+                45,
+                51
+              ],
+              "matrix": 0,
+              "output": 52,
+              "site": 87
+            },
+            {
+              "indices": [
+                45,
+                51
+              ],
+              "matrix": 0,
+              "output": 53,
+              "site": 88
+            }
+          ],
+          "captures": [
+            45
+          ],
+          "scalar_ops": [
+            {
+              "op": "F64Mul",
+              "operands": [
+                52,
+                53
+              ],
+              "output": 54
+            }
+          ],
+          "body_sites": [
+            84,
+            86,
+            87,
+            88,
+            89,
+            90
+          ],
+          "every_source_block_straight": true
+        }
+      ]
+    },
+    "next_transformation": "Source-derived closed ordered-dot proof, endpoint-checked affine input streams, shared ordered native product reduction core; scalar/reversed/strided reductions and batched independent output columns. Retain old map DAG on any proof/guard/nonfinite decline. Seed original +0 and preserve every per-output multiply/add/k order, no FMA/reassociation. No benchmark source rewrite, dimensions/names in compiler rules, new runtime ABI/helper/frame/buffer or fee/counter changes.",
+    "proof_obligations": [
+      "Every original potentially failing body action must belong to the admitted expression closure; dead checked arithmetic or unknown calls prevent the rewrite.",
+      "Every checked affine selector subexpression and logical axis has valid first/last endpoints; monotonic affine interior is therefore safe. Linear column-major selection needs vector geometry or a same-logical-column proof, otherwise use original checked DAG.",
+      "Batch parent must resolve to exactly one admitted child dot or invariant F64 alternative through its exact U64 comparison/Boolean source CFG. Retain source visits/fees and fill every original output position.",
+      "Only private final results may be written before complete success. Any invalid endpoint, shape, unexpected current view or nonfinite fast result resumes the untouched original checked DAG before publication.",
+      "Share the same strict F64Mul/F64Add ordered kernel with products; SIMD lanes are independent outputs, never partial sums of one reduction. Existing scalar/product direct paths, private loans, replay and accounting remain."
+    ],
+    "prior_work": "Rejected38 generic hoisted-map-bounds and41 direct frame/SSA composition did not recognize an aggregate dot or batch independent parent outputs through shared product SIMD. Rejected55 changed only final publication; it is absent. No observed compiler fingerprint is retried.",
+    "official_performance_observations": 0
+  },
+  "source_and_history_unchanged": true,
+  "official_performance_observations": 0,
+  "archives": {
+    "build.log": {
+      "path": "qualification/round-61-ordered-map-dot-research/build.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "cholesky.metadata.bin": {
+      "path": "qualification/round-61-ordered-map-dot-research/cholesky.metadata.bin.gz",
+      "sha256": "fcb8a25295ae5b8b8fb369269f93ecff9988aa86e579426f1150cd533879e07d",
+      "compressed_sha256": "65a33a53c15b482e894bed69f9100746dd190317a061bf87558d94495d6d6db1"
+    },
+    "cholesky.metadata.json": {
+      "path": "qualification/round-61-ordered-map-dot-research/cholesky.metadata.json.gz",
+      "sha256": "cafe9c42f2ec32740304e9ddaf3cda76f850ad1d95e211ea672b24303736e187",
+      "compressed_sha256": "3d62b279a05d71c8514e8cd5cc970a20253a4ea53707d03a477f013329a6202d"
+    },
+    "durbin.metadata.bin": {
+      "path": "qualification/round-61-ordered-map-dot-research/durbin.metadata.bin.gz",
+      "sha256": "9f35783b04f24aa8fc897d68cb9d7c810cd959fc3dc29258a1e878a3e245dc64",
+      "compressed_sha256": "afad5b8c438a7675c515d70d6082d20be645a4643e6e3b9ddcd8de22b78bc54c"
+    },
+    "durbin.metadata.json": {
+      "path": "qualification/round-61-ordered-map-dot-research/durbin.metadata.json.gz",
+      "sha256": "77c1642a1ec2b1f3a4043e91c15f4ffd4dcbd4ed43a9eda497a88eeebaad7489",
+      "compressed_sha256": "5c2b85ac9b9201d12182624152705b01bb2dcbeacff683c0ea4deca3bcbb7aea"
+    },
+    "gramschmidt.metadata.bin": {
+      "path": "qualification/round-61-ordered-map-dot-research/gramschmidt.metadata.bin.gz",
+      "sha256": "2de3e7277d67635078e1da1e7e97028253033dfc1c742b8ad980edd5b3fd640d",
+      "compressed_sha256": "ffcd13bc4c75e504022881c5133b30bce0a213b029d18df975899e96cbb80ec7"
+    },
+    "gramschmidt.metadata.json": {
+      "path": "qualification/round-61-ordered-map-dot-research/gramschmidt.metadata.json.gz",
+      "sha256": "61d537ad1932788a9821201d785208a51f085e70f269955638b4ac9c32029c98",
+      "compressed_sha256": "ff128f57556df64bd0db4a95ce2d03d787e8075ae49112eed4372d3bab248740"
+    },
+    "inspect.rs": {
+      "path": "qualification/round-61-ordered-map-dot-research/inspect.rs.gz",
+      "sha256": "5864a4b50d5b628076f6ce185aec5908febde7f1829b3787432767b6e9071454",
+      "compressed_sha256": "68007025c0755c2a6b03602bf3850cc4ac8c390ae2e285337c008b1c9792d376"
+    },
+    "preserve.py": {
+      "path": "qualification/round-61-ordered-map-dot-research/preserve.py.gz",
+      "sha256": "765af5291b7e29264e1f9a07b31d1041001bd79f1dd44466841d5994ab4a75e9",
+      "compressed_sha256": "729480bc492a74f0a43dcd4adc72d35702c6aa950de7919a4a870d6450a7bc22"
+    },
+    "provenance.json": {
+      "path": "qualification/round-61-ordered-map-dot-research/provenance.json.gz",
+      "sha256": "b45754cfaf6d5ee8ddefa3ba528fa7c51639fc8cd0314ab9ad042fc6752bad51",
+      "compressed_sha256": "7f8cce3e685e83e1ffaea6ab8b38315d6fa1880db07b5b70e81170b8b675aa89"
+    },
+    "research.json": {
+      "path": "qualification/round-61-ordered-map-dot-research/research.json.gz",
+      "sha256": "c23f069fda1013eeb3c1dc94f42c5b69c496e252f9a66a3b6333797ab9844211",
+      "compressed_sha256": "02db32e1d034f14bd1b42a43970fd2e8312252cf4e97be75f3114dd14492111d"
+    }
+  }
+}
