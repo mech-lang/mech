@@ -203,7 +203,6 @@ pub(in crate::native_artifact) fn emit_entry(
     is_scalar: impl Fn(NativeMatchValue) -> bool,
     product_row_pairs: bool,
     product_row_quartets: bool,
-    transpose_tiles: bool,
     error: Block,
 ) -> Result<Block, NativeCompileError> {
     if operands.iter().map(|v| v.get()).collect::<Vec<_>>() != op.operands {
@@ -270,12 +269,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     *target = b.ins().iconst(types::I64, known as i64);
                 }
             }
-            let emit = if transpose_tiles {
-                super::numeric_transpose::emit
-            } else {
-                super::numeric_transpose::emit_ordinal
-            };
-            emit(
+            super::numeric_transpose::emit(
                 b,
                 left,
                 output,

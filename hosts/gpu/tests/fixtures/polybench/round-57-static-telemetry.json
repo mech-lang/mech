@@ -1,0 +1,2684 @@
+{
+  "schema": "mech.polybench.transpose-tiles-static-telemetry.v1",
+  "scope": "Optimization15 genuine checked Object exports and static instructions only; no Object execution, performance observations, hardware retired instructions or traffic claims.",
+  "compiler_fingerprint": "48e05773ee9b334949a37f6859fe03caea4c12ad03992cf79ac820205c7ded7b",
+  "driver_sha256": "9b1a883ecdf02d522870aae0647dd52fc566fda869663a8eaabab3feac8ceae6",
+  "cases": {
+    "2mm": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 9768,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31400,
+          "static_instruction_count": 2442,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2442,
+              "disassembly_sha256": "fb20ced0e7263f8d8bd2159349221c70aa75e34a5de7a6bbe881e72b0bd1d33a"
+            }
+          },
+          "object_sha256": "57562a8577acac0f67ab1fd24972502389689b6c973566d589d2d3e5f7f50b30",
+          "metadata_sha256": "bb88d2e0777d89ec46cff82323b43b45bf65b092a18dbe66a636630cadb807b4",
+          "disassembly_sha256": "21fb051bf038c7df8ea9f8322ddbc8bf21eac75fcf0b34004ef7d5530036dbc5",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 16,
+          "integer_vector_copy_sites": [
+            "     23c:      \tdup.2d\tv2, x9",
+            "     240:      \tdup.2d\tv3, v0[0]",
+            "     348:      \tstr\tq4, [x2, x10]",
+            "     35c:      \tldr\tq5, [x11, x12]",
+            "     470:      \tstr\tq5, [x2, x11]",
+            "     494:      \tstr\tq4, [x2, x10]",
+            "     4a8:      \tldr\tq6, [x11, x12]",
+            "     658:      \tstr\tq7, [x2, x11]",
+            "     67c:      \tstr\tq6, [x2, x11]",
+            "     6a0:      \tstr\tq5, [x2, x11]",
+            "     6c4:      \tstr\tq4, [x2, x9]",
+            "     998:      \tldr\tq16, [x2, x6]",
+            "     99c:      \tldr\tq17, [x1, x6]",
+            "     9a4:      \tstr\tq16, [x0, x6]",
+            "     9e0:      \tldr\tq26, [x2, x5]",
+            "     9e8:      \tdup.2d\tv27, v27[0]",
+            "     9f0:      \tstr\tq26, [x0, x5]",
+            "     a34:      \tldr\tq0, [x1, x2]",
+            "     a3c:      \tdup.2d\tv1, v1[0]",
+            "     a44:      \tstr\tq0, [x0, x2]",
+            "     b7c:      \tdup.2d\tv20, x14",
+            "     b80:      \tdup.2d\tv21, v17[0]",
+            "     b84:      \tdup.2d\tv22, v18[0]",
+            "     ce8:      \tldr\tq1, [x10, x2]",
+            "     d38:      \tstr\tq2, [x7, x2]",
+            "     d4c:      \tldr\tq4, [x14, x15]",
+            "     f00:      \tldr\tq2, [x10, x1]",
+            "     f50:      \tstr\tq1, [x7, x2]",
+            "     f94:      \tldr\tq31, [x10, x15]",
+            "     fe8:      \tstr\tq23, [x7, x15]",
+            "     ffc:      \tldr\tq23, [x15, x2]",
+            "    12d4:      \tldr\tq0, [x10, x2]",
+            "    1324:      \tstr\tq0, [x7, x14]",
+            "    1368:      \tldr\tq26, [x10, x14]",
+            "    13bc:      \tstr\tq0, [x7, x14]",
+            "    1400:      \tldr\tq0, [x10, x14]",
+            "    1454:      \tstr\tq3, [x7, x15]",
+            "    1498:      \tldr\tq0, [x10, x15]",
+            "    14ec:      \tstr\tq23, [x7, x2]",
+            "    17c4:      \tldr\tq0, [x1, x5]",
+            "    17c8:      \tldr\tq1, [x0, x5]",
+            "    17d0:      \tstr\tq0, [x15, x5]",
+            "    180c:      \tldr\tq0, [x1, x2]",
+            "    1814:      \tdup.2d\tv1, v1[0]",
+            "    181c:      \tstr\tq0, [x15, x2]",
+            "    1860:      \tldr\tq16, [x0, x11]",
+            "    1868:      \tdup.2d\tv17, v17[0]",
+            "    1870:      \tstr\tq16, [x15, x11]",
+            "    1a64:      \tldr\tq21, [x2, x5]",
+            "    1a68:      \tldr\tq22, [x1, x5]",
+            "    1a70:      \tstr\tq21, [x0, x5]",
+            "    1aac:      \tldr\tq31, [x2, x5]",
+            "    1ab4:      \tdup.2d\tv0, v0[0]",
+            "    1abc:      \tstr\tq31, [x0, x5]",
+            "    1b00:      \tldr\tq0, [x1, x5]",
+            "    1b08:      \tdup.2d\tv1, v1[0]",
+            "    1b10:      \tstr\tq0, [x0, x5]",
+            "    1be8:      \tdup.2d\tv16, v16[0]",
+            "    1bf0:      \tdup.2d\tv17, v17[0]",
+            "    1bfc:      \tstr\tq16, [x0, x11]",
+            "    1c0c:      \tdup.2d\tv16, v16[0]",
+            "    1c14:      \tdup.2d\tv17, v17[0]",
+            "    1c20:      \tstr\tq16, [x15, x11]",
+            "    1cc0:      \tstr\tq2, [x2, x11]",
+            "    1cd4:      \tldr\tq3, [x12, x13]",
+            "    1da0:      \tstr\tq18, [x2, x12]",
+            "    1dac:      \tstr\tq19, [x2, x11]",
+            "    1dc0:      \tldr\tq2, [x11, x12]",
+            "    1ef8:      \tstr\tq25, [x2, x12]",
+            "    1f04:      \tstr\tq26, [x2, x12]",
+            "    1f10:      \tstr\tq27, [x2, x13]",
+            "    1f1c:      \tstr\tq28, [x2, x13]",
+            "    1f30:      \tldr\tq16, [x15, x12]",
+            "    1fb0:      \tldr\tq27, [x2, x15]",
+            "    202c:      \tdup.2d\tv17, v17[0]",
+            "    2034:      \tdup.2d\tv18, v18[0]",
+            "    2040:      \tstr\tq17, [x0, x2]",
+            "    20e0:      \tstr\tq0, [x10, x1]",
+            "    20f4:      \tldr\tq1, [x2, x6]",
+            "    21c0:      \tstr\tq19, [x10, x5]",
+            "    21cc:      \tstr\tq20, [x10, x2]",
+            "    21e0:      \tldr\tq0, [x5, x6]",
+            "    2318:      \tstr\tq26, [x10, x5]",
+            "    2324:      \tstr\tq27, [x10, x5]",
+            "    2330:      \tstr\tq28, [x10, x5]",
+            "    233c:      \tstr\tq29, [x10, x2]",
+            "    2350:      \tldr\tq21, [x5, x6]",
+            "    23d0:      \tldr\tq22, [x11, x12]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 9768,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31400,
+          "static_instruction_count": 2442,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2442,
+              "disassembly_sha256": "fb20ced0e7263f8d8bd2159349221c70aa75e34a5de7a6bbe881e72b0bd1d33a"
+            }
+          },
+          "object_sha256": "9d97987c4b8206bd533a5ea1c44a48c04ec93883430808af30002d1ea158813d",
+          "metadata_sha256": "412fe8686b0d3b63d1a36d23ccc48f2e1511e04d5c1d760d0293f974a29df4f6",
+          "disassembly_sha256": "ad5c434729b4ce1f2f4679b131c544b0ba1306de848a24724b74e6e54f385202",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 16,
+          "integer_vector_copy_sites": [
+            "     23c:      \tdup.2d\tv2, x9",
+            "     240:      \tdup.2d\tv3, v0[0]",
+            "     348:      \tstr\tq4, [x2, x10]",
+            "     35c:      \tldr\tq5, [x11, x12]",
+            "     470:      \tstr\tq5, [x2, x11]",
+            "     494:      \tstr\tq4, [x2, x10]",
+            "     4a8:      \tldr\tq6, [x11, x12]",
+            "     658:      \tstr\tq7, [x2, x11]",
+            "     67c:      \tstr\tq6, [x2, x11]",
+            "     6a0:      \tstr\tq5, [x2, x11]",
+            "     6c4:      \tstr\tq4, [x2, x9]",
+            "     998:      \tldr\tq16, [x2, x6]",
+            "     99c:      \tldr\tq17, [x1, x6]",
+            "     9a4:      \tstr\tq16, [x0, x6]",
+            "     9e0:      \tldr\tq26, [x2, x5]",
+            "     9e8:      \tdup.2d\tv27, v27[0]",
+            "     9f0:      \tstr\tq26, [x0, x5]",
+            "     a34:      \tldr\tq0, [x1, x2]",
+            "     a3c:      \tdup.2d\tv1, v1[0]",
+            "     a44:      \tstr\tq0, [x0, x2]",
+            "     b7c:      \tdup.2d\tv20, x14",
+            "     b80:      \tdup.2d\tv21, v17[0]",
+            "     b84:      \tdup.2d\tv22, v18[0]",
+            "     ce8:      \tldr\tq1, [x10, x2]",
+            "     d38:      \tstr\tq2, [x7, x2]",
+            "     d4c:      \tldr\tq4, [x14, x15]",
+            "     f00:      \tldr\tq2, [x10, x1]",
+            "     f50:      \tstr\tq1, [x7, x2]",
+            "     f94:      \tldr\tq31, [x10, x15]",
+            "     fe8:      \tstr\tq23, [x7, x15]",
+            "     ffc:      \tldr\tq23, [x15, x2]",
+            "    12d4:      \tldr\tq0, [x10, x2]",
+            "    1324:      \tstr\tq0, [x7, x14]",
+            "    1368:      \tldr\tq26, [x10, x14]",
+            "    13bc:      \tstr\tq0, [x7, x14]",
+            "    1400:      \tldr\tq0, [x10, x14]",
+            "    1454:      \tstr\tq3, [x7, x15]",
+            "    1498:      \tldr\tq0, [x10, x15]",
+            "    14ec:      \tstr\tq23, [x7, x2]",
+            "    17c4:      \tldr\tq0, [x1, x5]",
+            "    17c8:      \tldr\tq1, [x0, x5]",
+            "    17d0:      \tstr\tq0, [x15, x5]",
+            "    180c:      \tldr\tq0, [x1, x2]",
+            "    1814:      \tdup.2d\tv1, v1[0]",
+            "    181c:      \tstr\tq0, [x15, x2]",
+            "    1860:      \tldr\tq16, [x0, x11]",
+            "    1868:      \tdup.2d\tv17, v17[0]",
+            "    1870:      \tstr\tq16, [x15, x11]",
+            "    1a64:      \tldr\tq21, [x2, x5]",
+            "    1a68:      \tldr\tq22, [x1, x5]",
+            "    1a70:      \tstr\tq21, [x0, x5]",
+            "    1aac:      \tldr\tq31, [x2, x5]",
+            "    1ab4:      \tdup.2d\tv0, v0[0]",
+            "    1abc:      \tstr\tq31, [x0, x5]",
+            "    1b00:      \tldr\tq0, [x1, x5]",
+            "    1b08:      \tdup.2d\tv1, v1[0]",
+            "    1b10:      \tstr\tq0, [x0, x5]",
+            "    1be8:      \tdup.2d\tv16, v16[0]",
+            "    1bf0:      \tdup.2d\tv17, v17[0]",
+            "    1bfc:      \tstr\tq16, [x0, x11]",
+            "    1c0c:      \tdup.2d\tv16, v16[0]",
+            "    1c14:      \tdup.2d\tv17, v17[0]",
+            "    1c20:      \tstr\tq16, [x15, x11]",
+            "    1cc0:      \tstr\tq2, [x2, x11]",
+            "    1cd4:      \tldr\tq3, [x12, x13]",
+            "    1da0:      \tstr\tq18, [x2, x12]",
+            "    1dac:      \tstr\tq19, [x2, x11]",
+            "    1dc0:      \tldr\tq2, [x11, x12]",
+            "    1ef8:      \tstr\tq25, [x2, x12]",
+            "    1f04:      \tstr\tq26, [x2, x12]",
+            "    1f10:      \tstr\tq27, [x2, x13]",
+            "    1f1c:      \tstr\tq28, [x2, x13]",
+            "    1f30:      \tldr\tq16, [x15, x12]",
+            "    1fb0:      \tldr\tq27, [x2, x15]",
+            "    202c:      \tdup.2d\tv17, v17[0]",
+            "    2034:      \tdup.2d\tv18, v18[0]",
+            "    2040:      \tstr\tq17, [x0, x2]",
+            "    20e0:      \tstr\tq0, [x10, x1]",
+            "    20f4:      \tldr\tq1, [x2, x6]",
+            "    21c0:      \tstr\tq19, [x10, x5]",
+            "    21cc:      \tstr\tq20, [x10, x2]",
+            "    21e0:      \tldr\tq0, [x5, x6]",
+            "    2318:      \tstr\tq26, [x10, x5]",
+            "    2324:      \tstr\tq27, [x10, x5]",
+            "    2330:      \tstr\tq28, [x10, x5]",
+            "    233c:      \tstr\tq29, [x10, x2]",
+            "    2350:      \tldr\tq21, [x5, x6]",
+            "    23d0:      \tldr\tq22, [x11, x12]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "3mm": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 4256,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 19168,
+          "static_instruction_count": 1064,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1064,
+              "disassembly_sha256": "76df42accc90d8e5ea1702a498ee441e2ce2f45dd30911178d6ae1e8fa8bd164"
+            }
+          },
+          "object_sha256": "2e28f8ddf26a50914f826e1261785db56d8531813ee63443706cb604dead1b96",
+          "metadata_sha256": "4adc5f91aad11d9aa8c1ef6fdadb39dd06582934113e58d7fea6be9929f446cf",
+          "disassembly_sha256": "610d6c0ffaff9a9972c959ff6afd134f7ce11417af25a29884e251d0111c3411",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 3,
+          "integer_vector_copy_sites": [
+            "     58c:      \tstr\tq0, [x2, x11]",
+            "     5a0:      \tldr\tq3, [x12, x13]",
+            "     66c:      \tstr\tq20, [x2, x12]",
+            "     678:      \tstr\tq21, [x2, x11]",
+            "     68c:      \tldr\tq3, [x12, x13]",
+            "     7c4:      \tstr\tq27, [x2, x12]",
+            "     7d0:      \tstr\tq28, [x2, x12]",
+            "     7dc:      \tstr\tq29, [x2, x12]",
+            "     7e8:      \tstr\tq30, [x2, x11]",
+            "     7fc:      \tldr\tq26, [x12, x13]",
+            "     908:      \tstr\tq0, [x2, x11]",
+            "     91c:      \tldr\tq1, [x12, x13]",
+            "     9e8:      \tstr\tq25, [x2, x12]",
+            "     9f4:      \tstr\tq26, [x2, x11]",
+            "     a08:      \tldr\tq5, [x12, x13]",
+            "     b40:      \tstr\tq3, [x2, x12]",
+            "     b4c:      \tstr\tq2, [x2, x12]",
+            "     b58:      \tstr\tq1, [x2, x12]",
+            "     b64:      \tstr\tq0, [x2, x11]",
+            "     b78:      \tldr\tq29, [x12, x13]",
+            "     c84:      \tstr\tq1, [x2, x9]",
+            "     c98:      \tldr\tq2, [x10, x11]",
+            "     d64:      \tstr\tq2, [x2, x11]",
+            "     d70:      \tstr\tq1, [x2, x10]",
+            "     d84:      \tldr\tq16, [x11, x12]",
+            "     ebc:      \tstr\tq4, [x2, x11]",
+            "     ec8:      \tstr\tq3, [x2, x11]",
+            "     ed4:      \tstr\tq2, [x2, x11]",
+            "     ee0:      \tstr\tq1, [x2, x10]",
+            "     ef4:      \tldr\tq5, [x11, x12]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 4256,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 19168,
+          "static_instruction_count": 1064,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1064,
+              "disassembly_sha256": "76df42accc90d8e5ea1702a498ee441e2ce2f45dd30911178d6ae1e8fa8bd164"
+            }
+          },
+          "object_sha256": "1d2d5187f6a1f363967fed65738c97a8705a532dc41068697a36314da36c3e00",
+          "metadata_sha256": "60554740b9fb9bfd5aa3ca1afa41354c573b0ecb8e33c33de32414fff642c707",
+          "disassembly_sha256": "0c3f600d4699427135e806d76f84257c4eaf2c780f0f5679a9106dd4dcab888b",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 3,
+          "integer_vector_copy_sites": [
+            "     58c:      \tstr\tq0, [x2, x11]",
+            "     5a0:      \tldr\tq3, [x12, x13]",
+            "     66c:      \tstr\tq20, [x2, x12]",
+            "     678:      \tstr\tq21, [x2, x11]",
+            "     68c:      \tldr\tq3, [x12, x13]",
+            "     7c4:      \tstr\tq27, [x2, x12]",
+            "     7d0:      \tstr\tq28, [x2, x12]",
+            "     7dc:      \tstr\tq29, [x2, x12]",
+            "     7e8:      \tstr\tq30, [x2, x11]",
+            "     7fc:      \tldr\tq26, [x12, x13]",
+            "     908:      \tstr\tq0, [x2, x11]",
+            "     91c:      \tldr\tq1, [x12, x13]",
+            "     9e8:      \tstr\tq25, [x2, x12]",
+            "     9f4:      \tstr\tq26, [x2, x11]",
+            "     a08:      \tldr\tq5, [x12, x13]",
+            "     b40:      \tstr\tq3, [x2, x12]",
+            "     b4c:      \tstr\tq2, [x2, x12]",
+            "     b58:      \tstr\tq1, [x2, x12]",
+            "     b64:      \tstr\tq0, [x2, x11]",
+            "     b78:      \tldr\tq29, [x12, x13]",
+            "     c84:      \tstr\tq1, [x2, x9]",
+            "     c98:      \tldr\tq2, [x10, x11]",
+            "     d64:      \tstr\tq2, [x2, x11]",
+            "     d70:      \tstr\tq1, [x2, x10]",
+            "     d84:      \tldr\tq16, [x11, x12]",
+            "     ebc:      \tstr\tq4, [x2, x11]",
+            "     ec8:      \tstr\tq3, [x2, x11]",
+            "     ed4:      \tstr\tq2, [x2, x11]",
+            "     ee0:      \tstr\tq1, [x2, x10]",
+            "     ef4:      \tldr\tq5, [x11, x12]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "atax": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 3732,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 18592,
+          "static_instruction_count": 933,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 933,
+              "disassembly_sha256": "dee1b4e0d69404cb923e0a3413cfe32236f05d9527f5b11522be1c68f49c607e"
+            }
+          },
+          "object_sha256": "709d13c6feb9a04d2df3aeeda26a63a6a46e0ceddf7637e92944c9b598ba667b",
+          "metadata_sha256": "8a75b2e5aa0d96dd602378c510a9e2b88ed40bb250308f9e4f964f2b7f163cea",
+          "disassembly_sha256": "93b7a6b6df348307b1cfbe23d73c814fb82de73ab7ed5b897c13dd7b48ea39e2",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 4,
+          "integer_vector_copy_sites": [
+            "     704:      \tstr\tq23, [x2, x11]",
+            "     718:      \tldr\tq16, [x13, x14]",
+            "     7e4:      \tstr\tq17, [x2, x12]",
+            "     7f0:      \tstr\tq16, [x2, x11]",
+            "     804:      \tldr\tq2, [x12, x13]",
+            "     93c:      \tstr\tq19, [x2, x12]",
+            "     948:      \tstr\tq16, [x2, x12]",
+            "     954:      \tstr\tq17, [x2, x12]",
+            "     960:      \tstr\tq18, [x2, x11]",
+            "     974:      \tldr\tq2, [x11, x13]",
+            "     a80:      \tstr\tq29, [x2, x14]",
+            "     a94:      \tldr\tq16, [x12, x13]",
+            "     b60:      \tstr\tq17, [x2, x12]",
+            "     b6c:      \tstr\tq16, [x2, x11]",
+            "     b80:      \tldr\tq1, [x11, x13]",
+            "     cb8:      \tstr\tq23, [x2, x12]",
+            "     cc4:      \tstr\tq24, [x2, x12]",
+            "     cd0:      \tstr\tq25, [x2, x12]",
+            "     cdc:      \tstr\tq26, [x2, x11]",
+            "     cf0:      \tldr\tq1, [x12, x13]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 3956,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 18816,
+          "static_instruction_count": 989,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 989,
+              "disassembly_sha256": "105e84001e93d0394c04e66e28b5e81f35bf36bf9a839baa01a8eafd517e7aba"
+            }
+          },
+          "object_sha256": "1ae5399c8268412e1faa49bd57e8f6b094dfdc2162c2b0d62d28de3e83cfe9d5",
+          "metadata_sha256": "e3568bcbb922b8f8e4bf6cdef3c805322a219ebfd93c01c5acb6be361a5f39be",
+          "disassembly_sha256": "dc9a9ff680f15aa26b31c2fbd0b908e0f227c677ad4ba918059e82e94125f737",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "     e4c:      \tuzp1.2d\tv7, v5, v6",
+            "     e64:      \tuzp2.2d\tv6, v5, v6"
+          ],
+          "hardware_division_sites": 2,
+          "integer_vector_copy_sites": [
+            "     74c:      \tstr\tq0, [x2, x10]",
+            "     760:      \tldr\tq16, [x11, x12]",
+            "     82c:      \tstr\tq1, [x2, x11]",
+            "     838:      \tstr\tq0, [x2, x10]",
+            "     84c:      \tldr\tq29, [x11, x12]",
+            "     984:      \tstr\tq3, [x2, x11]",
+            "     990:      \tstr\tq2, [x2, x11]",
+            "     99c:      \tstr\tq1, [x2, x11]",
+            "     9a8:      \tstr\tq0, [x2, x10]",
+            "     9bc:      \tldr\tq4, [x11, x12]",
+            "     ac8:      \tstr\tq1, [x2, x11]",
+            "     adc:      \tldr\tq16, [x12, x13]",
+            "     ba8:      \tstr\tq2, [x2, x12]",
+            "     bb4:      \tstr\tq1, [x2, x11]",
+            "     bc8:      \tldr\tq31, [x12, x13]",
+            "     d00:      \tstr\tq4, [x2, x12]",
+            "     d0c:      \tstr\tq3, [x2, x12]",
+            "     d18:      \tstr\tq2, [x2, x12]",
+            "     d24:      \tstr\tq1, [x2, x11]",
+            "     d38:      \tldr\tq5, [x12, x13]",
+            "     dc8:      \tdup.2d\tv0, x10",
+            "     ddc:      \tstr\tq0, [x8, x9]",
+            "     e0c:      \tldr\tq1, [x8, x9]",
+            "     e44:      \tldr\tq5, [x8, x10]",
+            "     e48:      \tldr\tq6, [x11, x9]",
+            "     e4c:      \tuzp1.2d\tv7, v5, v6",
+            "     e60:      \tstr\tq7, [x9, x10]",
+            "     e64:      \tuzp2.2d\tv6, v5, v6",
+            "     e6c:      \tstr\tq6, [x8, x9]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "bicg": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 3720,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 25664,
+          "static_instruction_count": 930,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 930,
+              "disassembly_sha256": "051ddae36bf9ec2b041fea4a21c54a295aef2f806d8968cf52d563f0b339c636"
+            }
+          },
+          "object_sha256": "5dbfef386fd5ae94e2264cac1d34d3ef196573e4dbbb022164dfa3438098bd2a",
+          "metadata_sha256": "09e794c2455ea3bfd4f0030f44cd68fc95ac4c34d44de677ea1d59628f899047",
+          "disassembly_sha256": "6cb099f4edfb247244594f9b7f19f04b8f27e66b4f73a4c1884873ff3677fae5",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 4,
+          "integer_vector_copy_sites": [
+            "     6ac:      \tstr\tq25, [x2, x13]",
+            "     6c0:      \tldr\tq16, [x15, x12]",
+            "     78c:      \tstr\tq17, [x2, x12]",
+            "     798:      \tstr\tq16, [x2, x11]",
+            "     7ac:      \tldr\tq0, [x12, x13]",
+            "     8e4:      \tstr\tq17, [x2, x12]",
+            "     8f0:      \tstr\tq18, [x2, x12]",
+            "     8fc:      \tstr\tq19, [x2, x12]",
+            "     908:      \tstr\tq20, [x2, x11]",
+            "     91c:      \tldr\tq0, [x11, x12]",
+            "     a28:      \tstr\tq31, [x2, x11]",
+            "     a3c:      \tldr\tq18, [x12, x13]",
+            "     b08:      \tstr\tq17, [x2, x12]",
+            "     b14:      \tstr\tq18, [x2, x11]",
+            "     b28:      \tldr\tq1, [x11, x12]",
+            "     c60:      \tstr\tq25, [x2, x12]",
+            "     c6c:      \tstr\tq26, [x2, x12]",
+            "     c78:      \tstr\tq27, [x2, x12]",
+            "     c84:      \tstr\tq28, [x2, x11]",
+            "     c98:      \tldr\tq1, [x12, x13]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 3928,
+          "reported_native_stack_bytes": 96,
+          "object_file_bytes": 25872,
+          "static_instruction_count": 982,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 982,
+              "disassembly_sha256": "87bbce082a85aa3727a763a371663b8def254b88ca07e385311371e0b1fa8251"
+            }
+          },
+          "object_sha256": "12543a6fe84053f97c67ba44e6ac70978315718bc9ad606a0be5f8cab4d2a80b",
+          "metadata_sha256": "53cf2cd68e4ddb1539baeba456e3d583d54aef4e860070350982c9b1fb991e79",
+          "disassembly_sha256": "f690f06b298f6a255c889ae6c7f6574c7cba3173e2c0427dd4ee8750cfae5845",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "     dec:      \tuzp1.2d\tv17, v7, v16",
+            "     e04:      \tuzp2.2d\tv16, v7, v16"
+          ],
+          "hardware_division_sites": 2,
+          "integer_vector_copy_sites": [
+            "     6ec:      \tstr\tq0, [x0, x9]",
+            "     700:      \tldr\tq16, [x10, x11]",
+            "     7cc:      \tstr\tq1, [x0, x10]",
+            "     7d8:      \tstr\tq0, [x0, x9]",
+            "     7ec:      \tldr\tq30, [x10, x11]",
+            "     924:      \tstr\tq3, [x0, x10]",
+            "     930:      \tstr\tq2, [x0, x10]",
+            "     93c:      \tstr\tq1, [x0, x10]",
+            "     948:      \tstr\tq0, [x0, x9]",
+            "     95c:      \tldr\tq4, [x10, x11]",
+            "     a68:      \tstr\tq1, [x2, x11]",
+            "     a7c:      \tldr\tq16, [x13, x14]",
+            "     b48:      \tstr\tq2, [x2, x12]",
+            "     b54:      \tstr\tq1, [x2, x11]",
+            "     b68:      \tldr\tq3, [x12, x13]",
+            "     ca0:      \tstr\tq4, [x2, x12]",
+            "     cac:      \tstr\tq3, [x2, x12]",
+            "     cb8:      \tstr\tq2, [x2, x12]",
+            "     cc4:      \tstr\tq1, [x2, x11]",
+            "     cd8:      \tldr\tq5, [x12, x13]",
+            "     d68:      \tdup.2d\tv0, x10",
+            "     d7c:      \tstr\tq0, [x8, x9]",
+            "     dac:      \tldr\tq3, [x8, x9]",
+            "     de4:      \tldr\tq7, [x8, x10]",
+            "     de8:      \tldr\tq16, [x11, x9]",
+            "     dec:      \tuzp1.2d\tv17, v7, v16",
+            "     e00:      \tstr\tq17, [x9, x10]",
+            "     e04:      \tuzp2.2d\tv16, v7, v16",
+            "     e0c:      \tstr\tq16, [x8, x9]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "cholesky": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 21672,
+          "reported_native_stack_bytes": 1696,
+          "object_file_bytes": 136144,
+          "static_instruction_count": 5418,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1939,
+              "disassembly_sha256": "63b1c05eafafa9d27fcd76d7f3f5f1a40a8b7c4d4c53b7deb831929d9a3497ba"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3479,
+              "disassembly_sha256": "291b88f31109ad5d31d9242c4f7c9e8b8d5963519feed095cd468306d831e28f"
+            }
+          },
+          "object_sha256": "f9eff8c6fc571de679be3778e42f25c8026d9faf5926bc7c3cbab8d49f7bba9b",
+          "metadata_sha256": "a6e11adc4731c4091f1c3b56db1cd4220d76804b9e504df7efdee15175eff685",
+          "disassembly_sha256": "6382effe59ac920fdaa125c931b598677cc901e2dd4fcf275b39fe8bf91efb68",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    3a30:      \tstr\tq16, [x1, x6]",
+            "    3afc:      \tdup.2d\tv5, v6[0]",
+            "    4af8:      \tstr\tq18, [x1, x10]",
+            "    4bc4:      \tdup.2d\tv1, v1[0]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 21672,
+          "reported_native_stack_bytes": 1696,
+          "object_file_bytes": 136144,
+          "static_instruction_count": 5418,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1939,
+              "disassembly_sha256": "63b1c05eafafa9d27fcd76d7f3f5f1a40a8b7c4d4c53b7deb831929d9a3497ba"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3479,
+              "disassembly_sha256": "291b88f31109ad5d31d9242c4f7c9e8b8d5963519feed095cd468306d831e28f"
+            }
+          },
+          "object_sha256": "fb4cd42102dd1f1d84527aa052feeee246364359b53a97335f0c9e03741546ed",
+          "metadata_sha256": "9ba5799ab8a01af058b88bc08897ee0fdeeec34167f9f70af8161b6fce430306",
+          "disassembly_sha256": "500eb41eb5250e64057331bd46cba11fff0c1a3a6b3924f5a62ca13097d639cc",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    3a30:      \tstr\tq16, [x1, x6]",
+            "    3afc:      \tdup.2d\tv5, v6[0]",
+            "    4af8:      \tstr\tq18, [x1, x10]",
+            "    4bc4:      \tdup.2d\tv1, v1[0]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "correlation": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 15088,
+          "reported_native_stack_bytes": 128,
+          "object_file_bytes": 83952,
+          "static_instruction_count": 3772,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3772,
+              "disassembly_sha256": "fec5e8d21d04131d44c0e8830f19678c75d5c419894a3ab71e141b3499893699"
+            }
+          },
+          "object_sha256": "355e730358501de272a80ba8246e0a74c5880addd98887c061b97c6894d74234",
+          "metadata_sha256": "4cc02eb47047cd234cc2b6091cd9407dc044b9bfbe9b6eb6e59b13f3d6ae58a2",
+          "disassembly_sha256": "6f31d1e3ab582571973c5c330d889adb6832980406a927a98d8a8d6fe88f1810",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 28,
+          "integer_vector_copy_sites": [
+            "     534:      \tldr\tq5, [x2, x6]",
+            "     538:      \tldr\tq6, [x1, x6]",
+            "     540:      \tstr\tq5, [x0, x6]",
+            "     57c:      \tldr\tq16, [x2, x15]",
+            "     584:      \tdup.2d\tv17, v17[0]",
+            "     58c:      \tstr\tq16, [x0, x15]",
+            "     5d0:      \tldr\tq27, [x1, x5]",
+            "     5d8:      \tdup.2d\tv28, v28[0]",
+            "     5e0:      \tstr\tq27, [x0, x5]",
+            "     7d4:      \tldr\tq0, [x2, x6]",
+            "     7d8:      \tldr\tq1, [x1, x6]",
+            "     7e0:      \tstr\tq0, [x0, x6]",
+            "     81c:      \tldr\tq0, [x2, x5]",
+            "     824:      \tdup.2d\tv1, v1[0]",
+            "     82c:      \tstr\tq0, [x0, x5]",
+            "     870:      \tldr\tq0, [x1, x5]",
+            "     878:      \tdup.2d\tv1, v1[0]",
+            "     880:      \tstr\tq0, [x0, x5]",
+            "     a24:      \tstr\tq1, [x0, x7]",
+            "     a58:      \tldr\tq20, [x2, x8]",
+            "     a84:      \tdup.2d\tv20, v3[0]",
+            "     a90:      \tdup.2d\tv5, x8",
+            "     c5c:      \tldr\tq2, [x2, x6]",
+            "     c60:      \tldr\tq3, [x1, x6]",
+            "     c68:      \tstr\tq2, [x0, x6]",
+            "     ca4:      \tldr\tq16, [x2, x12]",
+            "     cac:      \tdup.2d\tv17, v17[0]",
+            "     cb4:      \tstr\tq16, [x0, x12]",
+            "     cf8:      \tldr\tq24, [x1, x5]",
+            "     d00:      \tdup.2d\tv25, v25[0]",
+            "     d08:      \tstr\tq24, [x0, x5]",
+            "    10cc:      \tldr\tq0, [x2, x5]",
+            "    10d0:      \tldr\tq1, [x1, x5]",
+            "    10d8:      \tstr\tq0, [x0, x5]",
+            "    1114:      \tldr\tq0, [x2, x5]",
+            "    111c:      \tdup.2d\tv1, v1[0]",
+            "    1124:      \tstr\tq0, [x0, x5]",
+            "    1168:      \tldr\tq0, [x1, x5]",
+            "    1170:      \tdup.2d\tv1, v1[0]",
+            "    1178:      \tstr\tq0, [x0, x5]",
+            "    19d4:      \tldr\tq16, [x2, x9]",
+            "    19d8:      \tldr\tq17, [x1, x9]",
+            "    19e0:      \tstr\tq16, [x0, x9]",
+            "    1a1c:      \tldr\tq19, [x2, x1]",
+            "    1a24:      \tdup.2d\tv20, v20[0]",
+            "    1a2c:      \tstr\tq19, [x0, x1]",
+            "    1a70:      \tldr\tq31, [x1, x5]",
+            "    1a78:      \tdup.2d\tv0, v0[0]",
+            "    1a80:      \tstr\tq31, [x0, x5]",
+            "    1c70:      \tldr\tq0, [x7, x1]",
+            "    1c74:      \tldr\tq1, [x6, x1]",
+            "    1c7c:      \tstr\tq0, [x5, x1]",
+            "    1cb8:      \tldr\tq0, [x7, x0]",
+            "    1cc0:      \tdup.2d\tv1, v1[0]",
+            "    1cc8:      \tstr\tq0, [x5, x0]",
+            "    1d0c:      \tldr\tq0, [x6, x1]",
+            "    1d14:      \tdup.2d\tv1, v1[0]",
+            "    1d1c:      \tstr\tq0, [x5, x1]",
+            "    2f0c:      \tstr\tq27, [x2, x11]",
+            "    2f20:      \tldr\tq16, [x12, x13]",
+            "    2fec:      \tstr\tq17, [x2, x12]",
+            "    2ff8:      \tstr\tq16, [x2, x11]",
+            "    300c:      \tldr\tq29, [x12, x13]",
+            "    3144:      \tstr\tq19, [x2, x12]",
+            "    3150:      \tstr\tq20, [x2, x12]",
+            "    315c:      \tstr\tq21, [x2, x12]",
+            "    3168:      \tstr\tq22, [x2, x11]",
+            "    317c:      \tldr\tq2, [x12, x13]",
+            "    3220:      \tdup.2d\tv0, v0[0]",
+            "    3228:      \tdup.2d\tv1, v1[0]",
+            "    3234:      \tstr\tq0, [x5, x1]",
+            "    3244:      \tdup.2d\tv0, v0[0]",
+            "    324c:      \tdup.2d\tv1, v1[0]",
+            "    3258:      \tstr\tq0, [x0, x2]",
+            "    3278:      \tdup.2d\tv7, v7[0]",
+            "    3280:      \tdup.2d\tv16, v16[0]",
+            "    328c:      \tstr\tq7, [x0, x7]",
+            "    32f0:      \tstr\tq0, [x2, x7]",
+            "    3308:      \tldr\tq22, [x1, x8]",
+            "    331c:      \tdup.2d\tv23, v23[0]",
+            "    3324:      \tdup.2d\tv24, v24[0]",
+            "    3330:      \tstr\tq23, [x0, x1]",
+            "    3340:      \tdup.2d\tv25, v25[0]",
+            "    3348:      \tdup.2d\tv26, v26[0]",
+            "    3354:      \tstr\tq25, [x0, x1]",
+            "    3364:      \tdup.2d\tv27, v27[0]",
+            "    336c:      \tdup.2d\tv28, v28[0]",
+            "    3378:      \tstr\tq27, [x0, x2]",
+            "    33d4:      \tstr\tq0, [x2, x6]",
+            "    33e8:      \tldr\tq1, [x1, x7]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 15556,
+          "reported_native_stack_bytes": 128,
+          "object_file_bytes": 84424,
+          "static_instruction_count": 3889,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3889,
+              "disassembly_sha256": "38ac53b884c06bec1a3da46ebf65e18e2343056d3b7c4a5bfc93fdad6df39b49"
+            }
+          },
+          "object_sha256": "39bbd8968c9b12b96d118e78b7e6a4b7ecaaff8de117c38b6ee8d4622603d2b4",
+          "metadata_sha256": "42c50f507577dfbec9075cff4580c852f1638fa6c38eab9336ae4c04a1bd8d00",
+          "disassembly_sha256": "8c28d2205992104b79032c0b6337c6dba2110820613d6c97e521b11c7374cf8d",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    2e08:      \tuzp1.2d\tv2, v0, v1",
+            "    2e18:      \tuzp2.2d\tv0, v0, v1",
+            "    33cc:      \tuzp1.2d\tv17, v7, v16",
+            "    33e4:      \tuzp2.2d\tv16, v7, v16"
+          ],
+          "hardware_division_sites": 26,
+          "integer_vector_copy_sites": [
+            "     534:      \tldr\tq29, [x2, x6]",
+            "     538:      \tldr\tq30, [x1, x6]",
+            "     540:      \tstr\tq29, [x0, x6]",
+            "     57c:      \tldr\tq0, [x2, x5]",
+            "     584:      \tdup.2d\tv1, v1[0]",
+            "     58c:      \tstr\tq0, [x0, x5]",
+            "     5d0:      \tldr\tq0, [x1, x5]",
+            "     5d8:      \tdup.2d\tv1, v1[0]",
+            "     5e0:      \tstr\tq0, [x0, x5]",
+            "     7d4:      \tldr\tq0, [x2, x6]",
+            "     7d8:      \tldr\tq1, [x1, x6]",
+            "     7e0:      \tstr\tq0, [x0, x6]",
+            "     81c:      \tldr\tq16, [x2, x9]",
+            "     824:      \tdup.2d\tv17, v17[0]",
+            "     82c:      \tstr\tq16, [x0, x9]",
+            "     870:      \tldr\tq20, [x1, x5]",
+            "     878:      \tdup.2d\tv21, v21[0]",
+            "     880:      \tstr\tq20, [x0, x5]",
+            "     a24:      \tstr\tq1, [x0, x15]",
+            "     a58:      \tldr\tq20, [x2, x8]",
+            "     a84:      \tdup.2d\tv20, v27[0]",
+            "     a90:      \tdup.2d\tv29, x8",
+            "     c5c:      \tldr\tq26, [x2, x6]",
+            "     c60:      \tldr\tq27, [x1, x6]",
+            "     c68:      \tstr\tq26, [x0, x6]",
+            "     ca4:      \tldr\tq0, [x2, x5]",
+            "     cac:      \tdup.2d\tv1, v1[0]",
+            "     cb4:      \tstr\tq0, [x0, x5]",
+            "     cf8:      \tldr\tq0, [x1, x5]",
+            "     d00:      \tdup.2d\tv1, v1[0]",
+            "     d08:      \tstr\tq0, [x0, x5]",
+            "    10cc:      \tldr\tq0, [x2, x5]",
+            "    10d0:      \tldr\tq1, [x1, x5]",
+            "    10d8:      \tstr\tq0, [x0, x5]",
+            "    1114:      \tldr\tq6, [x2, x6]",
+            "    111c:      \tdup.2d\tv7, v7[0]",
+            "    1124:      \tstr\tq6, [x0, x6]",
+            "    1168:      \tldr\tq18, [x1, x5]",
+            "    1170:      \tdup.2d\tv19, v19[0]",
+            "    1178:      \tstr\tq18, [x0, x5]",
+            "    19d4:      \tldr\tq0, [x2, x6]",
+            "    19d8:      \tldr\tq1, [x1, x6]",
+            "    19e0:      \tstr\tq0, [x0, x6]",
+            "    1a1c:      \tldr\tq0, [x2, x1]",
+            "    1a24:      \tdup.2d\tv1, v1[0]",
+            "    1a2c:      \tstr\tq0, [x0, x1]",
+            "    1a70:      \tldr\tq0, [x1, x5]",
+            "    1a78:      \tdup.2d\tv1, v1[0]",
+            "    1a80:      \tstr\tq0, [x0, x5]",
+            "    1c70:      \tldr\tq2, [x2, x6]",
+            "    1c74:      \tldr\tq3, [x1, x6]",
+            "    1c7c:      \tstr\tq2, [x0, x6]",
+            "    1cb8:      \tldr\tq16, [x2, x12]",
+            "    1cc0:      \tdup.2d\tv17, v17[0]",
+            "    1cc8:      \tstr\tq16, [x0, x12]",
+            "    1d0c:      \tldr\tq24, [x1, x5]",
+            "    1d14:      \tdup.2d\tv25, v25[0]",
+            "    1d1c:      \tstr\tq24, [x0, x5]",
+            "    2d88:      \tdup.2d\tv0, x9",
+            "    2d98:      \tstr\tq0, [x7, x8]",
+            "    2dcc:      \tldr\tq0, [x7, x8]",
+            "    2e00:      \tldr\tq0, [x7, x9]",
+            "    2e04:      \tldr\tq1, [x10, x8]",
+            "    2e08:      \tuzp1.2d\tv2, v0, v1",
+            "    2e14:      \tstr\tq2, [x7, x8]",
+            "    2e18:      \tuzp2.2d\tv0, v0, v1",
+            "    2e20:      \tstr\tq0, [x7, x8]",
+            "    3048:      \tstr\tq0, [x12, x5]",
+            "    305c:      \tldr\tq18, [x6, x7]",
+            "    3128:      \tstr\tq1, [x12, x5]",
+            "    3134:      \tstr\tq0, [x12, x2]",
+            "    3148:      \tldr\tq2, [x5, x7]",
+            "    3280:      \tstr\tq3, [x12, x6]",
+            "    328c:      \tstr\tq2, [x12, x6]",
+            "    3298:      \tstr\tq1, [x12, x6]",
+            "    32a4:      \tstr\tq0, [x12, x5]",
+            "    32b8:      \tldr\tq4, [x6, x7]",
+            "    3348:      \tdup.2d\tv0, x10",
+            "    335c:      \tstr\tq0, [x8, x9]",
+            "    338c:      \tldr\tq3, [x8, x9]",
+            "    33c4:      \tldr\tq7, [x8, x10]",
+            "    33c8:      \tldr\tq16, [x11, x9]",
+            "    33cc:      \tuzp1.2d\tv17, v7, v16",
+            "    33e0:      \tstr\tq17, [x9, x10]",
+            "    33e4:      \tuzp2.2d\tv16, v7, v16",
+            "    33ec:      \tstr\tq16, [x8, x9]",
+            "    33fc:      \tdup.2d\tv16, v16[0]",
+            "    3404:      \tdup.2d\tv17, v17[0]",
+            "    3410:      \tstr\tq16, [x0, x10]",
+            "    3420:      \tdup.2d\tv16, v16[0]",
+            "    3428:      \tdup.2d\tv17, v17[0]",
+            "    3434:      \tstr\tq16, [x0, x12]",
+            "    3454:      \tdup.2d\tv22, v22[0]",
+            "    345c:      \tdup.2d\tv23, v23[0]",
+            "    3468:      \tstr\tq22, [x0, x1]",
+            "    34cc:      \tstr\tq0, [x2, x7]",
+            "    34e4:      \tldr\tq1, [x1, x8]",
+            "    34f8:      \tdup.2d\tv0, v0[0]",
+            "    3500:      \tdup.2d\tv1, v1[0]",
+            "    350c:      \tstr\tq0, [x0, x1]",
+            "    351c:      \tdup.2d\tv0, v0[0]",
+            "    3524:      \tdup.2d\tv1, v1[0]",
+            "    3530:      \tstr\tq0, [x0, x1]",
+            "    3540:      \tdup.2d\tv0, v0[0]",
+            "    3548:      \tdup.2d\tv1, v1[0]",
+            "    3554:      \tstr\tq0, [x0, x2]",
+            "    35b0:      \tstr\tq16, [x2, x6]",
+            "    35c4:      \tldr\tq0, [x1, x6]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "covariance": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 5624,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31112,
+          "static_instruction_count": 1406,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1406,
+              "disassembly_sha256": "c846b301eb4ff428404fb19112be903d5189dfc178ccde5617f4ec78480c7f12"
+            }
+          },
+          "object_sha256": "c834c47a54ab7218f1da262b4c109fa4f5a83129f4cebfbaa494015e2c4ead25",
+          "metadata_sha256": "0b7633c6d6b0efa4ec87a8c5272c1f34ccd13298261b4799ef6529b034a9d36d",
+          "disassembly_sha256": "c7da0bb72366f5429c2b8977a21917860b06985a5a18972bce2a394ac6b9db45",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 15,
+          "integer_vector_copy_sites": [
+            "     580:      \tldr\tq30, [x2, x6]",
+            "     584:      \tldr\tq31, [x1, x6]",
+            "     58c:      \tstr\tq30, [x0, x6]",
+            "     5c8:      \tldr\tq0, [x2, x5]",
+            "     5d0:      \tdup.2d\tv1, v1[0]",
+            "     5d8:      \tstr\tq0, [x0, x5]",
+            "     61c:      \tldr\tq0, [x1, x5]",
+            "     624:      \tdup.2d\tv1, v1[0]",
+            "     62c:      \tstr\tq0, [x0, x5]",
+            "     844:      \tldr\tq0, [x2, x6]",
+            "     848:      \tldr\tq1, [x1, x6]",
+            "     850:      \tstr\tq0, [x0, x6]",
+            "     88c:      \tldr\tq16, [x2, x9]",
+            "     894:      \tdup.2d\tv17, v17[0]",
+            "     89c:      \tstr\tq16, [x0, x9]",
+            "     8e0:      \tldr\tq21, [x1, x5]",
+            "     8e8:      \tdup.2d\tv22, v22[0]",
+            "     8f0:      \tstr\tq21, [x0, x5]",
+            "     e44:      \tldr\tq6, [x2, x6]",
+            "     e48:      \tldr\tq7, [x1, x6]",
+            "     e50:      \tstr\tq6, [x0, x6]",
+            "     e8c:      \tldr\tq16, [x2, x1]",
+            "     e94:      \tdup.2d\tv17, v17[0]",
+            "     e9c:      \tstr\tq16, [x0, x1]",
+            "     ee0:      \tldr\tq28, [x1, x5]",
+            "     ee8:      \tdup.2d\tv29, v29[0]",
+            "     ef0:      \tstr\tq28, [x0, x5]",
+            "     fe8:      \tdup.2d\tv0, v0[0]",
+            "     ff0:      \tdup.2d\tv1, v1[0]",
+            "     ffc:      \tstr\tq0, [x0, x2]",
+            "    109c:      \tstr\tq18, [x2, x15]",
+            "    10b0:      \tldr\tq17, [x11, x12]",
+            "    117c:      \tstr\tq3, [x2, x12]",
+            "    1188:      \tstr\tq4, [x2, x11]",
+            "    119c:      \tldr\tq2, [x12, x13]",
+            "    12d4:      \tstr\tq19, [x2, x12]",
+            "    12e0:      \tstr\tq18, [x2, x12]",
+            "    12ec:      \tstr\tq17, [x2, x12]",
+            "    12f8:      \tstr\tq16, [x2, x11]",
+            "    130c:      \tldr\tq2, [x12, x13]",
+            "    13b0:      \tdup.2d\tv3, v3[0]",
+            "    13b8:      \tdup.2d\tv4, v4[0]",
+            "    13c4:      \tstr\tq3, [x0, x5]",
+            "    13d4:      \tdup.2d\tv5, v5[0]",
+            "    13dc:      \tdup.2d\tv6, v6[0]",
+            "    13e8:      \tstr\tq5, [x0, x5]",
+            "    1444:      \tstr\tq19, [x1, x6]",
+            "    1458:      \tldr\tq20, [x0, x7]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 5848,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 31336,
+          "static_instruction_count": 1462,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1462,
+              "disassembly_sha256": "97b8f6a276caee8af4c82f2c61dce0b7827931c0d34afefccf799b90f3407c0b"
+            }
+          },
+          "object_sha256": "93f2091ae15d710e7e110c45c2e24ee79944bc5adf00e725e29614c161c4d1c5",
+          "metadata_sha256": "683bf816a14a35a219146067ad61626a31f1738042c0215c35819c6ca3c2559e",
+          "disassembly_sha256": "07661bbfbbbb0370f69f23672ec6efd2523382811a028cf545a0a291965148c4",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    1468:      \tuzp1.2d\tv16, v6, v7",
+            "    1480:      \tuzp2.2d\tv7, v6, v7"
+          ],
+          "hardware_division_sites": 13,
+          "integer_vector_copy_sites": [
+            "     580:      \tldr\tq16, [x2, x10]",
+            "     584:      \tldr\tq17, [x1, x10]",
+            "     58c:      \tstr\tq16, [x0, x10]",
+            "     5c8:      \tldr\tq20, [x2, x5]",
+            "     5d0:      \tdup.2d\tv21, v21[0]",
+            "     5d8:      \tstr\tq20, [x0, x5]",
+            "     61c:      \tldr\tq0, [x1, x5]",
+            "     624:      \tdup.2d\tv1, v1[0]",
+            "     62c:      \tstr\tq0, [x0, x5]",
+            "     844:      \tldr\tq0, [x7, x1]",
+            "     848:      \tldr\tq1, [x6, x1]",
+            "     850:      \tstr\tq0, [x5, x1]",
+            "     88c:      \tldr\tq0, [x7, x1]",
+            "     894:      \tdup.2d\tv1, v1[0]",
+            "     89c:      \tstr\tq0, [x5, x1]",
+            "     8e0:      \tldr\tq1, [x6, x1]",
+            "     8e8:      \tdup.2d\tv2, v2[0]",
+            "     8f0:      \tstr\tq1, [x5, x1]",
+            "     e8c:      \tldr\tq1, [x2, x6]",
+            "     e90:      \tldr\tq2, [x1, x6]",
+            "     e98:      \tstr\tq1, [x0, x6]",
+            "     ed4:      \tldr\tq16, [x2, x11]",
+            "     edc:      \tdup.2d\tv17, v17[0]",
+            "     ee4:      \tstr\tq16, [x0, x11]",
+            "     f28:      \tldr\tq23, [x1, x5]",
+            "     f30:      \tdup.2d\tv24, v24[0]",
+            "     f38:      \tstr\tq23, [x0, x5]",
+            "    1030:      \tdup.2d\tv0, v0[0]",
+            "    1038:      \tdup.2d\tv1, v1[0]",
+            "    1044:      \tstr\tq0, [x0, x2]",
+            "    10e4:      \tstr\tq2, [x2, x10]",
+            "    10f8:      \tldr\tq16, [x12, x14]",
+            "    11c4:      \tstr\tq29, [x2, x12]",
+            "    11d0:      \tstr\tq30, [x2, x11]",
+            "    11e4:      \tldr\tq2, [x12, x13]",
+            "    131c:      \tstr\tq5, [x2, x12]",
+            "    1328:      \tstr\tq4, [x2, x12]",
+            "    1334:      \tstr\tq3, [x2, x12]",
+            "    1340:      \tstr\tq2, [x2, x11]",
+            "    1354:      \tldr\tq6, [x12, x13]",
+            "    13e4:      \tdup.2d\tv0, x10",
+            "    13f8:      \tstr\tq0, [x8, x9]",
+            "    1428:      \tldr\tq2, [x8, x9]",
+            "    1460:      \tldr\tq6, [x8, x10]",
+            "    1464:      \tldr\tq7, [x11, x9]",
+            "    1468:      \tuzp1.2d\tv16, v6, v7",
+            "    147c:      \tstr\tq16, [x9, x10]",
+            "    1480:      \tuzp2.2d\tv7, v6, v7",
+            "    1488:      \tstr\tq7, [x8, x9]",
+            "    1498:      \tdup.2d\tv16, v16[0]",
+            "    14a0:      \tdup.2d\tv17, v17[0]",
+            "    14ac:      \tstr\tq16, [x5, x9]",
+            "    14bc:      \tdup.2d\tv16, v16[0]",
+            "    14c4:      \tdup.2d\tv17, v17[0]",
+            "    14d0:      \tstr\tq16, [x0, x11]",
+            "    152c:      \tstr\tq23, [x1, x6]",
+            "    1540:      \tldr\tq26, [x0, x7]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "deriche": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 62308,
+          "reported_native_stack_bytes": 496,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "bf50e2726ee6f51cf6953a108703f36238aa617902f7f67becf36060476d0605",
+          "metadata_sha256": "63706e3d9ce37ba6cf6bfa2d83ed9452a6703cef46ec255acfb0384de784064e",
+          "disassembly_sha256": "33772fa6ce3de4c74f4cd4e049e3c9fa8436488d5363d8e29ca9bf9e8a62a3e1",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 8,
+          "integer_vector_copy_sites": [
+            "    79f0:      \tldr\tq7, [x2, x7]",
+            "    79f4:      \tldr\tq16, [x1, x7]",
+            "    79fc:      \tstr\tq7, [x0, x7]",
+            "    7a38:      \tldr\tq17, [x2, x5]",
+            "    7a40:      \tdup.2d\tv18, v18[0]",
+            "    7a48:      \tstr\tq17, [x0, x5]",
+            "    7a8c:      \tldr\tq29, [x1, x5]",
+            "    7a94:      \tdup.2d\tv30, v30[0]",
+            "    7a9c:      \tstr\tq29, [x0, x5]",
+            "    7ba8:      \tdup.2d\tv1, v1[0]",
+            "    7bb0:      \tdup.2d\tv2, v2[0]",
+            "    7bbc:      \tstr\tq1, [x0, x2]",
+            "    d4d8:      \tldr\tq16, [x2, x12]",
+            "    d4dc:      \tldr\tq17, [x1, x12]",
+            "    d4e4:      \tstr\tq16, [x0, x12]",
+            "    d520:      \tldr\tq22, [x2, x5]",
+            "    d528:      \tdup.2d\tv23, v23[0]",
+            "    d530:      \tstr\tq22, [x0, x5]",
+            "    d574:      \tldr\tq0, [x1, x5]",
+            "    d57c:      \tdup.2d\tv1, v1[0]",
+            "    d584:      \tstr\tq0, [x0, x5]",
+            "    d690:      \tdup.2d\tv6, v6[0]",
+            "    d698:      \tdup.2d\tv7, v7[0]",
+            "    d6a4:      \tstr\tq6, [x0, x6]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 65188,
+          "reported_native_stack_bytes": 496,
+          "object_file_bytes": 407720,
+          "static_instruction_count": 16297,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 13419,
+              "disassembly_sha256": "ede086c07fdad29a84c2cdc8509d635d1eb6c1ab74df19c37419a0bb04d70199"
+            }
+          },
+          "object_sha256": "1df17809a693fe8a7af4b3ab5480805f678c699e5b4d4a966cf072b639a40dff",
+          "metadata_sha256": "d9ab0f43068ec25cdc80d703a6714c209b034352c973b8b7f0c63d538582eaec",
+          "disassembly_sha256": "48a87b8fa2c47debdcbc227664aae8f57195e193b8d6d3a7a16c6af2ffd4c6e7",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    4b54:      \tuzp1.2d\tv5, v3, v4",
+            "    4b64:      \tuzp2.2d\tv4, v3, v4",
+            "    5364:      \tuzp1.2d\tv17, v7, v16",
+            "    5374:      \tuzp2.2d\tv16, v7, v16",
+            "    67ec:      \tuzp1.2d\tv2, v0, v1",
+            "    67fc:      \tuzp2.2d\tv0, v0, v1",
+            "    6ffc:      \tuzp1.2d\tv2, v0, v1",
+            "    700c:      \tuzp2.2d\tv0, v0, v1",
+            "    aa90:      \tuzp1.2d\tv26, v24, v25",
+            "    aaa0:      \tuzp2.2d\tv25, v24, v25",
+            "    b2a0:      \tuzp1.2d\tv30, v28, v29",
+            "    b2b0:      \tuzp2.2d\tv29, v28, v29",
+            "    c72c:      \tuzp1.2d\tv18, v16, v17",
+            "    c73c:      \tuzp2.2d\tv16, v16, v17",
+            "    cf3c:      \tuzp1.2d\tv19, v17, v18",
+            "    cf4c:      \tuzp2.2d\tv18, v17, v18",
+            "    fa98:      \tuzp1.2d\tv2, v0, v1",
+            "    faa8:      \tuzp2.2d\tv0, v0, v1",
+            "    fb58:      \tuzp1.2d\tv18, v16, v17",
+            "    fb68:      \tuzp2.2d\tv16, v16, v17",
+            "    fc34:      \tuzp1.2d\tv1, v31, v0",
+            "    fc44:      \tuzp2.2d\tv0, v31, v0",
+            "    fcf4:      \tuzp1.2d\tv2, v0, v1",
+            "    fd04:      \tuzp2.2d\tv0, v0, v1"
+          ],
+          "hardware_division_sites": 8,
+          "integer_vector_copy_sites": [
+            "    4ad8:      \tdup.2d\tv0, x8",
+            "    4ae8:      \tstr\tq0, [x6, x7]",
+            "    4b18:      \tldr\tq0, [x5, x6]",
+            "    4b48:      \tldr\tq3, [x5, x6]",
+            "    4b50:      \tldr\tq4, [x5, x6]",
+            "    4b54:      \tuzp1.2d\tv5, v3, v4",
+            "    4b60:      \tstr\tq5, [x5, x6]",
+            "    4b64:      \tuzp2.2d\tv4, v3, v4",
+            "    4b6c:      \tstr\tq4, [x5, x6]",
+            "    52e8:      \tdup.2d\tv0, x8",
+            "    52f8:      \tstr\tq0, [x6, x7]",
+            "    5328:      \tldr\tq3, [x5, x6]",
+            "    5358:      \tldr\tq7, [x7, x8]",
+            "    5360:      \tldr\tq16, [x6, x8]",
+            "    5364:      \tuzp1.2d\tv17, v7, v16",
+            "    5370:      \tstr\tq17, [x7, x8]",
+            "    5374:      \tuzp2.2d\tv16, v7, v16",
+            "    537c:      \tstr\tq16, [x9, x8]",
+            "    6770:      \tdup.2d\tv0, x8",
+            "    6780:      \tstr\tq0, [x6, x7]",
+            "    67b0:      \tldr\tq0, [x6, x7]",
+            "    67e0:      \tldr\tq0, [x6, x7]",
+            "    67e8:      \tldr\tq1, [x6, x7]",
+            "    67ec:      \tuzp1.2d\tv2, v0, v1",
+            "    67f8:      \tstr\tq2, [x6, x7]",
+            "    67fc:      \tuzp2.2d\tv0, v0, v1",
+            "    6804:      \tstr\tq0, [x6, x7]",
+            "    6f80:      \tdup.2d\tv0, x8",
+            "    6f90:      \tstr\tq0, [x6, x7]",
+            "    6fc0:      \tldr\tq0, [x6, x7]",
+            "    6ff0:      \tldr\tq0, [x6, x7]",
+            "    6ff8:      \tldr\tq1, [x6, x7]",
+            "    6ffc:      \tuzp1.2d\tv2, v0, v1",
+            "    7008:      \tstr\tq2, [x6, x7]",
+            "    700c:      \tuzp2.2d\tv0, v0, v1",
+            "    7014:      \tstr\tq0, [x6, x7]",
+            "    7dbc:      \tldr\tq16, [x2, x12]",
+            "    7dc0:      \tldr\tq17, [x1, x12]",
+            "    7dc8:      \tstr\tq16, [x0, x12]",
+            "    7e04:      \tldr\tq22, [x2, x5]",
+            "    7e0c:      \tdup.2d\tv23, v23[0]",
+            "    7e14:      \tstr\tq22, [x0, x5]",
+            "    7e58:      \tldr\tq0, [x1, x5]",
+            "    7e60:      \tdup.2d\tv1, v1[0]",
+            "    7e68:      \tstr\tq0, [x0, x5]",
+            "    7f74:      \tdup.2d\tv6, v6[0]",
+            "    7f7c:      \tdup.2d\tv7, v7[0]",
+            "    7f88:      \tstr\tq6, [x0, x6]",
+            "    aa14:      \tdup.2d\tv16, x14",
+            "    aa24:      \tstr\tq16, [x12, x13]",
+            "    aa54:      \tldr\tq20, [x1, x2]",
+            "    aa84:      \tldr\tq24, [x1, x2]",
+            "    aa8c:      \tldr\tq25, [x1, x2]",
+            "    aa90:      \tuzp1.2d\tv26, v24, v25",
+            "    aa9c:      \tstr\tq26, [x1, x2]",
+            "    aaa0:      \tuzp2.2d\tv25, v24, v25",
+            "    aaa8:      \tstr\tq25, [x1, x2]",
+            "    b224:      \tdup.2d\tv16, x2",
+            "    b234:      \tstr\tq16, [x0, x1]",
+            "    b264:      \tldr\tq24, [x1, x2]",
+            "    b294:      \tldr\tq28, [x1, x2]",
+            "    b29c:      \tldr\tq29, [x1, x2]",
+            "    b2a0:      \tuzp1.2d\tv30, v28, v29",
+            "    b2ac:      \tstr\tq30, [x1, x2]",
+            "    b2b0:      \tuzp2.2d\tv29, v28, v29",
+            "    b2b8:      \tstr\tq29, [x1, x2]",
+            "    c6b0:      \tdup.2d\tv0, x7",
+            "    c6c0:      \tstr\tq0, [x5, x6]",
+            "    c6f0:      \tldr\tq16, [x10, x11]",
+            "    c720:      \tldr\tq16, [x13, x14]",
+            "    c728:      \tldr\tq17, [x12, x14]",
+            "    c72c:      \tuzp1.2d\tv18, v16, v17",
+            "    c738:      \tstr\tq18, [x13, x14]",
+            "    c73c:      \tuzp2.2d\tv16, v16, v17",
+            "    c744:      \tstr\tq16, [x15, x14]",
+            "    cec0:      \tdup.2d\tv4, x9",
+            "    ced0:      \tstr\tq4, [x7, x8]",
+            "    cf00:      \tldr\tq16, [x13, x14]",
+            "    cf30:      \tldr\tq17, [x1, x7]",
+            "    cf38:      \tldr\tq18, [x1, x7]",
+            "    cf3c:      \tuzp1.2d\tv19, v17, v18",
+            "    cf48:      \tstr\tq19, [x1, x7]",
+            "    cf4c:      \tuzp2.2d\tv18, v17, v18",
+            "    cf54:      \tstr\tq18, [x1, x7]",
+            "    dcfc:      \tldr\tq0, [x2, x6]",
+            "    dd00:      \tldr\tq1, [x1, x6]",
+            "    dd08:      \tstr\tq0, [x0, x6]",
+            "    dd44:      \tldr\tq0, [x2, x5]",
+            "    dd4c:      \tdup.2d\tv1, v1[0]",
+            "    dd54:      \tstr\tq0, [x0, x5]",
+            "    dd98:      \tldr\tq0, [x1, x2]",
+            "    dda0:      \tdup.2d\tv1, v1[0]",
+            "    dda8:      \tstr\tq0, [x0, x2]",
+            "    deb4:      \tdup.2d\tv27, v27[0]",
+            "    debc:      \tdup.2d\tv28, v28[0]",
+            "    dec8:      \tstr\tq27, [x0, x2]",
+            "    fa14:      \tdup.2d\tv0, x8",
+            "    fa24:      \tstr\tq0, [x6, x7]",
+            "    fa58:      \tldr\tq0, [x6, x7]",
+            "    fa8c:      \tldr\tq0, [x6, x7]",
+            "    fa94:      \tldr\tq1, [x6, x7]",
+            "    fa98:      \tuzp1.2d\tv2, v0, v1",
+            "    faa4:      \tstr\tq2, [x6, x7]",
+            "    faa8:      \tuzp2.2d\tv0, v0, v1",
+            "    fab0:      \tstr\tq0, [x6, x7]",
+            "    fad4:      \tdup.2d\tv0, x5",
+            "    fae4:      \tstr\tq0, [x1, x2]",
+            "    fb18:      \tldr\tq7, [x9, x10]",
+            "    fb4c:      \tldr\tq16, [x11, x12]",
+            "    fb54:      \tldr\tq17, [x10, x12]",
+            "    fb58:      \tuzp1.2d\tv18, v16, v17",
+            "    fb64:      \tstr\tq18, [x11, x12]",
+            "    fb68:      \tuzp2.2d\tv16, v16, v17",
+            "    fb70:      \tstr\tq16, [x13, x12]",
+            "    fbb0:      \tdup.2d\tv18, x8",
+            "    fbc0:      \tstr\tq18, [x2, x7]",
+            "    fbf4:      \tldr\tq27, [x2, x7]",
+            "    fc28:      \tldr\tq31, [x2, x7]",
+            "    fc30:      \tldr\tq0, [x2, x7]",
+            "    fc34:      \tuzp1.2d\tv1, v31, v0",
+            "    fc40:      \tstr\tq1, [x2, x7]",
+            "    fc44:      \tuzp2.2d\tv0, v31, v0",
+            "    fc4c:      \tstr\tq0, [x2, x7]",
+            "    fc70:      \tdup.2d\tv0, x8",
+            "    fc80:      \tstr\tq0, [x6, x7]",
+            "    fcb4:      \tldr\tq0, [x6, x7]",
+            "    fce8:      \tldr\tq0, [x6, x7]",
+            "    fcf0:      \tldr\tq1, [x6, x7]",
+            "    fcf4:      \tuzp1.2d\tv2, v0, v1",
+            "    fd00:      \tstr\tq2, [x6, x7]",
+            "    fd04:      \tuzp2.2d\tv0, v0, v1",
+            "    fd0c:      \tstr\tq0, [x6, x7]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "doitgen": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 1948,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 13488,
+          "static_instruction_count": 487,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 487,
+              "disassembly_sha256": "042e139b30bfc43eb1101ed5f4334ac1682447988b049b54c1301c4396da1b19"
+            }
+          },
+          "object_sha256": "4be984504d8113fb80caa670efa1fd3bd213e44f31f70a6de1831850ee60f930",
+          "metadata_sha256": "37c2b2a75ab7977e05756c058a09eb7895aa0d01a0e21ac490d884719da4b122",
+          "disassembly_sha256": "3e1485fc15ad3863aea1a0dd0b8b0f7a69c7f2357f901fcb1335acc424fdb2c1",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 1,
+          "integer_vector_copy_sites": [
+            "     3b4:      \tstr\tq0, [x2, x11]",
+            "     3c8:      \tldr\tq16, [x12, x13]",
+            "     494:      \tstr\tq1, [x2, x12]",
+            "     4a0:      \tstr\tq0, [x2, x11]",
+            "     4b4:      \tldr\tq29, [x12, x13]",
+            "     5ec:      \tstr\tq3, [x2, x12]",
+            "     5f8:      \tstr\tq2, [x2, x12]",
+            "     604:      \tstr\tq1, [x2, x12]",
+            "     610:      \tstr\tq0, [x2, x11]",
+            "     624:      \tldr\tq4, [x12, x13]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 1948,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 13488,
+          "static_instruction_count": 487,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 487,
+              "disassembly_sha256": "042e139b30bfc43eb1101ed5f4334ac1682447988b049b54c1301c4396da1b19"
+            }
+          },
+          "object_sha256": "f99b6e84d2b58a4fdc5f8c86e24a14b943a51bf36ed61fce331d352225b2d98d",
+          "metadata_sha256": "a3c9cb79e2437d6bcade12a165997fb514ae4bf5d585056fb7d08ff51bf66f60",
+          "disassembly_sha256": "329edd744f6dfb57a5429a15f7d47167d14fafef148c4e31403124027bf68b40",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 1,
+          "integer_vector_copy_sites": [
+            "     3b4:      \tstr\tq0, [x2, x11]",
+            "     3c8:      \tldr\tq16, [x12, x13]",
+            "     494:      \tstr\tq1, [x2, x12]",
+            "     4a0:      \tstr\tq0, [x2, x11]",
+            "     4b4:      \tldr\tq29, [x12, x13]",
+            "     5ec:      \tstr\tq3, [x2, x12]",
+            "     5f8:      \tstr\tq2, [x2, x12]",
+            "     604:      \tstr\tq1, [x2, x12]",
+            "     610:      \tstr\tq0, [x2, x11]",
+            "     624:      \tldr\tq4, [x12, x13]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "durbin": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 21236,
+          "reported_native_stack_bytes": 2032,
+          "object_file_bytes": 145080,
+          "static_instruction_count": 5309,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1867,
+              "disassembly_sha256": "74e56fea300a52725eed567806bcbd1454bd6c769ed02204435ff143c4c95a4c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3442,
+              "disassembly_sha256": "667aef55f57f0409a77fdfafa37cd73b1f5eb005557aafd2cd45097fe7c038c1"
+            }
+          },
+          "object_sha256": "3b68c9583c0a4c4cbe1be706772c8b700bdc0d82ddad94a6d211169764f68ea4",
+          "metadata_sha256": "27973f2ab55595b8bfd748cfc7ca9b456fda2768ccfc54e870bd6938c95b7977",
+          "disassembly_sha256": "e4e0ce22213eb29101e2820611ddaa243216c16711ad0d16131e97800de94413",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    3738:      \tstr\tq31, [x1, x9]",
+            "    37ec:      \tdup.2d\tv1, v1[0]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ]
+        },
+        "candidate": {
+          "code_bytes": 21480,
+          "reported_native_stack_bytes": 2032,
+          "object_file_bytes": 145328,
+          "static_instruction_count": 5370,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1867,
+              "disassembly_sha256": "74e56fea300a52725eed567806bcbd1454bd6c769ed02204435ff143c4c95a4c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3503,
+              "disassembly_sha256": "1c168a435928253b2363eb319c5157ffb7ed115f0a9dd7ab605ea22e122a2244"
+            }
+          },
+          "object_sha256": "1a4831cde670502d926c4017fb410ca2d0693ab35daf8a709ade7452f365343d",
+          "metadata_sha256": "ae8fe0d5a58a8b14e6c39afd4819499b37ae40db36a654fa71535190f5fca99f",
+          "disassembly_sha256": "38d78014fd9ca1dd1505eb2c9a9c1947bea9a5d11c2beaea51e175b6645baef2",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    46a8:      \tuzp1.2d\tv2, v0, v1",
+            "    46b8:      \tuzp2.2d\tv0, v0, v1"
+          ],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    3738:      \tstr\tq31, [x5, x0]",
+            "    37ec:      \tdup.2d\tv16, v16[0]",
+            "    4628:      \tdup.2d\tv20, x7",
+            "    4638:      \tstr\tq20, [x5, x6]",
+            "    466c:      \tldr\tq29, [x5, x6]",
+            "    469c:      \tldr\tq0, [x5, x6]",
+            "    46a4:      \tldr\tq1, [x5, x6]",
+            "    46a8:      \tuzp1.2d\tv2, v0, v1",
+            "    46b4:      \tstr\tq2, [x5, x6]",
+            "    46b8:      \tuzp2.2d\tv0, v0, v1",
+            "    46c0:      \tstr\tq0, [x5, x6]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "gemm": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 7360,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 27304,
+          "static_instruction_count": 1840,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1840,
+              "disassembly_sha256": "9de588143b8e5af40b4ee43e4fdc796cacb74ba4d1c5595aa5e9783c49e55b1f"
+            }
+          },
+          "object_sha256": "88357546c85a0bc388fb8fdd22f8ed805700d8dc8946ab766d96f84202a912cc",
+          "metadata_sha256": "b509754d12141836a3804cc11acb7bc8724d3b2467989b3adfdb87c8cede828b",
+          "disassembly_sha256": "c5797c18949d2015d4c44699f367b38cc337fcb7cdf537d7baadbe7467d140a7",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 14,
+          "integer_vector_copy_sites": [
+            "     25c:      \tdup.2d\tv27, x12",
+            "     260:      \tdup.2d\tv28, v23[0]",
+            "     264:      \tdup.2d\tv29, v24[0]",
+            "     268:      \tdup.2d\tv30, v25[0]",
+            "     3fc:      \tldr\tq0, [x7, x15]",
+            "     44c:      \tstr\tq22, [x2, x13]",
+            "     460:      \tldr\tq31, [x14, x15]",
+            "     65c:      \tldr\tq17, [x7, x13]",
+            "     6ac:      \tstr\tq31, [x2, x14]",
+            "     708:      \tldr\tq0, [x7, x14]",
+            "     75c:      \tstr\tq0, [x2, x13]",
+            "     770:      \tldr\tq2, [x14, x15]",
+            "     ac0:      \tldr\tq1, [x7, x13]",
+            "     b10:      \tstr\tq18, [x2, x13]",
+            "     b6c:      \tldr\tq19, [x7, x13]",
+            "     bc0:      \tstr\tq0, [x2, x14]",
+            "     c1c:      \tldr\tq4, [x7, x14]",
+            "     c70:      \tstr\tq0, [x2, x14]",
+            "     ccc:      \tldr\tq1, [x7, x14]",
+            "     d20:      \tstr\tq6, [x2, x13]",
+            "     fe8:      \tldr\tq0, [x2, x6]",
+            "     fec:      \tldr\tq1, [x1, x6]",
+            "     ff4:      \tstr\tq0, [x0, x6]",
+            "    1030:      \tldr\tq0, [x2, x5]",
+            "    1038:      \tdup.2d\tv1, v1[0]",
+            "    1040:      \tstr\tq0, [x0, x5]",
+            "    1084:      \tldr\tq0, [x1, x2]",
+            "    108c:      \tdup.2d\tv1, v1[0]",
+            "    1094:      \tstr\tq0, [x0, x2]",
+            "    1298:      \tldr\tq6, [x2, x6]",
+            "    129c:      \tldr\tq7, [x1, x6]",
+            "    12a4:      \tstr\tq6, [x0, x6]",
+            "    12e0:      \tldr\tq16, [x2, x5]",
+            "    12e8:      \tdup.2d\tv17, v17[0]",
+            "    12f0:      \tstr\tq16, [x0, x5]",
+            "    1334:      \tldr\tq28, [x1, x2]",
+            "    133c:      \tdup.2d\tv29, v29[0]",
+            "    1344:      \tstr\tq28, [x0, x2]",
+            "    1538:      \tldr\tq0, [x5, x6]",
+            "    153c:      \tldr\tq1, [x2, x6]",
+            "    1544:      \tstr\tq0, [x1, x6]",
+            "    1580:      \tldr\tq0, [x5, x2]",
+            "    1588:      \tdup.2d\tv1, v1[0]",
+            "    1590:      \tstr\tq0, [x1, x2]",
+            "    15d4:      \tldr\tq0, [x2, x5]",
+            "    15dc:      \tdup.2d\tv1, v1[0]",
+            "    15e4:      \tstr\tq0, [x1, x5]",
+            "    16bc:      \tdup.2d\tv26, v26[0]",
+            "    16c4:      \tdup.2d\tv27, v27[0]",
+            "    16d0:      \tstr\tq26, [x1, x2]",
+            "    16e0:      \tdup.2d\tv28, v28[0]",
+            "    16e8:      \tdup.2d\tv29, v29[0]",
+            "    16f4:      \tstr\tq28, [x0, x2]",
+            "    1704:      \tdup.2d\tv30, v30[0]",
+            "    170c:      \tdup.2d\tv31, v31[0]",
+            "    1718:      \tstr\tq30, [x0, x2]",
+            "    17b8:      \tstr\tq2, [x2, x10]",
+            "    17cc:      \tldr\tq3, [x11, x12]",
+            "    1898:      \tstr\tq31, [x2, x12]",
+            "    18a4:      \tstr\tq2, [x2, x11]",
+            "    18b8:      \tldr\tq16, [x12, x13]",
+            "    19f0:      \tstr\tq5, [x2, x12]",
+            "    19fc:      \tstr\tq4, [x2, x12]",
+            "    1a08:      \tstr\tq3, [x2, x12]",
+            "    1a14:      \tstr\tq2, [x2, x11]",
+            "    1a28:      \tldr\tq6, [x12, x13]",
+            "    1aa8:      \tldr\tq0, [x14, x15]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 7360,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 27304,
+          "static_instruction_count": 1840,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1840,
+              "disassembly_sha256": "9de588143b8e5af40b4ee43e4fdc796cacb74ba4d1c5595aa5e9783c49e55b1f"
+            }
+          },
+          "object_sha256": "f2f27cb2a7ad01b0f23ada4ab485281914bb04708a2366f6ce64b92488ac964b",
+          "metadata_sha256": "abb23ab1f148562c046e37dab611d4cc7f7ebbb95280da5813fb682c770772e6",
+          "disassembly_sha256": "14886eb291518681866a35d39c818ccf663faab51ea0e541bc03fece26a35e8d",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 14,
+          "integer_vector_copy_sites": [
+            "     25c:      \tdup.2d\tv27, x12",
+            "     260:      \tdup.2d\tv28, v23[0]",
+            "     264:      \tdup.2d\tv29, v24[0]",
+            "     268:      \tdup.2d\tv30, v25[0]",
+            "     3fc:      \tldr\tq0, [x7, x15]",
+            "     44c:      \tstr\tq22, [x2, x13]",
+            "     460:      \tldr\tq31, [x14, x15]",
+            "     65c:      \tldr\tq17, [x7, x13]",
+            "     6ac:      \tstr\tq31, [x2, x14]",
+            "     708:      \tldr\tq0, [x7, x14]",
+            "     75c:      \tstr\tq0, [x2, x13]",
+            "     770:      \tldr\tq2, [x14, x15]",
+            "     ac0:      \tldr\tq1, [x7, x13]",
+            "     b10:      \tstr\tq18, [x2, x13]",
+            "     b6c:      \tldr\tq19, [x7, x13]",
+            "     bc0:      \tstr\tq0, [x2, x14]",
+            "     c1c:      \tldr\tq4, [x7, x14]",
+            "     c70:      \tstr\tq0, [x2, x14]",
+            "     ccc:      \tldr\tq1, [x7, x14]",
+            "     d20:      \tstr\tq6, [x2, x13]",
+            "     fe8:      \tldr\tq0, [x2, x6]",
+            "     fec:      \tldr\tq1, [x1, x6]",
+            "     ff4:      \tstr\tq0, [x0, x6]",
+            "    1030:      \tldr\tq0, [x2, x5]",
+            "    1038:      \tdup.2d\tv1, v1[0]",
+            "    1040:      \tstr\tq0, [x0, x5]",
+            "    1084:      \tldr\tq0, [x1, x2]",
+            "    108c:      \tdup.2d\tv1, v1[0]",
+            "    1094:      \tstr\tq0, [x0, x2]",
+            "    1298:      \tldr\tq6, [x2, x6]",
+            "    129c:      \tldr\tq7, [x1, x6]",
+            "    12a4:      \tstr\tq6, [x0, x6]",
+            "    12e0:      \tldr\tq16, [x2, x5]",
+            "    12e8:      \tdup.2d\tv17, v17[0]",
+            "    12f0:      \tstr\tq16, [x0, x5]",
+            "    1334:      \tldr\tq28, [x1, x2]",
+            "    133c:      \tdup.2d\tv29, v29[0]",
+            "    1344:      \tstr\tq28, [x0, x2]",
+            "    1538:      \tldr\tq0, [x5, x6]",
+            "    153c:      \tldr\tq1, [x2, x6]",
+            "    1544:      \tstr\tq0, [x1, x6]",
+            "    1580:      \tldr\tq0, [x5, x2]",
+            "    1588:      \tdup.2d\tv1, v1[0]",
+            "    1590:      \tstr\tq0, [x1, x2]",
+            "    15d4:      \tldr\tq0, [x2, x5]",
+            "    15dc:      \tdup.2d\tv1, v1[0]",
+            "    15e4:      \tstr\tq0, [x1, x5]",
+            "    16bc:      \tdup.2d\tv26, v26[0]",
+            "    16c4:      \tdup.2d\tv27, v27[0]",
+            "    16d0:      \tstr\tq26, [x1, x2]",
+            "    16e0:      \tdup.2d\tv28, v28[0]",
+            "    16e8:      \tdup.2d\tv29, v29[0]",
+            "    16f4:      \tstr\tq28, [x0, x2]",
+            "    1704:      \tdup.2d\tv30, v30[0]",
+            "    170c:      \tdup.2d\tv31, v31[0]",
+            "    1718:      \tstr\tq30, [x0, x2]",
+            "    17b8:      \tstr\tq2, [x2, x10]",
+            "    17cc:      \tldr\tq3, [x11, x12]",
+            "    1898:      \tstr\tq31, [x2, x12]",
+            "    18a4:      \tstr\tq2, [x2, x11]",
+            "    18b8:      \tldr\tq16, [x12, x13]",
+            "    19f0:      \tstr\tq5, [x2, x12]",
+            "    19fc:      \tstr\tq4, [x2, x12]",
+            "    1a08:      \tstr\tq3, [x2, x12]",
+            "    1a14:      \tstr\tq2, [x2, x11]",
+            "    1a28:      \tldr\tq6, [x12, x13]",
+            "    1aa8:      \tldr\tq0, [x14, x15]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "gramschmidt": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 55676,
+          "reported_native_stack_bytes": 23168,
+          "object_file_bytes": 272576,
+          "static_instruction_count": 13919,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 5030,
+              "disassembly_sha256": "b5620aa6c931c4eacae351a6dd7f42610ac25fe86cfcb73de024969611323f96"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8889,
+              "disassembly_sha256": "4c2558cf78259f46202ca53f9a211469c386476a7e449656ad5d377b4cbff8fe"
+            }
+          },
+          "object_sha256": "dd1b251c03c513e1c988c1fdabb2833ecc343028fa6443752f1d78ee7cceb80f",
+          "metadata_sha256": "70ac59d216f5da91a1a842b1a7cd6eb0cd83629664e5340c98177c57caa176dd",
+          "disassembly_sha256": "694adf105be594f9f8150eeef08cfaa760692d4198d54f30283af75c59fa137f",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    1934:      \tdup.2d\tv16, x12",
+            "    19c0:      \tldr\tq25, [x12, x15]",
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    1a04:      \tstr\tq0, [x28, x4]",
+            "    21c4:      \tldr\tq0, [x0, x13]",
+            "    21c8:      \tstr\tq0, [x27, x13]",
+            "    2974:      \tldr\tq18, [x5, x15]",
+            "    2978:      \tstr\tq18, [x8, x15]",
+            "    2ff4:      \tldr\tq0, [x1, x0]",
+            "    2ff8:      \tstr\tq0, [x7, x0]",
+            "    6a30:      \tdup.2d\tv1, v1[0]",
+            "    6a48:      \tstr\tq16, [x1, x0]",
+            "    73d4:      \tstr\tq22, [sp, x16, sxtx]",
+            "    7988:      \tdup.2d\tv2, x0",
+            "    7a10:      \tldr\tq4, [x26, x25]",
+            "    7a20:      \tdup.2d\tv5, v5[0]",
+            "    7a50:      \tstr\tq3, [x8, x0]",
+            "    7e78:      \tldr\tq0, [sp, x16, sxtx]",
+            "    7ea8:      \tldr\tq16, [sp, x16, sxtx]",
+            "    85d8:      \tldr\tq20, [sp, x16, sxtx]",
+            "    8608:      \tldr\tq0, [sp, x16, sxtx]",
+            "    8b14:      \tldr\tq1, [sp, x16, sxtx]",
+            "    8b58:      \tdup.2d\tv16, v16[0]",
+            "    8b70:      \tstr\tq5, [x1, x12]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ]
+        },
+        "candidate": {
+          "code_bytes": 56648,
+          "reported_native_stack_bytes": 23168,
+          "object_file_bytes": 273544,
+          "static_instruction_count": 14162,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 5030,
+              "disassembly_sha256": "b5620aa6c931c4eacae351a6dd7f42610ac25fe86cfcb73de024969611323f96"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 9132,
+              "disassembly_sha256": "c9dfba60d8c82399e376c83c744e6035608147bf58c29e75ec5301de65313817"
+            }
+          },
+          "object_sha256": "0da6e732ba7dbad7a1753fd3efb7929822ac2409a6a00d37f6f04148ad574259",
+          "metadata_sha256": "ad00412ae4a63b947a1189784f4e6fe86b61bbc9381283526fdae804a4ae61b7",
+          "disassembly_sha256": "269c496a2be08429c78b4bb684c94dc3aec393328bab3cbbefe781cc552352e7",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    7364:      \tuzp1.2d\tv2, v0, v1",
+            "    7374:      \tuzp2.2d\tv0, v0, v1",
+            "    9d7c:      \tuzp1.2d\tv18, v16, v17",
+            "    9d8c:      \tuzp2.2d\tv16, v16, v17",
+            "    b284:      \tuzp1.2d\tv2, v0, v1",
+            "    b294:      \tuzp2.2d\tv0, v0, v1",
+            "    c5c0:      \tuzp1.2d\tv7, v5, v6",
+            "    c5d0:      \tuzp2.2d\tv6, v5, v6"
+          ],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [
+            "    1934:      \tdup.2d\tv16, x12",
+            "    19c0:      \tldr\tq25, [x12, x15]",
+            "    19cc:      \tdup.2d\tv26, v26[0]",
+            "    1a04:      \tstr\tq0, [x28, x4]",
+            "    21c4:      \tldr\tq0, [x0, x13]",
+            "    21c8:      \tstr\tq0, [x27, x13]",
+            "    2974:      \tldr\tq18, [x5, x15]",
+            "    2978:      \tstr\tq18, [x8, x15]",
+            "    2ff4:      \tldr\tq0, [x1, x0]",
+            "    2ff8:      \tstr\tq0, [x7, x0]",
+            "    6a34:      \tdup.2d\tv31, v31[0]",
+            "    6a4c:      \tstr\tq16, [x1, x0]",
+            "    72e4:      \tdup.2d\tv0, x7",
+            "    72f4:      \tstr\tq0, [x2, x6]",
+            "    7328:      \tldr\tq0, [x6, x7]",
+            "    7358:      \tldr\tq0, [x6, x7]",
+            "    7360:      \tldr\tq1, [x6, x7]",
+            "    7364:      \tuzp1.2d\tv2, v0, v1",
+            "    7370:      \tstr\tq2, [x6, x7]",
+            "    7374:      \tuzp2.2d\tv0, v0, v1",
+            "    737c:      \tstr\tq0, [x6, x7]",
+            "    74d0:      \tstr\tq0, [sp, x16, sxtx]",
+            "    7a80:      \tdup.2d\tv2, x0",
+            "    7b08:      \tldr\tq16, [x26, x24]",
+            "    7b18:      \tdup.2d\tv17, v17[0]",
+            "    7b48:      \tstr\tq3, [x8, x0]",
+            "    7f70:      \tldr\tq6, [sp, x16, sxtx]",
+            "    7fa0:      \tldr\tq20, [sp, x16, sxtx]",
+            "    86c8:      \tldr\tq30, [sp, x16, sxtx]",
+            "    86f8:      \tldr\tq0, [sp, x16, sxtx]",
+            "    8c04:      \tldr\tq4, [sp, x16, sxtx]",
+            "    8c48:      \tdup.2d\tv24, v24[0]",
+            "    8c60:      \tstr\tq17, [x1, x5]",
+            "    9cfc:      \tdup.2d\tv0, x8",
+            "    9d0c:      \tstr\tq0, [x6, x7]",
+            "    9d40:      \tldr\tq16, [x9, x10]",
+            "    9d70:      \tldr\tq16, [x13, x14]",
+            "    9d78:      \tldr\tq17, [x12, x14]",
+            "    9d7c:      \tuzp1.2d\tv18, v16, v17",
+            "    9d88:      \tstr\tq18, [x13, x14]",
+            "    9d8c:      \tuzp2.2d\tv16, v16, v17",
+            "    9d94:      \tstr\tq16, [x15, x14]",
+            "    b204:      \tdup.2d\tv0, x8",
+            "    b214:      \tstr\tq0, [x6, x7]",
+            "    b248:      \tldr\tq0, [x5, x6]",
+            "    b278:      \tldr\tq0, [x5, x6]",
+            "    b280:      \tldr\tq1, [x5, x6]",
+            "    b284:      \tuzp1.2d\tv2, v0, v1",
+            "    b290:      \tstr\tq2, [x5, x6]",
+            "    b294:      \tuzp2.2d\tv0, v0, v1",
+            "    b29c:      \tstr\tq0, [x5, x6]",
+            "    c540:      \tdup.2d\tv0, x8",
+            "    c550:      \tstr\tq0, [x6, x7]",
+            "    c584:      \tldr\tq1, [x6, x7]",
+            "    c5b4:      \tldr\tq5, [x6, x7]",
+            "    c5bc:      \tldr\tq6, [x6, x7]",
+            "    c5c0:      \tuzp1.2d\tv7, v5, v6",
+            "    c5cc:      \tstr\tq7, [x6, x7]",
+            "    c5d0:      \tuzp2.2d\tv6, v5, v6",
+            "    c5d8:      \tstr\tq6, [x6, x7]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "mvt": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 10264,
+          "reported_native_stack_bytes": 112,
+          "object_file_bytes": 37568,
+          "static_instruction_count": 2566,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2566,
+              "disassembly_sha256": "74bc97e33b4762ab65148f1bdeb3c1945cdd528d234a53738ad4b88de6704208"
+            }
+          },
+          "object_sha256": "db5a5e1c182d658e93bd3bcf28f54287c5f2c98a91ded0cc6bbefe6acb05cf6a",
+          "metadata_sha256": "0d394b0b7224e689140a34874bdf1c995a332bd8130cadb785627adb5e4c2a91",
+          "disassembly_sha256": "a9aac51a1bb0e85bd88a63a4ab76561b59bd192255687d3dc795af6bab4fa9e5",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 14,
+          "integer_vector_copy_sites": [
+            "     21c:      \tdup.2d\tv18, x8",
+            "     220:      \tdup.2d\tv19, v16[0]",
+            "     36c:      \tldr\tq20, [x1, x9]",
+            "     3a4:      \tstr\tq5, [x14, x9]",
+            "     3b8:      \tldr\tq7, [x10, x11]",
+            "     53c:      \tldr\tq2, [x1, x9]",
+            "     574:      \tstr\tq1, [x14, x10]",
+            "     5b8:      \tldr\tq24, [x1, x10]",
+            "     5f4:      \tstr\tq6, [x14, x9]",
+            "     608:      \tldr\tq20, [x10, x11]",
+            "     880:      \tldr\tq4, [x1, x9]",
+            "     8b8:      \tstr\tq20, [x14, x10]",
+            "     8fc:      \tldr\tq29, [x1, x10]",
+            "     938:      \tstr\tq27, [x14, x10]",
+            "     97c:      \tldr\tq2, [x1, x10]",
+            "     9b8:      \tstr\tq1, [x14, x10]",
+            "     9fc:      \tldr\tq1, [x1, x10]",
+            "     a38:      \tstr\tq0, [x14, x9]",
+            "     d00:      \tldr\tq25, [x2, x5]",
+            "     d04:      \tldr\tq26, [x1, x5]",
+            "     d0c:      \tstr\tq25, [x0, x5]",
+            "     d48:      \tldr\tq0, [x2, x5]",
+            "     d50:      \tdup.2d\tv1, v1[0]",
+            "     d58:      \tstr\tq0, [x0, x5]",
+            "     d9c:      \tldr\tq0, [x1, x5]",
+            "     da4:      \tdup.2d\tv1, v1[0]",
+            "     dac:      \tstr\tq0, [x0, x5]",
+            "    1080:      \tdup.2d\tv19, x8",
+            "    1084:      \tdup.2d\tv20, v17[0]",
+            "    11d0:      \tldr\tq21, [x1, x9]",
+            "    1208:      \tstr\tq5, [x14, x9]",
+            "    121c:      \tldr\tq7, [x10, x11]",
+            "    13a0:      \tldr\tq2, [x1, x9]",
+            "    13d8:      \tstr\tq1, [x14, x10]",
+            "    141c:      \tldr\tq23, [x1, x10]",
+            "    1458:      \tstr\tq6, [x14, x9]",
+            "    146c:      \tldr\tq21, [x10, x11]",
+            "    16e4:      \tldr\tq4, [x1, x9]",
+            "    171c:      \tstr\tq21, [x14, x10]",
+            "    1760:      \tldr\tq27, [x1, x10]",
+            "    179c:      \tstr\tq27, [x14, x10]",
+            "    17e0:      \tldr\tq2, [x1, x10]",
+            "    181c:      \tstr\tq1, [x14, x10]",
+            "    1860:      \tldr\tq1, [x1, x10]",
+            "    189c:      \tstr\tq0, [x14, x9]",
+            "    1b64:      \tldr\tq25, [x2, x5]",
+            "    1b68:      \tldr\tq26, [x1, x5]",
+            "    1b70:      \tstr\tq25, [x0, x5]",
+            "    1bac:      \tldr\tq0, [x2, x5]",
+            "    1bb4:      \tdup.2d\tv1, v1[0]",
+            "    1bbc:      \tstr\tq0, [x0, x5]",
+            "    1c00:      \tldr\tq0, [x1, x5]",
+            "    1c08:      \tdup.2d\tv1, v1[0]",
+            "    1c10:      \tstr\tq0, [x0, x5]",
+            "    1d40:      \tdup.2d\tv26, v26[0]",
+            "    1d48:      \tdup.2d\tv27, v27[0]",
+            "    1d54:      \tstr\tq26, [x0, x1]",
+            "    1df4:      \tstr\tq0, [x2, x11]",
+            "    1e08:      \tldr\tq1, [x12, x13]",
+            "    1ed4:      \tstr\tq1, [x2, x12]",
+            "    1ee0:      \tstr\tq0, [x2, x11]",
+            "    1ef4:      \tldr\tq6, [x12, x13]",
+            "    202c:      \tstr\tq3, [x2, x12]",
+            "    2038:      \tstr\tq2, [x2, x12]",
+            "    2044:      \tstr\tq1, [x2, x12]",
+            "    2050:      \tstr\tq0, [x2, x11]",
+            "    2064:      \tldr\tq30, [x12, x13]",
+            "    20e4:      \tldr\tq31, [x10, x11]",
+            "    218c:      \tdup.2d\tv0, v0[0]",
+            "    2194:      \tdup.2d\tv1, v1[0]",
+            "    21a0:      \tstr\tq0, [x0, x1]",
+            "    2240:      \tstr\tq0, [x2, x11]",
+            "    2254:      \tldr\tq1, [x12, x13]",
+            "    2320:      \tstr\tq1, [x2, x14]",
+            "    232c:      \tstr\tq0, [x2, x14]",
+            "    2340:      \tldr\tq16, [x12, x13]",
+            "    2478:      \tstr\tq3, [x2, x12]",
+            "    2484:      \tstr\tq2, [x2, x12]",
+            "    2490:      \tstr\tq1, [x2, x12]",
+            "    249c:      \tstr\tq0, [x2, x11]",
+            "    24b0:      \tldr\tq4, [x12, x13]",
+            "    2530:      \tldr\tq4, [x10, x11]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 10504,
+          "reported_native_stack_bytes": 128,
+          "object_file_bytes": 37808,
+          "static_instruction_count": 2626,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2626,
+              "disassembly_sha256": "501b1ec3833f196775a61a0a3fdbe28c2a92d48fd6a2cb78fe2a7fd3f0da4098"
+            }
+          },
+          "object_sha256": "2221f6a3c30bf97ff6bb3639cb3e37ce9e654a54bbc0a1193af271e68766836b",
+          "metadata_sha256": "5f935e60e09e43846108d43c49a9031e2f240cc2582c1e915f5baa1788bbfc85",
+          "disassembly_sha256": "cb6e54b59045ff4907fee4a83998039d866280c8c1aca4c0754f7af5f21a26ae",
+          "object_executed": false,
+          "native_64_lane_interleaves": [
+            "    2254:      \tuzp1.2d\tv2, v0, v1",
+            "    226c:      \tuzp2.2d\tv0, v0, v1"
+          ],
+          "hardware_division_sites": 12,
+          "integer_vector_copy_sites": [
+            "     224:      \tdup.2d\tv2, x12",
+            "     228:      \tdup.2d\tv3, v0[0]",
+            "     374:      \tldr\tq16, [x7, x13]",
+            "     3ac:      \tstr\tq4, [x2, x13]",
+            "     3c0:      \tldr\tq5, [x14, x15]",
+            "     544:      \tldr\tq6, [x7, x13]",
+            "     57c:      \tstr\tq5, [x2, x14]",
+            "     5c0:      \tldr\tq24, [x7, x14]",
+            "     5fc:      \tstr\tq4, [x2, x13]",
+            "     610:      \tldr\tq6, [x14, x15]",
+            "     888:      \tldr\tq16, [x7, x13]",
+            "     8c0:      \tstr\tq7, [x2, x14]",
+            "     904:      \tldr\tq29, [x7, x14]",
+            "     940:      \tstr\tq7, [x2, x14]",
+            "     984:      \tldr\tq6, [x7, x14]",
+            "     9c0:      \tstr\tq21, [x2, x14]",
+            "     a04:      \tldr\tq5, [x7, x14]",
+            "     a40:      \tstr\tq4, [x2, x13]",
+            "     d08:      \tldr\tq5, [x2, x5]",
+            "     d0c:      \tldr\tq6, [x1, x5]",
+            "     d14:      \tstr\tq5, [x0, x5]",
+            "     d50:      \tldr\tq16, [x2, x15]",
+            "     d58:      \tdup.2d\tv17, v17[0]",
+            "     d60:      \tstr\tq16, [x0, x15]",
+            "     da4:      \tldr\tq27, [x1, x5]",
+            "     dac:      \tdup.2d\tv28, v28[0]",
+            "     db4:      \tstr\tq27, [x0, x5]",
+            "    10d0:      \tdup.2d\tv19, x1",
+            "    10d4:      \tdup.2d\tv20, v17[0]",
+            "    1220:      \tldr\tq0, [x12, x2]",
+            "    1258:      \tstr\tq0, [x9, x2]",
+            "    126c:      \tldr\tq2, [x5, x6]",
+            "    13f0:      \tldr\tq21, [x12, x2]",
+            "    1428:      \tstr\tq1, [x9, x5]",
+            "    146c:      \tldr\tq1, [x12, x5]",
+            "    14a8:      \tstr\tq1, [x9, x2]",
+            "    14bc:      \tldr\tq3, [x5, x6]",
+            "    1734:      \tldr\tq21, [x12, x5]",
+            "    176c:      \tstr\tq21, [x9, x5]",
+            "    17b0:      \tldr\tq3, [x12, x5]",
+            "    17ec:      \tstr\tq22, [x9, x5]",
+            "    1830:      \tldr\tq24, [x12, x5]",
+            "    186c:      \tstr\tq0, [x9, x5]",
+            "    18b0:      \tldr\tq0, [x12, x5]",
+            "    18ec:      \tstr\tq0, [x9, x2]",
+            "    1bb4:      \tldr\tq20, [x2, x6]",
+            "    1bb8:      \tldr\tq21, [x1, x6]",
+            "    1bc0:      \tstr\tq20, [x0, x6]",
+            "    1bfc:      \tldr\tq30, [x2, x5]",
+            "    1c04:      \tdup.2d\tv31, v31[0]",
+            "    1c0c:      \tstr\tq30, [x0, x5]",
+            "    1c50:      \tldr\tq0, [x1, x2]",
+            "    1c58:      \tdup.2d\tv1, v1[0]",
+            "    1c60:      \tstr\tq0, [x0, x2]",
+            "    1d90:      \tdup.2d\tv21, v21[0]",
+            "    1d98:      \tdup.2d\tv22, v22[0]",
+            "    1da4:      \tstr\tq21, [x0, x2]",
+            "    1e44:      \tstr\tq18, [x14, x7]",
+            "    1e58:      \tldr\tq0, [x7, x8]",
+            "    1f24:      \tstr\tq1, [x14, x8]",
+            "    1f30:      \tstr\tq0, [x14, x7]",
+            "    1f44:      \tldr\tq2, [x8, x9]",
+            "    207c:      \tstr\tq4, [x14, x8]",
+            "    2088:      \tstr\tq5, [x14, x8]",
+            "    2094:      \tstr\tq6, [x14, x8]",
+            "    20a0:      \tstr\tq7, [x14, x7]",
+            "    20b4:      \tldr\tq25, [x8, x9]",
+            "    2134:      \tldr\tq26, [x5, x6]",
+            "    21c8:      \tdup.2d\tv26, x11",
+            "    21dc:      \tstr\tq26, [x9, x10]",
+            "    2210:      \tldr\tq0, [x9, x10]",
+            "    224c:      \tldr\tq0, [x9, x11]",
+            "    2250:      \tldr\tq1, [x12, x10]",
+            "    2254:      \tuzp1.2d\tv2, v0, v1",
+            "    2268:      \tstr\tq2, [x10, x11]",
+            "    226c:      \tuzp2.2d\tv0, v0, v1",
+            "    2274:      \tstr\tq0, [x9, x10]",
+            "    2284:      \tdup.2d\tv0, v0[0]",
+            "    228c:      \tdup.2d\tv1, v1[0]",
+            "    2298:      \tstr\tq0, [x0, x1]",
+            "    2338:      \tstr\tq0, [x2, x11]",
+            "    234c:      \tldr\tq3, [x12, x13]",
+            "    2418:      \tstr\tq3, [x2, x12]",
+            "    2424:      \tstr\tq0, [x2, x11]",
+            "    2438:      \tldr\tq22, [x12, x13]",
+            "    2570:      \tstr\tq5, [x2, x12]",
+            "    257c:      \tstr\tq4, [x2, x12]",
+            "    2588:      \tstr\tq3, [x2, x12]",
+            "    2594:      \tstr\tq0, [x2, x11]",
+            "    25a8:      \tldr\tq6, [x12, x13]",
+            "    2628:      \tldr\tq16, [x14, x15]"
+          ],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "nussinov": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "15e671a5a2765d9f831921a793d1eebd9a2a185eaf5ce355fd3c3e28cad41bdb",
+          "metadata_sha256": "a227e70429172ba8ccda7750e8ac02dbb58d1ab993eda6edcb444bcbeb233903",
+          "disassembly_sha256": "d0b40145c4710277a940add021b4ac7d8f5f6fe34b3e800daca613329f0ae3eb",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 19360,
+          "reported_native_stack_bytes": 320,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "6a6459e6d457fb40340ddf5902cb78f7a050d875bf32e4a0b932c25ee365bb3b",
+          "metadata_sha256": "e40e76dbee0266c5ba9ef19a32080e8efdca8bb9a5fd1a9fc06a2ab958fdd853",
+          "disassembly_sha256": "fa857d081f0db8d92e3c8b92008d2ef598bd8f735b141323dc416cd18c18129f",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "seidel-2d": {
+      "actors": {
+        "accepted56": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "710ce8a1e0ed64472c8df6661d891eff80d6b088a3b416717ec17f696b5522bd",
+          "metadata_sha256": "11ac95175429882c4250228575f7ae502d8d651a629854d6fc46b32a5a008025",
+          "disassembly_sha256": "6b749430c3c23c695bf3b0f33035d9161a6e5f154eda2ab0c29213239fbb96d4",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        },
+        "candidate": {
+          "code_bytes": 16104,
+          "reported_native_stack_bytes": 288,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "4fe9468f3ace074419d0e6dab52aba539eab598aec94b0945afb4fb2e2dfe84a",
+          "metadata_sha256": "082f82a331ef0caf5c48de487b26245d870a8eb0f6d81bb03d681c27d242133a",
+          "disassembly_sha256": "d399bd9aa56d3cb8a2afeee595346c958767153f8db04b25c7f7237a9b8fa42e",
+          "object_executed": false,
+          "native_64_lane_interleaves": [],
+          "hardware_division_sites": 0,
+          "integer_vector_copy_sites": [],
+          "fused_multiply_add_instructions": 0,
+          "compiled_product_epilogues": [],
+          "compiled_reduction_producers": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": []
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "native_code_changed_cases": [
+    "atax",
+    "bicg",
+    "correlation",
+    "covariance",
+    "deriche",
+    "durbin",
+    "gramschmidt",
+    "mvt"
+  ],
+  "no_new_fma": true,
+  "transpose_tiles_emitted": true,
+  "source_unchanged": true,
+  "passed": true
+}

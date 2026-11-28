@@ -2909,3 +2909,11 @@ Accepted56 optimization-only CPU profiles
 Current Correlation/MVT/Durbin/Gram-Schmidt owned-process samples have22.92%/25.38%/41.18%/80.57% generated self time. Complete sampled code binds to exact accepted56 Objects, including actual same-PID local calls. Every process reaches terminal0 with finite C outputs and exact frozen counters. MVT materialized transpose still performs dynamic quotient/remainder per output cell;373 of2258 samples hit three PCs in that loop. This motivates division-free exact-bit transpose tiles with the existing owner/admission/publication boundaries. Previously unselected view-loan and selected-publication implementations are not retried. No timing/history change or performance forecast.
 
 [CPU telemetry](round-56-cpu-telemetry.json) · [Profiles and complete code binding](training-experiments/accepted56-profile.json)
+
+Exact-bit transpose tiles: formal evaluation
+
+Dynamic two-by-two I64 SIMD transpose tiles replace per-cell quotient/remainder while keeping the original materialized output, current owner/admission, complete disjoint spans, accounting, private finish and fallback. Integer lanes preserve every floating-point bit pattern; odd/empty tails are bounded. 767 broad and3 focused groups passed, both features and all30 original/decoded/restored finite C cases, plus optimization15 untimed17002-output exact-counter/Object gate. Counts include overlapping test invocations.
+
+One210-observation optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history57. Optimization8.4256809456565076x C; independent holdout23.8119899277332685x C. V4 optimization-only decision: not_promoted. Raw Mech runtime and C/reference drift are recorded separately in round-57-audit.json. All observations/regressions preserved, no retry/exclusion. Exact accepted56 compiler restored solely because optimization failed its strict formal gate.
+
+[Qualification](round-57-qualification.json) · [Audit](round-57-audit.json) · [Progress](round-57-progress.json) · [Complete experiment](training-experiments/transpose-tiles-formal.json)
