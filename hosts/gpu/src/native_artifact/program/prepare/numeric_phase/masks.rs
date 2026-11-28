@@ -24,6 +24,27 @@ pub(in crate::native_artifact) enum Comparison {
     Ge,
 }
 impl Comparison {
+    pub fn relation_bits(self) -> u8 {
+        match self {
+            Self::Lt => 1,
+            Self::Eq => 2,
+            Self::Le => 3,
+            Self::Gt => 4,
+            Self::Ne => 5,
+            Self::Ge => 6,
+        }
+    }
+    pub fn from_relation_bits(bits: u8) -> Option<Self> {
+        Some(match bits {
+            1 => Self::Lt,
+            2 => Self::Eq,
+            3 => Self::Le,
+            4 => Self::Gt,
+            5 => Self::Ne,
+            6 => Self::Ge,
+            _ => return None,
+        })
+    }
     pub fn inverted(self) -> Self {
         match self {
             Self::Eq => Self::Ne,
@@ -78,6 +99,8 @@ enum Tag {
     Cell(usize),
 }
 type Tags = BTreeMap<u32, Tag>;
+#[path = "mask_domains.rs"]
+pub(in crate::native_artifact) mod domains;
 
 /// A pure description rederived from the actual selected CFG. It is absent
 /// from every image/ABI; callers cannot supply a wire mask or current sample.
@@ -125,62 +148,8 @@ impl Mask {
         proof: &crate::native_artifact::program::prepare::readonly_numeric::Proof,
         replacement: &Replacement,
     ) -> Option<Self> {
-        proof.arrays.get(replacement.target)?;
-        let source = &replacement.source;
-        let region = &source.region;
-        let [rows, columns] = source.extents;
-        if !region.range
-            || region.reduction.is_some()
-            || rows == 0
-            || columns == 0
-            || rows.checked_mul(columns)? != source.elements
-            || replacement.arrays.len() != region.matrices.len()
-            || constant(plan, source.first) != Some(1)
-        {
-            return None;
-        }
-        for (index, matrix) in region.matrices.iter().enumerate() {
-            if proof.arrays.get(*replacement.arrays.get(index)?)?.width != matrix.width {
-                return None;
-            }
-        }
-        let mut tags = Tags::new();
-        for &id in &region.captures {
-            if plan.values().get(id as usize)?.scalar_kind() == Some(NativeScalarKind::U64) {
-                tags.insert(id, Tag::Bound(id));
-            }
-        }
-        for value in plan.constants() {
-            if let mech_core::ValueData::Bool(value_data) = value.constant().data() {
-                tags.insert(value.value().get(), Tag::Bool(*value_data));
-            }
-        }
-        let rectangular = if let Some(rectangle) = &region.rectangle {
-            let [first, _, inner_rows] = rectangle.fixed()?;
-            if first != 1
-                || inner_rows != rows
-                || source.count != columns
-                || region.transpose.is_some()
-            {
-                return None;
-            }
-            tags.insert(rectangle.inner_element, Tag::Axis(Axis::Row));
-            tags.insert(region.element, Tag::Axis(Axis::Column));
-            true
-        } else {
-            if source.count != source.elements {
-                return None;
-            }
-            let axis = if columns == 1 {
-                Axis::Row
-            } else if rows == 1 {
-                Axis::Column
-            } else {
-                return None;
-            };
-            tags.insert(region.element, Tag::Axis(axis));
-            false
-        };
+        let ([rows, columns], rectangular, mut tags) = source_tags(plan, proof, replacement)?;
+        let region = &replacement.source.region;
         let mut at = *region.body.first()?;
         let mut visited = BTreeSet::new();
         while region.body.contains(&at) && visited.insert(at) {
@@ -226,6 +195,66 @@ impl Mask {
         }
         None
     }
+}
+fn source_tags(
+    plan: &Plan,
+    proof: &crate::native_artifact::program::prepare::readonly_numeric::Proof,
+    replacement: &Replacement,
+) -> Option<([u64; 2], bool, Tags)> {
+    proof.arrays.get(replacement.target)?;
+    let source = &replacement.source;
+    let region = &source.region;
+    let [rows, columns] = source.extents;
+    if !region.range
+        || region.reduction.is_some()
+        || rows == 0
+        || columns == 0
+        || rows.checked_mul(columns)? != source.elements
+        || replacement.arrays.len() != region.matrices.len()
+        || constant(plan, source.first) != Some(1)
+    {
+        return None;
+    }
+    for (index, matrix) in region.matrices.iter().enumerate() {
+        if proof.arrays.get(*replacement.arrays.get(index)?)?.width != matrix.width {
+            return None;
+        }
+    }
+    let mut tags = Tags::new();
+    for &id in &region.captures {
+        if plan.values().get(id as usize)?.scalar_kind() == Some(NativeScalarKind::U64) {
+            tags.insert(id, Tag::Bound(id));
+        }
+    }
+    for value in plan.constants() {
+        if let mech_core::ValueData::Bool(value_data) = value.constant().data() {
+            tags.insert(value.value().get(), Tag::Bool(*value_data));
+        }
+    }
+    let rectangular = if let Some(rectangle) = &region.rectangle {
+        let [first, _, inner_rows] = rectangle.fixed()?;
+        if first != 1 || inner_rows != rows || source.count != columns || region.transpose.is_some()
+        {
+            return None;
+        }
+        tags.insert(rectangle.inner_element, Tag::Axis(Axis::Row));
+        tags.insert(region.element, Tag::Axis(Axis::Column));
+        true
+    } else {
+        if source.count != source.elements {
+            return None;
+        }
+        let axis = if columns == 1 {
+            Axis::Row
+        } else if rows == 1 {
+            Axis::Column
+        } else {
+            return None;
+        };
+        tags.insert(region.element, Tag::Axis(axis));
+        false
+    };
+    Some(([rows, columns], rectangular, tags))
 }
 fn normalize(tag: Tag, assumption: Option<(Predicate, bool)>) -> Tag {
     match (tag, assumption) {

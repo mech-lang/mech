@@ -1,0 +1,10 @@
+{
+  "schema": "mech.polybench.compound-domain-proof-refinement.v1",
+  "created_at": "2026-11-28T05:53:08.107027+00:00",
+  "stage": "Prospective before source fix or any performance observation",
+  "failed_attempt": "attempt-03",
+  "reason": "Focused same/different-bank prefix fixture contains a second captured-bound comparison inside its active update branch. Returning inconsistent for that branch unnecessarily discards independently proved identity buckets; actual unchanged Durbin/R proofs already pass. Keep the route expectation and fill the general proof gap.",
+  "rule": "Bind at most one original captured bound per axis. Any comparison against another bound is unknown for the current bucket, so classify that whole bucket active and stop following it. Never change the chosen bound, choose an edge, or establish identity using the unknown predicate. Identity is granted only by a fully understood total same-cell path. Nonfactorable/all-active tables still decline.",
+  "scope": "Compile-time conservative proof refinement only; same fixed Cartesian representation, source arithmetic, runtime guards/fees/caps/counters/publication/partial-scratch completion and all ports/timing remain. No runtime samples or holdout use.",
+  "performance_observations": 0
+}

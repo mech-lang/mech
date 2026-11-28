@@ -1,42 +1,47 @@
-//! Compact selected coordinates of a source-proved identity-complement map.
-//! All output cells have already been initialized in disjoint phase scratch.
-use crate::native_artifact::program::prepare::numeric_phase::masks::{Axis, Comparison, Mask};
+//! Compact coordinates from source-proved identity complements. Evaluation and
+//! publication share this exact mapping; complete or selected-only raw scratch
+//! is governed separately by the phase emitter's initialization certificate.
+use crate::native_artifact::program::prepare::numeric_phase::masks::{
+    Axis, Comparison, Mask,
+    domains::{Constraint, Domain},
+};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::ir::{InstBuilder, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use std::collections::BTreeMap;
 
-pub(in crate::native_artifact::program::codegen) struct Selection {
-    axis: Axis,
-    rectangular: bool,
-    rows: u64,
-    columns: u64,
+struct AxisSelection {
     first: Value,
     first_count: Value,
     second: Value,
     selected: Value,
-    count: Value,
     singleton: bool,
-    selector: u32,
-    active: u32,
+    full: bool,
+}
+enum Coordinates {
+    Single {
+        axis: Axis,
+        range: AxisSelection,
+    },
+    Rectangle {
+        row: AxisSelection,
+        column: AxisSelection,
+    },
+}
+pub(in crate::native_artifact::program::codegen) struct Selection {
+    coordinates: Coordinates,
+    rectangular: bool,
+    rows: u64,
+    columns: u64,
+    count: Value,
+    edge: Option<(u32, u32)>,
 }
 fn minimum(b: &mut FunctionBuilder<'_>, left: Value, right: Value) -> Value {
     let less = b.ins().icmp(IntCC::UnsignedLessThan, left, right);
     b.ins().select(less, left, right)
 }
-impl Selection {
-    pub(in crate::native_artifact::program::codegen) fn new(
-        b: &mut FunctionBuilder<'_>,
-        mask: &Mask,
-        captures: &BTreeMap<u32, Value>,
-    ) -> Result<Self, NativeCompileError> {
-        let bound = *captures
-            .get(&mask.bound())
-            .ok_or_else(|| backend("masked map lost its current captured bound"))?;
-        let extent = match mask.axis() {
-            Axis::Row => mask.rows(),
-            Axis::Column => mask.columns(),
-        };
+impl AxisSelection {
+    fn new(b: &mut FunctionBuilder<'_>, comparison: Comparison, bound: Value, extent: u64) -> Self {
         let limit = b.ins().iconst(types::I64, extent as i64);
         let zero = b.ins().iconst(types::I64, 0);
         let one = b.ins().iconst(types::I64, 1);
@@ -47,7 +52,7 @@ impl Selection {
         let before = minimum(b, prior, limit);
         let inside = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, bound, limit);
         let inside = b.ins().band(positive, inside);
-        let (first, first_count, second, second_count) = match mask.comparison() {
+        let (first, first_count, second, second_count) = match comparison {
             Comparison::Eq => (
                 b.ins().select(inside, prior, zero),
                 b.ins().select(inside, one, zero),
@@ -75,34 +80,49 @@ impl Selection {
             }
         };
         let selected = b.ins().iadd(first_count, second_count);
-        let count = if mask.rectangular() {
-            let other = match mask.axis() {
-                Axis::Row => mask.columns(),
-                Axis::Column => mask.rows(),
-            };
-            b.ins().imul_imm(selected, other as i64)
-        } else {
-            selected
-        };
-        Ok(Self {
-            axis: mask.axis(),
-            rectangular: mask.rectangular(),
-            rows: mask.rows(),
-            columns: mask.columns(),
+        Self {
             first,
             first_count,
             second,
             selected,
-            count,
-            singleton: mask.comparison() == Comparison::Eq,
-            selector: mask.selector(),
-            active: mask.active(),
+            singleton: comparison == Comparison::Eq,
+            full: false,
+        }
+    }
+    fn from_constraint(
+        b: &mut FunctionBuilder<'_>,
+        constraint: Option<Constraint>,
+        extent: u64,
+        captures: &BTreeMap<u32, Value>,
+    ) -> Result<Self, NativeCompileError> {
+        if let Some(constraint) = constraint {
+            let bound = *captures
+                .get(&constraint.bound())
+                .ok_or_else(|| backend("compound map lost its current captured bound"))?;
+            return Ok(Self::new(b, constraint.comparison(), bound, extent));
+        }
+        let zero = b.ins().iconst(types::I64, 0);
+        let selected = b.ins().iconst(types::I64, extent as i64);
+        Ok(Self {
+            first: zero,
+            first_count: selected,
+            second: zero,
+            selected,
+            singleton: false,
+            full: true,
         })
     }
-    pub(in crate::native_artifact::program::codegen) fn count(&self) -> Value {
-        self.count
+    fn divisor(&self, b: &mut FunctionBuilder<'_>) -> Value {
+        if self.singleton {
+            b.ins().iconst(types::I64, 1)
+        } else {
+            self.selected
+        }
     }
     fn coordinate(&self, b: &mut FunctionBuilder<'_>, ordinal: Value) -> Value {
+        if self.full {
+            return ordinal;
+        }
         if self.singleton {
             return b.ins().iadd(self.first, ordinal);
         }
@@ -114,21 +134,116 @@ impl Selection {
         let second = b.ins().iadd(self.second, remainder);
         b.ins().select(in_first, first, second)
     }
-    fn coordinates(&self, b: &mut FunctionBuilder<'_>, ordinal: Value) -> (Value, Value) {
-        let divisor = match self.axis {
-            Axis::Row if self.singleton => b.ins().iconst(types::I64, 1),
-            Axis::Row => self.selected,
-            Axis::Column => b.ins().iconst(types::I64, self.rows as i64),
+}
+impl Selection {
+    pub(in crate::native_artifact::program::codegen) fn new(
+        b: &mut FunctionBuilder<'_>,
+        mask: &Mask,
+        captures: &BTreeMap<u32, Value>,
+    ) -> Result<Self, NativeCompileError> {
+        let bound = *captures
+            .get(&mask.bound())
+            .ok_or_else(|| backend("masked map lost its current captured bound"))?;
+        let extent = match mask.axis() {
+            Axis::Row => mask.rows(),
+            Axis::Column => mask.columns(),
         };
-        // A nonempty selected loop proves a positive divisor. Eq has exactly
-        // one selected coordinate on this reached path, otherwise the loop is empty.
+        let range = AxisSelection::new(b, mask.comparison(), bound, extent);
+        let count = if mask.rectangular() {
+            let other = match mask.axis() {
+                Axis::Row => mask.columns(),
+                Axis::Column => mask.rows(),
+            };
+            b.ins().imul_imm(range.selected, other as i64)
+        } else {
+            range.selected
+        };
+        Ok(Self {
+            coordinates: Coordinates::Single {
+                axis: mask.axis(),
+                range,
+            },
+            rectangular: mask.rectangular(),
+            rows: mask.rows(),
+            columns: mask.columns(),
+            count,
+            edge: Some((mask.selector(), mask.active())),
+        })
+    }
+    pub(in crate::native_artifact::program::codegen) fn compound(
+        b: &mut FunctionBuilder<'_>,
+        domain: &Domain,
+        old: Option<&Mask>,
+        captures: &BTreeMap<u32, Value>,
+    ) -> Result<Self, NativeCompileError> {
+        let (coordinates, count) = if domain.rectangular() {
+            let row = AxisSelection::from_constraint(
+                b,
+                domain.constraint(Axis::Row),
+                domain.rows(),
+                captures,
+            )?;
+            let column = AxisSelection::from_constraint(
+                b,
+                domain.constraint(Axis::Column),
+                domain.columns(),
+                captures,
+            )?;
+            let count = b.ins().imul(row.selected, column.selected);
+            (Coordinates::Rectangle { row, column }, count)
+        } else {
+            let (axis, extent) = if domain.columns() == 1 {
+                (Axis::Row, domain.rows())
+            } else {
+                (Axis::Column, domain.columns())
+            };
+            let range =
+                AxisSelection::from_constraint(b, domain.constraint(axis), extent, captures)?;
+            let count = range.selected;
+            (Coordinates::Single { axis, range }, count)
+        };
+        // Only an already proved old edge implied by the strict refinement may
+        // be forced. A union such as Lt|Eq retains its original source branches.
+        let edge = old
+            .filter(|mask| domain.strictly_refines(Some(mask)))
+            .map(|mask| (mask.selector(), mask.active()));
+        Ok(Self {
+            coordinates,
+            rectangular: domain.rectangular(),
+            rows: domain.rows(),
+            columns: domain.columns(),
+            count,
+            edge,
+        })
+    }
+    pub(in crate::native_artifact::program::codegen) fn count(&self) -> Value {
+        self.count
+    }
+    fn coordinates(&self, b: &mut FunctionBuilder<'_>, ordinal: Value) -> (Value, Value) {
+        let (divisor, row, column) = match &self.coordinates {
+            Coordinates::Single {
+                axis: Axis::Row,
+                range,
+            } => (range.divisor(b), Some(range), None),
+            Coordinates::Single {
+                axis: Axis::Column,
+                range,
+            } => (
+                b.ins().iconst(types::I64, self.rows as i64),
+                None,
+                Some(range),
+            ),
+            Coordinates::Rectangle { row, column } => (row.divisor(b), Some(row), Some(column)),
+        };
+        // A reached nonempty loop implies both selected axes are positive.
+        // The exact original source order remains column-outer, row-inner.
         let group = b.ins().udiv(ordinal, divisor);
         let consumed = b.ins().imul(group, divisor);
         let within = b.ins().isub(ordinal, consumed);
-        match self.axis {
-            Axis::Row => (self.coordinate(b, within), group),
-            Axis::Column => (within, self.coordinate(b, group)),
-        }
+        (
+            row.map_or(within, |row| row.coordinate(b, within)),
+            column.map_or(group, |column| column.coordinate(b, group)),
+        )
     }
     pub(in crate::native_artifact::program::codegen) fn cursors(
         &self,
@@ -136,7 +251,10 @@ impl Selection {
         ordinal: Value,
     ) -> (Value, Option<Value>) {
         if !self.rectangular {
-            return (self.coordinate(b, ordinal), None);
+            let Coordinates::Single { range, .. } = &self.coordinates else {
+                unreachable!()
+            };
+            return (range.coordinate(b, ordinal), None);
         }
         let (row, column) = self.coordinates(b, ordinal);
         (column, Some(row))
@@ -145,7 +263,8 @@ impl Selection {
         &self,
         site: u32,
     ) -> Option<u32> {
-        (site == self.selector).then_some(self.active)
+        self.edge
+            .and_then(|(selector, active)| (site == selector).then_some(active))
     }
     pub(in crate::native_artifact::program::codegen) fn output_index(
         &self,
@@ -153,7 +272,10 @@ impl Selection {
         ordinal: Value,
     ) -> Value {
         if !self.rectangular {
-            return self.coordinate(b, ordinal);
+            let Coordinates::Single { range, .. } = &self.coordinates else {
+                unreachable!()
+            };
+            return range.coordinate(b, ordinal);
         }
         let (row, column) = self.coordinates(b, ordinal);
         let row = b.ins().imul_imm(row, self.columns as i64);

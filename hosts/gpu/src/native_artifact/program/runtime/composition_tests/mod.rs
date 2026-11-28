@@ -903,4 +903,6 @@ pub(super) mod borrowed_dictionary_values;
 
 pub(super) mod fixed_key_loops;
 
+mod numeric_compound_maps;
 mod numeric_masked_maps;
+mod numeric_selected_initialization;

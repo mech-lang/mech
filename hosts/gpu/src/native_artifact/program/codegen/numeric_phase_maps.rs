@@ -13,6 +13,13 @@ use cranelift_codegen::ir::{
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeProgramArtifactPlan as Plan;
 use std::collections::BTreeMap;
+/// Descriptive emission information; authority remains in the source mask.
+pub(super) struct MapEmission {
+    pub mask: Option<(u32, u8)>,
+    pub source_selector: u32,
+    pub guarded_initialization_bytes: Option<u32>,
+    pub compound: Option<(usize, Vec<(u8, u32, u8)>)>,
+}
 fn require(b: &mut FunctionBuilder<'_>, good: cranelift_codegen::ir::Value, miss: Block) {
     let next = b.create_block();
     b.ins().brif(good, next, &[], miss, &[]);
@@ -26,8 +33,10 @@ pub(super) fn emit(
     replacement: &Replacement,
     plan: &Plan,
     masked_maps: bool,
+    selective_initialization: bool,
+    compound_domains: bool,
     miss: Block,
-) -> Result<Option<(u32, u8)>, NativeCompileError> {
+) -> Result<MapEmission, NativeCompileError> {
     let source = &replacement.source;
     let target = replacement.target;
     let width = proof.arrays[target].width;
@@ -102,12 +111,27 @@ pub(super) fn emit(
     } else {
         None
     };
-    let old = if mask.is_some() {
+    let domain = if masked_maps && compound_domains {
+        crate::native_artifact::program::prepare::numeric_phase::masks::domains::Domain::derive(
+            plan,
+            proof,
+            replacement,
+        )
+        .filter(|domain| domain.strictly_refines(mask.as_ref()))
+    } else {
+        None
+    };
+    let identity = domain
+        .as_ref()
+        .map(|domain| domain.base())
+        .or_else(|| mask.as_ref().map(|mask| mask.base()));
+    let mut whole_output_initialized = None;
+    let old = if let Some(identity) = identity {
         // The source proof uses literal one-based coordinates. Check the
         // actual current first word too, not only the range cardinality.
         let one = b.ins().icmp_imm(IntCC::Equal, first, 1);
         require(b, one, miss);
-        let base_view = shadow + proof.view(mask.as_ref().unwrap().base());
+        let base_view = shadow + proof.view(identity);
         for (lane, expected) in [
             (1, source.elements),
             (2, source.extents[0]),
@@ -130,15 +154,40 @@ pub(super) fn emit(
             .icmp(IntCC::UnsignedLessThanOrEqual, scratch_end, old);
         let disjoint = b.ins().bor(before, after);
         require(b, disjoint, miss);
-        initialize_scratch(b, old, scratch, bytes, width)?;
+        if selective_initialization {
+            // The body reads only the captured immutable source views. When
+            // selected publication targets the identity source itself, no
+            // scratch complement will be read. Keep the complete capacity and
+            // bounds/disjointness guards, but omit this dead copy pass.
+            let destination = words.read(b, owned.map_or(view, |bank| shadow + bank));
+            let different = b.ins().icmp(IntCC::NotEqual, destination, old);
+            let initialize = b.create_block();
+            let ready = b.create_block();
+            b.ins().brif(different, initialize, &[], ready, &[]);
+            b.switch_to_block(initialize);
+            initialize_scratch(b, old, scratch, bytes, width)?;
+            b.ins().jump(ready, &[]);
+            b.switch_to_block(ready);
+            whole_output_initialized = Some(different);
+        } else {
+            initialize_scratch(b, old, scratch, bytes, width)?;
+        }
         Some(old)
     } else {
         None
     };
-    let selection = mask
-        .as_ref()
-        .map(|mask| super::numeric_map::selection::Selection::new(b, mask, &captures))
-        .transpose()?;
+    let selection = if let Some(domain) = &domain {
+        Some(super::numeric_map::selection::Selection::compound(
+            b,
+            domain,
+            mask.as_ref(),
+            &captures,
+        )?)
+    } else {
+        mask.as_ref()
+            .map(|mask| super::numeric_map::selection::Selection::new(b, mask, &captures))
+            .transpose()?
+    };
     super::numeric_phase_reductions::emit_region_with_selection(
         b,
         &source.region,
@@ -149,6 +198,7 @@ pub(super) fn emit(
         &captures,
         Some((scratch, capacity)),
         selection.as_ref(),
+        whole_output_initialized,
         miss,
     )?;
     // The complete checked map succeeded. No fallible source operation or
@@ -166,6 +216,12 @@ pub(super) fn emit(
         publish_selected(b, selection, scratch, base, width)?;
         b.ins().jump(published, &[]);
         b.switch_to_block(full);
+        if let Some(initialized) = whole_output_initialized {
+            // Recheck after checked evaluation and before any publication.
+            // A skipped initialization can never reach complete publication,
+            // even if a future body implementation changes its destination.
+            require(b, initialized, miss);
+        }
         publish_complete(b, scratch, base, width, bytes)?;
         b.ins().jump(published, &[]);
         b.switch_to_block(published);
@@ -177,15 +233,20 @@ pub(super) fn emit(
         let one = b.ins().iconst(types::I64, 1);
         words.write(b, shadow + proof.private_flag(target), one);
     }
-    Ok(mask.map(|mask| {
-        (
-            mask.selector(),
-            match mask.axis() {
-                crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Row => 0,
-                crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Column => 1,
-            },
-        )
-    }))
+    Ok(MapEmission {
+        source_selector: mask
+            .as_ref()
+            .map_or(source.region.header, |mask| mask.selector()),
+        mask: mask.map(|mask| {
+            (mask.selector(), match mask.axis() {
+            crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Row => 0,
+            crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Column => 1,
+        })
+        }),
+        guarded_initialization_bytes: (identity.is_some() && selective_initialization)
+            .then_some(bytes),
+        compound: domain.map(|domain| (domain.base(), domain.description())),
+    })
 }
 
 fn span(
