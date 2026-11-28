@@ -202,6 +202,7 @@ pub(in crate::native_artifact) fn emit_entry(
     locals: Value,
     is_scalar: impl Fn(NativeMatchValue) -> bool,
     product_row_pairs: bool,
+    product_row_quartets: bool,
     error: Block,
 ) -> Result<Block, NativeCompileError> {
     if operands.iter().map(|v| v.get()).collect::<Vec<_>>() != op.operands {
@@ -330,6 +331,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 columns,
                 inner,
                 product_row_pairs,
+                product_row_quartets,
                 complete,
             );
         }

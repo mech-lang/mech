@@ -60,6 +60,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericMatrixArithmetic,
     /// Share right loads and loop control across independent ordered product rows.
     ProductRowPairs,
+    /// Share the same RHS and k control across four independent ordered rows.
+    ProductRowQuartets,
     /// Fuse source-closed cell expressions into ordered product accumulators.
     ProductEpilogues,
     /// Fuse nonescaping pointwise producers into original ordered sum terms.

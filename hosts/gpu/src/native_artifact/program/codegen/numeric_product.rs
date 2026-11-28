@@ -83,10 +83,21 @@ pub(super) fn emit(
     columns: Value,
     inner: Value,
     row_pairs: bool,
+    row_quartets: bool,
     done: Block,
 ) {
     emit_body(
-        b, left, right, output, count, columns, inner, None, row_pairs, done,
+        b,
+        left,
+        right,
+        output,
+        count,
+        columns,
+        inner,
+        None,
+        row_pairs,
+        row_quartets,
+        done,
     );
 }
 pub(super) fn emit_epilogue(
@@ -99,6 +110,7 @@ pub(super) fn emit_epilogue(
     inner: Value,
     epilogue: &Epilogue<'_>,
     row_pairs: bool,
+    row_quartets: bool,
     done: Block,
 ) {
     emit_body(
@@ -111,6 +123,7 @@ pub(super) fn emit_epilogue(
         inner,
         Some(epilogue),
         row_pairs,
+        row_quartets,
         done,
     );
 }
@@ -124,11 +137,21 @@ fn emit_body(
     inner: Value,
     epilogue: Option<&Epilogue<'_>>,
     row_pairs: bool,
+    row_quartets: bool,
     done: Block,
 ) {
     if row_pairs {
         rows::emit(
-            b, left, right, output, count, columns, inner, epilogue, done,
+            b,
+            left,
+            right,
+            output,
+            count,
+            columns,
+            inner,
+            epilogue,
+            row_quartets,
+            done,
         );
         return;
     }

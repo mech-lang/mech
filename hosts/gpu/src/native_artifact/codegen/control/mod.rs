@@ -1616,7 +1616,7 @@ impl<'plan> CfgDefinition<'plan> {
                             if let Some(recipe)=program.metadata().numeric_binary.epilogue(index)
                                 && controls.enabled(if recipe.reduction_axis().is_some() {crate::native_artifact::codegen::options::OptimizationPass::ReductionProducers} else {crate::native_artifact::codegen::options::OptimizationPass::ProductEpilogues})
                                 && let Some(target)=blocks.get(recipe.resume as usize).copied().flatten() {
-                                crate::native_artifact::program::codegen::numeric_product_epilogues::emit_entry(b,hooks,index,recipe,locals,|operand|plan.kind(operand).is_some(),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),target,error)?;
+                                crate::native_artifact::program::codegen::numeric_product_epilogues::emit_entry(b,hooks,index,recipe,locals,|operand|plan.kind(operand).is_some(),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowQuartets),target,error)?;
                                 let record = codegen_report::ProductEpilogue {entry:recipe.entry,end:recipe.end,resume:recipe.resume,parent:recipe.parent,operators:recipe.nodes.iter().map(|n|n.site).collect(),sites:recipe.steps.iter().map(|s|s.site()).collect(),external:recipe.external.iter().map(|v|v.get()).collect(),elided_values:recipe.elided_values.clone()};
                                 if let Some(axis) = recipe.reduction_axis() {
                                     report.reduction_producers.push(codegen_report::ReductionProducer {axis,expression:record});
@@ -1626,6 +1626,7 @@ impl<'plan> CfgDefinition<'plan> {
                                 b, hooks, index, proof, operands, locals,
                                 |operand| plan.kind(operand).is_some(),
                                 controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),
+                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowQuartets),
                                 error,
                             )?)
                         } else { None }
