@@ -18,26 +18,39 @@ use std::collections::BTreeSet;
 /// The entry witness validates these exact dimensions before lending a view.
 /// Replacements preserve its shape; an append changes its logical length and
 /// must never use this certificate, even if an earlier schema was fixed.
-pub(super) fn fixed_length(code: CodePlan<'_>, proof: &Proof, array: usize) -> Option<u64> {
-    let array = proof.arrays.get(array)?;
+pub(super) fn fixed_axes(code: CodePlan<'_>, proof: &Proof, array: usize) -> [Option<u64>; 2] {
+    let Some(array) = proof.arrays.get(array) else {
+        return [None, None];
+    };
     if array.appends {
-        return None;
+        return [None, None];
     }
-    let Action::LibraryCall { template, .. } = code.blocks().get(array.witness)?.action() else {
-        return None;
+    let Some(Action::LibraryCall { template, .. }) =
+        code.blocks().get(array.witness).map(|block| block.action())
+    else {
+        return [None, None];
     };
-    let mech_core::SchemaBody::Matrix { dimensions, .. } = template.inputs().first()?.body() else {
-        return None;
+    let Some(mech_core::SchemaBody::Matrix { dimensions, .. }) =
+        template.inputs().first().map(|schema| schema.body())
+    else {
+        return [None, None];
     };
-    if dimensions.len() != 2 {
-        return None;
-    }
-    dimensions.iter().try_fold(1u64, |size, dimension| {
-        let mech_core::DimensionExpr::Constant(value) = dimension else {
-            return None;
-        };
-        size.checked_mul(*value)
+    let [row, column] = dimensions.as_ref() else {
+        return [None, None];
+    };
+    [row, column].map(|dimension| {
+        if let mech_core::DimensionExpr::Constant(n) = dimension {
+            Some(*n)
+        } else {
+            None
+        }
     })
+}
+pub(super) fn fixed_length(code: CodePlan<'_>, proof: &Proof, array: usize) -> Option<u64> {
+    let [Some(rows), Some(columns)] = fixed_axes(code, proof, array) else {
+        return None;
+    };
+    rows.checked_mul(columns)
 }
 
 /// Only for a packed cell load AFTER the original logical bounds check (or
