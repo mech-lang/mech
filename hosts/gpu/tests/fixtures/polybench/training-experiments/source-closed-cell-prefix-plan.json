@@ -26,14 +26,14 @@
   "target_policy_sha256": "e398f0afb1a82915f4060435a2e27de2ecc952a2d0fdc65dc62a284125aa12e3",
   "source_paths": [
     "hosts/gpu/src/native_artifact/codegen/options.rs",
-    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
     "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
     "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
     "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
     "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
     "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
     "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
-    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs"
   ],
   "profiling_basis": "training-experiments/closest-parity-first-profile.json: Seidel2D1774 execution samples,1731=97.5761% in actual numeric function; every numeric byte5468B matches its genuine accepted59 Object and caller local BL resolves to same-PID code. Current source counters/1600 warm+final C outputs match. All source/history unchanged.",
   "transformation": "Derive bounded single-entry straight-line pure scalar prefixes containing at least two F64 two-axis matrix reads over current numeric loans. Reconstruct source U64 checked coordinate subexpressions, validate every original arithmetic intermediate and unique current read axis before any load, then emit source-ordered scalar F64 loads/arithmetic using the shared emitter. Only values observed outside the prefix cross the original word-bank boundary. One aggregate nonfinite escaping-result guard replays the exact original checked prefix before any state write. Rejoin the unchanged first-change/private write path; never batch or reorder dependent state updates.",
@@ -60,5 +60,6 @@
     "selection": "One prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median-runtime speedup>1 and active Seidel target raw speedup>1, with exact counters/resources. All210 observations/regressions retained; no retries or exclusions."
   },
   "formal_acceptance": "If selected commit/push clean qualified source and driver, then one900-observation formal evaluation/29482 finite C liveouts and immutable history60. Existing strict optimization-only gate<7.852513248471486; holdout independently report-only. Report raw Mech and C/reference drift separately. On failed gate restore exact accepted59. Target remains Seidel until accepted<=1.0x C; no existing parity wins.",
-  "performance_observations": 0
+  "performance_observations": 0,
+  "pre_timing_refinement": "Reuse and expose the existing read-pack source/phase/debit boundary inventory for both prefix proofs; no control dispatcher edit is necessary. Source paths updated before any compiler build or timing."
 }

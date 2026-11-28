@@ -39,6 +39,7 @@ pub(in crate::native_artifact) struct Report {
     pub ordinary_capture_reads: Vec<(usize, usize)>,
     #[serde(skip)]
     pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
+    pub cell_expression_prefixes: Vec<(usize, usize, usize, usize)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -578,6 +579,12 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let cell_prefixes = if controls.enabled(OptimizationPass::CellExpressionPrefixes) {
+        super::numeric_cell_prefix::derive(&program.metadata().plan.facts(), proof)
+    } else {
+        Vec::new()
+    };
+
     let movable_captures = if outlined_body
         && controls.enabled(OptimizationPass::GuardedNumericLoads)
         && controls.enabled(OptimizationPass::MovableCaptureReads)
@@ -617,6 +624,7 @@ pub(in crate::native_artifact) fn emit_entry(
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
         capture_read_candidates: Vec::new(),
+        cell_expression_prefixes: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -1035,6 +1043,40 @@ pub(in crate::native_artifact) fn emit_entry(
             let count = words.read(b, shadow + debit.counter);
             let count = b.ins().iadd_imm(count, 1);
             words.write(b, shadow + debit.counter, count);
+        }
+        if let Some(prefix) = cell_prefixes.iter().find(|prefix| {
+            prefix.first == site
+                && version.is_none_or(|v| {
+                    prefix
+                        .sites
+                        .iter()
+                        .all(|at| v.blocks.contains_key(&(*at as u32)))
+                })
+        }) {
+            let slow = b.create_block();
+            b.set_cold_block(slow);
+            for &at in &prefix.sites {
+                if at != site {
+                    b.set_cold_block(target(at as u32));
+                }
+            }
+            super::numeric_cell_prefix::emit(
+                b,
+                controls.options(),
+                &words,
+                shadow,
+                proof,
+                prefix,
+                slow,
+                target(prefix.next),
+            );
+            report.cell_expression_prefixes.push((
+                site,
+                *prefix.sites.last().unwrap(),
+                prefix.read_sites.len(),
+                prefix.exports.len(),
+            ));
+            b.switch_to_block(slow);
         }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
             let address = version
