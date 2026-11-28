@@ -58,6 +58,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericGenerators,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.
     NumericMatrixArithmetic,
+    /// Consume a sole-use transpose directly in the ordered product loan.
+    TransposeProductViews,
     /// Evaluate nonidentity matrix regions through the original checked scratch DAG.
     MaskedMatrixMaps,
     /// Omit capacity guards at a proved frontier with no append operation.

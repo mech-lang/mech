@@ -1,0 +1,127 @@
+{
+  "schema": "mech.polybench.transpose-product-first-execution.v1",
+  "created_at": "2026-11-28T01:59:46.155521+00:00",
+  "status": "Untimed IR413 candidate; accepted performance baseline remains47. Broad qualification and further focused groups pending.",
+  "compiler_fingerprint": "fc073e0f3716a9185a35fdce021008b3b5edaa17c46fabe65b6df8cd1cd26d33",
+  "accepted_base": 47,
+  "source_parent": "44236f0be9ab3713b8b577927ddc172427fb10de",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_transpose_product.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs"
+  ],
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs": "c77e5ba8c7b14617fdc17550ec85c9b25dda63a93ed6d4c016818f4b12229188",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "0affeacc217293e0de87eb70d3173f2ba22458e019be99753fb68735f2c8cf99",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "f11735ddd591712f3510844fc775349e77fa01c71121aa829f94c29b4770d844",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "1d07292d226d7a1dd781a7e83361906be663836e12cc84a8148c47c890c078b6",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "4c9409690fa7d4f2eadb62f280da98187c15ed90546a057351bd4ccafb765c7b",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "1f5d0d8728b1cc8c0bb04c70a28a54c756bb67cbaee9a179a0ef3095d5b9569c",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "947cd742b437eda1b8eedd7ccfd80624a0f7d73d05b87058502723fcecb206f3",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs": "2ed3561a4fb9d8606b32b52df1f13bb4ac80346575a95b2e1dbc7eddb0c3d50c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b74bf33bb2b3aa987d027987fd2ebdb49a54046a4b0dc9596bb66783399ff185",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "5f740828aaffd4b7461bebfd0ea93b22a4cbb4fa7cb743209939d99f0cab63ae",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "d439bba7ad40a67ff152e58690a4b06b26a5f3639aabd162028d359149bd30a9",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_transpose_product.rs": "a976d8f7a3d876b64a5156162057feab7c25fb6fb1dc9fab609bf356704fafb6",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "1df66232408e98bee35dd48f341aa87d389de606f3f38e1ec36ae4e14c97045c"
+  },
+  "focused_groups": 4,
+  "raw_result": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "numeric_transpose_products",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 93.50151333305985,
+    "compiler_fingerprint": "fc073e0f3716a9185a35fdce021008b3b5edaa17c46fabe65b6df8cd1cd26d33",
+    "source_unchanged": true,
+    "passed_tests": [
+      4
+    ],
+    "scope": "Untimed pure source proof; native product execution unchanged; no candidate performance observations"
+  },
+  "raw_scope_correction": "The inherited runner scope string still says pure source proof; attempt04 actually executes the added native view/census group, as its command/log/test source show. Raw receipt remains unchanged.",
+  "evidence": "Either transposed operand, original/decoded/restored, empty/odd axes, three repeats, exact ordinary/materialized bits, retained aliases, no canonical transpose intermediate, one final bank, skipped consumer callback, exact visit delta, nondecreasing source work/comparison and all other counters equal.",
+  "archives": [
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-01/focused.log.gz",
+      "sha256": "281d83b4aa432a9fb2c20475421236344effe515ad4814abbae9391404847660",
+      "compressed_sha256": "a1455287b8650ea933d0d46ef3bc09e3cb4c78a26b80303cb99cec5d84ddaaf2"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-01/result.json.gz",
+      "sha256": "e139aeba487774faa93d79d68cc30796da8c4ec6edf46c5e3fb2d22b6491659d",
+      "compressed_sha256": "f5be2c4be180ffd097a3df4f8c6c345258c6d9a950304e055d04cf97ba15028f"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-02/focused.log.gz",
+      "sha256": "3036d57bb48a20b7fb921a1471be85eb52f8d7f106da4ab96c1bd8c2222cf4e5",
+      "compressed_sha256": "9f73924ea1599ec836dba02d1db5c90b8f069a6f5f2b84c2b4f7499b48f0b39d"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-02/result.json.gz",
+      "sha256": "c58f8b016081002c2fe7d4a565395d2af64e31656072eb9ff04bc5889d104c59",
+      "compressed_sha256": "75a48bdaab01d5e97273895be8ed0c65fea5cce23b9471696eb52604e38be8d8"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-03/focused.log.gz",
+      "sha256": "9dbb6e22f9d69e14b7105808607639258cfcc354ea46953a64a6c8725a376cd5",
+      "compressed_sha256": "4fa469db2c2791f252f015baa11f607b5e9472c84aa15bd5ccc353a0e6097b41"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-03/result.json.gz",
+      "sha256": "f927753b9cd9d534b7a49ff93feed8e24f0aef3121dbec5c52bf0b09f09a06ef",
+      "compressed_sha256": "470c8802e2ae8293c0c1fd9549ef5fcf4ed62fec1d4e16d5dfad0eef910709e6"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-04/focused.log.gz",
+      "sha256": "2fbec0447bd1bc70431d987714900388307c9b67c794a8c2a32fb92bba821f32",
+      "compressed_sha256": "01a210a785de784730e5ab76e06b04789583fdc6fa23f3beb97c7d86ec38f85e"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/attempt-04/result.json.gz",
+      "sha256": "23229a339bf533a524ff4a943b56d79532e050e99b672d565282a1681e1cdc50",
+      "compressed_sha256": "d61814fa545d959a777f8168d6b0cb797b9c14e7954f44d36998be294e7d574c"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/run-focused.py.gz",
+      "sha256": "5983ea87dad12b1fa4d787338d48691f4afd237cac825878dbf8af91cb0fdc49",
+      "compressed_sha256": "0b669c612304d6dd76c145409f6832a88563414531de92c033cd771563b5aa70"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/plan.json.gz",
+      "sha256": "2599634a24af9e68f953547af547673f345a033510724c78b0e0390851601c61",
+      "compressed_sha256": "454c9b0e87840b5266715d8e18b8924fcc40e647d557dd8bc67e9d22c849e481"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-first-execution/tracked-source.patch.gz",
+      "sha256": "ffbfed03dd59e5d006ea85dfc1d4ca796fe9b2b24c241df5c8d95a172b6881e1",
+      "compressed_sha256": "37caaedba2561a0dbe1e58ffb3e3cf55bfb33fa3d9e752e0d82b97a08318c77b"
+    }
+  ],
+  "performance_observations": 0,
+  "next": "Nonfinite/fixed shapes, finite/physical/spent budgets, malformed images/loans, broader features/corpus and optimization15 source-fee/actual-callback/Object gate before one prospective probe."
+}

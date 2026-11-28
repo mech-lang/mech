@@ -1,5 +1,7 @@
 //! Exact-site loans for one generated F64 matrix operation.
 //! Inputs stay pinned; one initialized private result bank publishes atomically.
+#[path = "numeric_transpose_product.rs"]
+mod transpose_product;
 use super::*;
 use crate::native_artifact::program::prepare::numeric_binary::Kind;
 use crate::native_artifact::program::protocol::{GlobalHelper, abi::NumericBinaryFrame};
@@ -12,6 +14,7 @@ use mech_core::{
 pub(in crate::native_artifact::program::runtime) struct Pending {
     pub frame: NumericBinaryFrame,
     issued: NumericBinaryFrame,
+    view_end: Option<(u32, u64)>,
     site: usize,
     output: u32,
     inputs: [Option<Value>; 2],
@@ -73,6 +76,17 @@ impl Invocation<'_, '_, '_> {
     ) -> Result<Option<u64>, Error> {
         if tag == GlobalHelper::NumericBinaryFinish {
             return self.finish_numeric_binary(site, args);
+        }
+        if tag == GlobalHelper::NumericBinaryPrepare
+            && args[1] == 2
+            && self
+                .descriptor
+                .metadata()
+                .numeric_binary
+                .product_view(site)
+                .is_some()
+        {
+            return self.prepare_transpose_product(site, args);
         }
         let descriptor = self.descriptor;
         let m = descriptor.metadata();
@@ -342,6 +356,7 @@ impl Invocation<'_, '_, '_> {
                 right_scalar: words[1],
             },
             issued: NumericBinaryFrame::default(),
+            view_end: None,
             site,
             output: op.output,
             inputs: values,
@@ -394,6 +409,21 @@ impl Invocation<'_, '_, '_> {
             ));
         }
         let metadata = self.descriptor.metadata();
+        if let Some((end, epoch)) = pending.view_end {
+            let view = metadata
+                .numeric_binary
+                .product_view(site)
+                .ok_or_else(|| invalid("transpose/product finish lost its source proof"))?;
+            if view.product != end
+                || view.output != pending.output
+                || self.state.control.visits != epoch
+                || self.state.control.current != view.parent
+            {
+                return Err(invalid(
+                    "transpose/product finish differs from its admitted path",
+                ));
+            }
+        }
         let ty = &metadata.types[pending.output as usize];
         let value = Value::from_f64_matrix(
             ty.schema,
@@ -409,6 +439,11 @@ impl Invocation<'_, '_, '_> {
         self.state
             .arena
             .put(pending.output, &value, &mut self.state.control.work)?;
+        if let Some((end, _)) = pending.view_end {
+            // One genuine source-proved transition, with all original source
+            // fees paid at entry. Do not fabricate the skipped physical visits.
+            self.state.control.previous = Some(end);
+        }
         self.state.consumed = true;
         Ok(Some(1))
     }
