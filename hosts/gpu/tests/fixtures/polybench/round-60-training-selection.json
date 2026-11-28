@@ -1,0 +1,26 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T15:48:18.186561+00:00",
+  "compiler_fingerprint": "93b8edecfb6233360716f132e51903d59c6b5f7dbaab5663b85f20b4e6548560",
+  "driver_sha256": "a9cd9704db8623ba65f0756d629f274c76a0c7decfa1b4e888bdcbee2c5ace19",
+  "source_parent": "fe6b8eae76fa7cdb6169970bf0ab7137622e8bfe",
+  "policy_sha256": "1b054eff250d7b81ddeb891493dc335a7f56f571ea06fbab7e08f4facad533e7",
+  "adopted_selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted59": 1.0081857384319344,
+    "regressions_over_five_percent": 2,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "active_target": "seidel-2d",
+    "active_target_raw_speedup": 1.1515340393343418,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted59/candidate medians on optimization15; one prospective fresh-process probe, all samples and regressions retained.",
+  "formal_gate": "If selected commit/push clean qualified source and driver, then one900-observation formal evaluation/29482 finite C liveouts and immutable history60. Existing strict optimization-only gate<7.852513248471486; holdout independently report-only. Report raw Mech and C/reference drift separately. On failed gate restore exact accepted59. Target remains Seidel until accepted<=1.0x C; no existing parity wins."
+}
