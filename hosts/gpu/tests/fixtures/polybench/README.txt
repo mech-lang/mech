@@ -2797,3 +2797,11 @@ General guarded same-bank selected publication skips redundant complete scratch 
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history50 without altering earlier entries. Formal optimization9.4153094154070995x C, independent holdout25.3710300143922964x C. V4 optimization-only decision: not_promoted. Raw runtime and C/reference drift controls remain in round-49-audit.json. All observations and regressions are preserved, no retries/exclusions. Exact accepted48 compiler restored solely because optimization failed its strict formal score gate.
 
 [Qualification](round-49-qualification.json) · [Audit](round-49-audit.json) · [Progress](round-49-progress.json) · [Complete experiment](training-experiments/selected-scratch-initialization-formal.json)
+
+Compound conditional domains: formal evaluation
+
+General source-proved compound conditional domains skip only total identity buckets, retaining source order and unknown/fallible branches. Same-bank selected publication skips redundant scratch initialization; different-bank complete publication retains it. Partial scratch grants no full-output completion certificate. All740 broad/19 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history51 without altering earlier entries. Formal optimization9.2435020206874565x C, independent holdout25.1484878192208328x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-50-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted50.
+
+[Qualification](round-50-qualification.json) · [Audit](round-50-audit.json) · [Progress](round-50-progress.json) · [Complete experiment](training-experiments/compound-conditional-domains-formal.json)
