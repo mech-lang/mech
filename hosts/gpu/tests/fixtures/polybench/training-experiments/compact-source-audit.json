@@ -1,0 +1,61 @@
+{
+  "schema": "mech.polybench.compact-source-audit.v1",
+  "created_at": "2026-11-28T02:53:10.709714+00:00",
+  "programs": [
+    {
+      "program": "gesummv",
+      "mech_code_lines": 1,
+      "c_kernel_code_lines": 25,
+      "mech_source": "-- Two matrix-vector products, combined with the original coefficients.\nalpha<f64> * (A<[f64]> ** x<[f64]>) + beta<f64> * (B<[f64]> ** x)\n",
+      "mech_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "upstream_c_path": "linear-algebra/blas/gesummv/gesummv.c",
+      "upstream_c_sha256": "0500b876ed3d2058cdea353119d0e8e9d814e8c531c9437e069121d13e80231f"
+    },
+    {
+      "program": "doitgen",
+      "mech_code_lines": 1,
+      "c_kernel_code_lines": 19,
+      "mech_source": "-- View the first two tensor axes as rows; transform every row by C4.\nA<[f64]> ** C4<[f64]>\n",
+      "mech_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "upstream_c_path": "linear-algebra/kernels/doitgen/doitgen.c",
+      "upstream_c_sha256": "fb1aed52d0707a37eb557474703b9503b2b103fd9128cce6f125fbbabfe13a5e"
+    },
+    {
+      "program": "bicg",
+      "mech_code_lines": 2,
+      "c_kernel_code_lines": 23,
+      "mech_source": "-- The two independent BiCG products share the input matrix.\na := A<[f64]>\n(a' ** r<[f64]>, a ** p<[f64]>)\n",
+      "mech_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "upstream_c_path": "linear-algebra/kernels/bicg/bicg.c",
+      "upstream_c_sha256": "540a0f5864bc443857a5fa5ac473c7302980f32294a33c8dc10f49ddf8612115"
+    },
+    {
+      "program": "atax",
+      "mech_code_lines": 2,
+      "c_kernel_code_lines": 21,
+      "mech_source": "-- PolyBench/C 4.2.1 ATAX: transpose matrix-vector composition.\na := A<[f64]>\na' ** (a ** x<[f64]>)\n",
+      "mech_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "upstream_c_path": "linear-algebra/kernels/atax/atax.c",
+      "upstream_c_sha256": "b3925adb41b5efb545ee1c9278ee2776e4970fdec64e72398494a336d59facbb"
+    },
+    {
+      "program": "mvt",
+      "mech_code_lines": 2,
+      "c_kernel_code_lines": 18,
+      "mech_source": "-- Forward and transposed products update independent vectors.\na := A<[f64]>\n(x1<[f64]> + a ** y-1<[f64]>, x2<[f64]> + a' ** y-2<[f64]>)\n",
+      "mech_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "upstream_c_path": "linear-algebra/kernels/mvt/mvt.c",
+      "upstream_c_sha256": "201dfe26e1119f3901b11f4c802e970dc48c7f6a0e64dca71854292d0c689465"
+    }
+  ],
+  "count": 5,
+  "findings": [
+    "All five use general typed matrix products/transposes, scalar arithmetic and tuples. Their source contains no benchmark-name intrinsic, stored output table or precomputed answer.",
+    "The previous C kernel line counts include signatures, declarations, braces and scop pragmas. Line-count ratios reflect syntax/formatting and library abstraction; they do not measure the implementation size of shared operators.",
+    "Doitgen flattens the first two tensor axes into matrix rows in the fixed input adapter. This changes representation without precomputing the numeric kernel.",
+    "MVT expresses initial_x + ordered_dot. Upstream C initializes its accumulator from initial_x before adding each term. These are algebraically equivalent but have different floating-point association. Current fixed MINI validation is finite with rtol1e-10/atol1e-9, not universal bitwise C equivalence."
+  ],
+  "compiler_optimization_constraint": "Preserve the arithmetic tree and ordered reductions of the unchanged Mech source. Do not use this audit to rewrite ports/inputs, loosen tolerances or adjust recorded measurements.",
+  "compiler_edits": false,
+  "performance_observations": 0
+}
