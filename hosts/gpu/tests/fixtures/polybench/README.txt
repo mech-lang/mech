@@ -2859,3 +2859,11 @@ One owned warm checked-call process was sampled and its entire14620-byte JIT ran
 The next proposed source-derived experiment shares RHS loads/k control across four independent ordered output rows, retaining all existing guards/tails/fees/ownership/publication and exact per-cell arithmetic order. These profiles are warm diagnostics and no runtime/generalization gain is inferred.
 
 [CPU telemetry](round-52-correlation-cpu-telemetry.json) · [Full same-process profile/code evidence](training-experiments/accepted52-correlation-profile.json)
+
+Four independent product rows: formal evaluation
+
+General F64 products group four independent output rows around one RHS load/k loop, with original per-cell arithmetic order and2/1-row tails. Original errors, arithmetic, source fees, current owners, bounds, full buffers and atomic completion remain. All756 broad/4 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.8663442023512840x C, independent holdout24.8165403467171153x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-53-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted53.
+
+[Qualification](round-53-qualification.json) · [Audit](round-53-audit.json) · [Progress](round-53-progress.json) · [Complete experiment](training-experiments/ordered-product-four-rows-formal.json)
