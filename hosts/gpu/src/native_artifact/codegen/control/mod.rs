@@ -1633,6 +1633,7 @@ impl<'plan> CfgDefinition<'plan> {
                                 |operand| plan.kind(operand).is_some(),
                                 controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),
                                 controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowQuartets),
+                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::TransposeTiles),
                                 error,
                             )?)
                         } else { None }

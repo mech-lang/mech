@@ -64,6 +64,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericMatrixArithmetic,
     /// Share right loads and loop control across independent ordered product rows.
     ProductRowPairs,
+    /// Copy materialized transposes in bounded exact-bit two-by-two tiles.
+    TransposeTiles,
     /// Share the same RHS and k control across four independent ordered rows.
     ProductRowQuartets,
     /// Fuse source-closed cell expressions into ordered product accumulators.
