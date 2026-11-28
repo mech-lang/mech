@@ -146,6 +146,3 @@ pub(in crate::native_artifact) mod numeric_transpose;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_product_epilogues;
 mod numeric_reduction_producers;
-
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) mod numeric_cell_prefix;

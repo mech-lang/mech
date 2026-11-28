@@ -3029,3 +3029,9 @@ Exact round60 Seidel native functions/code/stack are preserved. Pure load-only p
 One210-observation target-aware optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history62. Optimization8.1648967348236781x C; independent holdout24.3903966811620911x C. Strict optimization-only decision:not_promoted. Raw Mech and C/reference drift are separate in round-62-audit.json. All observations/regressions retained, no fingerprint retry/exclusion. Exact accepted59 source restored solely because optimization failed its strict gate. Closest-parity target/parity wins are updated only from accepted optimization receipts.
 
 [Qualification](round-62-qualification.json) · [Audit](round-62-audit.json) · [Progress](round-62-progress.json) · [Complete experiment](training-experiments/single-pass-matrix-preflight-formal.json) · [Active target](optimization-target-state.json)
+
+Checked linear expression prefixes: unselected probe
+
+Qualified checked single-read linear/cell expression fusion retained exact round62 Seidel machine code/stack and matrix preflight, source arithmetic/order and all counters. Full783 broad checks,9 focused groups,both features,all30/restored and17002 finite O C outputs passed. Its sole210-observation O-only probe returned0.9967072778438564x raw speedup and Seidel1.1539887323943661x raw speedup; not selected under the preregistered gate. All sources/failures/samples preserved. Accepted59 source restored; no new formal or holdout observations.
+
+[Probe and restoration](training-experiments/linear-expression-prefixes-probe.json)

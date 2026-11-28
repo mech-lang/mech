@@ -1,0 +1,26 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T20:09:59.090408+00:00",
+  "selected": false,
+  "compiler_fingerprint": "5eec0d905d5f9169dd37e8b82eb048da6b547bd8d0bb57f5a7545f8a6a606b9a",
+  "driver_sha256": "ad3cf893bc05c699e4bca6f4474935c64d0e17b4c6d4cea4291099ab0dbf5603",
+  "observations": 210,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted59": 0.9967072778438564,
+    "regressions_over_five_percent": 3,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "active_target": "seidel-2d",
+    "active_target_raw_speedup": 1.153988732394366,
+    "selected": false
+  },
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight optimization15 GM accepted59/candidate medians. One prospective fresh-process probe; all observations retained.",
+  "decision": "Not selected because raw optimization aggregate and active Seidel target did not both improve. Exact accepted59 source restored. No formal run or holdout observation.",
+  "restored_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_round": 59,
+  "history_entries": 63
+}
