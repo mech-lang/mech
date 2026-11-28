@@ -58,6 +58,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericGenerators,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.
     NumericMatrixArithmetic,
+    /// Share right loads and loop control across independent ordered product rows.
+    ProductRowPairs,
     /// Fuse source-closed cell expressions into ordered product accumulators.
     ProductEpilogues,
     /// Evaluate nonidentity matrix regions through the original checked scratch DAG.

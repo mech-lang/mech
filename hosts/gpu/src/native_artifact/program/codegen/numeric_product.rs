@@ -6,6 +6,8 @@ use crate::native_artifact::compiler::f64_arithmetic;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeScalarOp;
+#[path = "numeric_product_rows.rs"]
+mod rows;
 
 fn cell(
     b: &mut FunctionBuilder<'_>,
@@ -80,9 +82,12 @@ pub(super) fn emit(
     count: Value,
     columns: Value,
     inner: Value,
+    row_pairs: bool,
     done: Block,
 ) {
-    emit_body(b, left, right, output, count, columns, inner, None, done);
+    emit_body(
+        b, left, right, output, count, columns, inner, None, row_pairs, done,
+    );
 }
 pub(super) fn emit_epilogue(
     b: &mut FunctionBuilder<'_>,
@@ -93,6 +98,7 @@ pub(super) fn emit_epilogue(
     columns: Value,
     inner: Value,
     epilogue: &Epilogue<'_>,
+    row_pairs: bool,
     done: Block,
 ) {
     emit_body(
@@ -104,6 +110,7 @@ pub(super) fn emit_epilogue(
         columns,
         inner,
         Some(epilogue),
+        row_pairs,
         done,
     );
 }
@@ -116,8 +123,15 @@ fn emit_body(
     columns: Value,
     inner: Value,
     epilogue: Option<&Epilogue<'_>>,
+    row_pairs: bool,
     done: Block,
 ) {
+    if row_pairs {
+        rows::emit(
+            b, left, right, output, count, columns, inner, epilogue, done,
+        );
+        return;
+    }
     let index = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(index, zero);

@@ -1616,12 +1616,14 @@ impl<'plan> CfgDefinition<'plan> {
                             if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductEpilogues)
                                 && let Some(recipe)=program.metadata().numeric_binary.epilogue(index)
                                 && let Some(target)=blocks.get(recipe.resume as usize).copied().flatten() {
-                                crate::native_artifact::program::codegen::numeric_product_epilogues::emit_entry(b,hooks,index,recipe,locals,|operand|plan.kind(operand).is_some(),target,error)?;
+                                crate::native_artifact::program::codegen::numeric_product_epilogues::emit_entry(b,hooks,index,recipe,locals,|operand|plan.kind(operand).is_some(),controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),target,error)?;
                                 report.product_epilogues.push(codegen_report::ProductEpilogue {entry:recipe.entry,end:recipe.end,resume:recipe.resume,parent:recipe.parent,operators:recipe.nodes.iter().map(|n|n.site).collect(),sites:recipe.steps.iter().map(|s|s.site()).collect(),external:recipe.external.iter().map(|v|v.get()).collect(),elided_values:recipe.elided_values.clone()});
                             }
                             Some(crate::native_artifact::program::codegen::numeric_binary::emit_entry(
                                 b, hooks, index, proof, operands, locals,
-                                |operand| plan.kind(operand).is_some(), error,
+                                |operand| plan.kind(operand).is_some(),
+                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ProductRowPairs),
+                                error,
                             )?)
                         } else { None }
                     } else { None };

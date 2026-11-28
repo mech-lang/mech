@@ -201,6 +201,7 @@ pub(in crate::native_artifact) fn emit_entry(
     operands: &[NativeMatchValue],
     locals: Value,
     is_scalar: impl Fn(NativeMatchValue) -> bool,
+    product_row_pairs: bool,
     error: Block,
 ) -> Result<Block, NativeCompileError> {
     if operands.iter().map(|v| v.get()).collect::<Vec<_>>() != op.operands {
@@ -320,7 +321,17 @@ pub(in crate::native_artifact) fn emit_entry(
         }
         Kind::Product => {
             let inner = get(b, frame, offset_of!(Frame, inner));
-            super::numeric_product::emit(b, left, right, output, count, columns, inner, complete);
+            super::numeric_product::emit(
+                b,
+                left,
+                right,
+                output,
+                count,
+                columns,
+                inner,
+                product_row_pairs,
+                complete,
+            );
         }
         Kind::Elementwise(op) => {
             let flat_entry = b.create_block();

@@ -153,6 +153,7 @@ pub(in crate::native_artifact) fn emit_entry(
     recipe: &Candidate,
     locals: Value,
     is_scalar: impl Fn(NativeMatchValue) -> bool,
+    row_pairs: bool,
     target: Block,
     error: Block,
 ) -> Result<(), NativeCompileError> {
@@ -205,7 +206,7 @@ pub(in crate::native_artifact) fn emit_entry(
         cancelled,
     };
     super::numeric_product::emit_epilogue(
-        b, left, right, output, count, columns, inner, &epilogue, complete,
+        b, left, right, output, count, columns, inner, &epilogue, row_pairs, complete,
     );
     for (block, cancel, ready, target) in [(complete, 0, 1, target), (cancelled, 1, 0, ordinary)] {
         b.switch_to_block(block);
