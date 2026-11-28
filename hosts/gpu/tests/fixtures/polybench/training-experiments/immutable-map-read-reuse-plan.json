@@ -1,0 +1,89 @@
+{
+  "schema": "mech.polybench.immutable-map-read-reuse-plan.v1",
+  "created_at": "2026-11-28T08:02:49.626951+00:00",
+  "status": "Prospective before compiler edits or candidate measurements",
+  "source_parent": "870241314ea9d782e4a5ebb47046ca29ccd43b42",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_read_reuse.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_map_read_reuse.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "ec66b500fae5b27136e5393eef6a944f01505b581755f6e39f8da53cb9456ba9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_read_reuse.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "a5ab11fca87b245dfb96f7a966d60d7bf089b569fce7db1188a454208254d702",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "e424036f3d01ccb1eb7d277033f061c91aa705880e54b9e356e3eb85b6720b9f",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "f15acf83b3fd3fb945f33d9468e0c82d28345bf2b5dff9c05549278da46e8f91",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "05f3947a8ef9bfbfb1737d419a1b4be921bcb8564f801024cefdb46d0af84cb5",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f127675d59eff4818f0fc9526d27a25bad22e38a1e510bf5d58575c87ca76fe2",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "1181b7677fdf0d6522e6bc995ae31206ac048aff52e414c09ba830f2f5d4d1e8",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "9894ab2a86cab22d4e656b7590b78f624d42abb246ea270156a5ec8794ea2209",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_map_read_reuse.rs": null
+  },
+  "accepted_round": 51,
+  "accepted_compiler_fingerprint": "c58f49cf83a22b0d2dfbd0d138a8a338b9cd5dde0199cbddd7ffebf7dc3a2800",
+  "accepted_scores": {
+    "optimization": 9.096908651052887,
+    "holdout": 24.60099065552092
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-52/ordered-product-row-pairs/ordered-product-row-pairs-driver",
+  "accepted_driver_sha256": "bd9316769f90230c9bb6e45c74956d20fe6fed2ec6089682fa084696615e0bac",
+  "formal_history_entries": 52,
+  "versions": {
+    "ir": 420,
+    "work": 157,
+    "abi": 48
+  },
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "scope": "General common-subexpression elimination of an already successful immutable numeric matrix read inside one native map iteration, including phase maps and nested ordered reductions. Compiler decisions use source matrix identity, exact selector identities, source scope and dominance. No benchmark names/dimensions, source ports/inputs/C/limits/flags/tolerance/cache/timer changes.",
+  "profiling_basis": {
+    "optimization_only": true,
+    "highest_margins": [
+      "gramschmidt",
+      "durbin"
+    ],
+    "current_accepted51_native_functions_identical_to_accepted50": true,
+    "evidence": "round-51-static-telemetry.json and training-experiments/accepted50-optimization-profile.json",
+    "finding": "Gram-Schmidt generated self time82.92%, concentrated in ordered reduction traversal/checked reads and selected publication. The map emitter currently independently emits every MatrixRead; square reductions in unchanged source repeat exact same-cell reads. Cholesky has the same structural opportunity. Durbin remains a control unless its actual source admits reuse.",
+    "hypothesis_limit": "Backend may already remove some loads. Inspect genuine Objects and source reuse records before any probe; no runtime gain inferred from static source or instruction counts."
+  },
+  "physical_work_removed": [
+    "Reuse the first successful checked read word, omitting the later bounds checks, ordinal/address reconstruction and physical load for identical matrix/selectors.",
+    "The cached SSA word is produced inside the current iteration, not hoisted across iterations, phases or invocations. Original first read and its failure edge remain.",
+    "Only immutable captured selectors or current source element/rectangular element are admitted, with a checked single-predecessor source chain from first read to second and no intervening index write or publication. Divergent paths, joins, changed selectors and unknown actions decline."
+  ],
+  "implementation": [
+    "Add a private emission-only RepeatedMatrixReads ablation and compiler-only per-region cache. Exact matrix index and original selector IDs identify a read; source CFG/scope and successful dominance prove reuse. Reuse the actual first native SSA word, including every F64 bit.",
+    "Keep all existing loan/shape/span/epoch/factory/first-error guards, checked scalar arithmetic, full buffers, source fees, visits, atomic private publication and replay behavior. No new runtime allocation, cache/owner lifetime, frame/helper/ABI/layout or source-fee policy. IR420/work157/ABI48.",
+    "Do not reuse through a collection publication, nested/control cycle, unknown predecessor, or source index redefinition. Every other operation and error edge executes in original order. Constant/alias/affine selector equivalence is not guessed.",
+    "Export descriptive source read-reuse triples from native phase reports; these confer no serialized authority. Existing scalar Bool/U64/I64/F64 native paths remain intact."
+  ],
+  "required_qualification": [
+    "Original/decoded/restored old-emitter ablation for repeated numeric reads across supported packed kinds, exact F64 NaN/signed-zero/subnormal/Inf bits, range/vector/rectangle/phase/nested-reduction paths and aliases.",
+    "Positive repeated selectors and negative different/changed selectors, conditional reads that do not dominate, joins, invalid bounds and first-error identity. Atomic failures, cleanup/retry and current loans remain.",
+    "Finite/missing/zero/spent logical/physical caps and malformed image/frame/source/loan tests, all maintained numeric/scalar/compression regressions and both features; all30 original/decoded/restored finite C cases.",
+    "Actual optimization15 Objects, exact source read-reuse records and lower checked-read/load sequences demonstrate physical work removal. If no real qualifying work changes, preserve diagnostics and restore accepted51 without timing."
+  ],
+  "untimed_gate": "All17002 optimization finite C liveouts and every execution counter, including source work/comparison and physical visits, identical to accepted51. Source resource obligations remain even when native repeated reads disappear.",
+  "training_probe": {
+    "actors": [
+      "accepted51",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "One prospective fresh-process optimization-only probe per fully qualified materially changed fingerprint; raw equal-weight GM accepted51/candidate median speedup strictly above1. Preserve every observation/regression; no exact retry or exclusions."
+  },
+  "formal_acceptance": "After complete qualification, selected probe and clean committed/pushed/frozen source+driver: one900-observation formal run,29482 finite C values, immutable history append at index52. Promote only optimization15 kernel Mech/C strictly below9.096908651052887. Holdout independently reported and cannot veto/select/diagnose/tune/trigger rollback or retry. Trial53 is distinct from formal history index52.",
+  "prior_related_work": "Earlier map bounds/coordinate experiments changed guard placement/coordinate arithmetic. This removes a complete repeated checked read using a successful dominating value and immutable exact selectors. It is not another metadata/type-slot cache or rectangular-induction retry. No observed fingerprint is retried.",
+  "restoration": "If no physical work is removed, or unselected/unpromoted, preserve all source/evidence/observations and restore every planned source path exactly from source_parent, stage deletions, verify accepted51 fingerprint; commit/push only PR1001.",
+  "performance_observations": 0
+}
