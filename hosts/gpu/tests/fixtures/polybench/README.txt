@@ -2977,3 +2977,9 @@ Unpromoted point-prefix Seidel profile
 Same owned process sample/code capture validates all5756 numeric bytes and caller local BL targets. Generated code1718/1774=96.84% of execution samples. Read admission, old-cell comparison and a spilled credit remain in the hot path. The actual timed C loop in main uses three new F64 loads per cell and carries neighboring values/prior output in registers; the Mech point prefix still issues nine expression loads plus its old-cell comparison load. This motivates a source-proved rolling-cell cache under the existing numeric loan, preserving sequential updates, exact source fees and lexical fallback. No timing/history change or rejected-fingerprint retry. Exact accepted59 is restored.
 
 [Profile and full provenance](training-experiments/unselected-cell-prefix-profile.json)
+
+Rolling point expression prefixes: unselected probe
+
+The rolling point-expression kernel passed784 broad invocations,11 focused groups, both features, all30 source forms, and an exact17002-value optimization counter gate. Genuine Objects show nine distinct Seidel source reads and three newly exposed rolling reads, exact center-read consumer reuse and exact source-fee conservation. Its single210-observation optimization-only probe returned0.9962806821997101x raw speedup, with2 regressions over5%. It was not selected. All observations and attempted sources are retained. Exact accepted59 fingerprint5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f is restored; no formal history append or holdout observation. The recorded accepted scores remain7.852513248471486x /23.989161547848273x C.
+
+[Full probe and source restoration](training-experiments/rolling-cell-prefixes-probe.json) · [Selection](training-experiments/rolling-cell-prefixes-selection.json)

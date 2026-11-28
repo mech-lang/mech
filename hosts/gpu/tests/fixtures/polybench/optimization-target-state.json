@@ -113,7 +113,7 @@
   "latest_diagnostic": "training-experiments/closest-parity-first-profile.json",
   "latest_diagnostic_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
   "latest_diagnostic_official_performance_observations": 0,
-  "latest_experiment": "training-experiments/source-closed-cell-prefix-formal.json",
-  "latest_experiment_selected": true,
+  "latest_experiment": "training-experiments/rolling-cell-prefixes-probe.json",
+  "latest_experiment_selected": false,
   "latest_experiment_promoted": false
 }

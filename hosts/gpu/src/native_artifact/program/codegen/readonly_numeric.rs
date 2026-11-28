@@ -39,10 +39,6 @@ pub(in crate::native_artifact) struct Report {
     pub ordinary_capture_reads: Vec<(usize, usize)>,
     #[serde(skip)]
     pub(super) capture_read_candidates: Vec<super::numeric_captured_reads::Candidate>,
-    pub rolling_cell_prefixes: Vec<(usize, usize, usize, usize, usize)>,
-    pub reused_cell_write_sources: Vec<(usize, u32)>,
-    pub static_cell_axes: Vec<(usize, usize, u8, u64)>,
-    pub cell_expression_prefixes: Vec<(usize, usize, usize, usize)>,
     pub read_pack_sites: Vec<(usize, usize, u8)>,
     pub source_guarded_read_packs: Vec<usize>,
     pub fully_lowered_read_packs: Vec<usize>,
@@ -554,7 +550,7 @@ pub(in crate::native_artifact) fn emit_entry(
     } else {
         BTreeSet::new()
     };
-    let mut setup_work = b.func.dfg.num_insts() - setup_start;
+    let setup_work = b.func.dfg.num_insts() - setup_start;
     let exit = b.create_block();
     let bailouts = if let Some(tree) = &region.numeric_tree {
         tree.nodes
@@ -582,12 +578,6 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     };
     let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
-    let cell_prefixes = if controls.enabled(OptimizationPass::CellExpressionPrefixes) {
-        super::numeric_cell_prefix::derive(&program.metadata().plan.facts(), proof)
-    } else {
-        Vec::new()
-    };
-
     let movable_captures = if outlined_body
         && controls.enabled(OptimizationPass::GuardedNumericLoads)
         && controls.enabled(OptimizationPass::MovableCaptureReads)
@@ -606,28 +596,6 @@ pub(in crate::native_artifact) fn emit_entry(
         &read_packs,
         controls.enabled(OptimizationPass::ChildFunding),
     );
-    let cache_setup = b.func.dfg.num_insts();
-    let rolling_caches = if controls.enabled(OptimizationPass::RollingCellPrefixes)
-        && region.numeric_tree.is_none()
-        && versions.is_empty()
-    {
-        cell_prefixes
-            .iter()
-            .filter_map(|prefix| {
-                super::numeric_cell_prefix::rolling::Recipe::derive(
-                    &program.metadata().plan.facts(),
-                    &program.metadata().buffer_frames,
-                    proof,
-                    &region.tail,
-                    prefix,
-                )
-            })
-            .map(|recipe| super::numeric_cell_prefix::rolling::Cache::new(b, recipe))
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
-    setup_work += b.func.dfg.num_insts() - cache_setup;
     let checks = versions
         .iter()
         .map(|v| (v.initialize, v.queries(proof)))
@@ -649,13 +617,6 @@ pub(in crate::native_artifact) fn emit_entry(
         movable_capture_reads: Vec::new(),
         ordinary_capture_reads: Vec::new(),
         capture_read_candidates: Vec::new(),
-        rolling_cell_prefixes: rolling_caches
-            .iter()
-            .map(|cache| cache.recipe.report())
-            .collect(),
-        reused_cell_write_sources: Vec::new(),
-        static_cell_axes: Vec::new(),
-        cell_expression_prefixes: Vec::new(),
         read_pack_sites: Vec::new(),
         source_guarded_read_packs: Vec::new(),
         fully_lowered_read_packs: Vec::new(),
@@ -1075,49 +1036,6 @@ pub(in crate::native_artifact) fn emit_entry(
             let count = b.ins().iadd_imm(count, 1);
             words.write(b, shadow + debit.counter, count);
         }
-        if let Some(prefix) = cell_prefixes.iter().find(|prefix| {
-            prefix.first == site
-                && version.is_none_or(|v| {
-                    prefix
-                        .sites
-                        .iter()
-                        .all(|at| v.blocks.contains_key(&(*at as u32)))
-                })
-        }) {
-            let slow = b.create_block();
-            b.set_cold_block(slow);
-            for &at in &prefix.sites {
-                if at != site {
-                    b.set_cold_block(target(at as u32));
-                }
-            }
-            super::numeric_cell_prefix::emit(
-                b,
-                controls.options(),
-                &words,
-                shadow,
-                proof,
-                code,
-                prefix,
-                rolling_caches
-                    .iter()
-                    .find(|cache| cache.recipe.first == site),
-                slow,
-                target(prefix.next),
-            );
-            report.cell_expression_prefixes.push((
-                site,
-                *prefix.sites.last().unwrap(),
-                prefix.read_sites.len(),
-                prefix.exports.len(),
-            ));
-            b.switch_to_block(slow);
-            for cache in &rolling_caches {
-                if cache.recipe.first == site {
-                    cache.invalidate(b);
-                }
-            }
-        }
         if let Some(pack) = read_packs.iter().find(|pack| pack.first == site) {
             let address = version
                 .and_then(|v| v.addresses.iter().find(|address| address.site == site))
@@ -1420,24 +1338,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 let view = shadow + proof.view(*array);
                 let row = words.read(b, *row as usize);
                 let column = words.read(b, *column as usize);
-                let axes = if controls.enabled(OptimizationPass::StaticNumericExtents) {
-                    super::numeric_words::fixed_axes(code, proof, *array)
-                } else {
-                    [None, None]
-                };
-                for (axis, value) in axes.iter().enumerate() {
-                    if let Some(n) = value {
-                        report.static_cell_axes.push((site, *array, axis as u8, *n));
-                    }
-                }
-                let rows = match axes[0] {
-                    Some(n) => b.ins().iconst(types::I64, n as i64),
-                    None => words.read(b, view + 2),
-                };
-                let columns = match axes[1] {
-                    Some(n) => b.ins().iconst(types::I64, n as i64),
-                    None => words.read(b, view + 3),
-                };
+                let rows = words.read(b, view + 2);
+                let columns = words.read(b, view + 3);
                 let base = words.read(b, view);
                 let width = proof.arrays[*array].width;
                 let bad = b.create_block();
@@ -1446,22 +1348,9 @@ pub(in crate::native_artifact) fn emit_entry(
                 boundaries.insert(bad);
                 // These are independent source axes, never a linear access or
                 // a one-coordinate CSE/window certificate.
-                let known_old = rolling_caches
-                    .iter()
-                    .find(|cache| cache.recipe.write == site)
-                    .and_then(|cache| cache.recipe.old);
-                let (address, ty) = if let Some(old) = known_old {
-                    report.reused_cell_write_sources.push((site, old));
-                    let r = b.ins().iadd_imm(row, -1);
-                    let c = b.ins().iadd_imm(column, -1);
-                    let start = b.ins().imul(r, columns);
-                    let ordinal = b.ins().iadd(start, c);
-                    super::numeric_words::element_address(b, ordinal, width, |_| base)?
-                } else {
-                    super::numeric_words::cell_address(
-                        b, row, column, rows, columns, width, base, bad,
-                    )?
-                };
+                let (address, ty) = super::numeric_words::cell_address(
+                    b, row, column, rows, columns, width, base, bad,
+                )?;
                 match operation {
                     Operation::CellRead { output, .. } => {
                         let value = super::numeric_words::load_unsigned_word(
@@ -1477,18 +1366,14 @@ pub(in crate::native_artifact) fn emit_entry(
                     Operation::CellWrite { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
                         super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
-                        let old = if let Some(old) = known_old {
-                            words.read(b, old as usize)
-                        } else {
-                            report.typed_loads.push((site, width));
-                            super::numeric_words::load_unsigned_word(
-                                b,
-                                ty,
-                                super::numeric_words::guarded_load_flags(controls.options()),
-                                address,
-                                0,
-                            )
-                        };
+                        let old = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            super::numeric_words::guarded_load_flags(controls.options()),
+                            address,
+                            0,
+                        );
+                        report.typed_loads.push((site, width));
                         let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
                         let update = b.create_block();
                         let done = b.create_block();
@@ -1529,9 +1414,6 @@ pub(in crate::native_artifact) fn emit_entry(
                         b.ins().store(MemFlags::new(), value, address, 0);
                         b.ins().jump(done, &[]);
                         b.switch_to_block(done);
-                        for cache in &rolling_caches {
-                            cache.finish_write(b, site);
-                        }
                         report.typed_stores.push((site, width));
                         report.first_change_boundaries.push(site);
                         if boundary::tree_owner_handoff(controls, region, proof) {
@@ -1901,9 +1783,6 @@ pub(in crate::native_artifact) fn emit_entry(
                 }
                 _ => return Err(backend("numeric proof contains unsupported action")),
             },
-        }
-        for cache in &rolling_caches {
-            cache.control(b, &program.metadata().plan.facts(), site);
         }
         if let Some(tree) = &region.numeric_tree {
             super::numeric_tree::control(b, &words, shadow, tree, site, retirement.as_ref())?;
