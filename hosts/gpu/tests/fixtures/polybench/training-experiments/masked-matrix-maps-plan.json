@@ -1,0 +1,70 @@
+{
+  "schema": "mech.polybench.masked-matrix-maps-plan.v1",
+  "created_at": "2026-11-28",
+  "status": "Prospective before compiler edits or candidate timing",
+  "source_parent": "71b48ec19b214e8810ff5aa8e2c97a2368b8d297",
+  "accepted_round": 45,
+  "accepted_scores": {
+    "optimization": 9.784192694066512,
+    "holdout": 25.86144806723818
+  },
+  "accepted_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+  "accepted_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "profiling_basis": "training-experiments/accepted45-gramschmidt-profile.json",
+  "scope": "General source-proved conditional matrix maps. Optimization15 diagnosis/selection only. No holdout source diagnosis/profiling/tuning.",
+  "implementation": [
+    "Derive one row/column U64 comparison mask from the actual sealed acyclic comprehension CFG. Its pure prefix must have no fallible/effectful work, and its skipped branch must yield precisely the destination matrix current cell through only safe identity reads/copies and path-proved Boolean pattern branches.",
+    "Require exact fixed rectangular source ranges beginning at1 and matching the destination extents; unknown, shifted, neighbour-reading, effectful or uncertain identity paths keep existing complete evaluation. Support Eq/Ne/Lt/Le/Gt/Ge with reversed operands and captured bounds; clip selected intervals without introducing unsigned overflow.",
+    "Keep scratch-before-publication. Copy the complete current destination into the same pre-admitted scratch bank, evaluate only selected coordinates in original column/row order through the existing checked scalar/map emitter, and copy the complete result only after success. A miss preserves the exact pre-map state including earlier completed maps. No partial in-place updates.",
+    "Reuse unchanged full source range/builder/transpose/read/clone/native-step/scratch/publication/replay envelopes and finite owner/coexistence/currentness checks. Validate the source span before scratch initialization; scratch remains disjoint and private. No new runtime cache, wire selector, owner, helper or ABI field.",
+    "A private compile-only selected-iteration argument leaves all ordinary/runtime numeric map emission unchanged. Full output cardinality is genuinely initialized by scratch copy; active-body checks/errors/bits retain exact source order. Scalar Bool/U64/I64/F64 native instructions remain maintained. IR412/work157/ABI47."
+  ],
+  "prior_rejected_work": "R40 packed copying, R41 SSA, R42 total direct maps and R43 guarded domains remain rejected. This transformation skips whole identity iteration regions and keeps the complete checked scratch boundary; it does not restore those changes or retry any observed fingerprint. R46 type-slot reuse remains fully restored to accepted45.",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "d16cfaf23f1c68e5b64a718c6a7507ecf9cbc5bd0f58e19ae3d94bd58ee2aa98",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs": "50f5c2894e04c30439dc942d3bd988d2c67e6b221002490049de5936e7fa17cc",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "b8d5fcda61a8b7ba179516c544dbe89cdfb7aa09a76d5413a7e9a826e685824e",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "7095918c7b5c7601814481c855473479d18c75ccc78d0fd3188531dde50cb30f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "4b38ebe6701ff79f26900a48a76d7d855d2899b6fe436578da34004f14eaaa1f",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "270170b8a1ff59d0624c70fdc0f982507c50af59957cefde2849363d4497a347",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "e14a48bd76587bbc55d097fb66f2f4a1c4095f15b0ecc8b401d9ed25bfd522e9",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f051cd94d4fd364b49f3993fbda5c64f58d1496251d69a180be86249027ad934"
+  },
+  "required_qualification": [
+    "Source-proof positive/negative and mutated proof/body/target tests; interval selection independently checked at0,1,domain edges,u64::MAX, both axes, all comparisons/polarities and reversed operands.",
+    "Differential original/decoded/restored source execution with pass enabled/ablated: exact F64 payloads and all maintained integer/Bool widths, partial/empty/full masks, arbitrary input aliases and neighbouring reads, multi-iteration maps, current bounds, and selected errors after earlier completed maps.",
+    "Finite work/comparison/temporary/output/node/stack admission, clone envelopes, cold replay, aliases, atomicity, cleanup/retry, malformed images/loans, scalar/compression regressions, all30 unchanged finite C cases, Object emission and both feature builds."
+  ],
+  "untimed_gate": "Before timing: all15 optimization finite C outputs and actual execution counters against accepted45; visits and all other counters equal, source work/comparison nondecreasing. Actual checked Object export must change the profiled Gram numeric_5 instruction stream through at least the three Q/R/A mask proofs, retain original scratch/publication boundary and source body arithmetic order, and introduce no FMA. No holdout performance before selection/freeze.",
+  "training_probe": {
+    "observations": 210,
+    "actors": [
+      "accepted45",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "method": "One fresh process per actor/case/sample, interleaved with alternating actor order by case/pair; fixed formal cache/warmup/checked-call boundaries. Exactly one prospective probe per fully qualified fingerprint; retain all observations/regressions, no retry/exclusion.",
+    "selection": "Raw equal-weight GM accepted45/candidate median kernel runtime speedup strictly>1 after qualification and the untimed source/counter gate."
+  },
+  "formal_acceptance": "Commit/push and freeze exact clean selected source/driver before both sets. Retain all900 observations/29482 finite liveouts and append-only history. Promote only BOTH primary kernel GM Mech/C scores strictly improve accepted45 (9.784192694066512 /25.86144806723818); otherwise restore every candidate Rust path exactly to source_parent. Controls cannot override either score.",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "formal_history_entries": 47,
+  "performance_observations": 0
+}
