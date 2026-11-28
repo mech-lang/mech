@@ -2971,3 +2971,9 @@ Bounded pure scalar point prefixes share one complete checked coordinate/read ad
 One210-observation target-aware optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history60. Optimization8.2794912058078403x C; independent holdout23.7001339441827348x C. Strict optimization-only decision:not_promoted. Raw Mech and C/reference drift are separate in round-60-audit.json. All observations/regressions retained, no fingerprint retry/exclusion. Exact accepted59 source restored solely because optimization failed its strict gate. Closest-parity target/parity wins are updated only from accepted optimization receipts.
 
 [Qualification](round-60-qualification.json) · [Audit](round-60-audit.json) · [Progress](round-60-progress.json) · [Complete experiment](training-experiments/source-closed-cell-prefix-formal.json) · [Active target](optimization-target-state.json)
+
+Unpromoted point-prefix Seidel profile
+
+Same owned process sample/code capture validates all5756 numeric bytes and caller local BL targets. Generated code1718/1774=96.84% of execution samples. Read admission, old-cell comparison and a spilled credit remain in the hot path. The actual timed C loop in main uses three new F64 loads per cell and carries neighboring values/prior output in registers; the Mech point prefix still issues nine expression loads plus its old-cell comparison load. This motivates a source-proved rolling-cell cache under the existing numeric loan, preserving sequential updates, exact source fees and lexical fallback. No timing/history change or rejected-fingerprint retry. Exact accepted59 is restored.
+
+[Profile and full provenance](training-experiments/unselected-cell-prefix-profile.json)
