@@ -1,0 +1,1423 @@
+{
+  "scope": "Largest accepted45 optimization-set margin only. No holdout source diagnosis, profiling or tuning. Round46 was rejected and every source path restored before this independent diagnostic.",
+  "method": "One fresh exact accepted45 driver, unchanged source/inputs/finite limits/cache flush/checked-call boundary. Estimate240s residence from prior same-case wall/call ratio; one120s nominal1ms macOS sample after startup. Attempt one read-only same-process JIT byte/disassembly snapshot before sampling and preserve success/failure. Attribute only canonical execution stacks through the same-process JIT map. Preserve natural completion, all diagnostic arrays and every error; never restart a live process after an observation timeout. Diagnostic times never enter performance scores or training selection.",
+  "source_commit": "48df1f857e78ba6bbbd82339f0c2abd82b7659e1",
+  "workspace_commit": "077e678fc833ed23c205203aa9c8383cbb4cfcd9",
+  "workspace_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "accepted_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "accepted_round": 45,
+  "schema": "mech.polybench.same-process-training-profile-review.v1",
+  "created_at": "2026-11-28T00:13:13.239131+00:00",
+  "case": "gramschmidt",
+  "execution_samples": 3829,
+  "jit_self_samples": 3436,
+  "jit_self_percent": 89.7362235570645,
+  "jit_functions": [
+    {
+      "name": "mech_canonical_program_entry_v1_numeric_5",
+      "samples": 3436,
+      "percent": 89.7362235570645
+    }
+  ],
+  "self_time_mechanisms": [
+    {
+      "name": "Generated code, resolved function",
+      "samples": 3436,
+      "percent": 89.7362235570645
+    },
+    {
+      "name": "Other runtime self time",
+      "samples": 195,
+      "percent": 5.092713502219901
+    },
+    {
+      "name": "Allocation and deallocation",
+      "samples": 62,
+      "percent": 1.6192217289109427
+    },
+    {
+      "name": "Memory planning, schema and snapshot validation",
+      "samples": 57,
+      "percent": 1.4886393314181248
+    },
+    {
+      "name": "Resource bookkeeping and locks",
+      "samples": 50,
+      "percent": 1.3058239749281797
+    },
+    {
+      "name": "Byte copy and zeroing",
+      "samples": 29,
+      "percent": 0.7573779054583443
+    }
+  ],
+  "top_inclusive_functions": [
+    {
+      "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+      "samples": 3829,
+      "percent": 100.0
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+      "samples": 3733,
+      "percent": 97.4928179681379
+    },
+    {
+      "name": "JIT::mech_canonical_program_entry_v1",
+      "samples": 3726,
+      "percent": 97.31000261164795
+    },
+    {
+      "name": "JIT::mech_canonical_program_entry_v1_numeric_5",
+      "samples": 3479,
+      "percent": 90.85923217550274
+    },
+    {
+      "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+      "samples": 278,
+      "percent": 7.260381300600679
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_closed_region",
+      "samples": 116,
+      "percent": 3.029511621833377
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+      "samples": 116,
+      "percent": 3.029511621833377
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::initialize_numeric_map_banks",
+      "samples": 88,
+      "percent": 2.2982501958735964
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+      "samples": 77,
+      "percent": 2.010968921389397
+    },
+    {
+      "name": "mech_gpu::native_artifact::program::runtime::invocation::numeric_map_banks::make_bank",
+      "samples": 73,
+      "percent": 1.9065030033951422
+    },
+    {
+      "name": "<deduplicated_symbol>",
+      "samples": 59,
+      "percent": 1.540872290415252
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_composite_call",
+      "samples": 53,
+      "percent": 1.3841734134238706
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+      "samples": 53,
+      "percent": 1.3841734134238706
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_closed_tail",
+      "samples": 43,
+      "percent": 1.1230086184382346
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::synchronize_numeric_carrier",
+      "samples": 37,
+      "percent": 0.966309741446853
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+      "samples": 35,
+      "percent": 0.9140767824497258
+    },
+    {
+      "name": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+      "samples": 34,
+      "percent": 0.8879603029511621
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+      "samples": 32,
+      "percent": 0.835727343954035
+    },
+    {
+      "name": "core::ptr::drop_in_place::<mech_core::snapshot::validation::Value>",
+      "samples": 26,
+      "percent": 0.6790284669626534
+    },
+    {
+      "name": "_platform_memmove",
+      "samples": 23,
+      "percent": 0.6006790284669626
+    }
+  ],
+  "top_self_functions": [
+    {
+      "name": "JIT::mech_canonical_program_entry_v1_numeric_5",
+      "samples": 3436,
+      "percent": 89.7362235570645
+    },
+    {
+      "name": "<deduplicated_symbol>",
+      "samples": 34,
+      "percent": 0.8879603029511621
+    },
+    {
+      "name": "_platform_memmove",
+      "samples": 23,
+      "percent": 0.6006790284669626
+    },
+    {
+      "name": "_xzm_xzone_malloc_tiny",
+      "samples": 15,
+      "percent": 0.3917471924784539
+    },
+    {
+      "name": "_xzm_free",
+      "samples": 14,
+      "percent": 0.3656307129798903
+    },
+    {
+      "name": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize_prefix",
+      "samples": 13,
+      "percent": 0.3395142334813267
+    },
+    {
+      "name": "mech_gpu::native_artifact::program::runtime::invocation::numeric_map_banks::make_bank",
+      "samples": 10,
+      "percent": 0.26116479498563594
+    },
+    {
+      "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+      "samples": 8,
+      "percent": 0.20893183598850876
+    },
+    {
+      "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+      "samples": 7,
+      "percent": 0.18281535648994515
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::synchronize_numeric_carrier",
+      "samples": 7,
+      "percent": 0.18281535648994515
+    },
+    {
+      "name": "_xzm_xzone_malloc",
+      "samples": 7,
+      "percent": 0.18281535648994515
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+      "samples": 6,
+      "percent": 0.15669887699138157
+    },
+    {
+      "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::initialize_numeric_map_banks",
+      "samples": 6,
+      "percent": 0.15669887699138157
+    },
+    {
+      "name": "_malloc_zone_malloc",
+      "samples": 6,
+      "percent": 0.15669887699138157
+    },
+    {
+      "name": "mech_core::schema::shape::evaluate_body_extents",
+      "samples": 6,
+      "percent": 0.15669887699138157
+    }
+  ],
+  "same_process_jit_sites": {
+    "schema": "mech.polybench.same-process-jit-sites.v1",
+    "scope": "Optimization Gram-Schmidt only; actual sampled process/function bytes, no Object-byte identity assumption.",
+    "pid": 15349,
+    "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "symbol": "mech_canonical_program_entry_v1_numeric_5",
+    "jit_bytes_sha256": "38d0eef0574f3d0132507d659eaab33c29f9bf6863c2ae8513239fb38be22c7b",
+    "jit_bytes": 17212,
+    "decoded_instructions": 4303,
+    "all_decoded_words_match_same_process_bytes": true,
+    "execution_samples": 3829,
+    "jit_self_samples": 3436,
+    "jit_functions": [
+      {
+        "name": "mech_canonical_program_entry_v1_numeric_5",
+        "samples": 3436,
+        "percent": 89.7362235570645
+      }
+    ],
+    "sites": [
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9852,
+        "samples": 396,
+        "percent": 10.342125881431183,
+        "actual_jit_instruction": "ldr    x4, [sp, #0x54e8]",
+        "instruction_window": [
+          {
+            "offset": 9844,
+            "instruction": "msub   x12, x11, x28, x1",
+            "word_hex": "9b1c856c"
+          },
+          {
+            "offset": 9848,
+            "instruction": "add    x0, x12, #0x1",
+            "word_hex": "91000580"
+          },
+          {
+            "offset": 9852,
+            "instruction": "ldr    x4, [sp, #0x54e8]",
+            "word_hex": "f96a77e4"
+          },
+          {
+            "offset": 9856,
+            "instruction": "cmp    x0, x4",
+            "word_hex": "eb04001f"
+          },
+          {
+            "offset": 9860,
+            "instruction": "b.eq   0xcbdc9a6b4",
+            "word_hex": "54000180"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 7784,
+        "samples": 393,
+        "percent": 10.263776442935493,
+        "actual_jit_instruction": "cmp    x1, x7",
+        "instruction_window": [
+          {
+            "offset": 7776,
+            "instruction": "cbz    x0, 0xcbdc9bac0",
+            "word_hex": "b400e300"
+          },
+          {
+            "offset": 7780,
+            "instruction": "mov    x1, #0x0",
+            "word_hex": "d2800001"
+          },
+          {
+            "offset": 7784,
+            "instruction": "cmp    x1, x7",
+            "word_hex": "eb07003f"
+          },
+          {
+            "offset": 7788,
+            "instruction": "b.lo   0xcbdc9a65c",
+            "word_hex": "54003f83"
+          },
+          {
+            "offset": 7792,
+            "instruction": "str    x7, [sp, #0x3d50]",
+            "word_hex": "f91eabe7"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 7808,
+        "samples": 209,
+        "percent": 5.458344215199791,
+        "actual_jit_instruction": "str    x1, [x9, x0]",
+        "instruction_window": [
+          {
+            "offset": 7800,
+            "instruction": "ldr    x1, [x5, x0]",
+            "word_hex": "f86068a1"
+          },
+          {
+            "offset": 7804,
+            "instruction": "ldr    x9, [sp, #0x5588]",
+            "word_hex": "f96ac7e9"
+          },
+          {
+            "offset": 7808,
+            "instruction": "str    x1, [x9, x0]",
+            "word_hex": "f8206921"
+          },
+          {
+            "offset": 7812,
+            "instruction": "add    x0, x0, #0x8",
+            "word_hex": "91002000"
+          },
+          {
+            "offset": 7816,
+            "instruction": "mov    x1, #0x1c20",
+            "word_hex": "d2838401"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 10360,
+        "samples": 209,
+        "percent": 5.458344215199791,
+        "actual_jit_instruction": "ldr    x4, [sp, #0x54e8]",
+        "instruction_window": [
+          {
+            "offset": 10352,
+            "instruction": "lsr    x3, x3, #4",
+            "word_hex": "d344fc63"
+          },
+          {
+            "offset": 10356,
+            "instruction": "add    x9, x1, x3",
+            "word_hex": "8b030029"
+          },
+          {
+            "offset": 10360,
+            "instruction": "ldr    x4, [sp, #0x54e8]",
+            "word_hex": "f96a77e4"
+          },
+          {
+            "offset": 10364,
+            "instruction": "cmp    x9, x4",
+            "word_hex": "eb04013f"
+          },
+          {
+            "offset": 10368,
+            "instruction": "b.eq   0xcbdc9a8ac",
+            "word_hex": "54000160"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 6464,
+        "samples": 199,
+        "percent": 5.197179420214155,
+        "actual_jit_instruction": "cmp    x0, x10",
+        "instruction_window": [
+          {
+            "offset": 6456,
+            "instruction": "cbz    x0, 0xcbdc9b984",
+            "word_hex": "b4010260"
+          },
+          {
+            "offset": 6460,
+            "instruction": "mov    x0, #0x0",
+            "word_hex": "d2800000"
+          },
+          {
+            "offset": 6464,
+            "instruction": "cmp    x0, x10",
+            "word_hex": "eb0a001f"
+          },
+          {
+            "offset": 6468,
+            "instruction": "b.lo   0xcbdc9a858",
+            "word_hex": "540078a3"
+          },
+          {
+            "offset": 6472,
+            "instruction": "str    x10, [sp, #0x1eb0]",
+            "word_hex": "f90f5bea"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11824,
+        "samples": 195,
+        "percent": 5.092713502219901,
+        "actual_jit_instruction": "add    x4, x0, x6",
+        "instruction_window": [
+          {
+            "offset": 11816,
+            "instruction": "mov    x22, x21",
+            "word_hex": "aa1503f6"
+          },
+          {
+            "offset": 11820,
+            "instruction": "b      0xcbdc9940c",
+            "word_hex": "17fff978"
+          },
+          {
+            "offset": 11824,
+            "instruction": "add    x4, x0, x6",
+            "word_hex": "8b060004"
+          },
+          {
+            "offset": 11828,
+            "instruction": "sub    x9, x4, #0x1",
+            "word_hex": "d1000489"
+          },
+          {
+            "offset": 11832,
+            "instruction": "cmp    x9, #0x14",
+            "word_hex": "f100513f"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9344,
+        "samples": 192,
+        "percent": 5.01436406372421,
+        "actual_jit_instruction": "ldr    x11, [sp, #0x54e8]",
+        "instruction_window": [
+          {
+            "offset": 9336,
+            "instruction": "lsr    x0, x0, #4",
+            "word_hex": "d344fc00"
+          },
+          {
+            "offset": 9340,
+            "instruction": "add    x9, x1, x0",
+            "word_hex": "8b000029"
+          },
+          {
+            "offset": 9344,
+            "instruction": "ldr    x11, [sp, #0x54e8]",
+            "word_hex": "f96a77eb"
+          },
+          {
+            "offset": 9348,
+            "instruction": "cmp    x9, x11",
+            "word_hex": "eb0b013f"
+          },
+          {
+            "offset": 9352,
+            "instruction": "b.hi   0xcbdc9a4b4",
+            "word_hex": "54000168"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9864,
+        "samples": 178,
+        "percent": 4.64873335074432,
+        "actual_jit_instruction": "add    x0, x6, x11",
+        "instruction_window": [
+          {
+            "offset": 9856,
+            "instruction": "cmp    x0, x4",
+            "word_hex": "eb04001f"
+          },
+          {
+            "offset": 9860,
+            "instruction": "b.eq   0xcbdc9a6b4",
+            "word_hex": "54000180"
+          },
+          {
+            "offset": 9864,
+            "instruction": "add    x0, x6, x11",
+            "word_hex": "8b0b00c0"
+          },
+          {
+            "offset": 9868,
+            "instruction": "sub    x0, x0, #0x1",
+            "word_hex": "d1000400"
+          },
+          {
+            "offset": 9872,
+            "instruction": "cmp    x12, #0x1e",
+            "word_hex": "f100799f"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9144,
+        "samples": 173,
+        "percent": 4.518150953251502,
+        "actual_jit_instruction": "cmp    x8, x3",
+        "instruction_window": [
+          {
+            "offset": 9136,
+            "instruction": "cbz    x0, 0xcbdc9bc34",
+            "word_hex": "b400c420"
+          },
+          {
+            "offset": 9140,
+            "instruction": "mov    x8, #0x0",
+            "word_hex": "d2800008"
+          },
+          {
+            "offset": 9144,
+            "instruction": "cmp    x8, x3",
+            "word_hex": "eb03011f"
+          },
+          {
+            "offset": 9148,
+            "instruction": "b.lo   0xcbdc9a464",
+            "word_hex": "54000543"
+          },
+          {
+            "offset": 9152,
+            "instruction": "str    x3, [sp, #0x5290]",
+            "word_hex": "f9294be3"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11780,
+        "samples": 171,
+        "percent": 4.465917994254374,
+        "actual_jit_instruction": "cmp    x6, x15",
+        "instruction_window": [
+          {
+            "offset": 11772,
+            "instruction": "mov    x6, #0x0",
+            "word_hex": "d2800006"
+          },
+          {
+            "offset": 11776,
+            "instruction": "mov    x19, x6",
+            "word_hex": "aa0603f3"
+          },
+          {
+            "offset": 11780,
+            "instruction": "cmp    x6, x15",
+            "word_hex": "eb0f00df"
+          },
+          {
+            "offset": 11784,
+            "instruction": "b.lo   0xcbdc9ae30",
+            "word_hex": "54000143"
+          },
+          {
+            "offset": 11788,
+            "instruction": "str    x19, [sp, #0x948]",
+            "word_hex": "f904a7f3"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9168,
+        "samples": 139,
+        "percent": 3.6301906503003396,
+        "actual_jit_instruction": "str    x1, [x8, x0]",
+        "instruction_window": [
+          {
+            "offset": 9160,
+            "instruction": "ldr    x1, [x7, x0]",
+            "word_hex": "f86068e1"
+          },
+          {
+            "offset": 9164,
+            "instruction": "ldr    x8, [sp, #0x5590]",
+            "word_hex": "f96acbe8"
+          },
+          {
+            "offset": 9168,
+            "instruction": "str    x1, [x8, x0]",
+            "word_hex": "f8206901"
+          },
+          {
+            "offset": 9172,
+            "instruction": "add    x0, x0, #0x8",
+            "word_hex": "91002000"
+          },
+          {
+            "offset": 9176,
+            "instruction": "mov    x1, #0x12c0",
+            "word_hex": "d2825801"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 6488,
+        "samples": 137,
+        "percent": 3.5779576913032125,
+        "actual_jit_instruction": "str    x1, [x11, x0]",
+        "instruction_window": [
+          {
+            "offset": 6480,
+            "instruction": "ldr    x1, [x7, x0]",
+            "word_hex": "f86068e1"
+          },
+          {
+            "offset": 6484,
+            "instruction": "ldr    x11, [sp, #0x5580]",
+            "word_hex": "f96ac3eb"
+          },
+          {
+            "offset": 6488,
+            "instruction": "str    x1, [x11, x0]",
+            "word_hex": "f8206961"
+          },
+          {
+            "offset": 6492,
+            "instruction": "add    x0, x0, #0x8",
+            "word_hex": "91002000"
+          },
+          {
+            "offset": 6496,
+            "instruction": "mov    x1, #0x12c0",
+            "word_hex": "d2825801"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9424,
+        "samples": 123,
+        "percent": 3.212326978323322,
+        "actual_jit_instruction": "uxtb   w9, w9",
+        "instruction_window": [
+          {
+            "offset": 9416,
+            "instruction": "cset   x9, lo",
+            "word_hex": "9a9f27e9"
+          },
+          {
+            "offset": 9420,
+            "instruction": "and    w9, w14, w9",
+            "word_hex": "0a0901c9"
+          },
+          {
+            "offset": 9424,
+            "instruction": "uxtb   w9, w9",
+            "word_hex": "53001d29"
+          },
+          {
+            "offset": 9428,
+            "instruction": "cbnz   x9, 0xcbdc9a4e0",
+            "word_hex": "b5000069"
+          },
+          {
+            "offset": 9432,
+            "instruction": "ldr    x1, [sp, #0x54e8]",
+            "word_hex": "f96a77e1"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 10372,
+        "samples": 92,
+        "percent": 2.4027161138678506,
+        "actual_jit_instruction": "msub   x4, x3, x24, x0",
+        "instruction_window": [
+          {
+            "offset": 10364,
+            "instruction": "cmp    x9, x4",
+            "word_hex": "eb04013f"
+          },
+          {
+            "offset": 10368,
+            "instruction": "b.eq   0xcbdc9a8ac",
+            "word_hex": "54000160"
+          },
+          {
+            "offset": 10372,
+            "instruction": "msub   x4, x3, x24, x0",
+            "word_hex": "9b188064"
+          },
+          {
+            "offset": 10376,
+            "instruction": "sub    x9, x9, #0x1",
+            "word_hex": "d1000529"
+          },
+          {
+            "offset": 10380,
+            "instruction": "cmp    x4, #0x14",
+            "word_hex": "f100509f"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9356,
+        "samples": 59,
+        "percent": 1.540872290415252,
+        "actual_jit_instruction": "msub   x11, x0, x24, x8",
+        "instruction_window": [
+          {
+            "offset": 9348,
+            "instruction": "cmp    x9, x11",
+            "word_hex": "eb0b013f"
+          },
+          {
+            "offset": 9352,
+            "instruction": "b.hi   0xcbdc9a4b4",
+            "word_hex": "54000168"
+          },
+          {
+            "offset": 9356,
+            "instruction": "msub   x11, x0, x24, x8",
+            "word_hex": "9b18a00b"
+          },
+          {
+            "offset": 9360,
+            "instruction": "sub    x9, x9, #0x1",
+            "word_hex": "d1000529"
+          },
+          {
+            "offset": 9364,
+            "instruction": "cmp    x11, #0x14",
+            "word_hex": "f100517f"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11856,
+        "samples": 48,
+        "percent": 1.2535910159310526,
+        "actual_jit_instruction": "ldr    x4, [x11, x9, lsl #3]",
+        "instruction_window": [
+          {
+            "offset": 11848,
+            "instruction": "ldr    x1, [sp, #0x54e8]",
+            "word_hex": "f96a77e1"
+          },
+          {
+            "offset": 11852,
+            "instruction": "b      0xcbdc9ae70",
+            "word_hex": "14000009"
+          },
+          {
+            "offset": 11856,
+            "instruction": "ldr    x4, [x11, x9, lsl #3]",
+            "word_hex": "f8697964"
+          },
+          {
+            "offset": 11860,
+            "instruction": "sub    x14, x22, #0x1",
+            "word_hex": "d10006ce"
+          },
+          {
+            "offset": 11864,
+            "instruction": "cmp    x14, #0x1e",
+            "word_hex": "f10079df"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9464,
+        "samples": 37,
+        "percent": 0.966309741446853,
+        "actual_jit_instruction": "ldr    x13, [x10, x13, lsl #3]",
+        "instruction_window": [
+          {
+            "offset": 9456,
+            "instruction": "ldr    x1, [sp, #0x54e8]",
+            "word_hex": "f96a77e1"
+          },
+          {
+            "offset": 9460,
+            "instruction": "b      0xcbdc9a508",
+            "word_hex": "14000005"
+          },
+          {
+            "offset": 9464,
+            "instruction": "ldr    x13, [x10, x13, lsl #3]",
+            "word_hex": "f86d794d"
+          },
+          {
+            "offset": 9468,
+            "instruction": "cmp    x11, #0x1e",
+            "word_hex": "f100797f"
+          },
+          {
+            "offset": 9472,
+            "instruction": "b.lo   0xcbdc9a62c",
+            "word_hex": "54000963"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11836,
+        "samples": 33,
+        "percent": 0.8618438234525986,
+        "actual_jit_instruction": "cset   x25, lo",
+        "instruction_window": [
+          {
+            "offset": 11828,
+            "instruction": "sub    x9, x4, #0x1",
+            "word_hex": "d1000489"
+          },
+          {
+            "offset": 11832,
+            "instruction": "cmp    x9, #0x14",
+            "word_hex": "f100513f"
+          },
+          {
+            "offset": 11836,
+            "instruction": "cset   x25, lo",
+            "word_hex": "9a9f27f9"
+          },
+          {
+            "offset": 11840,
+            "instruction": "cmp    x9, #0x14",
+            "word_hex": "f100513f"
+          },
+          {
+            "offset": 11844,
+            "instruction": "b.lo   0xcbdc9ae50",
+            "word_hex": "54000063"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9908,
+        "samples": 29,
+        "percent": 0.7573779054583443,
+        "actual_jit_instruction": "add    x0, x6, x11",
+        "instruction_window": [
+          {
+            "offset": 9900,
+            "instruction": "mov    x21, x22",
+            "word_hex": "aa1603f5"
+          },
+          {
+            "offset": 9904,
+            "instruction": "b      0xcbdc9a844",
+            "word_hex": "14000065"
+          },
+          {
+            "offset": 9908,
+            "instruction": "add    x0, x6, x11",
+            "word_hex": "8b0b00c0"
+          },
+          {
+            "offset": 9912,
+            "instruction": "cmp    x0, x4",
+            "word_hex": "eb04001f"
+          },
+          {
+            "offset": 9916,
+            "instruction": "b.eq   0xcbdc9a834",
+            "word_hex": "54000bc0"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9968,
+        "samples": 23,
+        "percent": 0.6006790284669626,
+        "actual_jit_instruction": "sub    x14, x0, #0x1",
+        "instruction_window": [
+          {
+            "offset": 9960,
+            "instruction": "mov    x21, x22",
+            "word_hex": "aa1603f5"
+          },
+          {
+            "offset": 9964,
+            "instruction": "b      0xcbdc9a844",
+            "word_hex": "14000056"
+          },
+          {
+            "offset": 9968,
+            "instruction": "sub    x14, x0, #0x1",
+            "word_hex": "d100040e"
+          },
+          {
+            "offset": 9972,
+            "instruction": "cmp    x14, #0x1e",
+            "word_hex": "f10079df"
+          },
+          {
+            "offset": 9976,
+            "instruction": "b.lo   0xcbdc9a828",
+            "word_hex": "54000983"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11840,
+        "samples": 23,
+        "percent": 0.6006790284669626,
+        "actual_jit_instruction": "cmp    x9, #0x14",
+        "instruction_window": [
+          {
+            "offset": 11832,
+            "instruction": "cmp    x9, #0x14",
+            "word_hex": "f100513f"
+          },
+          {
+            "offset": 11836,
+            "instruction": "cset   x25, lo",
+            "word_hex": "9a9f27f9"
+          },
+          {
+            "offset": 11840,
+            "instruction": "cmp    x9, #0x14",
+            "word_hex": "f100513f"
+          },
+          {
+            "offset": 11844,
+            "instruction": "b.lo   0xcbdc9ae50",
+            "word_hex": "54000063"
+          },
+          {
+            "offset": 11848,
+            "instruction": "ldr    x1, [sp, #0x54e8]",
+            "word_hex": "f96a77e1"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9444,
+        "samples": 20,
+        "percent": 0.5223295899712719,
+        "actual_jit_instruction": "ldr    x9, [x12, x9, lsl #3]",
+        "instruction_window": [
+          {
+            "offset": 9436,
+            "instruction": "b      0xcbdc9a508",
+            "word_hex": "1400000b"
+          },
+          {
+            "offset": 9440,
+            "instruction": "madd   x9, x13, x28, x11",
+            "word_hex": "9b1c2da9"
+          },
+          {
+            "offset": 9444,
+            "instruction": "ldr    x9, [x12, x9, lsl #3]",
+            "word_hex": "f8697989"
+          },
+          {
+            "offset": 9448,
+            "instruction": "cmp    x13, #0x14",
+            "word_hex": "f10051bf"
+          },
+          {
+            "offset": 9452,
+            "instruction": "b.lo   0xcbdc9a4f8",
+            "word_hex": "54000063"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 11036,
+        "samples": 13,
+        "percent": 0.3395142334813267,
+        "actual_jit_instruction": "cmp    w0, #0x0",
+        "instruction_window": [
+          {
+            "offset": 11028,
+            "instruction": "cset   x0, ne",
+            "word_hex": "9a9f07e0"
+          },
+          {
+            "offset": 11032,
+            "instruction": "uxtb   w0, w0",
+            "word_hex": "53001c00"
+          },
+          {
+            "offset": 11036,
+            "instruction": "cmp    w0, #0x0",
+            "word_hex": "7100001f"
+          },
+          {
+            "offset": 11040,
+            "instruction": "b.eq   0xcbdc9ab2c",
+            "word_hex": "54000060"
+          },
+          {
+            "offset": 11044,
+            "instruction": "ldr    x1, [sp, #0x54e8]",
+            "word_hex": "f96a77e1"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 5132,
+        "samples": 11,
+        "percent": 0.28728127448419954,
+        "actual_jit_instruction": "cmp    x13, x2",
+        "instruction_window": [
+          {
+            "offset": 5124,
+            "instruction": "cbz    x4, 0xcbdc9b7b0",
+            "word_hex": "b4011d64"
+          },
+          {
+            "offset": 5128,
+            "instruction": "mov    x13, #0x0",
+            "word_hex": "d280000d"
+          },
+          {
+            "offset": 5132,
+            "instruction": "cmp    x13, x2",
+            "word_hex": "eb0201bf"
+          },
+          {
+            "offset": 5136,
+            "instruction": "b.lo   0xcbdc9aa00",
+            "word_hex": "5400af83"
+          },
+          {
+            "offset": 5140,
+            "instruction": "str    x2, [sp, #0x6f0]",
+            "word_hex": "f9037be2"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 6480,
+        "samples": 11,
+        "percent": 0.28728127448419954,
+        "actual_jit_instruction": "ldr    x1, [x7, x0]",
+        "instruction_window": [
+          {
+            "offset": 6472,
+            "instruction": "str    x10, [sp, #0x1eb0]",
+            "word_hex": "f90f5bea"
+          },
+          {
+            "offset": 6476,
+            "instruction": "mov    x0, #0x0",
+            "word_hex": "d2800000"
+          },
+          {
+            "offset": 6480,
+            "instruction": "ldr    x1, [x7, x0]",
+            "word_hex": "f86068e1"
+          },
+          {
+            "offset": 6484,
+            "instruction": "ldr    x11, [sp, #0x5580]",
+            "word_hex": "f96ac3eb"
+          },
+          {
+            "offset": 6488,
+            "instruction": "str    x1, [x11, x0]",
+            "word_hex": "f8206961"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9796,
+        "samples": 11,
+        "percent": 0.28728127448419954,
+        "actual_jit_instruction": "mov.d  x9, v0[0]",
+        "instruction_window": [
+          {
+            "offset": 9788,
+            "instruction": "fmul   d1, d1, d2",
+            "word_hex": "1e620821"
+          },
+          {
+            "offset": 9792,
+            "instruction": "fsub   d0, d0, d1",
+            "word_hex": "1e613800"
+          },
+          {
+            "offset": 9796,
+            "instruction": "mov.d  x9, v0[0]",
+            "word_hex": "4e083c09"
+          },
+          {
+            "offset": 9800,
+            "instruction": "msub   x11, x0, x24, x8",
+            "word_hex": "9b18a00b"
+          },
+          {
+            "offset": 9804,
+            "instruction": "madd   x0, x11, x4, x0",
+            "word_hex": "9b040160"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 9928,
+        "samples": 11,
+        "percent": 0.28728127448419954,
+        "actual_jit_instruction": "sub    x9, x0, #0x1",
+        "instruction_window": [
+          {
+            "offset": 9920,
+            "instruction": "cmp    x0, x4",
+            "word_hex": "eb04001f"
+          },
+          {
+            "offset": 9924,
+            "instruction": "b.hi   0xcbdc9a6f0",
+            "word_hex": "54000168"
+          },
+          {
+            "offset": 9928,
+            "instruction": "sub    x9, x0, #0x1",
+            "word_hex": "d1000409"
+          },
+          {
+            "offset": 9932,
+            "instruction": "cmp    x12, #0x1e",
+            "word_hex": "f100799f"
+          },
+          {
+            "offset": 9936,
+            "instruction": "ccmp   x9, x28, #0x2, lo",
+            "word_hex": "fa5c3122"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 2800,
+        "samples": 9,
+        "percent": 0.23504831548707233,
+        "actual_jit_instruction": "cmp    x0, x3",
+        "instruction_window": [
+          {
+            "offset": 2792,
+            "instruction": "mov    x0, #0x0",
+            "word_hex": "d2800000"
+          },
+          {
+            "offset": 2796,
+            "instruction": "mov    x4, x0",
+            "word_hex": "aa0003e4"
+          },
+          {
+            "offset": 2800,
+            "instruction": "cmp    x0, x3",
+            "word_hex": "eb03001f"
+          },
+          {
+            "offset": 2804,
+            "instruction": "b.lo   0xcbdc9b134",
+            "word_hex": "54013203"
+          },
+          {
+            "offset": 2808,
+            "instruction": "stur   x4, [sp, #0x38]",
+            "word_hex": "f80383e4"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 3840,
+        "samples": 9,
+        "percent": 0.23504831548707233,
+        "actual_jit_instruction": "cmp    x3, x12",
+        "instruction_window": [
+          {
+            "offset": 3832,
+            "instruction": "cbz    x1, 0xcbdc9b5ec",
+            "word_hex": "b40137a1"
+          },
+          {
+            "offset": 3836,
+            "instruction": "mov    x3, #0x0",
+            "word_hex": "d2800003"
+          },
+          {
+            "offset": 3840,
+            "instruction": "cmp    x3, x12",
+            "word_hex": "eb0c007f"
+          },
+          {
+            "offset": 3844,
+            "instruction": "b.lo   0xcbdc9afbc",
+            "word_hex": "540105c3"
+          },
+          {
+            "offset": 3848,
+            "instruction": "str    x12, [sp, #0x380]",
+            "word_hex": "f901c3ec"
+          }
+        ]
+      },
+      {
+        "symbol": "mech_canonical_program_entry_v1_numeric_5",
+        "offset": 12616,
+        "samples": 9,
+        "percent": 0.23504831548707233,
+        "actual_jit_instruction": "ldr    x9, [sp, #0x54e8]",
+        "instruction_window": [
+          {
+            "offset": 12608,
+            "instruction": "cmp    x6, #0x14",
+            "word_hex": "f10050df"
+          },
+          {
+            "offset": 12612,
+            "instruction": "cset   x11, lo",
+            "word_hex": "9a9f27eb"
+          },
+          {
+            "offset": 12616,
+            "instruction": "ldr    x9, [sp, #0x54e8]",
+            "word_hex": "f96a77e9"
+          },
+          {
+            "offset": 12620,
+            "instruction": "sub    x9, x9, #0x1",
+            "word_hex": "d1000529"
+          },
+          {
+            "offset": 12624,
+            "instruction": "cmp    x9, #0x1e",
+            "word_hex": "f100793f"
+          }
+        ]
+      }
+    ],
+    "limitation": "Sampled positions and local instruction windows identify mechanisms; they do not establish exact cost per instruction or a speedup. Diagnostic timings never enter scores."
+  },
+  "finite_C_liveouts": 2100,
+  "counters_match_accepted45": true,
+  "read_only_debugger": {
+    "pid": 15349,
+    "jit_bytes": 17212,
+    "sha256": "38d0eef0574f3d0132507d659eaab33c29f9bf6863c2ae8513239fb38be22c7b",
+    "all4303_decoded_words_match_actual_bytes": true,
+    "detach_succeeded": true
+  },
+  "archives": {
+    "analysis.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/analysis.json.gz",
+      "sha256": "1caab8bcd67fa051fffbe59386f7cbf016b659736979ea0bec7817468dd6e46f",
+      "compressed_sha256": "6d5e9687fc85f8293364d74ad36e359e4cf788c5ec6a25195ce33ce5783f0feb"
+    },
+    "analyzer.log": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/analyzer.log.gz",
+      "sha256": "4cf85b5cec10eb2ee9f9815e402c81277b0bdb3a17af3c8a40dd042ccb2076dc",
+      "compressed_sha256": "42eef7d5fbbf9b598eb9252fd0d116cf1450bca295e077077176aaa4ab88636c"
+    },
+    "capture_jit.py": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/capture_jit.py.gz",
+      "sha256": "03b9e006c7415124cf65a1a617e52e6335e5cf4a919aa82300a7a7949b5e3cec",
+      "compressed_sha256": "bf7f9fa4eed5130da97bc9ad733eb2013da0df94f02da1a3742445cb0ebb5eee"
+    },
+    "collect.py": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/collect.py.gz",
+      "sha256": "871a1dc4cab89ebd155a22a0e1516ae7f96a46a1e3158310d2474afb1fa9551d",
+      "compressed_sha256": "14a3ca0b32569b23da36a25531b5aecca6ec719acfc1e2a809905d3a0910be07"
+    },
+    "gramschmidt-driver-output.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt-driver-output.json.gz",
+      "sha256": "a5147fe38a90e72a1eb4af3c44d655b9e5bf3f2427e388c955b2667d25a437ca",
+      "compressed_sha256": "4793d4dcd343c700f532f51a947288e75c2ae9ff634ae5aeb82ebda7513b8bd1"
+    },
+    "gramschmidt-driver.stderr": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "gramschmidt-inputs.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt-inputs.json.gz",
+      "sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "compressed_sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c"
+    },
+    "gramschmidt-sample.log": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt-sample.log.gz",
+      "sha256": "de848c751711695cb36593ef25df361ce417fcc8b7e231000f6cf545a3c24e6e",
+      "compressed_sha256": "b40ba05aeb8564d05b27a2cf04f907976c732d8824abbff75f4c461cabc21a1a"
+    },
+    "gramschmidt.perf.map": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt.perf.map.gz",
+      "sha256": "981f03d029faf122caa1de8a46e9f8e5be6ea89156e3a5a4797f63fbb42eab86",
+      "compressed_sha256": "0d16caf7a27faa2154ad72d79661956824c9427aca8e20085191453dfd262384"
+    },
+    "gramschmidt.sample.txt": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/gramschmidt.sample.txt.gz",
+      "sha256": "6c604b638a61c9aa6a1d0568c8dcfcfca30b42236dc6f1d98e052e3447a63168",
+      "compressed_sha256": "21f8e773189a5376e92d3b350b706ac82a57b825cdec0d84bffd5c5db300ad3f"
+    },
+    "inspect-jit-sites.py": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/inspect-jit-sites.py.gz",
+      "sha256": "a0f4307300372832c41b13c0af415d3bbb423420d2ca4eb1d3c1c5a063d4938b",
+      "compressed_sha256": "bcdd57d3f69d2cad58580ca360852b5f172ace23491d58acaae6aa486fab130f"
+    },
+    "instruction-sites.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/instruction-sites.json.gz",
+      "sha256": "42a8c11523bf7c1e855e4a1f45ac351799b1c92a1332025ef778896b6276dfcb",
+      "compressed_sha256": "95edca261b5aff58049414bd1fc77cd6d91a6c30af65eeba962da20cd01c282d"
+    },
+    "jit-capture-request.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/jit-capture-request.json.gz",
+      "sha256": "afec79c888a18530f75fb5fd41cc0540a705a313a1a793e61761b85f33d68093",
+      "compressed_sha256": "c1950c7c467b96333730e84cada308e42763cefcb08762062fbdc62fb9afd42f"
+    },
+    "jit-capture-result.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/jit-capture-result.json.gz",
+      "sha256": "3a91080e7a64d1f036b42777eda4d85ce90a730be63181be092af04df2fd1afa",
+      "compressed_sha256": "227556370fc23c9ed59c81d621e0f9c9e4590129864dbf7ed26c73ba5b5e4b6a"
+    },
+    "jit-capture-status.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/jit-capture-status.json.gz",
+      "sha256": "506b59650a0a911d6f6191cc654b9c9c3ba1a8203d0c871e5c5ed2c65e65fa62",
+      "compressed_sha256": "c10aefabd6bec938059f98931a71b842e87160b144df9aa327e699815f9027d2"
+    },
+    "jit-capture.log": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/jit-capture.log.gz",
+      "sha256": "0fcbc705b5781b02a0f2248c8ab9009620917c15173423c26b1e179c91cc37ae",
+      "compressed_sha256": "f58286e83f1747dc948e91d4694edf8598d88b31decaddc9fce307fa9db10dab"
+    },
+    "jit-instruction-map.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/jit-instruction-map.json.gz",
+      "sha256": "00231510bae7bd70bc8384456d8a5d454e5fb02aad218eb04b7a6246be2e0166",
+      "compressed_sha256": "8d9faad0649ac43e5cdaa6c0ddc003697adf0992980f28dd745a65ebdf187c81"
+    },
+    "live-process.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/live-process.json.gz",
+      "sha256": "864157485f2a0923cb9c50bce2b92e85dcd995b99f1d338bf9616801f29e2a7a",
+      "compressed_sha256": "aa21ebd3a927fb42a8c6e1ae05e2339aee2014163e7df09209209c8ac50d9a73"
+    },
+    "numeric_5.jit.bin": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/numeric_5.jit.bin.gz",
+      "sha256": "38d0eef0574f3d0132507d659eaab33c29f9bf6863c2ae8513239fb38be22c7b",
+      "compressed_sha256": "f0b67710f251278aada1c2cb1b8a340834ba038d3e7142b9ad2fb02c58ae25a1"
+    },
+    "numeric_5.jit.disasm.txt": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/numeric_5.jit.disasm.txt.gz",
+      "sha256": "8e1447af5a15494259ab9df0633c4b12aa70f702dc440cae2841329eb62ccac1",
+      "compressed_sha256": "da012ac90e2167338db3db140f40b54904aaa1c8b506fd939fc5112896cc0f49"
+    },
+    "plan.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/plan.json.gz",
+      "sha256": "c38bcbac8638fda099e18f59b6b4b2ca2a0bb5d310d535fe352c10f10a4e961b",
+      "compressed_sha256": "11f09cb4f70f8ecc8a890a112edac563a16bb4e1af01adb97bb2dea02039fba5"
+    },
+    "preserve.py": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/preserve.py.gz",
+      "sha256": "dcbecfba3e21f53468cb602292b3f8332a1f9884a053f411882f1771394aaf20",
+      "compressed_sha256": "8915f2fd98485d533352260c82879877ce8b61b81a212ea3ffbf46a2a71285ba"
+    },
+    "profile-collection.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/profile-collection.json.gz",
+      "sha256": "adb14806922e46bbde085c270eeacdfebb27e8b34220b92311b19217ee7eb20c",
+      "compressed_sha256": "a4a815c313fee3b5cfdf325d446eff9ef717d024aac95f98e4945c733f8083c2"
+    },
+    "training-profile.json": {
+      "path": "qualification/experiments/accepted45-gramschmidt-profile/training-profile.json.gz",
+      "sha256": "70b576335799ef636882d797bf2247a34cc9737fcb4a273b13be7fa62cf90d3f",
+      "compressed_sha256": "eb8ccfe7c6212f658b024ec1dfd7791276ff819855b0373e1405e99cd22309a9"
+    }
+  },
+  "formal_history_entries_unchanged": 47,
+  "performance_score_observations": 0,
+  "limitations": [
+    "Canonical execution stacks supply the denominator; startup/cache-flush/formatting are excluded. Diagnostic timing arrays do not enter scores.",
+    "Same-process bytes resolve the prior Object/JIT byte-identity limitation. Sampled instruction positions still do not establish exact cycle cost per instruction or an optimization speedup.",
+    "Earlier rejected copy/SSA/total-map/domain fingerprints remain ineligible for retry. Any new source optimization requires new source proof, qualification, training-only selection and both formal gates."
+  ],
+  "findings": [
+    "Generated numeric_5 self time is 3436/3829 canonical execution samples (89.736%). Host schema/planning is57 samples (1.489%); allocation/deallocation is62 (1.619%). This supports focusing on generated matrix traversal rather than another metadata-only candidate.",
+    "Same-process sites at offsets6464/7784/9144 are full-map iteration comparisons immediately preceding publication-copy loops. Do not label those comparisons as the copy-loop backedges: the actual copy loops compare at6500/7820/9180.",
+    "Publication stores at6488/7808/9168 belong to byte-exact copies of4800/7200/4800 bytes. Captured bounds/index/selector work at9344/9852/10360 repeatedly reloads a stack word before row/column comparisons and affine index arithmetic.",
+    "The unchanged optimization source reconstructs Q/R/A through nested comprehensions with same-cell identity alternatives. Investigate source-proved mask-aware matrix updates that skip complete identity regions, preserving original fees, checked errors, aliases, finite admission and atomicity. This is a research direction, not an implemented or selected optimization.",
+    "Earlier rejected packed-copy, SSA, total-map and domain candidates remain rejected and cannot be retried at their observed fingerprints. Any future combination must make a material source-derived transformation and pass fresh qualification/training plus both aggregate gates."
+  ]
+}

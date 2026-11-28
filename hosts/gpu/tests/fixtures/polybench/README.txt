@@ -2734,3 +2734,5 @@ One prospective probe retained all 210 fresh-process observations: raw GM speedu
 The strict two-set gate rejects this run; exact accepted45 source and driver are restored. All 900 observations, 29,482 finite liveouts, 47 append-only history entries and every regression remain. Holdout is the aggregate gate only; the below1.0x C goal requires a separate completion audit.
 
 [Qualification](round-46-qualification.json) · [Freeze](round-46-frozen.json) · [Acceptance](round-46-performance-acceptance.json) · [Development](training-experiments/prepared-type-slots-development.json)
+
+Fresh accepted45 Gram-Schmidt profile: 3829 canonical execution samples; 3436 generated-function self samples (89.74%). Same-process JIT capture verifies all 17,212 bytes / 4,303 decoded instructions and binds sampled offsets to actual executed code. C liveouts and accepted45 counters match; diagnostic times are excluded from scores. All 24 raw/analysis archives verify. No holdout diagnosis; formal history remains47 and accepted scores remain9.78419x /25.86145x C. See training-experiments/accepted45-gramschmidt-profile.json.
