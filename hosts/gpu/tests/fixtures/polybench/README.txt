@@ -2827,3 +2827,11 @@ Accepted50 correlation CPU profile
 Correlation, the next highest optimization margin beyond the three already sampled, shows31.40% generated,17.78% allocation/free and15.66% planning/schema/validation self time in a warm diagnostic loop. All13820 native bytes match the same sampled PID and accepted Object. The dominant0x2ce0 site (13.58% of samples) is the two-column ordered product k loop. This motivates grouping independent output rows to share right loads/control and expose independent accumulators, also for one-column products. Host preparation and materialized elementwise-to-sum intermediates remain separate opportunities. No official performance samples/history entries were added; no holdout profiling.
 
 [CPU evidence](round-50-correlation-cpu-telemetry.json) · [Full profile and code evidence](training-experiments/accepted50-correlation-profile.json)
+
+Ordered product row pairs: formal evaluation
+
+General ordered products pair independent output rows, sharing right loads and k control while preserving each cell +0/k arithmetic, source fees, current owners, bounds, full buffers, existing epilogues and atomic completion. All744 broad/19 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history52 without altering earlier entries. Formal optimization9.0969086510528872x C, independent holdout24.6009906555209206x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-51-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted51.
+
+[Qualification](round-51-qualification.json) · [Audit](round-51-audit.json) · [Progress](round-51-progress.json) · [Complete experiment](training-experiments/ordered-product-row-pairs-formal.json)

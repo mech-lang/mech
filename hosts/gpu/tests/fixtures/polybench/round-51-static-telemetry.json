@@ -1,0 +1,2076 @@
+{
+  "schema": "mech.polybench.product-row-pairs-static-telemetry.v1",
+  "scope": "Optimization15 genuine checked Object exports and emitted static instructions only. No linked Object execution, timing samples, retired hardware instructions or measured memory traffic.",
+  "compiler_fingerprint": "c58f49cf83a22b0d2dfbd0d138a8a338b9cd5dde0199cbddd7ffebf7dc3a2800",
+  "driver_sha256": "bd9316769f90230c9bb6e45c74956d20fe6fed2ec6089682fa084696615e0bac",
+  "cases": {
+    "2mm": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 5140,
+          "object_file_bytes": 26776,
+          "static_instruction_count": 1285,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1285,
+              "disassembly_sha256": "8feb376e92fc4fe0c8f83990398b3255aa91e729cdf62e5d22e4fa03a8bd4702"
+            }
+          },
+          "object_sha256": "782e1211203222d0d24f34b1e317c25d2dcc5df76dca55715489e07cbde156bf",
+          "metadata_sha256": "6902d28a69c3271c68f3e15f88bacb649405a8fff8c8a4a266546c292727b893",
+          "disassembly_sha256": "64cf15b26b66e2c33513bff66c5607893a8cce05d633aa37e8199be2f8d76d2e",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 24,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 6776,
+          "object_file_bytes": 28408,
+          "static_instruction_count": 1694,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1694,
+              "disassembly_sha256": "b19949f9edc73cc54beb251e4aed266c28c5618f37573a8432fcdc424e32c2c1"
+            }
+          },
+          "object_sha256": "0e29059e995cc44c17b789ac88f4362195847a855f4415ef250a86873d644e43",
+          "metadata_sha256": "f4ef5af86e7b98c4e58928a5febd501a755926e343f47564e2526ad907764a91",
+          "disassembly_sha256": "4a805b7819524bddcd91653de1134407fdb61eab9046c4b3512a5f08c1dd1321",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     3e0:      \tldr\td2, [x1, x10, lsl #3]",
+              "multiply_sites": [
+                "     3fc:      \tfmul\td7, d7, d2",
+                "     404:      \tfmul\td2, d16, d2"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "     3dc:      \tmadd\tx10, x9, x5, x8",
+                "     3e0:      \tldr\td2, [x1, x10, lsl #3]",
+                "     3e4:      \tmadd\tx10, x14, x6, x9",
+                "     3e8:      \tldr\td7, [x0, x10, lsl #3]",
+                "     3ec:      \tadd\tx10, x14, #1",
+                "     3f0:      \tmadd\tx10, x10, x6, x9",
+                "     3f4:      \tldr\td16, [x0, x10, lsl #3]",
+                "     3f8:      \tadd\tx9, x9, #1",
+                "     3fc:      \tfmul\td7, d7, d2",
+                "     400:      \tfadd\td1, d1, d7",
+                "     404:      \tfmul\td2, d16, d2",
+                "     408:      \tfadd\td0, d0, d2",
+                "     40c:      \tb\t0x38c <_mech_canonical_program_entry_v1+0x38c>"
+              ]
+            },
+            {
+              "shared_reached_load": "     bf8:      \tldr\td3, [x1, x12, lsl #3]",
+              "multiply_sites": [
+                "     c14:      \tfmul\td4, d4, d3",
+                "     c1c:      \tfmul\td3, d5, d3"
+              ],
+              "independent_add_registers": [
+                "f17",
+                "f18"
+              ],
+              "block": [
+                "     bf4:      \tmadd\tx12, x14, x5, x11",
+                "     bf8:      \tldr\td3, [x1, x12, lsl #3]",
+                "     bfc:      \tmadd\tx12, x10, x6, x14",
+                "     c00:      \tldr\td4, [x0, x12, lsl #3]",
+                "     c04:      \tadd\tx12, x10, #1",
+                "     c08:      \tmadd\tx12, x12, x6, x14",
+                "     c0c:      \tldr\td5, [x0, x12, lsl #3]",
+                "     c10:      \tadd\tx14, x14, #1",
+                "     c14:      \tfmul\td4, d4, d3",
+                "     c18:      \tfadd\td17, d17, d4",
+                "     c1c:      \tfmul\td3, d5, d3",
+                "     c20:      \tfadd\td18, d18, d3",
+                "     c24:      \tb\t0xb20 <_mech_canonical_program_entry_v1+0xb20>"
+              ]
+            },
+            {
+              "shared_reached_load": "    15a4:      \tldr\td2, [x1, x10, lsl #3]",
+              "multiply_sites": [
+                "    15c0:      \tfmul\td3, d3, d2",
+                "    15c8:      \tfmul\td2, d4, d2"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f17"
+              ],
+              "block": [
+                "    15a0:      \tmadd\tx10, x12, x5, x9",
+                "    15a4:      \tldr\td2, [x1, x10, lsl #3]",
+                "    15a8:      \tmadd\tx10, x8, x6, x12",
+                "    15ac:      \tldr\td3, [x0, x10, lsl #3]",
+                "    15b0:      \tadd\tx10, x8, #1",
+                "    15b4:      \tmadd\tx10, x10, x6, x12",
+                "    15b8:      \tldr\td4, [x0, x10, lsl #3]",
+                "    15bc:      \tadd\tx12, x12, #1",
+                "    15c0:      \tfmul\td3, d3, d2",
+                "    15c4:      \tfadd\td17, d17, d3",
+                "    15c8:      \tfmul\td2, d4, d2",
+                "    15cc:      \tfadd\td16, d16, d2",
+                "    15d0:      \tb\t0x1580 <_mech_canonical_program_entry_v1+0x1580>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1610:      \tldr\tq4, [x1, x11]",
+              "multiply_sites": [
+                "    1630:      \tfmul.2d\tv5, v5, v4",
+                "    163c:      \tfmul.2d\tv4, v5, v4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "    1608:      \tmadd\tx11, x10, x5, x9",
+                "    160c:      \tlsl\tx11, x11, #3",
+                "    1610:      \tldr\tq4, [x1, x11]",
+                "    1614:      \tmadd\tx11, x8, x6, x10",
+                "    1618:      \tadd\tx11, x0, x11, lsl #3",
+                "    161c:      \tadd\tx12, x8, #1",
+                "    1620:      \tmadd\tx12, x12, x6, x10",
+                "    1624:      \tadd\tx12, x0, x12, lsl #3",
+                "    1628:      \tadd\tx10, x10, #1",
+                "    162c:      \tld1r.2d\t{ v5 }, [x11]",
+                "    1630:      \tfmul.2d\tv5, v5, v4",
+                "    1634:      \tfadd.2d\tv3, v3, v5",
+                "    1638:      \tld1r.2d\t{ v5 }, [x12]",
+                "    163c:      \tfmul.2d\tv4, v5, v4",
+                "    1640:      \tfadd.2d\tv2, v2, v4",
+                "    1644:      \tb\t0x15e0 <_mech_canonical_program_entry_v1+0x15e0>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1650:      \tldr\tq3, [x1, x13]",
+              "multiply_sites": [
+                "    1670:      \tfmul.2d\tv4, v4, v3",
+                "    167c:      \tfmul.2d\tv3, v4, v3"
+              ],
+              "independent_add_registers": [
+                "f21",
+                "f22"
+              ],
+              "block": [
+                "    1648:      \tmadd\tx13, x12, x5, x11",
+                "    164c:      \tlsl\tx13, x13, #3",
+                "    1650:      \tldr\tq3, [x1, x13]",
+                "    1654:      \tmadd\tx13, x10, x6, x12",
+                "    1658:      \tadd\tx13, x0, x13, lsl #3",
+                "    165c:      \tadd\tx14, x10, #1",
+                "    1660:      \tmadd\tx14, x14, x6, x12",
+                "    1664:      \tadd\tx14, x0, x14, lsl #3",
+                "    1668:      \tadd\tx12, x12, #1",
+                "    166c:      \tld1r.2d\t{ v4 }, [x13]",
+                "    1670:      \tfmul.2d\tv4, v4, v3",
+                "    1674:      \tfadd.2d\tv21, v21, v4",
+                "    1678:      \tld1r.2d\t{ v4 }, [x14]",
+                "    167c:      \tfmul.2d\tv3, v4, v3",
+                "    1680:      \tfadd.2d\tv22, v22, v3",
+                "    1684:      \tb\t0xc34 <_mech_canonical_program_entry_v1+0xc34>"
+              ]
+            },
+            {
+              "shared_reached_load": "    17b4:      \tldr\td4, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "    17d0:      \tfmul\td5, d5, d4",
+                "    17d8:      \tfmul\td4, d6, d4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "    17b0:      \tmadd\tx11, x10, x5, x9",
+                "    17b4:      \tldr\td4, [x1, x11, lsl #3]",
+                "    17b8:      \tmadd\tx11, x8, x6, x10",
+                "    17bc:      \tldr\td5, [x0, x11, lsl #3]",
+                "    17c0:      \tadd\tx11, x8, #1",
+                "    17c4:      \tmadd\tx11, x11, x6, x10",
+                "    17c8:      \tldr\td6, [x0, x11, lsl #3]",
+                "    17cc:      \tadd\tx10, x10, #1",
+                "    17d0:      \tfmul\td5, d5, d4",
+                "    17d4:      \tfadd\td3, d3, d5",
+                "    17d8:      \tfmul\td4, d6, d4",
+                "    17dc:      \tfadd\td2, d2, d4",
+                "    17e0:      \tb\t0x1790 <_mech_canonical_program_entry_v1+0x1790>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1820:      \tldr\tq4, [x1, x11]",
+              "multiply_sites": [
+                "    1840:      \tfmul.2d\tv5, v5, v4",
+                "    184c:      \tfmul.2d\tv4, v5, v4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "    1818:      \tmadd\tx11, x10, x5, x9",
+                "    181c:      \tlsl\tx11, x11, #3",
+                "    1820:      \tldr\tq4, [x1, x11]",
+                "    1824:      \tmadd\tx11, x8, x6, x10",
+                "    1828:      \tadd\tx11, x0, x11, lsl #3",
+                "    182c:      \tadd\tx12, x8, #1",
+                "    1830:      \tmadd\tx12, x12, x6, x10",
+                "    1834:      \tadd\tx12, x0, x12, lsl #3",
+                "    1838:      \tadd\tx10, x10, #1",
+                "    183c:      \tld1r.2d\t{ v5 }, [x11]",
+                "    1840:      \tfmul.2d\tv5, v5, v4",
+                "    1844:      \tfadd.2d\tv2, v2, v5",
+                "    1848:      \tld1r.2d\t{ v5 }, [x12]",
+                "    184c:      \tfmul.2d\tv4, v5, v4",
+                "    1850:      \tfadd.2d\tv3, v3, v4",
+                "    1854:      \tb\t0x17f0 <_mech_canonical_program_entry_v1+0x17f0>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1860:      \tldr\tq0, [x1, x10]",
+              "multiply_sites": [
+                "    1880:      \tfmul.2d\tv1, v1, v0",
+                "    188c:      \tfmul.2d\tv0, v1, v0"
+              ],
+              "independent_add_registers": [
+                "f24",
+                "f25"
+              ],
+              "block": [
+                "    1858:      \tmadd\tx10, x9, x5, x8",
+                "    185c:      \tlsl\tx10, x10, #3",
+                "    1860:      \tldr\tq0, [x1, x10]",
+                "    1864:      \tmadd\tx10, x14, x6, x9",
+                "    1868:      \tadd\tx10, x0, x10, lsl #3",
+                "    186c:      \tadd\tx11, x14, #1",
+                "    1870:      \tmadd\tx11, x11, x6, x9",
+                "    1874:      \tadd\tx11, x0, x11, lsl #3",
+                "    1878:      \tadd\tx9, x9, #1",
+                "    187c:      \tld1r.2d\t{ v1 }, [x10]",
+                "    1880:      \tfmul.2d\tv1, v1, v0",
+                "    1884:      \tfadd.2d\tv24, v24, v1",
+                "    1888:      \tld1r.2d\t{ v1 }, [x11]",
+                "    188c:      \tfmul.2d\tv0, v1, v0",
+                "    1890:      \tfadd.2d\tv25, v25, v0",
+                "    1894:      \tb\t0x41c <_mech_canonical_program_entry_v1+0x41c>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 16,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -8
+    },
+    "3mm": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 2040,
+          "object_file_bytes": 16952,
+          "static_instruction_count": 510,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 510,
+              "disassembly_sha256": "2678a1c32f7ec9c7fa98b89ed285799a08895b77d84ae01740c2d0213e2dd046"
+            }
+          },
+          "object_sha256": "56a47b70b45527161ce9a233cfc36f3828d8db7940fd0a3e3c1ef3b126e814ea",
+          "metadata_sha256": "c0d8c13e0ac99212d3f2d89a08980f765cce3a5ae179d2f0f645fef4e0d54b34",
+          "disassembly_sha256": "ca5e07a2e159d931f0beb573e51eb985dd6bc794b6eb02340b99c1779e413105",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 9,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2848,
+          "object_file_bytes": 17760,
+          "static_instruction_count": 712,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 712,
+              "disassembly_sha256": "608343ff774222b2f4c200c6bfafc7500129cc80e078263e75758261f88ec3d5"
+            }
+          },
+          "object_sha256": "45d60a7f1e6fca4930226284961c1582f6b6e291fb0d818675ebf229efed9a92",
+          "metadata_sha256": "1342034c14ee980ac21647cdd58ad270c6cdb310ceb648e3001465bc25adcc9a",
+          "disassembly_sha256": "f80c313a1438ed189df0a9fc1ee7cd38dfee54becf10e6af773ea32f0ee3fc74",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     5f0:      \tldr\td16, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     60c:      \tfmul\td17, d17, d16",
+                "     614:      \tfmul\td16, d18, d16"
+              ],
+              "independent_add_registers": [
+                "f19",
+                "f20"
+              ],
+              "block": [
+                "     5ec:      \tmadd\tx11, x10, x5, x9",
+                "     5f0:      \tldr\td16, [x1, x11, lsl #3]",
+                "     5f4:      \tmadd\tx11, x8, x6, x10",
+                "     5f8:      \tldr\td17, [x0, x11, lsl #3]",
+                "     5fc:      \tadd\tx11, x8, #1",
+                "     600:      \tmadd\tx11, x11, x6, x10",
+                "     604:      \tldr\td18, [x0, x11, lsl #3]",
+                "     608:      \tadd\tx10, x10, #1",
+                "     60c:      \tfmul\td17, d17, d16",
+                "     610:      \tfadd\td19, d19, d17",
+                "     614:      \tfmul\td16, d18, d16",
+                "     618:      \tfadd\td20, d20, d16",
+                "     61c:      \tb\t0x5cc <_mech_canonical_program_entry_v1+0x5cc>"
+              ]
+            },
+            {
+              "shared_reached_load": "     65c:      \tldr\tq23, [x1, x11]",
+              "multiply_sites": [
+                "     67c:      \tfmul.2d\tv26, v26, v23",
+                "     688:      \tfmul.2d\tv23, v26, v23"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "     654:      \tmadd\tx11, x10, x5, x9",
+                "     658:      \tlsl\tx11, x11, #3",
+                "     65c:      \tldr\tq23, [x1, x11]",
+                "     660:      \tmadd\tx11, x8, x6, x10",
+                "     664:      \tadd\tx11, x0, x11, lsl #3",
+                "     668:      \tadd\tx12, x8, #1",
+                "     66c:      \tmadd\tx12, x12, x6, x10",
+                "     670:      \tadd\tx12, x0, x12, lsl #3",
+                "     674:      \tadd\tx10, x10, #1",
+                "     678:      \tld1r.2d\t{ v26 }, [x11]",
+                "     67c:      \tfmul.2d\tv26, v26, v23",
+                "     680:      \tfadd.2d\tv1, v1, v26",
+                "     684:      \tld1r.2d\t{ v26 }, [x12]",
+                "     688:      \tfmul.2d\tv23, v26, v23",
+                "     68c:      \tfadd.2d\tv0, v0, v23",
+                "     690:      \tb\t0x62c <_mech_canonical_program_entry_v1+0x62c>"
+              ]
+            },
+            {
+              "shared_reached_load": "     79c:      \tldr\td4, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     7b8:      \tfmul\td5, d5, d4",
+                "     7c0:      \tfmul\td4, d6, d4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "     798:      \tmadd\tx11, x10, x5, x9",
+                "     79c:      \tldr\td4, [x1, x11, lsl #3]",
+                "     7a0:      \tmadd\tx11, x8, x6, x10",
+                "     7a4:      \tldr\td5, [x0, x11, lsl #3]",
+                "     7a8:      \tadd\tx11, x8, #1",
+                "     7ac:      \tmadd\tx11, x11, x6, x10",
+                "     7b0:      \tldr\td6, [x0, x11, lsl #3]",
+                "     7b4:      \tadd\tx10, x10, #1",
+                "     7b8:      \tfmul\td5, d5, d4",
+                "     7bc:      \tfadd\td3, d3, d5",
+                "     7c0:      \tfmul\td4, d6, d4",
+                "     7c4:      \tfadd\td2, d2, d4",
+                "     7c8:      \tb\t0x778 <_mech_canonical_program_entry_v1+0x778>"
+              ]
+            },
+            {
+              "shared_reached_load": "     808:      \tldr\tq2, [x1, x11]",
+              "multiply_sites": [
+                "     828:      \tfmul.2d\tv3, v3, v2",
+                "     834:      \tfmul.2d\tv2, v3, v2"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f7"
+              ],
+              "block": [
+                "     800:      \tmadd\tx11, x10, x5, x9",
+                "     804:      \tlsl\tx11, x11, #3",
+                "     808:      \tldr\tq2, [x1, x11]",
+                "     80c:      \tmadd\tx11, x8, x6, x10",
+                "     810:      \tadd\tx11, x0, x11, lsl #3",
+                "     814:      \tadd\tx12, x8, #1",
+                "     818:      \tmadd\tx12, x12, x6, x10",
+                "     81c:      \tadd\tx12, x0, x12, lsl #3",
+                "     820:      \tadd\tx10, x10, #1",
+                "     824:      \tld1r.2d\t{ v3 }, [x11]",
+                "     828:      \tfmul.2d\tv3, v3, v2",
+                "     82c:      \tfadd.2d\tv7, v7, v3",
+                "     830:      \tld1r.2d\t{ v3 }, [x12]",
+                "     834:      \tfmul.2d\tv2, v3, v2",
+                "     838:      \tfadd.2d\tv16, v16, v2",
+                "     83c:      \tb\t0x7d8 <_mech_canonical_program_entry_v1+0x7d8>"
+              ]
+            },
+            {
+              "shared_reached_load": "     948:      \tldr\td0, [x0, x10, lsl #3]",
+              "multiply_sites": [
+                "     964:      \tfmul\td1, d1, d0",
+                "     96c:      \tfmul\td0, d2, d0"
+              ],
+              "independent_add_registers": [
+                "f18",
+                "f21"
+              ],
+              "block": [
+                "     944:      \tmadd\tx10, x9, x2, x8",
+                "     948:      \tldr\td0, [x0, x10, lsl #3]",
+                "     94c:      \tmadd\tx10, x7, x5, x9",
+                "     950:      \tldr\td1, [x15, x10, lsl #3]",
+                "     954:      \tadd\tx10, x7, #1",
+                "     958:      \tmadd\tx10, x10, x5, x9",
+                "     95c:      \tldr\td2, [x15, x10, lsl #3]",
+                "     960:      \tadd\tx9, x9, #1",
+                "     964:      \tfmul\td1, d1, d0",
+                "     968:      \tfadd\td18, d18, d1",
+                "     96c:      \tfmul\td0, d2, d0",
+                "     970:      \tfadd\td21, d21, d0",
+                "     974:      \tb\t0x924 <_mech_canonical_program_entry_v1+0x924>"
+              ]
+            },
+            {
+              "shared_reached_load": "     9b4:      \tldr\tq2, [x0, x10]",
+              "multiply_sites": [
+                "     9d4:      \tfmul.2d\tv3, v3, v2",
+                "     9e0:      \tfmul.2d\tv2, v3, v2"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "     9ac:      \tmadd\tx10, x9, x2, x8",
+                "     9b0:      \tlsl\tx10, x10, #3",
+                "     9b4:      \tldr\tq2, [x0, x10]",
+                "     9b8:      \tmadd\tx10, x7, x5, x9",
+                "     9bc:      \tadd\tx10, x15, x10, lsl #3",
+                "     9c0:      \tadd\tx11, x7, #1",
+                "     9c4:      \tmadd\tx11, x11, x5, x9",
+                "     9c8:      \tadd\tx11, x15, x11, lsl #3",
+                "     9cc:      \tadd\tx9, x9, #1",
+                "     9d0:      \tld1r.2d\t{ v3 }, [x10]",
+                "     9d4:      \tfmul.2d\tv3, v3, v2",
+                "     9d8:      \tfadd.2d\tv1, v1, v3",
+                "     9dc:      \tld1r.2d\t{ v3 }, [x11]",
+                "     9e0:      \tfmul.2d\tv2, v3, v2",
+                "     9e4:      \tfadd.2d\tv0, v0, v2",
+                "     9e8:      \tb\t0x984 <_mech_canonical_program_entry_v1+0x984>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -6
+    },
+    "atax": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 2256,
+          "object_file_bytes": 17112,
+          "static_instruction_count": 564,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 564,
+              "disassembly_sha256": "6e4c09c7e72d6eeb8f46876ddb0b2c4a209a97280e6b9e845a3d58dcee7db776"
+            }
+          },
+          "object_sha256": "15008248a8be20dc4dda1298bc108037761fa7b329cbda8a47801b1e011ab64d",
+          "metadata_sha256": "98f604a531f8c482a1a67fd422d752b0c427c579c818218ddde8ac1cca6883d8",
+          "disassembly_sha256": "6c9c6181cf8aa2ce69a8f9bc96a0f589cd46ca3a18f71c264eca9ef0e53fdd17",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2792,
+          "object_file_bytes": 17648,
+          "static_instruction_count": 698,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 698,
+              "disassembly_sha256": "a2f9406b36e0af6f289dfb8cbca8c49a1a4393774c9429ceeb29d6add92bdc87"
+            }
+          },
+          "object_sha256": "d0a22598e7d7a3a7764ee9f564393fce29fd33cfa84664a1323272ea2731894f",
+          "metadata_sha256": "bb234547e332235e5ded04af49865b59767ac74eac0d01e410d76fa009f114d3",
+          "disassembly_sha256": "7fd9837daec5e99eaeb291ce9fc9fd38ab7e2d8531b48c577a9c1eb0ec5fe77b",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     76c:      \tldr\td21, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     788:      \tfmul\td24, d24, d21",
+                "     790:      \tfmul\td21, d25, d21"
+              ],
+              "independent_add_registers": [
+                "f22",
+                "f23"
+              ],
+              "block": [
+                "     768:      \tmadd\tx11, x10, x5, x9",
+                "     76c:      \tldr\td21, [x1, x11, lsl #3]",
+                "     770:      \tmadd\tx11, x8, x6, x10",
+                "     774:      \tldr\td24, [x0, x11, lsl #3]",
+                "     778:      \tadd\tx11, x8, #1",
+                "     77c:      \tmadd\tx11, x11, x6, x10",
+                "     780:      \tldr\td25, [x0, x11, lsl #3]",
+                "     784:      \tadd\tx10, x10, #1",
+                "     788:      \tfmul\td24, d24, d21",
+                "     78c:      \tfadd\td22, d22, d24",
+                "     790:      \tfmul\td21, d25, d21",
+                "     794:      \tfadd\td23, d23, d21",
+                "     798:      \tb\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+              ]
+            },
+            {
+              "shared_reached_load": "     7d8:      \tldr\tq28, [x1, x11]",
+              "multiply_sites": [
+                "     7f8:      \tfmul.2d\tv31, v31, v28",
+                "     804:      \tfmul.2d\tv28, v31, v28"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "     7d0:      \tmadd\tx11, x10, x5, x9",
+                "     7d4:      \tlsl\tx11, x11, #3",
+                "     7d8:      \tldr\tq28, [x1, x11]",
+                "     7dc:      \tmadd\tx11, x8, x6, x10",
+                "     7e0:      \tadd\tx11, x0, x11, lsl #3",
+                "     7e4:      \tadd\tx12, x8, #1",
+                "     7e8:      \tmadd\tx12, x12, x6, x10",
+                "     7ec:      \tadd\tx12, x0, x12, lsl #3",
+                "     7f0:      \tadd\tx10, x10, #1",
+                "     7f4:      \tld1r.2d\t{ v31 }, [x11]",
+                "     7f8:      \tfmul.2d\tv31, v31, v28",
+                "     7fc:      \tfadd.2d\tv1, v1, v31",
+                "     800:      \tld1r.2d\t{ v31 }, [x12]",
+                "     804:      \tfmul.2d\tv28, v31, v28",
+                "     808:      \tfadd.2d\tv0, v0, v28",
+                "     80c:      \tb\t0x7a8 <_mech_canonical_program_entry_v1+0x7a8>"
+              ]
+            },
+            {
+              "shared_reached_load": "     918:      \tldr\td3, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     934:      \tfmul\td4, d4, d3",
+                "     93c:      \tfmul\td3, d5, d3"
+              ],
+              "independent_add_registers": [
+                "f1",
+                "f2"
+              ],
+              "block": [
+                "     914:      \tmadd\tx11, x10, x5, x9",
+                "     918:      \tldr\td3, [x1, x11, lsl #3]",
+                "     91c:      \tmadd\tx11, x8, x6, x10",
+                "     920:      \tldr\td4, [x0, x11, lsl #3]",
+                "     924:      \tadd\tx11, x8, #1",
+                "     928:      \tmadd\tx11, x11, x6, x10",
+                "     92c:      \tldr\td5, [x0, x11, lsl #3]",
+                "     930:      \tadd\tx10, x10, #1",
+                "     934:      \tfmul\td4, d4, d3",
+                "     938:      \tfadd\td2, d2, d4",
+                "     93c:      \tfmul\td3, d5, d3",
+                "     940:      \tfadd\td1, d1, d3",
+                "     944:      \tb\t0x8f4 <_mech_canonical_program_entry_v1+0x8f4>"
+              ]
+            },
+            {
+              "shared_reached_load": "     984:      \tldr\tq5, [x1, x11]",
+              "multiply_sites": [
+                "     9a4:      \tfmul.2d\tv6, v6, v5",
+                "     9b0:      \tfmul.2d\tv5, v6, v5"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f17"
+              ],
+              "block": [
+                "     97c:      \tmadd\tx11, x10, x5, x9",
+                "     980:      \tlsl\tx11, x11, #3",
+                "     984:      \tldr\tq5, [x1, x11]",
+                "     988:      \tmadd\tx11, x8, x6, x10",
+                "     98c:      \tadd\tx11, x0, x11, lsl #3",
+                "     990:      \tadd\tx12, x8, #1",
+                "     994:      \tmadd\tx12, x12, x6, x10",
+                "     998:      \tadd\tx12, x0, x12, lsl #3",
+                "     99c:      \tadd\tx10, x10, #1",
+                "     9a0:      \tld1r.2d\t{ v6 }, [x11]",
+                "     9a4:      \tfmul.2d\tv6, v6, v5",
+                "     9a8:      \tfadd.2d\tv17, v17, v6",
+                "     9ac:      \tld1r.2d\t{ v6 }, [x12]",
+                "     9b0:      \tfmul.2d\tv5, v6, v5",
+                "     9b4:      \tfadd.2d\tv16, v16, v5",
+                "     9b8:      \tb\t0x954 <_mech_canonical_program_entry_v1+0x954>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -4
+    },
+    "bicg": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 2224,
+          "object_file_bytes": 24168,
+          "static_instruction_count": 556,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 556,
+              "disassembly_sha256": "38c5ff1e1ce23fc846ae36fee07ef097085511de29d905a2f5de556f1515d718"
+            }
+          },
+          "object_sha256": "16ff0c91fef7c87288dce06ae43a8a9ac8dabf34325c285b2e68cb7337e81e08",
+          "metadata_sha256": "3a0de1b22f14318228aa0c41976b90ee7d610dd08e8ee6672c26eb6d9cbd26d8",
+          "disassembly_sha256": "43191985ded09ef095bb98b5ebd7b1046f0e71be3d4c7885e237e12e0c06583c",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2764,
+          "object_file_bytes": 24712,
+          "static_instruction_count": 691,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 691,
+              "disassembly_sha256": "0ac6e57933da0e7d3e1bd06b6d896514d7190f833981c0ee81490ba9c4b453bf"
+            }
+          },
+          "object_sha256": "b89154c073dfa5056f1aa8e86355fa8bc2be5fc562834f42bae10d1ca6748cdb",
+          "metadata_sha256": "3f61df08fbe927f08fd19c84541c4d70fe746bcfa4816654862b4e5ae682f5e9",
+          "disassembly_sha256": "fce1a97402ab8b5d9d1b53028e21d750f82e81200ca5d7b3a082cd8085314235",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     70c:      \tldr\td23, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     728:      \tfmul\td26, d26, d23",
+                "     730:      \tfmul\td23, d27, d23"
+              ],
+              "independent_add_registers": [
+                "f24",
+                "f25"
+              ],
+              "block": [
+                "     708:      \tmadd\tx11, x10, x5, x9",
+                "     70c:      \tldr\td23, [x1, x11, lsl #3]",
+                "     710:      \tmadd\tx11, x8, x6, x10",
+                "     714:      \tldr\td26, [x0, x11, lsl #3]",
+                "     718:      \tadd\tx11, x8, #1",
+                "     71c:      \tmadd\tx11, x11, x6, x10",
+                "     720:      \tldr\td27, [x0, x11, lsl #3]",
+                "     724:      \tadd\tx10, x10, #1",
+                "     728:      \tfmul\td26, d26, d23",
+                "     72c:      \tfadd\td24, d24, d26",
+                "     730:      \tfmul\td23, d27, d23",
+                "     734:      \tfadd\td25, d25, d23",
+                "     738:      \tb\t0x6e8 <_mech_canonical_program_entry_v1+0x6e8>"
+              ]
+            },
+            {
+              "shared_reached_load": "     778:      \tldr\tq30, [x1, x11]",
+              "multiply_sites": [
+                "     798:      \tfmul.2d\tv31, v31, v30",
+                "     7a4:      \tfmul.2d\tv30, v31, v30"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "     770:      \tmadd\tx11, x10, x5, x9",
+                "     774:      \tlsl\tx11, x11, #3",
+                "     778:      \tldr\tq30, [x1, x11]",
+                "     77c:      \tmadd\tx11, x8, x6, x10",
+                "     780:      \tadd\tx11, x0, x11, lsl #3",
+                "     784:      \tadd\tx12, x8, #1",
+                "     788:      \tmadd\tx12, x12, x6, x10",
+                "     78c:      \tadd\tx12, x0, x12, lsl #3",
+                "     790:      \tadd\tx10, x10, #1",
+                "     794:      \tld1r.2d\t{ v31 }, [x11]",
+                "     798:      \tfmul.2d\tv31, v31, v30",
+                "     79c:      \tfadd.2d\tv1, v1, v31",
+                "     7a0:      \tld1r.2d\t{ v31 }, [x12]",
+                "     7a4:      \tfmul.2d\tv30, v31, v30",
+                "     7a8:      \tfadd.2d\tv0, v0, v30",
+                "     7ac:      \tb\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+              ]
+            },
+            {
+              "shared_reached_load": "     8b8:      \tldr\td3, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     8d4:      \tfmul\td4, d4, d3",
+                "     8dc:      \tfmul\td3, d5, d3"
+              ],
+              "independent_add_registers": [
+                "f1",
+                "f2"
+              ],
+              "block": [
+                "     8b4:      \tmadd\tx11, x10, x5, x9",
+                "     8b8:      \tldr\td3, [x1, x11, lsl #3]",
+                "     8bc:      \tmadd\tx11, x8, x6, x10",
+                "     8c0:      \tldr\td4, [x0, x11, lsl #3]",
+                "     8c4:      \tadd\tx11, x8, #1",
+                "     8c8:      \tmadd\tx11, x11, x6, x10",
+                "     8cc:      \tldr\td5, [x0, x11, lsl #3]",
+                "     8d0:      \tadd\tx10, x10, #1",
+                "     8d4:      \tfmul\td4, d4, d3",
+                "     8d8:      \tfadd\td2, d2, d4",
+                "     8dc:      \tfmul\td3, d5, d3",
+                "     8e0:      \tfadd\td1, d1, d3",
+                "     8e4:      \tb\t0x894 <_mech_canonical_program_entry_v1+0x894>"
+              ]
+            },
+            {
+              "shared_reached_load": "     924:      \tldr\tq7, [x1, x10]",
+              "multiply_sites": [
+                "     944:      \tfmul.2d\tv18, v18, v7",
+                "     950:      \tfmul.2d\tv7, v18, v7"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f17"
+              ],
+              "block": [
+                "     91c:      \tmadd\tx10, x11, x5, x9",
+                "     920:      \tlsl\tx10, x10, #3",
+                "     924:      \tldr\tq7, [x1, x10]",
+                "     928:      \tmadd\tx10, x8, x6, x11",
+                "     92c:      \tadd\tx10, x0, x10, lsl #3",
+                "     930:      \tadd\tx12, x8, #1",
+                "     934:      \tmadd\tx12, x12, x6, x11",
+                "     938:      \tadd\tx12, x0, x12, lsl #3",
+                "     93c:      \tadd\tx11, x11, #1",
+                "     940:      \tld1r.2d\t{ v18 }, [x10]",
+                "     944:      \tfmul.2d\tv18, v18, v7",
+                "     948:      \tfadd.2d\tv17, v17, v18",
+                "     94c:      \tld1r.2d\t{ v18 }, [x12]",
+                "     950:      \tfmul.2d\tv7, v18, v7",
+                "     954:      \tfadd.2d\tv16, v16, v7",
+                "     958:      \tb\t0x8f4 <_mech_canonical_program_entry_v1+0x8f4>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -4
+    },
+    "cholesky": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 19944,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4986,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1650,
+              "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3336,
+              "disassembly_sha256": "ea3a0429ebef21e8421e5cf5688a8b4a9004a69c05b0b0f162c36451b54883f1"
+            }
+          },
+          "object_sha256": "e9a5449573b69101f0a1f7224d42de2c62fb22cae007fc2c9edd407b12e0ee32",
+          "metadata_sha256": "8d05fd1bb5fb86d7431a20bd0c6ce54526e37554d1aebcfe9bbbe9c3068625cd",
+          "disassembly_sha256": "ee81471bcae719e6996b7314c5d6409e6729d14d533cfaba4afa8ac90cc9ad9d",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19944,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4986,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1650,
+              "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3336,
+              "disassembly_sha256": "ea3a0429ebef21e8421e5cf5688a8b4a9004a69c05b0b0f162c36451b54883f1"
+            }
+          },
+          "object_sha256": "a240302cab8ad2b06e215730d62a62064ac0c93e28f17a880e9e77c4f74e70f2",
+          "metadata_sha256": "cbae69ed6d05bddbd53d0a62e80906e40d29b134e232891b47eac3ec219a017f",
+          "disassembly_sha256": "498d7b9ce20b6922bed311a06503d6013683bdf0988e78a7e6c6ffdad97afcf2",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "correlation": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 13820,
+          "object_file_bytes": 82688,
+          "static_instruction_count": 3455,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3455,
+              "disassembly_sha256": "52854334fbe1487222663e5a4a9e4f46d6bc07e55911d7234c350cb50d71b967"
+            }
+          },
+          "object_sha256": "c070f721a4f2b86e5923a6255d88a6af7806d1230fdf79196ca7ee4151f37c74",
+          "metadata_sha256": "238e17549d0e9449aa3b5be380184dd4c6f7d0906274424f14f312e11d825dce",
+          "disassembly_sha256": "b2dc87864e5b9c1f140d841bdf3985391b65c545509b6968c12d410a67fb5114",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 30,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 14096,
+          "object_file_bytes": 82960,
+          "static_instruction_count": 3524,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3524,
+              "disassembly_sha256": "866422e2794b41081829aa16b0726524ce8f0e9b352a0cf31af653194fe5435f"
+            }
+          },
+          "object_sha256": "8a2e3ac707d98a939553af0187bcdaee5c2181cf8693d24600315f0bea6f8a74",
+          "metadata_sha256": "9ee6602f6ee85d822cb2bc97c9f9cdaf3219af87a8b28cb4589602851d379f52",
+          "disassembly_sha256": "a7f9dd879558804dec9c54b6fbc48c1ea0897a772b39e36cbeb1fcb6f6f115a4",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "    2d98:      \tldr\td2, [x1, x10, lsl #3]",
+              "multiply_sites": [
+                "    2db4:      \tfmul\td3, d3, d2",
+                "    2dbc:      \tfmul\td2, d4, d2"
+              ],
+              "independent_add_registers": [
+                "f28",
+                "f29"
+              ],
+              "block": [
+                "    2d94:      \tmadd\tx10, x9, x5, x12",
+                "    2d98:      \tldr\td2, [x1, x10, lsl #3]",
+                "    2d9c:      \tmadd\tx10, x8, x6, x9",
+                "    2da0:      \tldr\td3, [x0, x10, lsl #3]",
+                "    2da4:      \tadd\tx10, x8, #1",
+                "    2da8:      \tmadd\tx10, x10, x6, x9",
+                "    2dac:      \tldr\td4, [x0, x10, lsl #3]",
+                "    2db0:      \tadd\tx9, x9, #1",
+                "    2db4:      \tfmul\td3, d3, d2",
+                "    2db8:      \tfadd\td28, d28, d3",
+                "    2dbc:      \tfmul\td2, d4, d2",
+                "    2dc0:      \tfadd\td29, d29, d2",
+                "    2dc4:      \tb\t0x2d74 <_mech_canonical_program_entry_v1+0x2d74>"
+              ]
+            },
+            {
+              "shared_reached_load": "    2e04:      \tldr\tq4, [x1, x10]",
+              "multiply_sites": [
+                "    2e24:      \tfmul.2d\tv5, v5, v4",
+                "    2e30:      \tfmul.2d\tv4, v5, v4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "    2dfc:      \tmadd\tx10, x9, x5, x12",
+                "    2e00:      \tlsl\tx10, x10, #3",
+                "    2e04:      \tldr\tq4, [x1, x10]",
+                "    2e08:      \tmadd\tx10, x8, x6, x9",
+                "    2e0c:      \tadd\tx10, x0, x10, lsl #3",
+                "    2e10:      \tadd\tx11, x8, #1",
+                "    2e14:      \tmadd\tx11, x11, x6, x9",
+                "    2e18:      \tadd\tx11, x0, x11, lsl #3",
+                "    2e1c:      \tadd\tx9, x9, #1",
+                "    2e20:      \tld1r.2d\t{ v5 }, [x10]",
+                "    2e24:      \tfmul.2d\tv5, v5, v4",
+                "    2e28:      \tfadd.2d\tv3, v3, v5",
+                "    2e2c:      \tld1r.2d\t{ v5 }, [x11]",
+                "    2e30:      \tfmul.2d\tv4, v5, v4",
+                "    2e34:      \tfadd.2d\tv2, v2, v4",
+                "    2e38:      \tb\t0x2dd4 <_mech_canonical_program_entry_v1+0x2dd4>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 28,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "covariance": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 4884,
+          "object_file_bytes": 30376,
+          "static_instruction_count": 1221,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1221,
+              "disassembly_sha256": "d75d147423ef113575c65c57a3d6c093dcac648ea088c281b6316d69edd580b9"
+            }
+          },
+          "object_sha256": "3681106deb73cd067caf6a39b902af5e2ed427c9d2650bc26bb8e31ed294a40d",
+          "metadata_sha256": "560b38ee0fcb15bc7bbf320e752f82d13fd075056577798042cb4d73041db5b5",
+          "disassembly_sha256": "bd2824f3fe0a6dff0619b4d159b0913b5bf40e52533cb1b8e26909d08574b58e",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 17,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 5160,
+          "object_file_bytes": 30648,
+          "static_instruction_count": 1290,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1290,
+              "disassembly_sha256": "ac2f30d75cb8b995af2c1824680f048296aea07f0e26e1f0656e6692262dd32c"
+            }
+          },
+          "object_sha256": "f1c703ae274f7a8c20c4ba16f08c7f76fdfccfa636fe75f493b8ed26193d70b1",
+          "metadata_sha256": "3481317eb296095c92f80b4f92c7290ce88ee08e269592ac92adc6b4314795de",
+          "disassembly_sha256": "6eed11c86bb13462945d91fc313847505bed2ad1bb7e6414d12d70f8b4824401",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "    1110:      \tldr\td0, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "    112c:      \tfmul\td1, d1, d0",
+                "    1134:      \tfmul\td0, d2, d0"
+              ],
+              "independent_add_registers": [
+                "f27",
+                "f28"
+              ],
+              "block": [
+                "    110c:      \tmadd\tx11, x9, x5, x10",
+                "    1110:      \tldr\td0, [x1, x11, lsl #3]",
+                "    1114:      \tmadd\tx11, x8, x6, x9",
+                "    1118:      \tldr\td1, [x0, x11, lsl #3]",
+                "    111c:      \tadd\tx11, x8, #1",
+                "    1120:      \tmadd\tx11, x11, x6, x9",
+                "    1124:      \tldr\td2, [x0, x11, lsl #3]",
+                "    1128:      \tadd\tx9, x9, #1",
+                "    112c:      \tfmul\td1, d1, d0",
+                "    1130:      \tfadd\td28, d28, d1",
+                "    1134:      \tfmul\td0, d2, d0",
+                "    1138:      \tfadd\td27, d27, d0",
+                "    113c:      \tb\t0x10ec <_mech_canonical_program_entry_v1+0x10ec>"
+              ]
+            },
+            {
+              "shared_reached_load": "    117c:      \tldr\tq2, [x1, x11]",
+              "multiply_sites": [
+                "    119c:      \tfmul.2d\tv3, v3, v2",
+                "    11a8:      \tfmul.2d\tv2, v3, v2"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "    1174:      \tmadd\tx11, x9, x5, x10",
+                "    1178:      \tlsl\tx11, x11, #3",
+                "    117c:      \tldr\tq2, [x1, x11]",
+                "    1180:      \tmadd\tx11, x8, x6, x9",
+                "    1184:      \tadd\tx11, x0, x11, lsl #3",
+                "    1188:      \tadd\tx12, x8, #1",
+                "    118c:      \tmadd\tx12, x12, x6, x9",
+                "    1190:      \tadd\tx12, x0, x12, lsl #3",
+                "    1194:      \tadd\tx9, x9, #1",
+                "    1198:      \tld1r.2d\t{ v3 }, [x11]",
+                "    119c:      \tfmul.2d\tv3, v3, v2",
+                "    11a0:      \tfadd.2d\tv1, v1, v3",
+                "    11a4:      \tld1r.2d\t{ v3 }, [x12]",
+                "    11a8:      \tfmul.2d\tv2, v3, v2",
+                "    11ac:      \tfadd.2d\tv0, v0, v2",
+                "    11b0:      \tb\t0x114c <_mech_canonical_program_entry_v1+0x114c>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 15,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "deriche": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 62308,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "049368b811af17a20fdf110d90182d90c668fcd1baa55d2af535f9ce560cf390",
+          "metadata_sha256": "156bbee3902ccea0530cb9201c94f91e625922e9c06ec5d336df76f0bc112c3a",
+          "disassembly_sha256": "7847ad2d8b8b370f1a108f1410af8629b579ac86779f56527a0926b9590c1559",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 62308,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "0206deff30b7725316c470442a898fac238bf842a5add47ef789f9b46b3977cf",
+          "metadata_sha256": "3ae34b81ad9f99b3f1c43a3381eef34b168f5e37caca328b0f779dd14f4c92d6",
+          "disassembly_sha256": "5baeba6d2bedb08407fd3680175783ed1e7856bf4138e47baf1280a814d5cb97",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "doitgen": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 1200,
+          "object_file_bytes": 12736,
+          "static_instruction_count": 300,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 300,
+              "disassembly_sha256": "dd0ec457ea600988155da50e6da8a9c4721efdee61f5e0c549fbe2cd94d42b25"
+            }
+          },
+          "object_sha256": "9fdfa11092afd9df5fe746fbee474e01f93715540cc2925a46b68d687b951502",
+          "metadata_sha256": "e7ef95fffa41c7fe57ec037b6f1ca56af532848682de41dde273b259c81eef6b",
+          "disassembly_sha256": "91df10132cd735aa33a9cc5590bdfd26ad8ce8caad4051ca536663d13a1031d2",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 1464,
+          "object_file_bytes": 13000,
+          "static_instruction_count": 366,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 366,
+              "disassembly_sha256": "bc90af6eedabc56dc6d027741a413b23fd993aedf1ec49ef4481ec0a7f3a5edd"
+            }
+          },
+          "object_sha256": "1f363593806cd07848e80ad47ae8eb32987b1d7bcbb985e3992b5af684dbcebe",
+          "metadata_sha256": "65622f92d422b742ef18059e927449d14a3497b8c15c1ad1268785750f390c08",
+          "disassembly_sha256": "e24f95dbd4606323a6646709707e19439a25855e068806b91906e31a63320c18",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     41c:      \tldr\td3, [x1, x11, lsl #3]",
+              "multiply_sites": [
+                "     438:      \tfmul\td4, d4, d3",
+                "     440:      \tfmul\td3, d5, d3"
+              ],
+              "independent_add_registers": [
+                "f1",
+                "f2"
+              ],
+              "block": [
+                "     418:      \tmadd\tx11, x10, x5, x9",
+                "     41c:      \tldr\td3, [x1, x11, lsl #3]",
+                "     420:      \tmadd\tx11, x8, x6, x10",
+                "     424:      \tldr\td4, [x0, x11, lsl #3]",
+                "     428:      \tadd\tx11, x8, #1",
+                "     42c:      \tmadd\tx11, x11, x6, x10",
+                "     430:      \tldr\td5, [x0, x11, lsl #3]",
+                "     434:      \tadd\tx10, x10, #1",
+                "     438:      \tfmul\td4, d4, d3",
+                "     43c:      \tfadd\td2, d2, d4",
+                "     440:      \tfmul\td3, d5, d3",
+                "     444:      \tfadd\td1, d1, d3",
+                "     448:      \tb\t0x3f8 <_mech_canonical_program_entry_v1+0x3f8>"
+              ]
+            },
+            {
+              "shared_reached_load": "     488:      \tldr\tq1, [x1, x10]",
+              "multiply_sites": [
+                "     4a8:      \tfmul.2d\tv2, v2, v1",
+                "     4b4:      \tfmul.2d\tv1, v2, v1"
+              ],
+              "independent_add_registers": [
+                "f18",
+                "f19"
+              ],
+              "block": [
+                "     480:      \tmadd\tx10, x15, x5, x9",
+                "     484:      \tlsl\tx10, x10, #3",
+                "     488:      \tldr\tq1, [x1, x10]",
+                "     48c:      \tmadd\tx10, x8, x6, x15",
+                "     490:      \tadd\tx10, x0, x10, lsl #3",
+                "     494:      \tadd\tx11, x8, #1",
+                "     498:      \tmadd\tx11, x11, x6, x15",
+                "     49c:      \tadd\tx11, x0, x11, lsl #3",
+                "     4a0:      \tadd\tx15, x15, #1",
+                "     4a4:      \tld1r.2d\t{ v2 }, [x10]",
+                "     4a8:      \tfmul.2d\tv2, v2, v1",
+                "     4ac:      \tfadd.2d\tv18, v18, v2",
+                "     4b0:      \tld1r.2d\t{ v2 }, [x11]",
+                "     4b4:      \tfmul.2d\tv1, v2, v1",
+                "     4b8:      \tfadd.2d\tv19, v19, v1",
+                "     4bc:      \tb\t0x458 <_mech_canonical_program_entry_v1+0x458>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 1,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -2
+    },
+    "durbin": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 20968,
+          "object_file_bytes": 144800,
+          "static_instruction_count": 5242,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1902,
+              "disassembly_sha256": "a1cc7b7ebb5ac5305e8f258b2b2db2630bc185c20e7f5f8e2132bb8016b58d2f"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3340,
+              "disassembly_sha256": "d6d8a5a9e1b957d0215ffa1f2a5678f6fa368a08cb5e5c074ace43651300b44e"
+            }
+          },
+          "object_sha256": "1d7a155d555821f62bbff69cef2340dadcc859f5f2de73a62878790c7d7bd61e",
+          "metadata_sha256": "a608f53e5741b3a66d5fcfaac6603a80374db8dea13bac5e0d33c46eb96badae",
+          "disassembly_sha256": "81da29f03203a0db0a3b6d35c19fc31b87a97f84fde93423889e9bcbec05b563",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 20968,
+          "object_file_bytes": 144800,
+          "static_instruction_count": 5242,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1902,
+              "disassembly_sha256": "a1cc7b7ebb5ac5305e8f258b2b2db2630bc185c20e7f5f8e2132bb8016b58d2f"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3340,
+              "disassembly_sha256": "d6d8a5a9e1b957d0215ffa1f2a5678f6fa368a08cb5e5c074ace43651300b44e"
+            }
+          },
+          "object_sha256": "65c3ddb20c3ffd0b20b8f6fe2f873fa33488aa01d78e7dd69451228c953fde76",
+          "metadata_sha256": "553af1d32141e1b1cbcf6d3da830e970e141eb3dfeb74d67e938783e0255862e",
+          "disassembly_sha256": "06f7da1e029f003f818fdf14062e143e9b25101dc359510ad6265345451bf775",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "gemm": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 4216,
+          "object_file_bytes": 24160,
+          "static_instruction_count": 1054,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1054,
+              "disassembly_sha256": "30dffd8a56330aedb25cc648b16fe6f7334207dff2ee466d7755ac1be5e8cfe6"
+            }
+          },
+          "object_sha256": "26f14c6a21dff3b9f72457ad572908b0082703f64629fc62df25c9f771090ca3",
+          "metadata_sha256": "978b8c58de0be6c739cfa45154427af016b489d7d1e1bbf827d7297b66372f53",
+          "disassembly_sha256": "8d345eb53b7a2013e798dec565e60a4567e5aa165a6d93bf9dc85f6773e5d22a",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 18,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 5316,
+          "object_file_bytes": 25264,
+          "static_instruction_count": 1329,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1329,
+              "disassembly_sha256": "84e2ae5809a4b018459a06d3f6ff047cdd55ffc90f17658f02cc14b6d9433f51"
+            }
+          },
+          "object_sha256": "c3590f281a76e8bacdd455dbee1c651ff131733ff2b1afd8e6eaf81e1f336070",
+          "metadata_sha256": "5fec04870046824e1cf787f5070281026fefe250aeb995f38d9ada0cfa3841bc",
+          "disassembly_sha256": "ac11080627ce027b906faa923a5b30c16bdbac5bd23de62fca932158a8603310",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     5a0:      \tldr\td7, [x1, x13, lsl #3]",
+              "multiply_sites": [
+                "     5bc:      \tfmul\td16, d16, d7",
+                "     5c4:      \tfmul\td7, d17, d7"
+              ],
+              "independent_add_registers": [
+                "f4",
+                "f5"
+              ],
+              "block": [
+                "     59c:      \tmadd\tx13, x12, x5, x11",
+                "     5a0:      \tldr\td7, [x1, x13, lsl #3]",
+                "     5a4:      \tmadd\tx13, x10, x6, x12",
+                "     5a8:      \tldr\td16, [x0, x13, lsl #3]",
+                "     5ac:      \tadd\tx13, x10, #1",
+                "     5b0:      \tmadd\tx13, x13, x6, x12",
+                "     5b4:      \tldr\td17, [x0, x13, lsl #3]",
+                "     5b8:      \tadd\tx12, x12, #1",
+                "     5bc:      \tfmul\td16, d16, d7",
+                "     5c0:      \tfadd\td5, d5, d16",
+                "     5c4:      \tfmul\td7, d17, d7",
+                "     5c8:      \tfadd\td4, d4, d7",
+                "     5cc:      \tb\t0x498 <_mech_canonical_program_entry_v1+0x498>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1240:      \tldr\td0, [x7, x1, lsl #3]",
+              "multiply_sites": [
+                "    125c:      \tfmul\td1, d1, d0",
+                "    1264:      \tfmul\td0, d2, d0"
+              ],
+              "independent_add_registers": [
+                "f18",
+                "f19"
+              ],
+              "block": [
+                "    123c:      \tmadd\tx1, x15, x9, x2",
+                "    1240:      \tldr\td0, [x7, x1, lsl #3]",
+                "    1244:      \tmadd\tx1, x0, x10, x15",
+                "    1248:      \tldr\td1, [x6, x1, lsl #3]",
+                "    124c:      \tadd\tx1, x0, #1",
+                "    1250:      \tmadd\tx1, x1, x10, x15",
+                "    1254:      \tldr\td2, [x6, x1, lsl #3]",
+                "    1258:      \tadd\tx15, x15, #1",
+                "    125c:      \tfmul\td1, d1, d0",
+                "    1260:      \tfadd\td18, d18, d1",
+                "    1264:      \tfmul\td0, d2, d0",
+                "    1268:      \tfadd\td19, d19, d0",
+                "    126c:      \tb\t0x121c <_mech_canonical_program_entry_v1+0x121c>"
+              ]
+            },
+            {
+              "shared_reached_load": "    12ac:      \tldr\tq2, [x7, x5]",
+              "multiply_sites": [
+                "    12cc:      \tfmul.2d\tv3, v3, v2",
+                "    12d8:      \tfmul.2d\tv2, v3, v2"
+              ],
+              "independent_add_registers": [
+                "f0",
+                "f1"
+              ],
+              "block": [
+                "    12a4:      \tmadd\tx5, x1, x9, x2",
+                "    12a8:      \tlsl\tx5, x5, #3",
+                "    12ac:      \tldr\tq2, [x7, x5]",
+                "    12b0:      \tmadd\tx5, x0, x10, x1",
+                "    12b4:      \tadd\tx5, x6, x5, lsl #3",
+                "    12b8:      \tadd\tx12, x0, #1",
+                "    12bc:      \tmadd\tx12, x12, x10, x1",
+                "    12c0:      \tadd\tx12, x6, x12, lsl #3",
+                "    12c4:      \tadd\tx1, x1, #1",
+                "    12c8:      \tld1r.2d\t{ v3 }, [x5]",
+                "    12cc:      \tfmul.2d\tv3, v3, v2",
+                "    12d0:      \tfadd.2d\tv1, v1, v3",
+                "    12d4:      \tld1r.2d\t{ v3 }, [x12]",
+                "    12d8:      \tfmul.2d\tv2, v3, v2",
+                "    12dc:      \tfadd.2d\tv0, v0, v2",
+                "    12e0:      \tb\t0x127c <_mech_canonical_program_entry_v1+0x127c>"
+              ]
+            },
+            {
+              "shared_reached_load": "    12ec:      \tldr\tq4, [x1, x12]",
+              "multiply_sites": [
+                "    130c:      \tfmul.2d\tv5, v5, v4",
+                "    1318:      \tfmul.2d\tv4, v5, v4"
+              ],
+              "independent_add_registers": [
+                "f17",
+                "f18"
+              ],
+              "block": [
+                "    12e4:      \tmadd\tx12, x14, x5, x11",
+                "    12e8:      \tlsl\tx12, x12, #3",
+                "    12ec:      \tldr\tq4, [x1, x12]",
+                "    12f0:      \tmadd\tx12, x10, x6, x14",
+                "    12f4:      \tadd\tx12, x0, x12, lsl #3",
+                "    12f8:      \tadd\tx13, x10, #1",
+                "    12fc:      \tmadd\tx13, x13, x6, x14",
+                "    1300:      \tadd\tx13, x0, x13, lsl #3",
+                "    1304:      \tadd\tx14, x14, #1",
+                "    1308:      \tld1r.2d\t{ v5 }, [x12]",
+                "    130c:      \tfmul.2d\tv5, v5, v4",
+                "    1310:      \tfadd.2d\tv17, v17, v5",
+                "    1314:      \tld1r.2d\t{ v5 }, [x13]",
+                "    1318:      \tfmul.2d\tv4, v5, v4",
+                "    131c:      \tfadd.2d\tv18, v18, v4",
+                "    1320:      \tb\t0x5dc <_mech_canonical_program_entry_v1+0x5dc>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -4
+    },
+    "gramschmidt": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 52992,
+          "object_file_bytes": 269904,
+          "static_instruction_count": 13248,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4866,
+              "disassembly_sha256": "654ba70ad4f873536f2b39685ee91514862cd0340f2115c216e57ab073fd7d1c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8382,
+              "disassembly_sha256": "5f15a27ee717b59f19d76f7d3db888e71abb970471f7f9d212640afe7befe6e9"
+            }
+          },
+          "object_sha256": "a6149d2ef4f69536ddda8f4139de3967e04c0093653dfdc3e03329170fc42a27",
+          "metadata_sha256": "0c5330c281b1cc6971ec280b6400791196261784cb569fc3d6d8866beb9b2fd2",
+          "disassembly_sha256": "a92db9f6a7b7bfe86ba9c0e626a5a392d8c11fc4bf39480921389c6fd5f6095a",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 52992,
+          "object_file_bytes": 269904,
+          "static_instruction_count": 13248,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4866,
+              "disassembly_sha256": "654ba70ad4f873536f2b39685ee91514862cd0340f2115c216e57ab073fd7d1c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8382,
+              "disassembly_sha256": "5f15a27ee717b59f19d76f7d3db888e71abb970471f7f9d212640afe7befe6e9"
+            }
+          },
+          "object_sha256": "345f05f797fe8d84ac6d5946c885acaabdd77b07c0e20ee34a89b799d9882eae",
+          "metadata_sha256": "088bb44113e6bdf18f69fa51fc679236abe455c67e2e4db534eead4fc3d2c35a",
+          "disassembly_sha256": "2a8b45abadda54d2c1d9db393f227b5aaa801a989dacf23ecbfa4738be4c9c11",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "mvt": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 5112,
+          "object_file_bytes": 32416,
+          "static_instruction_count": 1278,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1278,
+              "disassembly_sha256": "ce953050cf152bd9a4ba0e679244a386c8523fb93b349ead49640bd2d003905e"
+            }
+          },
+          "object_sha256": "c9be8a4b96a6146c319a2e0242279544a9c6040a60c5a86565a48dedad42b2c5",
+          "metadata_sha256": "39019a40d6cef68b6f711d7cd8bf4ddbe905b55987be6f3885972374f72bfadb",
+          "disassembly_sha256": "8dbd8fac703210949b306fdd0b7be33c95be755563d2322519fe78aac4ed1eaf",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 22,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 6940,
+          "object_file_bytes": 34248,
+          "static_instruction_count": 1735,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1735,
+              "disassembly_sha256": "b3955a3a2d3832b144d5c91d893cf0c45bc5ffd0ce8e67e69cbc9b0c8ce1dcf5"
+            }
+          },
+          "object_sha256": "f06dcac705d63facc9e5e64bc62903c54c21fd25d5536a59847fdb0682cd2780",
+          "metadata_sha256": "da6bbdf61c2ee4879463ea47017bbcd532dedd79e81db7597e391eab4e62f31d",
+          "disassembly_sha256": "3e6402836e9ada6020ea7869aa80302351037b2ca24d6b0ba9bed39df9233d55",
+          "object_executed": false,
+          "shared_right_load_groups": [
+            {
+              "shared_reached_load": "     498:      \tldr\td4, [x1, x12, lsl #3]",
+              "multiply_sites": [
+                "     4b4:      \tfmul\td5, d5, d4",
+                "     4bc:      \tfmul\td4, d6, d4"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f18"
+              ],
+              "block": [
+                "     494:      \tmadd\tx12, x13, x5, x11",
+                "     498:      \tldr\td4, [x1, x12, lsl #3]",
+                "     49c:      \tmadd\tx12, x10, x6, x13",
+                "     4a0:      \tldr\td5, [x0, x12, lsl #3]",
+                "     4a4:      \tadd\tx12, x10, #1",
+                "     4a8:      \tmadd\tx12, x12, x6, x13",
+                "     4ac:      \tldr\td6, [x0, x12, lsl #3]",
+                "     4b0:      \tadd\tx13, x13, #1",
+                "     4b4:      \tfmul\td5, d5, d4",
+                "     4b8:      \tfadd\td16, d16, d5",
+                "     4bc:      \tfmul\td4, d6, d4",
+                "     4c0:      \tfadd\td18, d18, d4",
+                "     4c4:      \tb\t0x3f0 <_mech_canonical_program_entry_v1+0x3f0>"
+              ]
+            },
+            {
+              "shared_reached_load": "     e8c:      \tldr\td16, [x1, x13, lsl #3]",
+              "multiply_sites": [
+                "     ea8:      \tfmul\td17, d17, d16",
+                "     eb0:      \tfmul\td16, d20, d16"
+              ],
+              "independent_add_registers": [
+                "f18",
+                "f19"
+              ],
+              "block": [
+                "     e88:      \tmadd\tx13, x15, x5, x11",
+                "     e8c:      \tldr\td16, [x1, x13, lsl #3]",
+                "     e90:      \tmadd\tx13, x10, x6, x15",
+                "     e94:      \tldr\td17, [x0, x13, lsl #3]",
+                "     e98:      \tadd\tx13, x10, #1",
+                "     e9c:      \tmadd\tx13, x13, x6, x15",
+                "     ea0:      \tldr\td20, [x0, x13, lsl #3]",
+                "     ea4:      \tadd\tx15, x15, #1",
+                "     ea8:      \tfmul\td17, d17, d16",
+                "     eac:      \tfadd\td18, d18, d17",
+                "     eb0:      \tfmul\td16, d20, d16",
+                "     eb4:      \tfadd\td19, d19, d16",
+                "     eb8:      \tb\t0xde4 <_mech_canonical_program_entry_v1+0xde4>"
+              ]
+            },
+            {
+              "shared_reached_load": "    158c:      \tldr\td0, [x7, x2, lsl #3]",
+              "multiply_sites": [
+                "    15a8:      \tfmul\td1, d1, d0",
+                "    15b0:      \tfmul\td0, d2, d0"
+              ],
+              "independent_add_registers": [
+                "f18",
+                "f19"
+              ],
+              "block": [
+                "    1588:      \tmadd\tx2, x5, x9, x1",
+                "    158c:      \tldr\td0, [x7, x2, lsl #3]",
+                "    1590:      \tmadd\tx2, x0, x10, x5",
+                "    1594:      \tldr\td1, [x6, x2, lsl #3]",
+                "    1598:      \tadd\tx2, x0, #1",
+                "    159c:      \tmadd\tx2, x2, x10, x5",
+                "    15a0:      \tldr\td2, [x6, x2, lsl #3]",
+                "    15a4:      \tadd\tx5, x5, #1",
+                "    15a8:      \tfmul\td1, d1, d0",
+                "    15ac:      \tfadd\td19, d19, d1",
+                "    15b0:      \tfmul\td0, d2, d0",
+                "    15b4:      \tfadd\td18, d18, d0",
+                "    15b8:      \tb\t0x1568 <_mech_canonical_program_entry_v1+0x1568>"
+              ]
+            },
+            {
+              "shared_reached_load": "    15f8:      \tldr\tq0, [x7, x5]",
+              "multiply_sites": [
+                "    1618:      \tfmul.2d\tv1, v1, v0",
+                "    1624:      \tfmul.2d\tv0, v1, v0"
+              ],
+              "independent_add_registers": [
+                "f28",
+                "f29"
+              ],
+              "block": [
+                "    15f0:      \tmadd\tx5, x2, x9, x1",
+                "    15f4:      \tlsl\tx5, x5, #3",
+                "    15f8:      \tldr\tq0, [x7, x5]",
+                "    15fc:      \tmadd\tx5, x0, x10, x2",
+                "    1600:      \tadd\tx5, x6, x5, lsl #3",
+                "    1604:      \tadd\tx12, x0, #1",
+                "    1608:      \tmadd\tx12, x12, x10, x2",
+                "    160c:      \tadd\tx12, x6, x12, lsl #3",
+                "    1610:      \tadd\tx2, x2, #1",
+                "    1614:      \tld1r.2d\t{ v1 }, [x5]",
+                "    1618:      \tfmul.2d\tv1, v1, v0",
+                "    161c:      \tfadd.2d\tv28, v28, v1",
+                "    1620:      \tld1r.2d\t{ v1 }, [x12]",
+                "    1624:      \tfmul.2d\tv0, v1, v0",
+                "    1628:      \tfadd.2d\tv29, v29, v0",
+                "    162c:      \tb\t0x15c8 <_mech_canonical_program_entry_v1+0x15c8>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1638:      \tldr\tq5, [x1, x13]",
+              "multiply_sites": [
+                "    1658:      \tfmul.2d\tv6, v6, v5",
+                "    1664:      \tfmul.2d\tv5, v6, v5"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f7"
+              ],
+              "block": [
+                "    1630:      \tmadd\tx13, x12, x5, x11",
+                "    1634:      \tlsl\tx13, x13, #3",
+                "    1638:      \tldr\tq5, [x1, x13]",
+                "    163c:      \tmadd\tx13, x10, x6, x12",
+                "    1640:      \tadd\tx13, x0, x13, lsl #3",
+                "    1644:      \tadd\tx14, x10, #1",
+                "    1648:      \tmadd\tx14, x14, x6, x12",
+                "    164c:      \tadd\tx14, x0, x14, lsl #3",
+                "    1650:      \tadd\tx12, x12, #1",
+                "    1654:      \tld1r.2d\t{ v6 }, [x13]",
+                "    1658:      \tfmul.2d\tv6, v6, v5",
+                "    165c:      \tfadd.2d\tv7, v7, v6",
+                "    1660:      \tld1r.2d\t{ v6 }, [x14]",
+                "    1664:      \tfmul.2d\tv5, v6, v5",
+                "    1668:      \tfadd.2d\tv16, v16, v5",
+                "    166c:      \tb\t0xec8 <_mech_canonical_program_entry_v1+0xec8>"
+              ]
+            },
+            {
+              "shared_reached_load": "    17c8:      \tldr\td4, [x1, x10, lsl #3]",
+              "multiply_sites": [
+                "    17e4:      \tfmul\td5, d5, d4",
+                "    17ec:      \tfmul\td4, d6, d4"
+              ],
+              "independent_add_registers": [
+                "f2",
+                "f3"
+              ],
+              "block": [
+                "    17c4:      \tmadd\tx10, x9, x5, x8",
+                "    17c8:      \tldr\td4, [x1, x10, lsl #3]",
+                "    17cc:      \tmadd\tx10, x15, x6, x9",
+                "    17d0:      \tldr\td5, [x0, x10, lsl #3]",
+                "    17d4:      \tadd\tx10, x15, #1",
+                "    17d8:      \tmadd\tx10, x10, x6, x9",
+                "    17dc:      \tldr\td6, [x0, x10, lsl #3]",
+                "    17e0:      \tadd\tx9, x9, #1",
+                "    17e4:      \tfmul\td5, d5, d4",
+                "    17e8:      \tfadd\td3, d3, d5",
+                "    17ec:      \tfmul\td4, d6, d4",
+                "    17f0:      \tfadd\td2, d2, d4",
+                "    17f4:      \tb\t0x17a4 <_mech_canonical_program_entry_v1+0x17a4>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1834:      \tldr\tq2, [x1, x10]",
+              "multiply_sites": [
+                "    1854:      \tfmul.2d\tv5, v5, v2",
+                "    1860:      \tfmul.2d\tv2, v5, v2"
+              ],
+              "independent_add_registers": [
+                "f3",
+                "f4"
+              ],
+              "block": [
+                "    182c:      \tmadd\tx10, x9, x5, x8",
+                "    1830:      \tlsl\tx10, x10, #3",
+                "    1834:      \tldr\tq2, [x1, x10]",
+                "    1838:      \tmadd\tx10, x15, x6, x9",
+                "    183c:      \tadd\tx10, x0, x10, lsl #3",
+                "    1840:      \tadd\tx11, x15, #1",
+                "    1844:      \tmadd\tx11, x11, x6, x9",
+                "    1848:      \tadd\tx11, x0, x11, lsl #3",
+                "    184c:      \tadd\tx9, x9, #1",
+                "    1850:      \tld1r.2d\t{ v5 }, [x10]",
+                "    1854:      \tfmul.2d\tv5, v5, v2",
+                "    1858:      \tfadd.2d\tv3, v3, v5",
+                "    185c:      \tld1r.2d\t{ v5 }, [x11]",
+                "    1860:      \tfmul.2d\tv2, v5, v2",
+                "    1864:      \tfadd.2d\tv4, v4, v2",
+                "    1868:      \tb\t0x1804 <_mech_canonical_program_entry_v1+0x1804>"
+              ]
+            },
+            {
+              "shared_reached_load": "    1874:      \tldr\tq4, [x1, x13]",
+              "multiply_sites": [
+                "    1894:      \tfmul.2d\tv5, v5, v4",
+                "    18a0:      \tfmul.2d\tv4, v5, v4"
+              ],
+              "independent_add_registers": [
+                "f16",
+                "f6"
+              ],
+              "block": [
+                "    186c:      \tmadd\tx13, x12, x5, x11",
+                "    1870:      \tlsl\tx13, x13, #3",
+                "    1874:      \tldr\tq4, [x1, x13]",
+                "    1878:      \tmadd\tx13, x10, x6, x12",
+                "    187c:      \tadd\tx13, x0, x13, lsl #3",
+                "    1880:      \tadd\tx14, x10, #1",
+                "    1884:      \tmadd\tx14, x14, x6, x12",
+                "    1888:      \tadd\tx14, x0, x14, lsl #3",
+                "    188c:      \tadd\tx12, x12, #1",
+                "    1890:      \tld1r.2d\t{ v5 }, [x13]",
+                "    1894:      \tfmul.2d\tv5, v5, v4",
+                "    1898:      \tfadd.2d\tv6, v6, v5",
+                "    189c:      \tld1r.2d\t{ v5 }, [x14]",
+                "    18a0:      \tfmul.2d\tv4, v5, v4",
+                "    18a4:      \tfadd.2d\tv16, v16, v4",
+                "    18a8:      \tb\t0x4d4 <_mech_canonical_program_entry_v1+0x4d4>"
+              ]
+            }
+          ],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": -8
+    },
+    "nussinov": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 19360,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "ba4886d4f37ca030302723b18c4c9d110256c220416c0da93bc83507bc878d0f",
+          "metadata_sha256": "8f3abb6e6553c78c3ff22ff41539277c9ac7022ef7ba3cedec7c28da0cd2c1bd",
+          "disassembly_sha256": "f4bcd145c7c413bee586a58ad4683fec7fb2500a38c04f038a0a70198d483e5a",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19360,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "a611bb62593370c2ab4ff377ea5ede795efdcc0012c06ed1815e2f2d097b8afd",
+          "metadata_sha256": "d0a29cd04cac3d3176e957b6d6990fc34db5be8d3bd6445e7bc396745e5d09a1",
+          "disassembly_sha256": "eadb9e9efaaeeca94cb5dd3b07b791590af24d56236b5937b0a342c918155501",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "seidel-2d": {
+      "actors": {
+        "accepted50": {
+          "code_bytes": 16104,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "15c54b34672a64886a3f63730f5d2dffd3df117236dea800362554b4e8de9718",
+          "metadata_sha256": "eb05dbe78af1f981da9f274a2a7ebbedce418d9ced9f8aafc3ddf37f482a45f2",
+          "disassembly_sha256": "079bd7d0bf32b063020eb72b9006c0876306924f00f6d2eb1b8ec1e804b36e65",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 16104,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "22cf9f0148e4889aa9f525e95607df5a137a7953bb8017df5d6bc4a3cb4a173d",
+          "metadata_sha256": "3902af863987d87ed5ef87a0cba31170c93fab580f47cb63f2c4a483fd4601e4",
+          "disassembly_sha256": "d63c48a16c31243349942b97b4a963be208e8e1f7ec1ee69b58e8fab9761bff2",
+          "object_executed": false,
+          "shared_right_load_groups": [],
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "native_code_changed_cases": [
+    "2mm",
+    "3mm",
+    "atax",
+    "bicg",
+    "correlation",
+    "covariance",
+    "doitgen",
+    "gemm",
+    "mvt"
+  ],
+  "no_new_fma": true,
+  "row_pairs_emitted": true,
+  "independent_runtime_shape_kernel": "Focused Cranelift kernel has six runtime word parameters. Both two-row scalar and two-row SIMD bodies use one reached RHS load SSA value for two separate multiplies and independent +0/k accumulators. Ordered scalar oracle, canary banks, empty null banks and actual original/decoded/restored programs pass; every execution counter is unchanged.",
+  "source_unchanged": true,
+  "passed": true
+}
