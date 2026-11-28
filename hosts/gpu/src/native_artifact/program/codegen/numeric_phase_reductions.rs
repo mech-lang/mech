@@ -30,6 +30,7 @@ pub(super) fn emit(
     fold: &Fold,
     plan: &Plan,
     typed_folds: bool,
+    ordered_dots: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
@@ -58,6 +59,7 @@ pub(super) fn emit(
         &matrices,
         &captures,
         typed_folds,
+        ordered_dots,
         miss,
     )?;
     words.write(
@@ -84,6 +86,7 @@ pub(super) fn emit_from_views(
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
+    ordered_dots: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let region = &source.region;
@@ -123,6 +126,7 @@ pub(super) fn emit_from_views(
         matrices,
         captures,
         typed_folds,
+        ordered_dots,
         None,
         miss,
     )?;
@@ -146,6 +150,7 @@ pub(super) fn emit_region(
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
+    ordered_dots: bool,
     output: Option<(Value, Value)>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
@@ -158,6 +163,7 @@ pub(super) fn emit_region(
         matrices,
         captures,
         typed_folds,
+        ordered_dots,
         output,
         None,
         None,
@@ -173,6 +179,7 @@ pub(super) fn emit_region_with_selection(
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
+    ordered_dots: bool,
     output: Option<(Value, Value)>,
     selection: Option<&super::numeric_map::selection::Selection>,
     whole_output_initialized: Option<Value>,
@@ -299,6 +306,7 @@ pub(super) fn emit_region_with_selection(
         plan,
         captures,
         typed_folds,
+        ordered_dots,
         selection,
         whole_output_initialized,
         complete,

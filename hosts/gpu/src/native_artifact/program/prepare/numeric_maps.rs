@@ -11,7 +11,7 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-#[cfg(test)]
+#[cfg(feature = "canonical-native-program")]
 #[path = "numeric_map_dots/mod.rs"]
 pub(in crate::native_artifact) mod dots;
 

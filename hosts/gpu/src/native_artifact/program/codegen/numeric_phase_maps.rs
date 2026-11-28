@@ -36,6 +36,7 @@ pub(super) fn emit(
     selective_initialization: bool,
     compound_domains: bool,
     typed_folds: bool,
+    ordered_dots: bool,
     miss: Block,
 ) -> Result<MapEmission, NativeCompileError> {
     let source = &replacement.source;
@@ -198,6 +199,7 @@ pub(super) fn emit(
         &matrices,
         &captures,
         typed_folds,
+        ordered_dots,
         Some((scratch, capacity)),
         selection.as_ref(),
         whole_output_initialized,

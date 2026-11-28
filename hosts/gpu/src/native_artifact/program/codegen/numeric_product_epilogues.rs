@@ -30,7 +30,7 @@ pub(super) struct Epilogue<'a> {
     leaves: Vec<Leaf>,
     cancelled: Block,
 }
-fn finite(b: &mut FunctionBuilder<'_>, value: Value, vector: bool, cancelled: Block) {
+pub(super) fn finite(b: &mut FunctionBuilder<'_>, value: Value, vector: bool, cancelled: Block) {
     let kind = if vector {
         types::I64.by(2).unwrap()
     } else {

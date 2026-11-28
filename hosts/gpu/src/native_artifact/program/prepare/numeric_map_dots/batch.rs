@@ -190,6 +190,26 @@ impl Batch {
             return None;
         }
         let dot = Dot::derive(plan, &child.source.region, Some(region.element))?;
+        // A child capture defined by a parent-body Copy is not an entry
+        // invariant. Decline rather than treating its home as a snapshot or
+        // accidentally closing over a stale outer-coordinate alias.
+        fn available(index: &Index, plan: &Plan, parent: &Region) -> bool {
+            match &index.expr {
+                Expr::Coordinate(_) | Expr::Constant(_) => true,
+                Expr::Capture(id) => parent.captures.contains(id) || constant(plan, *id).is_some(),
+                Expr::Binary { left, right, .. } => {
+                    available(left, plan, parent) && available(right, plan, parent)
+                }
+            }
+        }
+        if !dot
+            .operands
+            .iter()
+            .all(|o| o.indices.iter().all(|i| available(i, plan, region)))
+        {
+            return None;
+        }
+
         if child.matrices.len() != child.source.region.matrices.len() {
             return None;
         }

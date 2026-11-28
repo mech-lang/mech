@@ -910,3 +910,6 @@ pub(super) mod fixed_key_loops;
 mod numeric_compound_maps;
 mod numeric_masked_maps;
 mod numeric_selected_initialization;
+
+mod ordered_map_dot_batches;
+mod ordered_map_dots;

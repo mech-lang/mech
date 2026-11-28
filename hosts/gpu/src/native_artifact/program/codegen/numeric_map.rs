@@ -67,6 +67,7 @@ pub(in crate::native_artifact) fn emit_entry(
     plan: &Plan,
     counter_slot: usize,
     typed_folds: bool,
+    ordered_dots: bool,
     exit: Block,
     error: Block,
 ) -> Result<(), NativeCompileError> {
@@ -137,6 +138,7 @@ pub(in crate::native_artifact) fn emit_entry(
         plan,
         &captures,
         typed_folds,
+        ordered_dots,
         complete,
         miss,
         malformed,
@@ -195,6 +197,7 @@ pub(super) fn emit(
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
+    ordered_dots: bool,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -206,6 +209,7 @@ pub(super) fn emit(
         plan,
         captures,
         typed_folds,
+        ordered_dots,
         None,
         None,
         complete,
@@ -220,6 +224,7 @@ pub(super) fn emit_with_selection(
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
+    ordered_dots: bool,
     selection: Option<&selection::Selection>,
     whole_output_initialized: Option<Value>,
     complete: Block,
@@ -387,6 +392,11 @@ pub(super) fn emit_with_selection(
         let good = b.ins().bor(empty, no_overflow);
         require(b, good, malformed);
     }
+    if ordered_dots && selection.is_none() {
+        super::numeric_map_dots::emit(
+            b, frame, region, plan, captures, &matrices, start, count, output, complete,
+        )?;
+    }
     // Source phi copies share a native SSA variable. Complete current-visits
     // and body inventories establish definite assignment before any use;
     // private body words need neither canonical slots nor runtime dispatch.
@@ -510,6 +520,7 @@ pub(super) fn emit_with_selection(
                 &views,
                 &captures,
                 typed_folds,
+                ordered_dots,
                 index_miss,
             )?;
             b.def_var(words[&child.output(plan).get()], value);

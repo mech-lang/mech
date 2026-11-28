@@ -115,3 +115,34 @@ fn ordered_map_dot_proofs_accept_affine_scaling_and_reject_nonlinear_extra_arith
         }
     }
 }
+
+#[test]
+fn ordered_map_dot_proofs_reject_child_captures_unavailable_at_parent_entry() {
+    let source = "+> stats\nvalues := data<[f64]:4,6>\nweights := coefficients<[f64]:3,1>\n[stats/sum/column([weights[i] * values[i + shift<u64>,j] | i <- 1u64..=3u64])[1u64] | j <- 1u64..=6u64]\n";
+    fn capture(index: &Index) -> Option<u32> {
+        match &index.expr {
+            Expr::Capture(id) => Some(*id),
+            Expr::Binary { left, right, .. } => capture(left).or_else(|| capture(right)),
+            _ => None,
+        }
+    }
+    for plan in plans(source) {
+        let layout = Layout::derive(&plan).unwrap();
+        let parent = layout
+            .regions
+            .iter()
+            .find(|r| Batch::derive(&plan, r).is_some())
+            .unwrap();
+        let batch = Batch::derive(&plan, parent).unwrap();
+        let id = batch
+            .dot
+            .operands
+            .iter()
+            .flat_map(|o| &o.indices)
+            .find_map(capture)
+            .unwrap();
+        let mut changed = parent.clone();
+        changed.captures.retain(|&v| v != id);
+        assert!(Batch::derive(&plan, &changed).is_none());
+    }
+}

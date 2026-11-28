@@ -1357,6 +1357,9 @@ impl<'plan> CfgDefinition<'plan> {
                     controls.enabled(
                         crate::native_artifact::codegen::options::OptimizationPass::TypedMapFolds,
                     ),
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::OrderedMapDots,
+                    ),
                     blocks[exit as usize].expect("reachable numeric map exit"),
                     error,
                 )?;
