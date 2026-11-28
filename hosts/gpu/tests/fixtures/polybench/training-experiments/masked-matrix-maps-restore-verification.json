@@ -1,0 +1,9 @@
+{
+  "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "clean": true,
+  "accepted_round": 45,
+  "actual_history_entries": 48,
+  "audit_history_entries": 48,
+  "state_history_entries": 48,
+  "note": "The finalizer terminal summary retained a stale printed count47; authoritative ledger/audit/state each verify48. No observation or acceptance data changed."
+}
