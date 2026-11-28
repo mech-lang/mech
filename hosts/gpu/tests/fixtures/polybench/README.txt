@@ -2805,3 +2805,11 @@ General source-proved compound conditional domains skip only total identity buck
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history51 without altering earlier entries. Formal optimization9.2435020206874565x C, independent holdout25.1484878192208328x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-50-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted50.
 
 [Qualification](round-50-qualification.json) · [Audit](round-50-audit.json) · [Progress](round-50-progress.json) · [Complete experiment](training-experiments/compound-conditional-domains-formal.json)
+
+Accepted50 optimization-only live-code profile
+
+Current accepted50 Gram-Schmidt/Durbin/MVT were sampled in owned warm checked-call processes and their named executable JIT ranges captured from those same PIDs after sampling. Every sampled instruction/window matches its genuine Object; both numeric functions and the complete MVT function are byte-identical. Small root call-relocation differences are isolated. All warmup/final C values and frozen execution counters match. One diagnostic async-wait failure and its successful same-process exit/code/sample were preserved; only remaining cases ran after its fix. No official timing samples or history entries were added.
+
+Generated self-time is82.92% Gram-Schmidt,50.83% Durbin,33.86% MVT. Residence includes output reset/drop and is not the exact kernel timer. The verified MVT transpose reconstructs coordinates with two integer divisions per copied cell; the next proposed general experiment replaces that reconstruction with induction, retaining traversal/admission/buffers/fees/ownership/publication. No runtime win is inferred from static operations.
+
+[CPU telemetry](round-50-cpu-telemetry.json) · [Full profile/code evidence](training-experiments/accepted50-optimization-profile.json)
