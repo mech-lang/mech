@@ -1,0 +1,37 @@
+{
+  "schema": "mech.polybench.optimization-profile-plan.v1",
+  "created_at": "2026-11-28T17:13:07.756195+00:00",
+  "accepted_round": 59,
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_source_parent": "c86f8b485bdd9167ff1ff5218fec939f212f5633",
+  "profiled_status": "Exact accepted59 source and frozen driver. Untimed warm CPU/code diagnosis only.",
+  "qualified_source_commit": "1fc9f28e254cf688fc5cbec8b926f5c0f568c0ea",
+  "compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "182b2b843cc66efaa34e6cc61736e4729b8e4f5a3f28b8f54484e176d7d7036c",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "23a8955f75903c76b2d4261b7d88ea47208f216ce7b7457f393e1bd95fa5ca46",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "7d9e750a0ba536b053977dc6d4274d388e73d4f9260f27649d51858ed70fa7fc",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "12fd4e90d0385ac0dfb5b067785f5b22290c78dc21486d665ea16af45f899850",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "c077ee308643aebf0029ff16945ec4201516ecc126623c9962904f459c2b8b3f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "7ce2426f1b3831ba651696b6d01acce06ec5acc49ef0e3bb38290b313de27b58",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": "f69a83a0642ac83bacc8e7ff172adcf076c1c2189a0cb80257baace214640408"
+  },
+  "cases": [
+    "seidel-2d"
+  ],
+  "selection": "Only the active closest-parity optimization target. No holdout diagnosis or new timing.",
+  "method": "Use exact current accepted59 source, use unchanged public-API host with Cranelift sole Mech generator, sample one owned warm process3s at1ms, capture only named executable JIT ranges from that same PID after sampling, resume child to real terminal0, validate finite warm/final C outputs and exact frozen counters, bind every code byte/local BL to genuine frozen Objects, retain and verify exact accepted59 source. No source edits during build/profile and no timing observations.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/private/tmp/mech-polybench-optimization/round-75/bounded-cell-cache-lifetimes/emission-census.json",
+  "census_actor": "accepted59",
+  "counter_gate": "/private/tmp/mech-polybench-optimization/round-75/bounded-cell-cache-lifetimes/untimed-counter-gate.json",
+  "profiled_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "profiled_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "hypothesis_to_check": "Bind accepted numeric code and locate its actual hot sites. Static accepted Object holds work credit in x3: cmp0x1c8/sub0xe14. Rejected e5ac usesSP+8: load0x1d8/load0xcc0/store0xcc8. FP cache spills were removed but credit still spills; extra valid/pending/max-column cache words increase general-register liveness. A follow-up may encode cache validity/commit state in its already-proved positive last read column, if exact CFG proof permits staging immediately before the sole store and no reuse before its successful completion. No accounting weakening or source change in this diagnostic.",
+  "holdout_profiling": false,
+  "official_performance_observations": 0,
+  "history_entries_unchanged": 61,
+  "scope_limit": "Warm residence includes output reset/drop and is not an official cache-flushed timing sample. PC samples are locations in dependency chains, not exclusive instruction cost, hardware retirement/IPC/cache/traffic/RSS or speedup forecasts."
+}
