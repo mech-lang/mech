@@ -1,0 +1,23 @@
+{
+  "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+  "created_at": "2026-11-28T10:24:42.106047+00:00",
+  "accepted_round": 54,
+  "source_commit": "cd3000bdc95faabedfa28947ebb00bab06bc7418",
+  "compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+  "cases": [
+    "gramschmidt",
+    "durbin"
+  ],
+  "selection": "The two highest accepted54 optimization15 Mech/C margins19.56489x and19.52606x: Gram-Schmidt and Durbin. No holdout diagnosis, profiling or selection.",
+  "method": "Build only the unchanged public-API diagnostic host against exact current Cargo artifact JSON rlibs. Mech generation remains Cranelift. Sample each owned warm checked-call process3s at1ms, then capture only its named executable JIT ranges from that same PID after sampling and resume the same process to terminal. Validate warmup/final finite C values and frozen counters. Bind complete generated code to genuine accepted53 Objects, explicitly verifying any ordinary local function-call relocations against captured target addresses.",
+  "seconds_per_process": 30,
+  "sample_seconds": 3,
+  "object_census": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-54-static-telemetry.json",
+  "counter_gate": "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/round-54-typed-map-fold-route-census.json",
+  "host_source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+  "source_native_generator": "Maintained Cranelift public JIT/Object APIs; Rust compiles only the host diagnostic wrapper.",
+  "hypothesis_to_check": "After typed F64 fold acceptance, locate remaining actual read/control/arithmetic/publication costs. Check whether raw-word source DAG/capture transport still introduces FP/GPR conversions or spills. Select a materially different physical transformation only after actual same-PID samples and byte-bound code evidence; no retry of failed bounds/read reuse/SSA-adapter fingerprints, no speedup inferred from static counts.",
+  "official_performance_observations": 0,
+  "holdout_profiling": false,
+  "scope_limit": "Warm residence includes output reset/drop; shares are not exact frozen kernel timer fractions, retired hardware instructions, IPC/cache counters, measured memory traffic or a speedup forecast."
+}
