@@ -2873,3 +2873,11 @@ Accepted53 phase profiles
 Owned Gram-Schmidt/Durbin warm checked-call samples attribute83.45%/53.16% self time to generated code. Both numeric functions match their genuine Objects byte-for-byte; complete caller code matches except expected BL relocations independently bound to captured same-PID targets. C liveouts and frozen counters match. Hot ordered sum loops round-trip their accumulator between integer and FP registers every term. The next proposed general pass keeps proved F64 reduction accumulators typed in SSA while retaining raw-word ABI boundaries and every source operation/error/fee. Rejected41 still used an I64 fold; this is a different physical computation. No benchmark timing observation/history entry was added or speedup inferred.
 
 [CPU telemetry](round-53-phase-cpu-telemetry.json) · [Profile and complete code binding](training-experiments/accepted53-phase-profile.json)
+
+Typed ordered map folds: formal evaluation
+
+Source-proved ordered F64 map sums remain in F64 SSA until the original raw-word frame boundary, including standalone, phase and nested folds. Original errors, arithmetic, source fees, current owners, bounds, full buffers and atomic completion remain. All758 broad/4 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.3658618933018118x C, independent holdout24.5993830037455226x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-54-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted53.
+
+[Qualification](round-54-qualification.json) · [Audit](round-54-audit.json) · [Progress](round-54-progress.json) · [Complete experiment](training-experiments/typed-map-folds-formal.json)

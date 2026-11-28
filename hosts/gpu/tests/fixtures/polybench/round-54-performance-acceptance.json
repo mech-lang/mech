@@ -1,0 +1,40 @@
+{
+  "schema": "mech.polybench.round-performance-acceptance.v1",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "selection_partition": "optimization",
+    "promotion": "Optimization score must be strictly below the last accepted optimization score. Holdout never vetoes, selects or retunes a candidate.",
+    "failed_run": "Optimization score fails to strictly improve the last accepted optimization score.",
+    "comparison_threshold": "Strict optimization improvement; no post-hoc tolerance or observation exclusions.",
+    "scope": "Performance selection only; correctness and frozen-source qualification remain prerequisites. Both complete aggregate sets are reported.",
+    "holdout_use": "Report aggregate generalization and the below1.0x C goal separately; no promotion/rollback decision, per-case diagnosis, tuning or candidate retry based on holdout.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; selection uses the fixed optimization Mech/C score.",
+    "historical_decisions": "Retain the original two-set decisions through history46. An explicit user-directed amendment accepts round47 and applies optimization-only promotion from47 onward."
+  },
+  "decision": {
+    "history_index": 54,
+    "label": "round-54-typed-map-folds",
+    "source_commit": "4f13eba2848408c7841dd5db6c49ea45419d93e5",
+    "history_entry_sha256": "35633e885b9b2e37a0d2833ab5d1e688b6ce7a24fb58e115bfee730e13ce6de8",
+    "scores": {
+      "optimization": 8.365861893301812,
+      "holdout": 24.599383003745523
+    },
+    "previous_measured_index": 53,
+    "run_outcome": "improved_both",
+    "compared_to_accepted_index": 53,
+    "multipliers_vs_accepted": {
+      "optimization": 0.9435525739101412,
+      "holdout": 0.9912494916721815
+    },
+    "performance_gate": "accepted",
+    "selection_partition": "optimization",
+    "selection_outcome": "optimization_improved",
+    "holdout_use": "reported_only",
+    "selection_policy": "optimization-only-v4",
+    "accepted_index_after_run": 54
+  },
+  "performance_history_sha256": "759a0cc60878a794d0a334d8da04e6368c536854b9af2e4a4625030a8ce326e5",
+  "interpretation": "Promote only when optimization15 kernel Mech/C is strictly below accepted53 (8.866344202351284). Holdout is independently reported and cannot veto, select, tune or trigger rollback/retry. All observations and regressions remain. Source work/comparison never decrease; every other counter, including visits, matches accepted53. Checked Objects certify ordered F64 accumulators without per-term running-sum FP/GPR round trips; no arithmetic reordering or FMA."
+}
