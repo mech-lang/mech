@@ -1,0 +1,67 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T16:55:10.883343+00:00",
+  "name": "bounded-cell-cache-lifetimes",
+  "source_parent": "ff22cfc2cf5b7ca3905a83231162a5c737d244cd",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 61,
+  "versions": {
+    "ir": 432,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "foundation": "Exact qualified but unselected rolling-cell source ad4f318c5646c2b75ded6abf1a448602c536c67a, fingerprint79c3. Preserve its single failed probe; no retiming. Material change cuts cache SSA live ranges at invalidation and before original first-change/COW helper.",
+  "profiling_basis": "training-experiments/unselected-rolling-cell-profile.json: actual PID91342 generated5592 numeric bytes matched frozen Object,1711/1752=97.66% generated self. Credit stack store397 samples; six vector-width cache reload/spill pairs include84 samples at the final spill. Values remain live through first-change/COW call and state resets. Locations are dependency-chain samples, not exclusive cost or hardware traffic.",
+  "transformation": "Keep the source-proved rolling recipe and original arithmetic, source fees, old-first/no-op/COW order and checked fresh fallback. Make invalidation replace all private SSA fields with inert zeros, terminating old live ranges. Before the original tracked CellWrite first-change/COW materialization call, discard that staged cache; after the call the pending bit remains false, so the next point performs full original admission/read fill. Already-private stores and no-op writes retain the cache. No pointer/owner is retained, no ABI/runtime helper/resource/semantic change.",
+  "invariants": [
+    "Unchanged30 idiomatic ports,inputs,C binaries/flags,arithmetic/tolerance,finite caps,split,cache/timing/protocol/objective. Compiler admission uses source operations,types,CFG,current loans; no benchmark names,MINI dimensions or input-value assumptions.",
+    "Cranelift sole Mech generator. Reuse native scalar/F64 emission, same-plan facts and exact frame recipes, current numeric loan/provenance, original word bank and COW/no-op/error machinery. Cache is bounded compiler SSA within one synchronous loan, with no serialized authority, pointer persistence, new helper/frame/ABI/mode/cache across invocations or per-operation runtime allocation. Efficient scalar/compression paths remain.",
+    "Rolling eligibility requires source-proved same-row checked column+1 post-store continuation of this exact updated matrix, single tracked matrix mutation, fixed affine offsets in both source axes, bounded source steps/keys and a single source-observed F64 result. Every other latch entry invalidates; any cold numeric reentry starts empty. Read reuse cannot cross an unproved mutation, phase/owner boundary or reshape. Only the last successfully completed store result can replace the overwritten center.",
+    "A fresh point retains complete checked U64 intermediate/row/column admission before any load. Consecutive-point reuse proves unchanged row expressions and shifted-by-one column expressions; retain upper/overflow guards for all source checked subexpressions, including unused ones. Current full geometry/epoch/span/capacity/schema/owner admission stays. Static axes only from the existing exact source witness and never appending views. No global readonly/alias/alignment claims.",
+    "Original separate scalar F64 operands/tree/term order/rounding remain; no reassociation,FMA,reciprocal substitution or independent SIMD of dependent outputs. Nonfinite final results invalidate and replay the exact original prefix at current state before exports/store. Prior completed in-place updates cannot be rewound. Preserve source first failures, no-op/COW order, aliases, atomic previous external output, finite denials and cleanup/retry.",
+    "All execution counters exactly match accepted59; no source work/comparison/visit/bill reduction or padding. Actual compiled stack/code envelopes remain checked; cache auxiliary initialization/emission counts remain within existing independently priced bounds. No Rust edits while build/test/profile/timing live.",
+    "Closest-parity-first target stays Seidel until accepted<=1.0x C. Maintain attained optimization parity wins; current set empty. Optimization only diagnoses/selects/promotes. Holdout independently reports and cannot tune/veto/rollback/retry.",
+    "Cache is an optional derived representation. Discarding its full SSA state at a cold COW/state edge cannot change source values or completed writes; every later reuse requires a newly staged finite point and completed original store/no-op. Preserve current source word outputs/address/input before discarding private fields. No cache float must survive the original first-change helper solely to populate an invalid cache."
+  ],
+  "qualification": "Retain11 focused groups and784 broad checks, all30 original/decoded/restored and both features. Add a public cached/uncached/original test with several no-op points before first mutation, first-change copy denial after entry, prior published outputs, exact reports/errors/callback counts/aliases and successful retry. Genuine Object must retain9-to3 source-read recipe/center reuse and materially reduce six vector-width cache spill/reloads versus rejected79c3 before any probe. Report actual code/stack and preserve every attempt.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts, zero samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push clean exact source and driver, one frozen900-observation formal run/29482 finite C liveouts and append immutable history61. Strict optimization-only Mech/C<7.852513248471486; holdout report-only. Report raw Mech and C/reference drift separately; restore exact accepted59 if gate fails. No attained parity wins yet.",
+  "performance_observations": 0,
+  "static_gate": "Before any performance sample, require the genuine Seidel numeric function to retain its9-to3 recipe and have fewer floating-vector stack accesses than the rejected79c3 Object. If the intended spill removal does not occur, retain diagnostics and do not select or time this source."
+}
