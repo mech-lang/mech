@@ -65,9 +65,9 @@ mod numeric_induction;
 mod numeric_matrix_sums;
 mod numeric_outlining;
 mod numeric_product_epilogues;
+mod numeric_product_views;
 mod numeric_product_quartets;
 mod numeric_product_rows;
-mod numeric_product_views;
 mod numeric_reduction_producers;
 mod numeric_summary_branches;
 mod numeric_transpose;
@@ -914,5 +914,3 @@ mod numeric_selected_initialization;
 
 mod ordered_map_dot_batches;
 mod ordered_map_dots;
-
-mod affine_map_cells;

@@ -17,7 +17,6 @@ struct AxisSelection {
     selected: Value,
     singleton: bool,
     full: bool,
-    split: bool,
 }
 enum Coordinates {
     Single {
@@ -88,7 +87,6 @@ impl AxisSelection {
             selected,
             singleton: comparison == Comparison::Eq,
             full: false,
-            split: comparison == Comparison::Ne,
         }
     }
     fn from_constraint(
@@ -112,16 +110,7 @@ impl AxisSelection {
             selected,
             singleton: false,
             full: true,
-            split: false,
         })
-    }
-    fn intervals(&self, b: &mut FunctionBuilder<'_>) -> Vec<(Value, Value)> {
-        let mut out = vec![(self.first, self.first_count)];
-        if self.split {
-            let tail = b.ins().isub(self.selected, self.first_count);
-            out.push((self.second, tail));
-        }
-        out
     }
     fn divisor(&self, b: &mut FunctionBuilder<'_>) -> Value {
         if self.singleton {
@@ -226,42 +215,6 @@ impl Selection {
             count,
             edge,
         })
-    }
-    /// Exact disjoint zero-based source boxes for independent cell evaluation.
-    /// Axis0 is the source element (column in a rectangle), axis1 the inner row.
-    /// This does not change selected publication or its initialization certificate.
-    pub(in crate::native_artifact::program::codegen) fn windows(
-        &self,
-        b: &mut FunctionBuilder<'_>,
-    ) -> Vec<([Value; 2], [Value; 2])> {
-        let zero = b.ins().iconst(types::I64, 0);
-        let one = b.ins().iconst(types::I64, 1);
-        if !self.rectangular {
-            let Coordinates::Single { range, .. } = &self.coordinates else {
-                unreachable!()
-            };
-            return range
-                .intervals(b)
-                .into_iter()
-                .map(|(first, count)| ([first, zero], [count, one]))
-                .collect();
-        }
-        let rows = b.ins().iconst(types::I64, self.rows as i64);
-        let columns = b.ins().iconst(types::I64, self.columns as i64);
-        let (row, column) = match &self.coordinates {
-            Coordinates::Single {
-                axis: Axis::Row,
-                range,
-            } => (range.intervals(b), vec![(zero, columns)]),
-            Coordinates::Single {
-                axis: Axis::Column,
-                range,
-            } => (vec![(zero, rows)], range.intervals(b)),
-            Coordinates::Rectangle { row, column } => (row.intervals(b), column.intervals(b)),
-        };
-        row.into_iter()
-            .flat_map(|(r, nr)| column.iter().map(move |&(c, nc)| ([c, r], [nc, nr])))
-            .collect()
     }
     pub(in crate::native_artifact::program::codegen) fn count(&self) -> Value {
         self.count

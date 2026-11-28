@@ -68,7 +68,6 @@ pub(in crate::native_artifact) fn emit_entry(
     counter_slot: usize,
     typed_folds: bool,
     ordered_dots: bool,
-    affine_cells: bool,
     exit: Block,
     error: Block,
 ) -> Result<(), NativeCompileError> {
@@ -140,7 +139,6 @@ pub(in crate::native_artifact) fn emit_entry(
         &captures,
         typed_folds,
         ordered_dots,
-        affine_cells,
         complete,
         miss,
         malformed,
@@ -200,7 +198,6 @@ pub(super) fn emit(
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
     ordered_dots: bool,
-    affine_cells: bool,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -213,7 +210,6 @@ pub(super) fn emit(
         captures,
         typed_folds,
         ordered_dots,
-        affine_cells,
         None,
         None,
         complete,
@@ -229,7 +225,6 @@ pub(super) fn emit_with_selection(
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
     ordered_dots: bool,
-    affine_cells: bool,
     selection: Option<&selection::Selection>,
     whole_output_initialized: Option<Value>,
     complete: Block,
@@ -402,25 +397,6 @@ pub(super) fn emit_with_selection(
             b, frame, region, plan, captures, &matrices, start, count, output, complete,
         )?;
     }
-    if affine_cells {
-        super::numeric_map_dots::cells::emit(
-            b,
-            frame,
-            region,
-            plan,
-            captures,
-            &matrices,
-            start,
-            count,
-            source_count,
-            inner_start,
-            inner_count,
-            output,
-            selection,
-            whole_output_initialized,
-            complete,
-        )?;
-    }
     // Source phi copies share a native SSA variable. Complete current-visits
     // and body inventories establish definite assignment before any use;
     // private body words need neither canonical slots nor runtime dispatch.
@@ -545,7 +521,6 @@ pub(super) fn emit_with_selection(
                 &captures,
                 typed_folds,
                 ordered_dots,
-                affine_cells,
                 index_miss,
             )?;
             b.def_var(words[&child.output(plan).get()], value);

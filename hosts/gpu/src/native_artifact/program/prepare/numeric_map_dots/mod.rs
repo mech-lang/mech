@@ -4,8 +4,6 @@ use super::*;
 use mech_engine::native_artifact::NativeScalarOp;
 mod affine;
 pub(in crate::native_artifact) use affine::{Expr, Index, Operand};
-mod cells;
-pub(in crate::native_artifact) use cells::{CellPath, CellProgram, CellValue};
 mod batch;
 pub(in crate::native_artifact) use batch::{Batch, Predicate};
 

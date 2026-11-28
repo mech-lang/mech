@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T14:28:58.430787+00:00",
+  "selected": false,
+  "compiler_fingerprint": "c946afc1ea23529c975b3e93b41ba5533227577b751b5d03bafd4d9591b0617f",
+  "driver_sha256": "7d296c5c1282f79061eb70c31037062295a3a0857dcfbf2089c467b7ed47ecde",
+  "observations": 210,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted58": 0.9727125117859827,
+    "regressions_over_five_percent": 4,
+    "all_visits_match": true,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": false
+  },
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight optimization15 GM accepted58/candidate medians. One prospective fresh-process probe; all observations retained.",
+  "decision": "Not selected because raw optimization speedup<=1. Exact accepted58 source restored. No formal run or holdout observation.",
+  "restored_compiler_fingerprint": "3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241",
+  "accepted_round": 58,
+  "history_entries": 59
+}

@@ -2931,3 +2931,9 @@ Accepted58 optimization-only CPU profiles
 Owned Durbin/Gram-Schmidt processes completed with finite C outputs and exact frozen counters. Their generated self-time fractions are39.66%/74.71%. Complete sampled numeric code is byte-identical to genuine accepted58 Objects; caller BL relocations resolve to same-PID captured numeric functions. Selected map bodies still execute repeated checked selector and word-transport work. This motivates source-closed typed affine cell kernels within the existing scratch/admission/publication boundary. No timing/history change or speedup forecast.
 
 [CPU telemetry](round-58-cpu-telemetry.json) · [Complete profile evidence](training-experiments/accepted58-phase-profile.json)
+
+Source-closed affine F64 map kernels: unselected probe
+
+The bounded piecewise typed kernel passed779 broad invocations,7 focused groups, both features, all30 source forms, and an exact17002-value optimization counter gate. Genuine Objects show typed SIMD updates and complete source-fee conservation. Its single210-observation optimization-only probe returned0.9727125117859827x raw speedup, with4 regressions over5%. It was not selected. All observations and attempted sources are retained. Exact accepted58 fingerprint3c94dd139dfe47d3fa85b32e72511a54a2f51e1e5c2be2e1fa7b6df24ad3b241 is restored; no formal history append or holdout observation. The recorded accepted scores remain8.144951071643966x /24.70557552923209x C.
+
+[Full probe and source restoration](training-experiments/affine-map-cells-probe.json) · [Selection](training-experiments/affine-map-cells-selection.json)

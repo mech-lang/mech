@@ -1360,9 +1360,6 @@ impl<'plan> CfgDefinition<'plan> {
                     controls.enabled(
                         crate::native_artifact::codegen::options::OptimizationPass::OrderedMapDots,
                     ),
-                    controls.enabled(
-                        crate::native_artifact::codegen::options::OptimizationPass::AffineMapCells,
-                    ),
                     blocks[exit as usize].expect("reachable numeric map exit"),
                     error,
                 )?;

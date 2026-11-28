@@ -16,6 +16,17 @@ fn windows(
         None => return Ok(vec![(zero, count)]),
     };
     let bound = context.word(b, predicate.bound)?;
+    let tail = b.ins().iadd_imm(count, -1);
+    let last = b.ins().iadd(start, tail);
+    let below = b.ins().icmp(IntCC::UnsignedLessThan, bound, start);
+    let above = b.ins().icmp(IntCC::UnsignedGreaterThan, bound, last);
+    let at_end = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, bound, last);
+    let difference = b.ins().isub(bound, start);
+    let before = b.ins().select(above, count, difference);
+    let before = b.ins().select(below, zero, before);
+    let successor = b.ins().iadd_imm(difference, 1);
+    let through = b.ins().select(at_end, count, successor);
+    let through = b.ins().select(below, zero, through);
     let op = if predicate.dot_when_true {
         predicate.op
     } else {
@@ -29,7 +40,17 @@ fn windows(
             _ => unreachable!("proved U64 comparison"),
         }
     };
-    Ok(super::windows::comparison(b, op, bound, start, count, true))
+    let rest_before = b.ins().isub(count, before);
+    let rest_through = b.ins().isub(count, through);
+    Ok(match op {
+        U64Lt => vec![(zero, before)],
+        U64Le => vec![(zero, through)],
+        U64Gt => vec![(through, rest_through)],
+        U64Ge => vec![(before, rest_before)],
+        U64Eq => vec![(before, b.ins().isub(through, before))],
+        U64Ne => vec![(zero, before), (through, rest_through)],
+        _ => unreachable!("proved U64 comparison"),
+    })
 }
 fn fill(b: &mut FunctionBuilder<'_>, output: Value, count: Value, word: Value) {
     let cursor = b.declare_var(types::I64);
