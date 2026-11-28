@@ -1,0 +1,2048 @@
+{
+  "schema": "mech.polybench.untimed-compiler-prototype.v1",
+  "created_at": "2026-11-28T17:26:47.418556+00:00",
+  "name": "single-column-cache-token",
+  "selected": false,
+  "complete": true,
+  "compiler_fingerprint": "6dc0ca325540233138efa65a1636c9bf4bd34c5566ead53660c1c04604371e5b",
+  "restored_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "plan": {
+    "schema": "mech.polybench.prospective-compiler-experiment.v1",
+    "created_at": "2026-11-28T17:19:33.967582+00:00",
+    "name": "single-column-cache-token",
+    "source_parent": "9fe3bf84185d3bc4102c51aa81fa9170466bf7dd",
+    "accepted_round": 59,
+    "accepted_scores": {
+      "optimization": 7.852513248471486,
+      "holdout": 23.989161547848273
+    },
+    "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+    "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+    "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+    "formal_history_index": 61,
+    "versions": {
+      "ir": 433,
+      "work": 157,
+      "abi": 48
+    },
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs"
+    ],
+    "active_target": {
+      "case": "seidel-2d",
+      "mech_over_c": 1.7111946615974802,
+      "mech_median_seconds": 0.000184667,
+      "c_median_seconds": 0.00010791700333356857
+    },
+    "foundation": "Exact fully qualified but unselected e5ac source99df4cef3d2bf4bfee0c476b5f1768b2c8fc5474. Keep both prior failed rolling probes; no retiming. Materially replace valid/pending/max-read-column cache control with one private last-column token and retain existing optional checked-intermediate guard.",
+    "profiling_basis": "training-experiments/accepted-seidel-credit-profile.json binds5468 accepted numeric bytes in PID93380;1701/1761=96.59% generated self. Accepted work credit remains in x3. Rejected e5ac has zero F64 vector stack accesses but work credit loads/stores atSP+8, and retains separate cache validity/pending/max-column words. Earlier source-bound profile shows credit stack accesses among hottest dependency locations. No exclusive-cost/hardware or speedup inference.",
+    "transformation": "Represent inactive cache by last source-read column0. Complete fresh admission guarantees every one-based source read column, hence its maximum, is positive. Source-proved exact sole CellWrite follows immediately; cache reuse is reachable only after its successful completion. All source failures exit the loan; COW/nonfinite replay/other state edges discard token/all cache fields. Already-private and no-op writes retain the staged token. Remove separate valid/pending SSA variables and finish-write publication. Reuse guard (last-1)<(columns-1), wrapping unsigned subtraction, is equivalent to0<last<columns on the private invariant last==0 or1<=last<=columns, including empty columns. Retain original optional max-checked overflow guard and full fresh preflight/F64/source fees/COW/error behavior.",
+    "invariants": [
+      "Unchanged30 idiomatic ports,inputs,C binaries/flags,arithmetic/tolerance,finite caps,split,cache/timing/protocol/objective. Compiler admission uses source operations,types,CFG,current loans; no benchmark names,MINI dimensions or input-value assumptions.",
+      "Cranelift sole Mech generator. Reuse native scalar/F64 emission, same-plan facts and exact frame recipes, current numeric loan/provenance, original word bank and COW/no-op/error machinery. Cache is bounded compiler SSA within one synchronous loan, with no serialized authority, pointer persistence, new helper/frame/ABI/mode/cache across invocations or per-operation runtime allocation. Efficient scalar/compression paths remain.",
+      "Rolling eligibility requires source-proved same-row checked column+1 post-store continuation of this exact updated matrix, single tracked matrix mutation, fixed affine offsets in both source axes, bounded source steps/keys and a single source-observed F64 result. Every other latch entry invalidates; any cold numeric reentry starts empty. Read reuse cannot cross an unproved mutation, phase/owner boundary or reshape. Only the last successfully completed store result can replace the overwritten center.",
+      "A fresh point retains complete checked U64 intermediate/row/column admission before any load. Consecutive-point reuse proves unchanged row expressions and shifted-by-one column expressions; retain upper/overflow guards for all source checked subexpressions, including unused ones. Current full geometry/epoch/span/capacity/schema/owner admission stays. Static axes only from the existing exact source witness and never appending views. No global readonly/alias/alignment claims.",
+      "Original separate scalar F64 operands/tree/term order/rounding remain; no reassociation,FMA,reciprocal substitution or independent SIMD of dependent outputs. Nonfinite final results invalidate and replay the exact original prefix at current state before exports/store. Prior completed in-place updates cannot be rewound. Preserve source first failures, no-op/COW order, aliases, atomic previous external output, finite denials and cleanup/retry.",
+      "All execution counters exactly match accepted59; no source work/comparison/visit/bill reduction or padding. Actual compiled stack/code envelopes remain checked; cache auxiliary initialization/emission counts remain within existing independently priced bounds. No Rust edits while build/test/profile/timing live.",
+      "Closest-parity-first target stays Seidel until accepted<=1.0x C. Maintain attained optimization parity wins; current set empty. Optimization only diagnoses/selects/promotes. Holdout independently reports and cannot tune/veto/rollback/retry.",
+      "Cache is an optional derived representation. Discarding its full SSA state at a cold COW/state edge cannot change source values or completed writes; every later reuse requires a newly staged finite point and completed original store/no-op. Preserve current source word outputs/address/input before discarding private fields. No cache float must survive the original first-change helper solely to populate an invalid cache.",
+      "Induction for private token: entry/invalidation is0. Fresh staged token is the exact maximum admitted one-based read column in1..columns. A reused point has prior token<columns, so exact source unit-column continuation stages previous+1 in1..columns. No observer can reenter prefix between staging and the sole store; source errors exit the native loan, and COW clears token before its original call. Thus early private staging cannot authorize an uncompleted source write. Source source/read/CFG witnesses remain private and rederived; no new external authority."
+    ],
+    "qualification": "Retain12 focused groups plus add direct native guard tests over legal private token states including0/empty axes/1/u64::MAX. Maintain all30 original/decoded/restored, broad numeric/scalar/compression/resource/image/ABI and both features. Before broad qualification or any timing, emit genuine Seidel Object from a frozen source snapshot and inspect credit compare/debit: direct register balance with no hot credit stack roundtrip, zero vector stack accesses, and unchanged9-to3 recipe. If this intended transformation is absent, retain prototype evidence and restore accepted59 without a probe. If present, fully qualify the same source, exact17002 optimization C/counter gate and genuine O15 Object census, commit/push then exactly one210-observation probe. Preserve all attempts.",
+    "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts, zero samples.",
+    "training_probe": {
+      "actors": [
+        "accepted59",
+        "candidate"
+      ],
+      "samples_per_actor_case": 7,
+      "observations": 210,
+      "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+    },
+    "formal_acceptance": "If selected commit/push clean exact source and driver, one frozen900-observation formal run/29482 finite C liveouts and append immutable history61. Strict optimization-only Mech/C<7.852513248471486; holdout report-only. Report raw Mech and C/reference drift separately; restore exact accepted59 if gate fails. No attained parity wins yet.",
+    "performance_observations": 0,
+    "static_gate": "Direct register work-credit compare/debit without hot stack balance load/store; zero vector stack accesses and9-to3 read recipe. Source/code/Object binding and actual assembly, not an instruction-count forecast. A failed prototype gate is not selected or timed."
+  },
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "a161c1b7dfade5819681aa4a19328a93b60c76d9a5b26ee53c7f789298603045",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "f3be12c5db4d07d742c0999201f37b7ad0b83e505b0a0bd1f1c17b8326d9f031",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "b8d7d611fd5d531a7cd97acd85a30f01632bc4dea78bed4c323f34ce7c29a35e",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "99ad4f1ef1aa8017ac68d2f1b2f9e0748948f32510bef5ada5da89e5afcdbfc5",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "088408a174daa7970e568f1ea66c968e3e74407f92d9cb9d40b1f58fb6b33c9b",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": "c4dd27feb6fb0358a8af6c8ee16ec305bbb94b0c8f0bfa89cb3756103e9debf2",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d"
+  },
+  "focused_checks": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "cell_prefix",
+      "--test-threads=1"
+    ],
+    "compiler_fingerprint": "6dc0ca325540233138efa65a1636c9bf4bd34c5566ead53660c1c04604371e5b",
+    "exit_code": 0,
+    "source_unchanged": true,
+    "wall_seconds": 113.39593791589141,
+    "passed_tests": [
+      13
+    ]
+  },
+  "prototype": {
+    "schema": "mech.polybench.source-frozen-static-prototype.v1",
+    "compiler_fingerprint": "6dc0ca325540233138efa65a1636c9bf4bd34c5566ead53660c1c04604371e5b",
+    "driver_sha256": "9b6a38c9185b16a8fc584f1ba8f65a109fd73a42d3821e8b0160983197b7e2c2",
+    "object_sha256": "f48cd1ae1ee9f4087cf60a822e700b38f819cfd05e400ff0e23daee27c41e671",
+    "object_executed": false,
+    "code_bytes": 16236,
+    "reported_stack_bytes": 272,
+    "rolling_recipes": [
+      [
+        56,
+        87,
+        91,
+        9,
+        3
+      ]
+    ],
+    "vector_stack_accesses": [],
+    "debits": [
+      {
+        "constant_offset": "0x318",
+        "subtract_offset": "0x324",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x320",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x30c",
+            "instruction": "cmp\tx0, #1"
+          },
+          {
+            "offset": "0x310",
+            "instruction": "b.ne\t0xf38 <_mech_canonical_program_entry_v1_numeric_5+0xf38>"
+          },
+          {
+            "offset": "0x314",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x318",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x31c",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x320",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x324",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x328",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x32c",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x330",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x334",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x338",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x33c",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x340",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x344",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0xc8c",
+        "subtract_offset": "0xc98",
+        "instruction": "sub\tx7, x8, x7",
+        "balance_loads": [
+          {
+            "offset": "0xc94",
+            "instruction": "ldur\tx8, [sp, #8]"
+          }
+        ],
+        "balance_stores": [
+          {
+            "offset": "0xc9c",
+            "instruction": "stur\tx7, [sp, #8]"
+          }
+        ],
+        "point_compare_follows": true,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xc80",
+            "instruction": "madd\tx9, x26, x9, x3"
+          },
+          {
+            "offset": "0xc84",
+            "instruction": "ldr\tx9, [x6, x9, lsl #3]"
+          },
+          {
+            "offset": "0xc88",
+            "instruction": "b\t0x1514 <_mech_canonical_program_entry_v1_numeric_5+0x1514>"
+          },
+          {
+            "offset": "0xc8c",
+            "instruction": "mov\tw7, #12472"
+          },
+          {
+            "offset": "0xc90",
+            "instruction": "movk\tw7, #1, lsl #16"
+          },
+          {
+            "offset": "0xc94",
+            "instruction": "ldur\tx8, [sp, #8]"
+          },
+          {
+            "offset": "0xc98",
+            "instruction": "sub\tx7, x8, x7"
+          },
+          {
+            "offset": "0xc9c",
+            "instruction": "stur\tx7, [sp, #8]"
+          },
+          {
+            "offset": "0xca0",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0xca4",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0xca8",
+            "instruction": "cmp\tx11, x14"
+          },
+          {
+            "offset": "0xcac",
+            "instruction": "b.ne\t0xcb8 <_mech_canonical_program_entry_v1_numeric_5+0xcb8>"
+          },
+          {
+            "offset": "0xcb0",
+            "instruction": "ldur\tx7, [sp, #16]"
+          },
+          {
+            "offset": "0xcb4",
+            "instruction": "b\t0xd78 <_mech_canonical_program_entry_v1_numeric_5+0xd78>"
+          },
+          {
+            "offset": "0xcb8",
+            "instruction": "ldur\tx7, [sp, #16]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0xdcc",
+        "subtract_offset": "0xdd8",
+        "instruction": "sub\tx8, x11, x8",
+        "balance_loads": [
+          {
+            "offset": "0xdd4",
+            "instruction": "ldur\tx11, [sp, #8]"
+          }
+        ],
+        "balance_stores": [
+          {
+            "offset": "0xddc",
+            "instruction": "stur\tx8, [sp, #8]"
+          }
+        ],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xdc0",
+            "instruction": "add\tx2, x2, #1"
+          },
+          {
+            "offset": "0xdc4",
+            "instruction": "mov\tx3, #2"
+          },
+          {
+            "offset": "0xdc8",
+            "instruction": "mov\tx0, #0"
+          },
+          {
+            "offset": "0xdcc",
+            "instruction": "mov\tw8, #12472"
+          },
+          {
+            "offset": "0xdd0",
+            "instruction": "movk\tw8, #1, lsl #16"
+          },
+          {
+            "offset": "0xdd4",
+            "instruction": "ldur\tx11, [sp, #8]"
+          },
+          {
+            "offset": "0xdd8",
+            "instruction": "sub\tx8, x11, x8"
+          },
+          {
+            "offset": "0xddc",
+            "instruction": "stur\tx8, [sp, #8]"
+          },
+          {
+            "offset": "0xde0",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0xde4",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0xde8",
+            "instruction": "movi.2s\tv22, #0"
+          },
+          {
+            "offset": "0xdec",
+            "instruction": "ldur\tx11, [sp, #24]"
+          },
+          {
+            "offset": "0xdf0",
+            "instruction": "mov\tx12, x0"
+          },
+          {
+            "offset": "0xdf4",
+            "instruction": "mov\tx13, x0"
+          },
+          {
+            "offset": "0xdf8",
+            "instruction": "ldur\tx14, [sp, #24]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0xe30",
+        "subtract_offset": "0xe3c",
+        "instruction": "sub\tx3, x3, x14",
+        "balance_loads": [
+          {
+            "offset": "0xe38",
+            "instruction": "ldur\tx3, [sp, #8]"
+          }
+        ],
+        "balance_stores": [
+          {
+            "offset": "0xe40",
+            "instruction": "stur\tx3, [sp, #8]"
+          }
+        ],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xe24",
+            "instruction": "sub\tx21, x21, #1"
+          },
+          {
+            "offset": "0xe28",
+            "instruction": "mov\tx2, #2"
+          },
+          {
+            "offset": "0xe2c",
+            "instruction": "mov\tx0, #0"
+          },
+          {
+            "offset": "0xe30",
+            "instruction": "mov\tw14, #12472"
+          },
+          {
+            "offset": "0xe34",
+            "instruction": "movk\tw14, #1, lsl #16"
+          },
+          {
+            "offset": "0xe38",
+            "instruction": "ldur\tx3, [sp, #8]"
+          },
+          {
+            "offset": "0xe3c",
+            "instruction": "sub\tx3, x3, x14"
+          },
+          {
+            "offset": "0xe40",
+            "instruction": "stur\tx3, [sp, #8]"
+          },
+          {
+            "offset": "0xe44",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0xe48",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0xe4c",
+            "instruction": "movi.2s\tv22, #0"
+          },
+          {
+            "offset": "0xe50",
+            "instruction": "mov\tx3, x2"
+          },
+          {
+            "offset": "0xe54",
+            "instruction": "mov\tx12, x0"
+          },
+          {
+            "offset": "0xe58",
+            "instruction": "ldur\tx14, [sp, #24]"
+          },
+          {
+            "offset": "0xe5c",
+            "instruction": "mov\tx15, x0"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0xe88",
+        "subtract_offset": "0xe94",
+        "instruction": "sub\tx3, x3, x2",
+        "balance_loads": [
+          {
+            "offset": "0xe90",
+            "instruction": "ldur\tx3, [sp, #8]"
+          }
+        ],
+        "balance_stores": [
+          {
+            "offset": "0xe98",
+            "instruction": "stur\tx3, [sp, #8]"
+          }
+        ],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xe7c",
+            "instruction": "stur\tx8, [sp, #48]"
+          },
+          {
+            "offset": "0xe80",
+            "instruction": "mov\tx21, #0"
+          },
+          {
+            "offset": "0xe84",
+            "instruction": "mov\tx0, #1"
+          },
+          {
+            "offset": "0xe88",
+            "instruction": "mov\tw2, #12472"
+          },
+          {
+            "offset": "0xe8c",
+            "instruction": "movk\tw2, #1, lsl #16"
+          },
+          {
+            "offset": "0xe90",
+            "instruction": "ldur\tx3, [sp, #8]"
+          },
+          {
+            "offset": "0xe94",
+            "instruction": "sub\tx3, x3, x2"
+          },
+          {
+            "offset": "0xe98",
+            "instruction": "stur\tx3, [sp, #8]"
+          },
+          {
+            "offset": "0xe9c",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0xea0",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0xea4",
+            "instruction": "movi.2s\tv22, #0"
+          },
+          {
+            "offset": "0xea8",
+            "instruction": "mov\tx2, x21"
+          },
+          {
+            "offset": "0xeac",
+            "instruction": "mov\tx3, x21"
+          },
+          {
+            "offset": "0xeb0",
+            "instruction": "mov\tx12, x21"
+          },
+          {
+            "offset": "0xeb4",
+            "instruction": "mov\tx15, x0"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0xf44",
+        "subtract_offset": "0xf50",
+        "instruction": "sub\tx6, x7, x6",
+        "balance_loads": [
+          {
+            "offset": "0xf4c",
+            "instruction": "ldur\tx7, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xf38",
+            "instruction": "mov\tx6, #92"
+          },
+          {
+            "offset": "0xf3c",
+            "instruction": "str\tx6, [x24, #72]"
+          },
+          {
+            "offset": "0xf40",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0xf44",
+            "instruction": "mov\tw6, #12472"
+          },
+          {
+            "offset": "0xf48",
+            "instruction": "movk\tw6, #1, lsl #16"
+          },
+          {
+            "offset": "0xf4c",
+            "instruction": "ldur\tx7, [sp, #8]"
+          },
+          {
+            "offset": "0xf50",
+            "instruction": "sub\tx6, x7, x6"
+          },
+          {
+            "offset": "0xf54",
+            "instruction": "str\tx6, [x28, #664]"
+          },
+          {
+            "offset": "0xf58",
+            "instruction": "sub\tx6, x4, #1"
+          },
+          {
+            "offset": "0xf5c",
+            "instruction": "str\tx6, [x28, #672]"
+          },
+          {
+            "offset": "0xf60",
+            "instruction": "mov\tx6, #4"
+          },
+          {
+            "offset": "0xf64",
+            "instruction": "b\t0x10d4 <_mech_canonical_program_entry_v1_numeric_5+0x10d4>"
+          },
+          {
+            "offset": "0xf68",
+            "instruction": "cmp\tx2, #0"
+          },
+          {
+            "offset": "0xf6c",
+            "instruction": "cset\tx7, ne"
+          },
+          {
+            "offset": "0xf70",
+            "instruction": "cmp\tx3, #0"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1048",
+        "subtract_offset": "0x1054",
+        "instruction": "sub\tx7, x8, x7",
+        "balance_loads": [
+          {
+            "offset": "0x1050",
+            "instruction": "ldur\tx8, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x103c",
+            "instruction": "str\tx26, [x28, #344]"
+          },
+          {
+            "offset": "0x1040",
+            "instruction": "str\tx3, [x28, #352]"
+          },
+          {
+            "offset": "0x1044",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1048",
+            "instruction": "mov\tw7, #12472"
+          },
+          {
+            "offset": "0x104c",
+            "instruction": "movk\tw7, #1, lsl #16"
+          },
+          {
+            "offset": "0x1050",
+            "instruction": "ldur\tx8, [sp, #8]"
+          },
+          {
+            "offset": "0x1054",
+            "instruction": "sub\tx7, x8, x7"
+          },
+          {
+            "offset": "0x1058",
+            "instruction": "str\tx7, [x28, #664]"
+          },
+          {
+            "offset": "0x105c",
+            "instruction": "sub\tx7, x4, #1"
+          },
+          {
+            "offset": "0x1060",
+            "instruction": "str\tx7, [x28, #672]"
+          },
+          {
+            "offset": "0x1064",
+            "instruction": "b\t0x10d4 <_mech_canonical_program_entry_v1_numeric_5+0x10d4>"
+          },
+          {
+            "offset": "0x1068",
+            "instruction": "cmp\tx3, #0"
+          },
+          {
+            "offset": "0x106c",
+            "instruction": "b.ne\t0x1114 <_mech_canonical_program_entry_v1_numeric_5+0x1114>"
+          },
+          {
+            "offset": "0x1070",
+            "instruction": "mov\tx6, #58"
+          },
+          {
+            "offset": "0x1074",
+            "instruction": "str\tx6, [x24, #72]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x10b8",
+        "subtract_offset": "0x10c4",
+        "instruction": "sub\tx7, x8, x7",
+        "balance_loads": [
+          {
+            "offset": "0x10c0",
+            "instruction": "ldur\tx8, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x10ac",
+            "instruction": "sub\tx7, x26, #1"
+          },
+          {
+            "offset": "0x10b0",
+            "instruction": "str\tx7, [x28, #360]"
+          },
+          {
+            "offset": "0x10b4",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x10b8",
+            "instruction": "mov\tw7, #12472"
+          },
+          {
+            "offset": "0x10bc",
+            "instruction": "movk\tw7, #1, lsl #16"
+          },
+          {
+            "offset": "0x10c0",
+            "instruction": "ldur\tx8, [sp, #8]"
+          },
+          {
+            "offset": "0x10c4",
+            "instruction": "sub\tx7, x8, x7"
+          },
+          {
+            "offset": "0x10c8",
+            "instruction": "str\tx7, [x28, #664]"
+          },
+          {
+            "offset": "0x10cc",
+            "instruction": "sub\tx7, x4, #1"
+          },
+          {
+            "offset": "0x10d0",
+            "instruction": "str\tx7, [x28, #672]"
+          },
+          {
+            "offset": "0x10d4",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x10d8",
+            "instruction": "mov\tw9, #12472"
+          },
+          {
+            "offset": "0x10dc",
+            "instruction": "movk\tw9, #1, lsl #16"
+          },
+          {
+            "offset": "0x10e0",
+            "instruction": "ldur\tx11, [sp, #8]"
+          },
+          {
+            "offset": "0x10e4",
+            "instruction": "sub\tx9, x11, x9"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x10d8",
+        "subtract_offset": "0x10e4",
+        "instruction": "sub\tx9, x11, x9",
+        "balance_loads": [
+          {
+            "offset": "0x10e0",
+            "instruction": "ldur\tx11, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x10cc",
+            "instruction": "sub\tx7, x4, #1"
+          },
+          {
+            "offset": "0x10d0",
+            "instruction": "str\tx7, [x28, #672]"
+          },
+          {
+            "offset": "0x10d4",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x10d8",
+            "instruction": "mov\tw9, #12472"
+          },
+          {
+            "offset": "0x10dc",
+            "instruction": "movk\tw9, #1, lsl #16"
+          },
+          {
+            "offset": "0x10e0",
+            "instruction": "ldur\tx11, [sp, #8]"
+          },
+          {
+            "offset": "0x10e4",
+            "instruction": "sub\tx9, x11, x9"
+          },
+          {
+            "offset": "0x10e8",
+            "instruction": "str\tx9, [x28, #664]"
+          },
+          {
+            "offset": "0x10ec",
+            "instruction": "sub\tx10, x4, #1"
+          },
+          {
+            "offset": "0x10f0",
+            "instruction": "str\tx10, [x28, #672]"
+          },
+          {
+            "offset": "0x10f4",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x10f8",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x10fc",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x1100",
+            "instruction": "add\tx14, x1, #1"
+          },
+          {
+            "offset": "0x1104",
+            "instruction": "str\tx14, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1158",
+        "subtract_offset": "0x1164",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x1160",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x114c",
+            "instruction": "sub\tx6, x3, #1"
+          },
+          {
+            "offset": "0x1150",
+            "instruction": "str\tx6, [x28, #368]"
+          },
+          {
+            "offset": "0x1154",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1158",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x115c",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x1160",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x1164",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x1168",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x116c",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x1170",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x1174",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x1178",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x117c",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x1180",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x1184",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x11d4",
+        "subtract_offset": "0x11e0",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x11dc",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x11c8",
+            "instruction": "sub\tx6, x26, #1"
+          },
+          {
+            "offset": "0x11cc",
+            "instruction": "str\tx6, [x28, #384]"
+          },
+          {
+            "offset": "0x11d0",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x11d4",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x11d8",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x11dc",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x11e0",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x11e4",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x11e8",
+            "instruction": "sub\tx6, x4, #1"
+          },
+          {
+            "offset": "0x11ec",
+            "instruction": "str\tx6, [x28, #672]"
+          },
+          {
+            "offset": "0x11f0",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x11f4",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x11f8",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x11fc",
+            "instruction": "add\tx10, x1, #1"
+          },
+          {
+            "offset": "0x1200",
+            "instruction": "str\tx10, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1248",
+        "subtract_offset": "0x1254",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x1250",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x123c",
+            "instruction": "add\tx6, x3, #1"
+          },
+          {
+            "offset": "0x1240",
+            "instruction": "str\tx6, [x28, #416]"
+          },
+          {
+            "offset": "0x1244",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1248",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x124c",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x1250",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x1254",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x1258",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x125c",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x1260",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x1264",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x1268",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x126c",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x1270",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x1274",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x12bc",
+        "subtract_offset": "0x12c8",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x12c4",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x12b0",
+            "instruction": "sub\tx6, x3, #1"
+          },
+          {
+            "offset": "0x12b4",
+            "instruction": "str\tx6, [x28, #440]"
+          },
+          {
+            "offset": "0x12b8",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x12bc",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x12c0",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x12c4",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x12c8",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x12cc",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x12d0",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x12d4",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x12d8",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x12dc",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x12e0",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x12e4",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x12e8",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1320",
+        "subtract_offset": "0x132c",
+        "instruction": "sub\tx10, x5, x10",
+        "balance_loads": [
+          {
+            "offset": "0x1328",
+            "instruction": "ldur\tx5, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x1314",
+            "instruction": "str\tx26, [x28, #344]"
+          },
+          {
+            "offset": "0x1318",
+            "instruction": "str\tx3, [x28, #352]"
+          },
+          {
+            "offset": "0x131c",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1320",
+            "instruction": "mov\tw10, #12472"
+          },
+          {
+            "offset": "0x1324",
+            "instruction": "movk\tw10, #1, lsl #16"
+          },
+          {
+            "offset": "0x1328",
+            "instruction": "ldur\tx5, [sp, #8]"
+          },
+          {
+            "offset": "0x132c",
+            "instruction": "sub\tx10, x5, x10"
+          },
+          {
+            "offset": "0x1330",
+            "instruction": "str\tx10, [x28, #664]"
+          },
+          {
+            "offset": "0x1334",
+            "instruction": "sub\tx11, x4, #1"
+          },
+          {
+            "offset": "0x1338",
+            "instruction": "str\tx11, [x28, #672]"
+          },
+          {
+            "offset": "0x133c",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x1340",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x1344",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x1348",
+            "instruction": "add\tx15, x1, #1"
+          },
+          {
+            "offset": "0x134c",
+            "instruction": "str\tx15, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1388",
+        "subtract_offset": "0x1394",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x1390",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x137c",
+            "instruction": "add\tx6, x3, #1"
+          },
+          {
+            "offset": "0x1380",
+            "instruction": "str\tx6, [x28, #480]"
+          },
+          {
+            "offset": "0x1384",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1388",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x138c",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x1390",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x1394",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x1398",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x139c",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x13a0",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x13a4",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x13a8",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x13ac",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x13b0",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x13b4",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x13fc",
+        "subtract_offset": "0x1408",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x1404",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x13f0",
+            "instruction": "sub\tx6, x3, #1"
+          },
+          {
+            "offset": "0x13f4",
+            "instruction": "str\tx6, [x28, #512]"
+          },
+          {
+            "offset": "0x13f8",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x13fc",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x1400",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x1404",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x1408",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x140c",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x1410",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x1414",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x1418",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x141c",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x1420",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x1424",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x1428",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x1464",
+        "subtract_offset": "0x1470",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x146c",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x1458",
+            "instruction": "add\tx14, x26, #1"
+          },
+          {
+            "offset": "0x145c",
+            "instruction": "str\tx14, [x28, #536]"
+          },
+          {
+            "offset": "0x1460",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x1464",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x1468",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x146c",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x1470",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x1474",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x1478",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x147c",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x1480",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x1484",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x1488",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x148c",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0x1490",
+            "instruction": "str\tx1, [x28, #944]"
+          }
+        ]
+      },
+      {
+        "constant_offset": "0x14d0",
+        "subtract_offset": "0x14dc",
+        "instruction": "sub\tx5, x6, x5",
+        "balance_loads": [
+          {
+            "offset": "0x14d8",
+            "instruction": "ldur\tx6, [sp, #8]"
+          }
+        ],
+        "balance_stores": [],
+        "point_compare_follows": false,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0x14c4",
+            "instruction": "add\tx6, x3, #1"
+          },
+          {
+            "offset": "0x14c8",
+            "instruction": "str\tx6, [x28, #568]"
+          },
+          {
+            "offset": "0x14cc",
+            "instruction": "str\tx5, [x28, #656]"
+          },
+          {
+            "offset": "0x14d0",
+            "instruction": "mov\tw5, #12472"
+          },
+          {
+            "offset": "0x14d4",
+            "instruction": "movk\tw5, #1, lsl #16"
+          },
+          {
+            "offset": "0x14d8",
+            "instruction": "ldur\tx6, [sp, #8]"
+          },
+          {
+            "offset": "0x14dc",
+            "instruction": "sub\tx5, x6, x5"
+          },
+          {
+            "offset": "0x14e0",
+            "instruction": "str\tx5, [x28, #664]"
+          },
+          {
+            "offset": "0x14e4",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0x14e8",
+            "instruction": "str\tx4, [x28, #672]"
+          },
+          {
+            "offset": "0x14ec",
+            "instruction": "str\tx21, [x28, #688]"
+          },
+          {
+            "offset": "0x14f0",
+            "instruction": "str\tx2, [x28, #696]"
+          },
+          {
+            "offset": "0x14f4",
+            "instruction": "str\tx3, [x28, #704]"
+          },
+          {
+            "offset": "0x14f8",
+            "instruction": "add\tx3, x1, #1"
+          },
+          {
+            "offset": "0x14fc",
+            "instruction": "str\tx3, [x28, #944]"
+          }
+        ]
+      }
+    ],
+    "point_debits": [
+      {
+        "constant_offset": "0xc8c",
+        "subtract_offset": "0xc98",
+        "instruction": "sub\tx7, x8, x7",
+        "balance_loads": [
+          {
+            "offset": "0xc94",
+            "instruction": "ldur\tx8, [sp, #8]"
+          }
+        ],
+        "balance_stores": [
+          {
+            "offset": "0xc9c",
+            "instruction": "stur\tx7, [sp, #8]"
+          }
+        ],
+        "point_compare_follows": true,
+        "direct_register_balance": false,
+        "window": [
+          {
+            "offset": "0xc80",
+            "instruction": "madd\tx9, x26, x9, x3"
+          },
+          {
+            "offset": "0xc84",
+            "instruction": "ldr\tx9, [x6, x9, lsl #3]"
+          },
+          {
+            "offset": "0xc88",
+            "instruction": "b\t0x1514 <_mech_canonical_program_entry_v1_numeric_5+0x1514>"
+          },
+          {
+            "offset": "0xc8c",
+            "instruction": "mov\tw7, #12472"
+          },
+          {
+            "offset": "0xc90",
+            "instruction": "movk\tw7, #1, lsl #16"
+          },
+          {
+            "offset": "0xc94",
+            "instruction": "ldur\tx8, [sp, #8]"
+          },
+          {
+            "offset": "0xc98",
+            "instruction": "sub\tx7, x8, x7"
+          },
+          {
+            "offset": "0xc9c",
+            "instruction": "stur\tx7, [sp, #8]"
+          },
+          {
+            "offset": "0xca0",
+            "instruction": "sub\tx4, x4, #1"
+          },
+          {
+            "offset": "0xca4",
+            "instruction": "add\tx1, x1, #1"
+          },
+          {
+            "offset": "0xca8",
+            "instruction": "cmp\tx11, x14"
+          },
+          {
+            "offset": "0xcac",
+            "instruction": "b.ne\t0xcb8 <_mech_canonical_program_entry_v1_numeric_5+0xcb8>"
+          },
+          {
+            "offset": "0xcb0",
+            "instruction": "ldur\tx7, [sp, #16]"
+          },
+          {
+            "offset": "0xcb4",
+            "instruction": "b\t0xd78 <_mech_canonical_program_entry_v1_numeric_5+0xd78>"
+          },
+          {
+            "offset": "0xcb8",
+            "instruction": "ldur\tx7, [sp, #16]"
+          }
+        ]
+      }
+    ],
+    "passed": false,
+    "source_unchanged": true,
+    "performance_observations": 0,
+    "interpretation": "Inspect actual source-fee balance storage and private source-read recipe. This is a static prototype gate, not performance qualification or a latency/hardware forecast."
+  },
+  "interpretation": {
+    "scope": "Optimization Seidel only; untimed source-frozen prototype. No full performance qualification, probe, formal history append or holdout observation.",
+    "selected": false,
+    "reason": "Preregistered actual credit-register gate failed. Reducing cache control to one scalar word did not remove the per-point work-credit load/store atSP+8. Do not infer a speedup from smaller code or take an additional timing probe.",
+    "actual_transformation": "Private zero/positive maximum-read-column token replaces explicit valid/pending words; finite staging and source CFG exclude reuse before the sole completed store. Full original preflight/arithmetic, first-error/no-op/COW/alias behavior and all source fees retained. Native guard tests cover legal token states at empty/one/extreme columns and the independent checked-intermediate overflow guard.",
+    "qualification": "13 focused groups pass, including direct native emitter and original/decoded/restored source comparisons, late/overflow/nonfinite failures, no-op-before-COW denial, prior output/aliases and retry. Broader all30/both-feature checks and timing were intentionally not started because the required physical credit change did not occur.",
+    "actual_static": {
+      "code_bytes": 16236,
+      "reported_native_stack_bytes": 272,
+      "vector_stack_accesses": 0,
+      "rolling_recipes": [
+        [
+          56,
+          87,
+          91,
+          9,
+          3
+        ]
+      ],
+      "point_credit_debits": [
+        {
+          "constant_offset": "0xc8c",
+          "subtract_offset": "0xc98",
+          "instruction": "sub\tx7, x8, x7",
+          "balance_loads": [
+            {
+              "offset": "0xc94",
+              "instruction": "ldur\tx8, [sp, #8]"
+            }
+          ],
+          "balance_stores": [
+            {
+              "offset": "0xc9c",
+              "instruction": "stur\tx7, [sp, #8]"
+            }
+          ],
+          "point_compare_follows": true,
+          "direct_register_balance": false,
+          "window": [
+            {
+              "offset": "0xc80",
+              "instruction": "madd\tx9, x26, x9, x3"
+            },
+            {
+              "offset": "0xc84",
+              "instruction": "ldr\tx9, [x6, x9, lsl #3]"
+            },
+            {
+              "offset": "0xc88",
+              "instruction": "b\t0x1514 <_mech_canonical_program_entry_v1_numeric_5+0x1514>"
+            },
+            {
+              "offset": "0xc8c",
+              "instruction": "mov\tw7, #12472"
+            },
+            {
+              "offset": "0xc90",
+              "instruction": "movk\tw7, #1, lsl #16"
+            },
+            {
+              "offset": "0xc94",
+              "instruction": "ldur\tx8, [sp, #8]"
+            },
+            {
+              "offset": "0xc98",
+              "instruction": "sub\tx7, x8, x7"
+            },
+            {
+              "offset": "0xc9c",
+              "instruction": "stur\tx7, [sp, #8]"
+            },
+            {
+              "offset": "0xca0",
+              "instruction": "sub\tx4, x4, #1"
+            },
+            {
+              "offset": "0xca4",
+              "instruction": "add\tx1, x1, #1"
+            },
+            {
+              "offset": "0xca8",
+              "instruction": "cmp\tx11, x14"
+            },
+            {
+              "offset": "0xcac",
+              "instruction": "b.ne\t0xcb8 <_mech_canonical_program_entry_v1_numeric_5+0xcb8>"
+            },
+            {
+              "offset": "0xcb0",
+              "instruction": "ldur\tx7, [sp, #16]"
+            },
+            {
+              "offset": "0xcb4",
+              "instruction": "b\t0xd78 <_mech_canonical_program_entry_v1_numeric_5+0xd78>"
+            },
+            {
+              "offset": "0xcb8",
+              "instruction": "ldur\tx7, [sp, #16]"
+            }
+          ]
+        }
+      ]
+    },
+    "next_direction": "Stop scalar cache-metadata tweaks. Inspect a general source-proved control-flow representation of cache state, or another way to eliminate complete per-point ownership/credit work. A fused finite point producer plus its sole write can expose successful/private/no-op continuations separately from original fallback and COW continuations. Encoding valid/invalid cache entry in CFG edges may remove the extra loop-carried control word entirely, retain FP values only on the producer-success edge, and make private-owner loop facts available. Keep all source fees, failure/alias/COW semantics and exact scalar order; do not repeat the rejected generic private-first or global F64-home changes. Require actual physical work removal and source proof before timing.",
+    "official_performance_observations": 0
+  },
+  "archives": {
+    "apply-source.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/apply-source.py.gz",
+      "sha256": "7a6379c57deca06913524d3d66f911fc1fe4895217850c4214cb72dde87eb6ed",
+      "compressed_sha256": "a04251cd08789ecf315c3edfffe3fed359a503bad74654533c03f512f96204f5"
+    },
+    "attempt-01/focused-result.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/focused-result.json.gz",
+      "sha256": "4a72ca713e4c20831eda7036e804c8c1868afe89cb13e868d4c1a2fd7c23f854",
+      "compressed_sha256": "52145561218786ef49930798fc86a0edde1b8d442dbaf712116af66c125cf21f"
+    },
+    "attempt-01/focused.log": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/focused.log.gz",
+      "sha256": "6c9a5f587b824609b045d602511d68b0ce81660f5fe6084bcfc493d1b6c8eb01",
+      "compressed_sha256": "22d2c7e3ab9ed18824005a4c979716dd640def5f1004d20c4733e9a0a890f5ee"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "a161c1b7dfade5819681aa4a19328a93b60c76d9a5b26ee53c7f789298603045",
+      "compressed_sha256": "9ca106f84d6aeb68747d858209117d5fb2cf7b471b2e87b88fc4c4bfde08b622"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "b8d7d611fd5d531a7cd97acd85a30f01632bc4dea78bed4c323f34ce7c29a35e",
+      "compressed_sha256": "7bf7e1a85a19d1c701b1a8ef804bc491e2e8861c2483a1fe60fe0e5340134f23"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+      "compressed_sha256": "4a1354fa5e4fcfa1dbd30d7ae25dbb1c4a458d211e61895bd1caec0c935556fc"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs.gz",
+      "sha256": "c4dd27feb6fb0358a8af6c8ee16ec305bbb94b0c8f0bfa89cb3756103e9debf2",
+      "compressed_sha256": "055b4630446838f38498fa145929bffdbdf6cfb215631579f39eb64852a9b312"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs.gz",
+      "sha256": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+      "compressed_sha256": "57523e503f51128f09928c3766b1d572ce32f5d2582bdf3876e666e4074af091"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d",
+      "compressed_sha256": "a6049e3ad3955899b7d7ffdf45b30ce407015be9c6f01298183e4ae4a9c53c90"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "f3be12c5db4d07d742c0999201f37b7ad0b83e505b0a0bd1f1c17b8326d9f031",
+      "compressed_sha256": "e582f058ac9004d5ed068bc1d41554f504d540b0576718e5f7667d4539c436ff"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "088408a174daa7970e568f1ea66c968e3e74407f92d9cb9d40b1f58fb6b33c9b",
+      "compressed_sha256": "51a42acb41fbea0438076dc92afd33bde1c9966266319b0d1cd2f28dd2aa4df0"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "99ad4f1ef1aa8017ac68d2f1b2f9e0748948f32510bef5ada5da89e5afcdbfc5",
+      "compressed_sha256": "35a1d158e444988a5cb05d989e193c91f480aaf1671045be01ef773688795fdb"
+    },
+    "attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/audit-results.py.gz",
+      "sha256": "11a9616294298aefc2169ad1c1e901a7e3a694e3381950ad3d637966d756d8d5",
+      "compressed_sha256": "7e5adc704769449a9e2ca2876d660bce6f212edd3d5fc87ed0a4209e468e67fe"
+    },
+    "current-work.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/current-work.json.gz",
+      "sha256": "2feccbe8d32b7df99c966bbceae2932c5647c082391789570bdb9503286fa6ef",
+      "compressed_sha256": "2611c2c7984638f7fd12e9917b4c2912058430551d9fee16325fa6895f804348"
+    },
+    "emission-census.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/emission-census.py.gz",
+      "sha256": "ca4850ee3bd098628ff62da63c53ac21e5a133d5b40dcb51391e7236637f5cb4",
+      "compressed_sha256": "587ba4e4a9f3e1314a892ad8977c5abf79174fd3f40fe4f1583e4917a81ee9fd"
+    },
+    "finalize-formal.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/finalize-formal.py.gz",
+      "sha256": "2d72eb516b29b404531b369115e01dd501a3ea664931321ddaa5832e50cd09a8",
+      "compressed_sha256": "7f6f9ca23a7a46ed5f347abc462230c7cfd20f59c45511b85eda43d60074ed00"
+    },
+    "focused-result.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/focused-result.json.gz",
+      "sha256": "4a72ca713e4c20831eda7036e804c8c1868afe89cb13e868d4c1a2fd7c23f854",
+      "compressed_sha256": "52145561218786ef49930798fc86a0edde1b8d442dbaf712116af66c125cf21f"
+    },
+    "interpretation.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/interpretation.json.gz",
+      "sha256": "2d72bb60cc6f5bb425ddf459f62316e8e499b31f0aae6be89299ed25d87773d9",
+      "compressed_sha256": "c1eb6f04c7141e849036b5c9a23fe491536bf4307025b461bf3a60756c19b2bd"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/measure-candidate.py.gz",
+      "sha256": "08f64e5bbb9f4578188ea7789c9d8c83e5efd5139dd7630bca84e68be1d3b801",
+      "compressed_sha256": "11e75036c53b30e707c472ca15de1f9030ba2988a2b6fdccd4e34e5814da044a"
+    },
+    "plan.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/plan.json.gz",
+      "sha256": "81fbd4f0f22b77285efb695d6d64a93751736f64d7307fe09c13c9386af919fc",
+      "compressed_sha256": "1d7f6adb3be8ae2a5a55bd4953745a5fc1438948b32460f19f528a6f289d6f2c"
+    },
+    "prepare-qualification-manifest.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prepare-qualification-manifest.py.gz",
+      "sha256": "31449d3ab07147f2722afb2612541b98937249562f4a233140a8408a32c4bcf7",
+      "compressed_sha256": "a8978b48fecb8365bc68315aa0243d3f3b609fe29878389a1b0d5b18167f1ef7"
+    },
+    "preserve-prototype.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/preserve-prototype.py.gz",
+      "sha256": "6a0328df7fbc4bf2b748d16964738ed8c3f8c4b926d6a32ba492ff306cb79c9a",
+      "compressed_sha256": "1c2a4deba6946b6735e8ec20d288bc0573954cb55ec33c1d823b3ed280602f87"
+    },
+    "preserve-qualification.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/preserve-qualification.py.gz",
+      "sha256": "e611ff121daaa5ada1a53511d01396f5226ce3015df5af0282de058c9c97a10e",
+      "compressed_sha256": "976af4b49b67610e09aaa6823606d71653a10f81208d33248d781f4b0e68c82d"
+    },
+    "preserve-training.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/preserve-training.py.gz",
+      "sha256": "1917cfaa8cca69656ffda78d2299b26c85e492fd655ef2086611bd656386df47",
+      "compressed_sha256": "9e7aeb009828efc2e9c306cc059f6267cad1051243c0e195a7cda234e18bb533"
+    },
+    "preserve-unselected.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/preserve-unselected.py.gz",
+      "sha256": "97d2af8136a22c44a853abb56ca38e3a469db77791828237cc32e7e37230592f",
+      "compressed_sha256": "3a0e764e07441679bf11db968ac24c41db94d25c94f81eda819b27865e172b58"
+    },
+    "prototype/build.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/build.json.gz",
+      "sha256": "39c1ba43786691ada671fc249efc5504408a376070781652a902fa81fb185c40",
+      "compressed_sha256": "8a4d9a3cd90bb3a27d67ced431aae930146d889099b243886f043575cbe97e04"
+    },
+    "prototype/build.log": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/build.log.gz",
+      "sha256": "9446b03b3dd93d5a05b2881f00e84a10a9c14fd63699bf6cd9b96a1f9a672c03",
+      "compressed_sha256": "55f2dc9b32cd90cc8a6812794343655d673f0510a44461b38c1d461964f58cc7"
+    },
+    "prototype/object.stderr": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/object.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "prototype/object.stdout": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/object.stdout.gz",
+      "sha256": "813285e42d49b25c81d4b9341271412e51358bdd7fbeeeb54f21bcf1eeed09c5",
+      "compressed_sha256": "67944d4e896f9b7b0d836f7836c1c896857e53797b90d2e451f8a9c53eab95cc"
+    },
+    "prototype/result.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/result.json.gz",
+      "sha256": "51ddca1f853bdf80cb460b7ffaee1745a211b73f4e88fbbab60635fb7c18fc46",
+      "compressed_sha256": "84c8d4f179e847ce7728c78f8aa30758dd17163bb051ba9b34fc5c46d73c6b47"
+    },
+    "prototype/seidel-2d-inputs.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/seidel-2d-inputs.json.gz",
+      "sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "compressed_sha256": "e8fcd1f4d36f2dbc89891dfa9f8fd21871d4612911ae205b7c0a6d223b5f5f21"
+    },
+    "prototype/seidel-2d.disasm.txt": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/seidel-2d.disasm.txt.gz",
+      "sha256": "826d657ebbbdb8f62ff306b05ff4ca79b0ff3797de51c1132f303e782df0fbc3",
+      "compressed_sha256": "88e1205aa46112081190f4d918727d112b2bc4e43a3b7c896cb5547d2d8ab19b"
+    },
+    "prototype/seidel-2d.metadata.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/seidel-2d.metadata.json.gz",
+      "sha256": "f6f19de26e2d9ea4bcead36da34d32f09f72f714baff7e240d421f0e8a42b382",
+      "compressed_sha256": "45619c49db7a6f877955370c197531ec6e299d091f6a323f8ee5f1447e575d83"
+    },
+    "prototype/seidel-2d.o": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/seidel-2d.o.gz",
+      "sha256": "f48cd1ae1ee9f4087cf60a822e700b38f819cfd05e400ff0e23daee27c41e671",
+      "compressed_sha256": "bb58e2d0f1a2fd5fd5a7999aa3c8402d5ffff4a4ded921c7170dc7ef58c2e22d"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "a161c1b7dfade5819681aa4a19328a93b60c76d9a5b26ee53c7f789298603045",
+      "compressed_sha256": "9ca106f84d6aeb68747d858209117d5fb2cf7b471b2e87b88fc4c4bfde08b622"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "compressed_sha256": "8eb6e1a306b9a1079b9a6ebd2c73df3ca7dccd2e012179b98becc69f6f59f775"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs.gz",
+      "sha256": "b8d7d611fd5d531a7cd97acd85a30f01632bc4dea78bed4c323f34ce7c29a35e",
+      "compressed_sha256": "7bf7e1a85a19d1c701b1a8ef804bc491e2e8861c2483a1fe60fe0e5340134f23"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs.gz",
+      "sha256": "6d48729d7ee32c27d16f8d6df311b15a6ed8c1b0c79571559d44df636f4a0ea3",
+      "compressed_sha256": "4a1354fa5e4fcfa1dbd30d7ae25dbb1c4a458d211e61895bd1caec0c935556fc"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs.gz",
+      "sha256": "c4dd27feb6fb0358a8af6c8ee16ec305bbb94b0c8f0bfa89cb3756103e9debf2",
+      "compressed_sha256": "055b4630446838f38498fa145929bffdbdf6cfb215631579f39eb64852a9b312"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs.gz",
+      "sha256": "dbe804997616de4f1aa7e0b7524da20236900309024bf730e2d0d6dabf538bdd",
+      "compressed_sha256": "57523e503f51128f09928c3766b1d572ce32f5d2582bdf3876e666e4074af091"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "compressed_sha256": "4fd64f1aa6c101f1d1a7b0728a7317b99cef0e708de2e8cdf24aa1e7ed0ec1ef"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "ec6ef3c358a9ca504924914a2cbe3b7d5857a6501b62ce43c6e153ce659f2b1d",
+      "compressed_sha256": "a6049e3ad3955899b7d7ffdf45b30ce407015be9c6f01298183e4ae4a9c53c90"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "f3be12c5db4d07d742c0999201f37b7ad0b83e505b0a0bd1f1c17b8326d9f031",
+      "compressed_sha256": "e582f058ac9004d5ed068bc1d41554f504d540b0576718e5f7667d4539c436ff"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "088408a174daa7970e568f1ea66c968e3e74407f92d9cb9d40b1f58fb6b33c9b",
+      "compressed_sha256": "51a42acb41fbea0438076dc92afd33bde1c9966266319b0d1cd2f28dd2aa4df0"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs.gz",
+      "sha256": "99ad4f1ef1aa8017ac68d2f1b2f9e0748948f32510bef5ada5da89e5afcdbfc5",
+      "compressed_sha256": "35a1d158e444988a5cb05d989e193c91f480aaf1671045be01ef773688795fdb"
+    },
+    "prototype/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "compressed_sha256": "b7ba2e7ea3b2cf82fb979cb45e96738e6d8e6f21c9ff94fb153dbce8484ad37a"
+    },
+    "prototype-result.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/prototype-result.json.gz",
+      "sha256": "51ddca1f853bdf80cb460b7ffaee1745a211b73f4e88fbbab60635fb7c18fc46",
+      "compressed_sha256": "84c8d4f179e847ce7728c78f8aa30758dd17163bb051ba9b34fc5c46d73c6b47"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/run-focused.py.gz",
+      "sha256": "4aafd51eb3575b620b9999e315b8d9e3c840ab7c76b19432854324a82b8ddc00",
+      "compressed_sha256": "ecb8c2f3b9110cfc9dd1f59dc9384a6b2b8df828ab26c9a550d15fa1aa7aab40"
+    },
+    "run-formal.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/run-formal.py.gz",
+      "sha256": "7fc0d95f6927b7b89e0c631211c768b9d0b2d04a871ef91ec7c34c394c341520",
+      "compressed_sha256": "339638bb703ad15aa100119afaf0ee9206cbc4b6675ea4d31ac3760a028a530a"
+    },
+    "run-prototype.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/run-prototype.py.gz",
+      "sha256": "d5703952b818c936a59ab4f64ec9ba6b0bbb6d3c5f94b2af51d03aa25f433046",
+      "compressed_sha256": "356a07f7715c0a752311a4445780b04c9761bee4a568d1a44a12a1bd4a593a67"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/run-qualification.py.gz",
+      "sha256": "2bb3db798c688a907c01bde6bb41a6d63bfd6ee6e5520173097d5a87d4fd09a1",
+      "compressed_sha256": "01c0404dc977265511868105d94e0bc837049970bf05e7942cb33b2074af5a9d"
+    },
+    "run-training-probe.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/run-training-probe.py.gz",
+      "sha256": "bf180ed3dc8bacdc66df0660c88c59b58c44a56d633918a02a7caea9afcac59d",
+      "compressed_sha256": "abb85639cc9168589762b1223fc6aebe5bf8424156d67c6f8c7dc38d9e81db04"
+    },
+    "source-before/hosts/gpu/src/native_artifact/codegen/options.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "182b2b843cc66efaa34e6cc61736e4729b8e4f5a3f28b8f54484e176d7d7036c",
+      "compressed_sha256": "1fc77819fd0881104c87307533ca48119fad5ebb8a9201cdefde29a9984a5f27"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "23a8955f75903c76b2d4261b7d88ea47208f216ce7b7457f393e1bd95fa5ca46",
+      "compressed_sha256": "f942c20f3a7ad2f67895cddd36bb7524bf2dd60df96daf7c23a00f6c9416e93a"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs.gz",
+      "sha256": "7ce2426f1b3831ba651696b6d01acce06ec5acc49ef0e3bb38290b313de27b58",
+      "compressed_sha256": "937c8fb713808adcf71839368c5a72a2b57ff97f2b0b2ba8fbbaeb27ccdd3806"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "f69a83a0642ac83bacc8e7ff172adcf076c1c2189a0cb80257baace214640408",
+      "compressed_sha256": "31caf4c787ae5158b6e710e6a2e2edaafb0ea92de8712abba18ba63ef38dbcbb"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "7d9e750a0ba536b053977dc6d4274d388e73d4f9260f27649d51858ed70fa7fc",
+      "compressed_sha256": "c1025d62f7c2ec242d91b4b27044631f1e31c3ef6e5dc1bac0ffab41b9f14ed0"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/image/identity.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "c077ee308643aebf0029ff16945ec4201516ecc126623c9962904f459c2b8b3f",
+      "compressed_sha256": "5f4e7ca64276be1cd8036fd828c76fc2ef9c371bfe5a4f645b5ae263fb427d4c"
+    },
+    "source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-before/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "12fd4e90d0385ac0dfb5b067785f5b22290c78dc21486d665ea16af45f899850",
+      "compressed_sha256": "c78673b05e28b94f43a61202a0f0c1e15b368442bed7ed6f45daf52f97d96bea"
+    },
+    "source-restoration.json": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/source-restoration.json.gz",
+      "sha256": "34d57c1128f5caa038bbf58f362c9e4abfce827413596e2b2b4d1e4efa070fd6",
+      "compressed_sha256": "7bc6fea9af64f04c12f1fd5b07b3e5995c0fb1758ed6042ed566eb984c9a0991"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/training-probe.py.gz",
+      "sha256": "4b80f1b6e0ca2aeaeccaece9b7fed32f8eb056571eb85ac3bd1b0eb8ee71bb4a",
+      "compressed_sha256": "3597991069f918ba61951d14ab7cf8ebcf8220c2e3508b71e06e18d514a63094"
+    },
+    "untimed-counter-gate.py": {
+      "path": "qualification/round-77-single-column-cache-token-prototype/untimed-counter-gate.py.gz",
+      "sha256": "69490cf4ba9e487d78fb8648562acbd5d711d3f4ed821978c311d8933a10c903",
+      "compressed_sha256": "300a2759c2bed7a6708b24c1022a6bc7501b42d22644e46987ba18bd4f3afa04"
+    }
+  },
+  "performance_observations": 0,
+  "formal_observations": 0,
+  "holdout_observations": 0,
+  "accepted_round_unchanged": 59,
+  "formal_history_entries_unchanged": 61
+}

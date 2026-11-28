@@ -3001,3 +3001,9 @@ Accepted Seidel register/credit profile
 Exact accepted59 CPU/code capture binds5468 numeric bytes and the caller BL in the same owned PID93380, which reached terminal0. Generated numeric code is1701/1761=96.59% of execution samples. Accepted work credit is register-held; the rejected spill-free rolling candidate adds a per-point work-credit stack roundtrip. This motivates reducing optional cache control words, with exact source/commit/bounds proof and static credit-placement verification before another single qualified-fingerprint probe. No official timing/history/source or holdout change.
 
 [Profile and complete binding](training-experiments/accepted-seidel-credit-profile.json)
+
+Single-column cache-token prototype
+
+The material one-word cache-control prototype passed13 focused groups, including actual native zero/empty/extreme token guards and source original/decoded/restored failure/ownership behavior. A genuine Object retains nine-to-three source-read reuse and zero vector stack accesses, and has16236B code/272B reported stack. It still loads/subtracts/stores work credit throughSP+8 per point, failing the preregistered physical gate. No broad performance qualification, timing probe, formal run or holdout timing was started. All source/Objects/tests retained and exact accepted59 restored. Control-flow representation/fusion is a different prospective way to remove complete state/ownership/credit work; scalar metadata reduction alone is insufficient.
+
+[Complete untimed prototype and restoration](training-experiments/single-column-cache-token-prototype.json)
