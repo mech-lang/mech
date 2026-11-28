@@ -1,0 +1,89 @@
+{
+  "schema": "mech.polybench.native-transpose-induction-plan.v1",
+  "created_at": "2026-11-28T06:38:48.280282+00:00",
+  "status": "Prospective before compiler edits or performance samples",
+  "source_parent": "cd59d4196f52f4e3975feea0d96184df2eb076e1",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_induction.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_transpose.rs": "4163c548ffebeb9e6d40fc9658c227d92aec941a132e9ff90f433040d8f41307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_binary.rs": "5942bf5d9980c5cfe9ecf8399ed39d76a8c5edf537811bf04a79dabaca6f73ac",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "f1797e48858c934f3e4fcb29ce01277ac6a222b30db04c75e4b4b4265b13795c",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "d18e88b1d9bf1a77123eff3a37491d510d7d134974e534eef775f55245b2ec10",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "77c56ac2cd0360513429de522b729e5af97622ce1bf10657dd994c5ea9dc9531",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "9602a1268df919f7f70084e556a79c4788f997014599c4d89add2f97e7f00167",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose.rs": "a6e85fed8abe8cbdb2c96bb089ca022cfe21345585814af6671c5a8e2d7d2380",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_induction.rs": null
+  },
+  "accepted_round": 50,
+  "accepted_compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+  "accepted_scores": {
+    "optimization": 9.243502020687457,
+    "holdout": 25.148487819220833
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-50/compound-conditional-domains/compound-conditional-domains-driver",
+  "accepted_driver_sha256": "f11b59a8e4946aa09c16baa6ef3a4540a3d15542e9dcb7464c8ff007c24f9178",
+  "formal_history_entries": 51,
+  "versions": {
+    "ir": 418,
+    "work": 157,
+    "abi": 48
+  },
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "scope": "General shared Cranelift F64 transpose over runtime-admitted disjoint banks, for both dynamic and fixed shapes. Keep original matrix operator/source/library machinery, buffers, allocations, boundaries, source fees and all checks. No benchmark names/dimensions, source ports/inputs/arithmetic/C/limits/tolerance/cache/timing changes.",
+  "profiling_basis": {
+    "optimization_only": true,
+    "evidence": "training-experiments/accepted50-optimization-profile.json",
+    "same_pid_verified": true,
+    "mvt_generated_self_percent": 33.86173491853809,
+    "mvt_hot_transpose_offsets": [
+      "0x8a0",
+      "0x1044",
+      "0x104c",
+      "0x1050",
+      "0x1054"
+    ],
+    "finding": "Verified actual MVT generated code reconstructs transpose coordinates using separate quotient/remainder udiv instructions for each cell. Source-derived40x40 transpose gives3200 such divisions per checked call, not a measured retired-instruction count. Shared native_transpose.rs retains these dynamic divisions.",
+    "profile_scope_limit": "Warm residence includes output reset/drop; CPU fractions are not exact frozen-kernel timer fractions or a speedup forecast."
+  },
+  "physical_work_removed": [
+    "Replace per-output-element udiv/urem coordinate reconstruction with carried output row/column and source-index induction, eliminating all divisions from the reached transpose copy loop.",
+    "Preserve exact original output-row-major store order and corresponding source address sequence: output index=row*output_columns+column, input index=column*input_columns+row. Outer output rows=input_columns; inner output columns=output_columns.",
+    "Retain full numeric buffers, initialization, original canonical output and prepare/finish transitions. This is a backend addressing improvement to the current operator, not another transpose-consumer view experiment."
+  ],
+  "implementation": [
+    "Keep all existing product-of-extents/count, source/schema/current owner, checked byte span/non-null/nonoverflow and disjointness guards in numeric_binary. No runtime/helper/root-frame/layout change, no Rust numeric kernel or per-cell operation dispatch.",
+    "Take count==0 completion before either axis loop or any pointer arithmetic/load/store; an admitted huge-by-zero shape must not perform an empty outer loop proportional to its huge extent. All reached nonempty extents are positive and index/pointer arithmetic follows the original checked full span.",
+    "Copy integer64-bit words to preserve every F64 bit including signed zeros/NaNs. Carry indices within bounded extents; do not form/read an out-of-span address for an unused post-loop induction value. Preserve source order and publication after full checked native completion.",
+    "Default-enabled private emission ablation retains the exact old flat transpose. Record actual Object/machine-code evidence: runtime-shaped transpose has no udiv/urem in the new copy loop; all original counters identical. IR418/work157/ABI48."
+  ],
+  "required_qualification": [
+    "Original/decoded/actual Object and restored-helper full-program coverage versus old-flat ablation; dynamic and fixed rectangular shapes, both vector orientations, square/non-square/odd tails,1x1 and0xN/Nx0/0x0 including representable huge empty extents. Independent exact-bit transpose oracle and roundtrip/source aliases.",
+    "NaN/signed zero/subnormal/Inf bit preservation and existing source admission/fallback behavior; source work/comparison cannot decrease and all other successful execution counters remain exact.",
+    "Finite/missing/zero/spent logical caps and physical bytes/nodes, atomic failures/cleanup/retry, malformed frame/image/source binding and issued-loan checks. All maintained scalar/compression/numeric regressions, both features, all30 original/decoded/restored finite C cases.",
+    "Machine-code inspection tied to genuine checked Objects and a runtime-shape helper where neither dimension is assumed constant: no hardware division/remainder in the induced transpose. Preserve and report static code/stack growth and every regression."
+  ],
+  "untimed_gate": "Optimization15 all17002 finite C liveouts, actual Objects, source work/comparison nondecreasing, every other execution counter including visits identical to accepted50; no padded/fictitious visits.",
+  "training_probe": {
+    "actors": [
+      "accepted50",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "One prospective fresh-process probe per fully qualified materially changed fingerprint; raw equal-weight GM accepted50/candidate medians must exceed1. Retain all samples/regressions; no exact retries or exclusions."
+  },
+  "formal_acceptance": "After complete qualification, selected probe and clean committed/pushed/frozen source+driver: one900-observation run,29482 finite liveouts, immutable history append. Promote only if optimization15 kernel Mech/C is strictly below9.243502020687457. Holdout independently reported; cannot veto/select/diagnose/tune/trigger rollback or retry.",
+  "prior_related_work": "Rejected transpose-product views95bb12a/742a83d removed the transpose buffer/pass/operator boundary and changed the product access pattern. Rejected rectangular comprehension induction targeted static constant-coordinate reconstruction in pure maps. This plan retains the ordinary operator/buffers and removes verified per-cell hardware divisions from its runtime-shaped copy kernel; it is not an exact retry of either.",
+  "restoration": "If unselected or not promoted, preserve all source/evidence/observations then restore every planned source path exactly from source_parent, stage deletions, verify accepted50 fingerprint. Commit/push only PR1001.",
+  "performance_observations": 0
+}
