@@ -54,6 +54,7 @@ impl Invocation<'_, '_, '_> {
             .epilogue(site)
             .ok_or_else(|| invalid("product epilogue outside source proof"))?;
         let reduction_axis = recipe.reduction_axis();
+        let product_index = recipe.product_index();
         if tag != GlobalHelper::NumericProductPrepare
             || args != [self.arguments as u64, recipe.scalars.len() as u64, 0]
             || self.arguments.is_null()
@@ -131,13 +132,21 @@ impl Invocation<'_, '_, '_> {
                     .inputs
                     .map(|s| source_dims(s, &external_dims, &node_dims));
                 let (rows, columns, inner) = match node.kind {
-                    Kind::Product if index == 0 => {
+                    Kind::Transpose { .. } if recipe.transposed_left() && index == 0 => {
+                        let [r, c, count] = call.f64_matrix_transpose_geometry(inputs[0])?;
+                        if r.checked_mul(c)? != count {
+                            return None;
+                        }
+                        (r, c, 0)
+                    }
+                    Kind::Product if Some(index) == product_index => {
                         let [r, c, k] = call.f64_matrix_product_geometry(inputs[0], inputs[1])?;
                         product_axes = [r, c, k];
                         (r, c, k)
                     }
                     Kind::Elementwise(op)
-                        if (index > 0 || reduction_axis.is_some())
+                        if (product_index.is_some_and(|p| index > p)
+                            || reduction_axis.is_some())
                             && call.template().f64_matrix_binary_op() == Some(op) =>
                     {
                         let [r, c, left, right] =
@@ -194,7 +203,7 @@ impl Invocation<'_, '_, '_> {
                         call.f64_matrix_binary_source_bound(input_count, count)?
                     }
                     Kind::Sum { .. } => call.f64_matrix_sum_source_bound(input_count, count)?,
-                    _ => return None,
+                    Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(count)?,
                 };
                 // Every omitted logical factory still has its original shape.
                 mech_core::shape_for_resolved_extents(call.template().output(), &[rows, columns])
@@ -276,7 +285,7 @@ impl Invocation<'_, '_, '_> {
                     Kind::Product => call.f64_matrix_product_source_bound(inputs, output, inner)?,
                     Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(inputs, output)?,
                     Kind::Sum { .. } => call.f64_matrix_sum_source_bound(inputs, output)?,
-                    _ => return None,
+                    Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(output)?,
                 };
                 replay = replay.checked_add(bound)?;
                 compute = compute.checked_add(demand.work.compute)?;
@@ -480,7 +489,7 @@ impl Invocation<'_, '_, '_> {
                 inputs.push(Some(value));
             }
         }
-        let [Source::External(left), Source::External(right)] = recipe.nodes[0].inputs else {
+        let Some([left, right]) = recipe.physical_roots() else {
             return Err(invalid("product epilogue lost original product sources"));
         };
         frame.product = NumericBinaryFrame {

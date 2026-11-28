@@ -65,6 +65,7 @@ mod numeric_induction;
 mod numeric_matrix_sums;
 mod numeric_outlining;
 mod numeric_product_epilogues;
+mod numeric_product_views;
 mod numeric_product_quartets;
 mod numeric_product_rows;
 mod numeric_reduction_producers;

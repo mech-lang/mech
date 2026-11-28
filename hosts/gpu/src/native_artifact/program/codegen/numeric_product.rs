@@ -14,17 +14,29 @@ fn cell(
     right: Value,
     output: Value,
     index: Value,
+    count: Value,
     columns: Value,
     inner: Value,
     vector: bool,
     epilogue: Option<&Epilogue<'_>>,
+    transposed_left: bool,
 ) {
     let row = b.ins().udiv(index, columns);
     let column = b.ins().urem(index, columns);
-    let left_base = b.ins().imul(row, inner);
+    let left_base = if transposed_left {
+        row
+    } else {
+        b.ins().imul(row, inner)
+    };
     let left_pointer = address(b, left, left_base);
     let right_pointer = address(b, right, column);
-    let left_step = b.ins().iconst(types::I64, 8);
+    let left_step = if transposed_left {
+        // Only reached for a nonempty output, hence columns is nonzero.
+        let rows = b.ins().udiv(count, columns);
+        b.ins().imul_imm(rows, 8)
+    } else {
+        b.ins().iconst(types::I64, 8)
+    };
     let right_step = b.ins().imul_imm(columns, 8);
     let result = numeric_dot_core::emit(
         b,
@@ -73,6 +85,7 @@ pub(super) fn emit(
         None,
         row_pairs,
         row_quartets,
+        false,
         done,
     );
 }
@@ -100,6 +113,7 @@ pub(super) fn emit_epilogue(
         Some(epilogue),
         row_pairs,
         row_quartets,
+        epilogue.transposed_left(),
         done,
     );
 }
@@ -114,6 +128,7 @@ fn emit_body(
     epilogue: Option<&Epilogue<'_>>,
     row_pairs: bool,
     row_quartets: bool,
+    transposed_left: bool,
     done: Block,
 ) {
     if row_pairs {
@@ -127,6 +142,7 @@ fn emit_body(
             inner,
             epilogue,
             row_quartets,
+            transposed_left,
             done,
         );
         return;
@@ -154,9 +170,25 @@ fn emit_body(
     b.ins().brif(two, pair, &[], single, &[]);
     for (block, vector, width) in [(pair, true, 2), (single, false, 1)] {
         b.switch_to_block(block);
-        cell(b, left, right, output, at, columns, inner, vector, epilogue);
+        cell(
+            b,
+            left,
+            right,
+            output,
+            at,
+            count,
+            columns,
+            inner,
+            vector,
+            epilogue,
+            transposed_left,
+        );
         let advanced = b.ins().iadd_imm(at, width);
         b.def_var(index, advanced);
         b.ins().jump(header, &[]);
     }
 }
+
+#[cfg(test)]
+#[path = "numeric_product_view_tests.rs"]
+mod view_tests;

@@ -25,6 +25,9 @@ pub(in crate::native_artifact) struct Operation {
 pub(in crate::native_artifact) struct Layout {
     sites: Box<[Option<Operation>]>,
     epilogues: Box<[Option<super::numeric_product_epilogues::Candidate>]>,
+    // Prefix views are rare; do not reserve a full candidate at every block.
+    transpose_epilogues:
+        std::collections::BTreeMap<usize, super::numeric_product_epilogues::Candidate>,
 }
 fn constant_axes(
     template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
@@ -93,21 +96,34 @@ impl Layout {
             .collect::<Result<Box<[_]>, &'static str>>()?;
         let mut result = Self {
             epilogues: vec![None; sites.len()].into_boxed_slice(),
+            transpose_epilogues: std::collections::BTreeMap::new(),
             sites,
         };
         for recipe in super::numeric_product_epilogues::derive(plan, &result) {
             let entry = recipe.entry as usize;
             result.epilogues[entry] = Some(recipe);
         }
+        for recipe in super::numeric_product_epilogues::derive_views(plan, &result) {
+            let entry = recipe.entry as usize;
+            result.transpose_epilogues.insert(entry, recipe);
+        }
         Ok(result)
     }
+    pub fn transpose_epilogue(
+        &self,
+        site: usize,
+    ) -> Option<&super::numeric_product_epilogues::Candidate> {
+        self.transpose_epilogues.get(&site)
+    }
     pub fn epilogue(&self, site: usize) -> Option<&super::numeric_product_epilogues::Candidate> {
-        self.epilogues.get(site)?.as_ref()
+        self.transpose_epilogue(site)
+            .or_else(|| self.epilogues.get(site)?.as_ref())
     }
     pub fn epilogue_arguments(&self) -> usize {
         self.epilogues
             .iter()
             .flatten()
+            .chain(self.transpose_epilogues.values())
             .map(|r| r.scalars.len())
             .max()
             .unwrap_or(0)

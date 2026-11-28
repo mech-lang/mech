@@ -104,10 +104,14 @@ impl Leaf {
     }
 }
 impl Epilogue<'_> {
+    pub(super) fn transposed_left(&self) -> bool {
+        self.recipe.transposed_left()
+    }
+
     fn expression(
         &self,
         b: &mut FunctionBuilder<'_>,
-        mut values: Vec<Value>,
+        mut values: Vec<Option<Value>>,
         end: usize,
         row: Value,
         column: Value,
@@ -118,7 +122,9 @@ impl Epilogue<'_> {
         let mut external = vec![None; self.leaves.len()];
         for (at, node) in self.recipe.nodes.iter().take(end).enumerate().skip(start) {
             let args = node.inputs.map(|source| match source {
-                Source::Node(n) => values[n],
+                Source::Node(n) => {
+                    values[n].expect("proved cell source excludes virtual transpose")
+                }
                 Source::External(n) => match external[n] {
                     Some(v) => v,
                     None => {
@@ -138,9 +144,9 @@ impl Epilogue<'_> {
             if at + 1 < self.recipe.nodes.len() {
                 finite(b, value, vector, self.cancelled);
             }
-            values.push(value);
+            values.push(Some(value));
         }
-        *values.last().unwrap()
+        values.last().copied().flatten().expect("final scalar cell")
     }
     pub(super) fn apply(
         &self,
@@ -152,9 +158,13 @@ impl Epilogue<'_> {
         vector: bool,
     ) -> Value {
         finite(b, product, vector, self.cancelled);
+        // The virtual view has no per-cell scalar. Keep its node slot empty;
+        // the closed source proof permits it only as the product's operand.
+        let mut values = vec![None; self.recipe.product_index().expect("selected product")];
+        values.push(Some(product));
         self.expression(
             b,
-            vec![product],
+            values,
             self.recipe.nodes.len(),
             row,
             column,
@@ -198,8 +208,7 @@ pub(in crate::native_artifact) fn emit_entry(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     if recipe.entry as usize != site
-        || (recipe.reduction_axis().is_none()
-            && recipe.nodes.first().is_none_or(|n| n.kind != Kind::Product))
+        || (recipe.reduction_axis().is_none() && recipe.product_index().is_none())
         || recipe.nodes.len() < 2
     {
         return Err(backend("product epilogue lost source entry"));

@@ -13,21 +13,35 @@ fn tile(
     row_width: usize,
     vector: bool,
     epilogue: Option<&Epilogue<'_>>,
+    transposed_left: bool,
+    rows: Value,
 ) {
     debug_assert!([1, 2, 4].contains(&row_width));
-    let left0 = b.ins().imul(row, inner);
+    let left0 = if transposed_left {
+        row
+    } else {
+        b.ins().imul(row, inner)
+    };
     let index0 = b.ins().imul(row, columns);
     let index0 = b.ins().iadd(index0, column);
     let mut states = vec![(row, left0, index0)];
     let mut prior_index = index0;
     for offset in 1..row_width {
         let r = b.ins().iadd_imm(row, offset as i64);
-        let base = b.ins().imul(r, inner);
+        let base = if transposed_left {
+            r
+        } else {
+            b.ins().imul(r, inner)
+        };
         let index = b.ins().iadd(prior_index, columns);
         states.push((r, base, index));
         prior_index = index;
     }
-    let left_step = b.ins().iconst(types::I64, 8);
+    let left_step = if transposed_left {
+        b.ins().imul_imm(rows, 8)
+    } else {
+        b.ins().iconst(types::I64, 8)
+    };
     let right_step = b.ins().imul_imm(columns, 8);
     let right_pointer = address(b, right, column);
     let streams = states
@@ -69,6 +83,7 @@ pub(super) fn emit(
     inner: Value,
     epilogue: Option<&Epilogue<'_>>,
     quartets: bool,
+    transposed_left: bool,
     done: Block,
 ) {
     let nonempty = b.create_block();
@@ -130,7 +145,19 @@ pub(super) fn emit(
         for (block, vector, width) in [(paired_columns, true, 2), (scalar_column, false, 1)] {
             b.switch_to_block(block);
             tile(
-                b, left, right, output, at_row, at_column, columns, inner, step, vector, epilogue,
+                b,
+                left,
+                right,
+                output,
+                at_row,
+                at_column,
+                columns,
+                inner,
+                step,
+                vector,
+                epilogue,
+                transposed_left,
+                rows,
             );
             let next = b.ins().iadd_imm(at_column, width);
             b.def_var(column, next);

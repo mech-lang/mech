@@ -68,6 +68,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ProductRowQuartets,
     /// Fuse source-closed cell expressions into ordered product accumulators.
     ProductEpilogues,
+    /// Consume a closed left transpose inside the existing product/epilogue loan.
+    TransposeProductEpilogues,
     /// Fuse nonescaping pointwise producers into original ordered sum terms.
     ReductionProducers,
     /// Evaluate nonidentity matrix regions through the original checked scratch DAG.

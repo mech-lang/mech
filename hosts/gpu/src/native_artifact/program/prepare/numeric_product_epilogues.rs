@@ -27,7 +27,7 @@ pub(in crate::native_artifact) struct Node {
 }
 impl Node {
     pub fn operands(&self) -> &[Source] {
-        &self.inputs[..if matches!(self.kind, Kind::Sum { .. }) {
+        &self.inputs[..if matches!(self.kind, Kind::Sum { .. } | Kind::Transpose { .. }) {
             1
         } else {
             2
@@ -70,6 +70,35 @@ pub(in crate::native_artifact) struct Candidate {
     pub elided_values: Vec<u32>,
 }
 impl Candidate {
+    pub fn product_index(&self) -> Option<usize> {
+        match self.nodes.first()?.kind {
+            Kind::Product => Some(0),
+            Kind::Transpose { .. } if self.nodes.get(1)?.kind == Kind::Product => Some(1),
+            _ => None,
+        }
+    }
+    pub fn transposed_left(&self) -> bool {
+        self.product_index() == Some(1)
+    }
+    /// Original physical roots. A virtual transpose is only the product's left
+    /// operand; it has no scalar cell value or separately materialized bank.
+    pub fn physical_roots(&self) -> Option<[usize; 2]> {
+        let first = self.nodes.first()?;
+        if self.transposed_left() {
+            let [Source::Node(0), Source::External(right)] = self.nodes.get(1)?.inputs else {
+                return None;
+            };
+            let Source::External(left) = first.inputs[0] else {
+                return None;
+            };
+            Some([left, right])
+        } else {
+            let [Source::External(left), Source::External(right)] = first.inputs else {
+                return None;
+            };
+            Some([left, right])
+        }
+    }
     pub fn reduction_axis(&self) -> Option<usize> {
         match self.nodes.last()?.kind {
             Kind::Sum { axis, .. } => Some(axis),
@@ -154,12 +183,22 @@ fn output(
     }
     (used.len() == nodes.len()).then_some(*value)
 }
-fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> Option<Candidate> {
+fn discover(
+    plan: &Plan,
+    facts: &Facts<'_>,
+    operators: &Layout,
+    entry: u32,
+    view: bool,
+) -> Option<Candidate> {
     let first = operators.at(entry as usize)?.kind;
-    if !matches!(first, Kind::Product | Kind::Elementwise(_)) {
+    if if view {
+        !matches!(first, Kind::Transpose { .. })
+    } else {
+        !matches!(first, Kind::Product | Kind::Elementwise(_))
+    } {
         return None;
     }
-    let product = first == Kind::Product;
+    let product = view || first == Kind::Product;
     let parent = plan.blocks()[entry as usize].iteration();
     let mut external = Vec::new();
     let mut nodes: Vec<Node> = Vec::new();
@@ -169,9 +208,11 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
     let mut at = entry;
     let mut previous = None;
     let mut best = None;
+    let mut prefix_steps = 0;
+
     loop {
         let block = plan.blocks().get(at as usize)?;
-        if steps.len() == MAX_STEPS
+        if steps.len() == MAX_STEPS + prefix_steps
             || plan.activation_boundary() == Some(at)
             || block.iteration() != parent
             || sites.contains(&at)
@@ -190,14 +231,21 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                     break;
                 };
                 let sum = matches!(op.kind, Kind::Sum { .. });
-                if nodes.len() == MAX_NODES
+                let unary = sum || matches!(op.kind, Kind::Transpose { .. });
+                if nodes.len() == MAX_NODES + usize::from(view)
                     || !typed(plan, *output)
-                    || operands.len() != if sum { 1 } else { 2 }
+                    || operands.len() != if unary { 1 } else { 2 }
                     || nodes
                         .last()
                         .is_some_and(|n| matches!(n.kind, Kind::Sum { .. }))
                     || (nodes.is_empty() && op.kind != first)
-                    || (!nodes.is_empty() && product && !matches!(op.kind, Kind::Elementwise(_)))
+                    || (!nodes.is_empty()
+                        && product
+                        && if view && nodes.len() == 1 {
+                            op.kind != Kind::Product
+                        } else {
+                            !matches!(op.kind, Kind::Elementwise(_))
+                        })
                     || (!product && !matches!(op.kind, Kind::Elementwise(_) | Kind::Sum { .. }))
                 {
                     break;
@@ -216,7 +264,7 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                 let Some(right) = source(
                     plan,
                     facts,
-                    operands[if sum { 0 } else { 1 }],
+                    operands[if unary { 0 } else { 1 }],
                     entry,
                     parent,
                     &bindings,
@@ -224,10 +272,20 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                 ) else {
                     break;
                 };
+                if view
+                    && ((nodes.len() == 1
+                        && (left != Source::Node(0) || !matches!(right, Source::External(_))))
+                        || (nodes.len() > 1 && [left, right].contains(&Source::Node(0))))
+                {
+                    break;
+                }
                 if sum && !matches!(left, Source::Node(_)) {
                     break;
                 }
                 let node = nodes.len();
+                if view && node == 1 {
+                    prefix_steps = steps.len();
+                }
                 nodes.push(Node {
                     site: at,
                     inputs: [left, right],
@@ -299,9 +357,40 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
     best
 }
 pub(in crate::native_artifact) fn derive(plan: &Plan, operators: &Layout) -> Vec<Candidate> {
+    derive_kind(plan, operators, false)
+}
+pub(in crate::native_artifact) fn derive_views(plan: &Plan, operators: &Layout) -> Vec<Candidate> {
+    derive_kind(plan, operators, true)
+        .into_iter()
+        .filter(|recipe| {
+            // The view does not replace an already longer arithmetic fusion with
+            // a shorter one. Keep every ordinary suffix as a complete fallback.
+            let Some(product) = recipe.nodes.get(1) else {
+                return false;
+            };
+            operators
+                .epilogue(product.site as usize)
+                .is_none_or(|suffix| {
+                    suffix
+                        .steps
+                        .iter()
+                        .all(|step| recipe.steps.iter().any(|ours| ours.site() == step.site()))
+                })
+        })
+        .collect()
+}
+fn derive_kind(plan: &Plan, operators: &Layout, view: bool) -> Vec<Candidate> {
     let mut covered = BTreeSet::new();
     (0..plan.blocks().len())
-        .filter_map(|at| discover(plan, &plan.facts(), operators, u32::try_from(at).ok()?))
+        .filter_map(|at| {
+            discover(
+                plan,
+                &plan.facts(),
+                operators,
+                u32::try_from(at).ok()?,
+                view,
+            )
+        })
         .filter(|recipe| {
             // Prefer the earliest closed producer and its longest proved
             // continuation. The ordinary fallback stays complete; do not emit
