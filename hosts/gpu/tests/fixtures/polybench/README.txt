@@ -2821,3 +2821,9 @@ All743 broad/13 focused checks, both features, all30 C cases and restored images
 The single210-observation optimization-only probe measured0.9928689728233402x raw GM speedup versus accepted50, with 1 regressions over5%. It fails the prospective selection rule. All observations remain; no exact fingerprint retry and no holdout/formal timing ran. Exact accepted50 source is restored. Accepted scores remain9.243502020687457x optimization /25.148487819220833x holdout, independently reported.
 
 [Unselected observations](training-experiments/native-transpose-induction-unselected-probe.json) · [Qualification/restoration](training-experiments/native-transpose-induction-unselected.json)
+
+Accepted50 correlation CPU profile
+
+Correlation, the next highest optimization margin beyond the three already sampled, shows31.40% generated,17.78% allocation/free and15.66% planning/schema/validation self time in a warm diagnostic loop. All13820 native bytes match the same sampled PID and accepted Object. The dominant0x2ce0 site (13.58% of samples) is the two-column ordered product k loop. This motivates grouping independent output rows to share right loads/control and expose independent accumulators, also for one-column products. Host preparation and materialized elementwise-to-sum intermediates remain separate opportunities. No official performance samples/history entries were added; no holdout profiling.
+
+[CPU evidence](round-50-correlation-cpu-telemetry.json) · [Full profile and code evidence](training-experiments/accepted50-correlation-profile.json)

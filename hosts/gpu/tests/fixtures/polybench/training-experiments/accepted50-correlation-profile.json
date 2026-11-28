@@ -1,0 +1,3481 @@
+{
+  "schema": "mech.polybench.accepted-optimization-profile-evidence.v1",
+  "created_at": "2026-11-28T07:13:47.829953+00:00",
+  "accepted_round": 50,
+  "workspace_commit": "d7e3b829985ebe07bb769ab63478ae07c6b8a9ae",
+  "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+  "driver_build": {
+    "command": [
+      "rustc",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-polybench-pr1000-target/release/deps",
+      "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence.rs",
+      "-o",
+      "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence-driver",
+      "--extern",
+      "serde_json=/private/tmp/mech-polybench-pr1000-target/release/deps/libserde_json-d4cbf430bef4d513.rlib",
+      "--extern",
+      "mech_core=/private/tmp/mech-polybench-pr1000-target/release/deps/libmech_core-3f09556dc3716cd3.rlib",
+      "--extern",
+      "mech_syntax=/private/tmp/mech-polybench-pr1000-target/release/deps/libmech_syntax-235f3926eeaaf33c.rlib",
+      "--extern",
+      "mech_engine=/private/tmp/mech-polybench-pr1000-target/release/deps/libmech_engine-aab75a1b7100ce56.rlib",
+      "--extern",
+      "mech_stdlib=/private/tmp/mech-polybench-pr1000-target/release/deps/libmech_stdlib-ee892d22170132e4.rlib",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-polybench-pr1000-target/release/deps/libmech_gpu-c25b6658c3ed1a3f.rlib"
+    ],
+    "exit_code": 0,
+    "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+    "source_unchanged": true,
+    "source_sha256": "2233a868c0d622b7cc671f91600325ca4e0dfcbdfa0a7909717ce391537ae784",
+    "driver": "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence-driver",
+    "driver_sha256": "cd509ac753b94a39fede1c65d4980a66d1373bdf5e2304e7658228b4d5d86e85",
+    "native_source_generator": "Maintained public Cranelift JIT/Object APIs; rustc builds only the host diagnostic wrapper."
+  },
+  "plan": {
+    "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+    "created_at": "2026-11-28T07:08:36.991754+00:00",
+    "accepted_round": 50,
+    "source_commit": "6a415339d2e78024f32fde16c3af4ca5bbdb204e",
+    "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+    "cases": [
+      "correlation"
+    ],
+    "selection": "Next highest accepted50 optimization15 Mech/C margin after the already sampled Gram-Schmidt, Durbin and MVT. No holdout diagnosis or selection.",
+    "optimization_rank": 4,
+    "recorded_mech_over_c": 17.86051305960265,
+    "method": "Reuse the byte-pinned accepted50 public-API residence host wrapper. Sample one owned warm checked-call process3s at1ms, then stop only after sampling, capture its named native executable ranges and resume the same PID to real terminal exit. Compare sampled instructions/full code with genuine accepted50 Objects and validate warmup/final finite C values and frozen counters. No Rust source/build changes or timing samples.",
+    "seconds_per_process": 30,
+    "sample_seconds": 3,
+    "driver": "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence-driver",
+    "driver_sha256": "cd509ac753b94a39fede1c65d4980a66d1373bdf5e2304e7658228b4d5d86e85",
+    "source_native_generator": "Maintained Cranelift public JIT/Object APIs; Rust compiled only the existing host wrapper.",
+    "hypothesis_to_check": "The ordinary centered*centered matrix materializes before ordered sum. Profile whether preparation/ownership and/or the complete intermediate pass justify general producer-to-reduction fusion; preserve +0 and each output term order, full original source fees and fallback. No speedup is inferred.",
+    "official_performance_observations": 0,
+    "holdout_profiling": false,
+    "scope_limit": "Warm residence includes output reset/drop outside the formal kernel timer; sample shares are not exact timer shares or retired instruction counts."
+  },
+  "same_pid_verification": {
+    "schema": "mech.polybench.same-pid-jit-object-verification.v1",
+    "scope": "Actual executable bytes from the same owned process sampled for CPU self time, captured only after sampling; original Object provenance exact. No timing scores or hardware retirement counts.",
+    "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+    "cases": {
+      "correlation": {
+        "pid": 50563,
+        "all_sampled_instructions_and_windows_identical": true,
+        "all_function_bytes_identical": true,
+        "functions": [
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "size": 13820,
+            "byte_identical": true,
+            "differing_bytes": 0,
+            "first_differences": [],
+            "jit_sha256": "8365ca81ddf09e2665798f7aa5a7c6846172c197948b526de40c62e56b705f7a",
+            "object_code_sha256": "8365ca81ddf09e2665798f7aa5a7c6846172c197948b526de40c62e56b705f7a",
+            "sampled_hot_sites": [
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11488,
+                "samples": 307,
+                "percent": 13.578062804068995,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx5, x10",
+                "window": [
+                  {
+                    "offset": 11456,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11460,
+                    "instruction": "fmul\td27, d27, d28"
+                  },
+                  {
+                    "offset": 11464,
+                    "instruction": "fadd\td0, d0, d27"
+                  },
+                  {
+                    "offset": 11468,
+                    "instruction": "b\t0x2c9c <_mech_canonical_program_entry_v1+0x2c9c>"
+                  },
+                  {
+                    "offset": 11472,
+                    "instruction": "cbz\tx9, 0x35f0 <_mech_canonical_program_entry_v1+0x35f0>"
+                  },
+                  {
+                    "offset": 11476,
+                    "instruction": "udiv\tx2, x0, x9"
+                  },
+                  {
+                    "offset": 11480,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 11484,
+                    "instruction": "movi.16b\tv0, #0"
+                  },
+                  {
+                    "offset": 11488,
+                    "instruction": "cmp\tx5, x10"
+                  },
+                  {
+                    "offset": 11492,
+                    "instruction": "b.lo\t0x2cf8 <_mech_canonical_program_entry_v1+0x2cf8>"
+                  },
+                  {
+                    "offset": 11496,
+                    "instruction": "lsl\tx1, x0, #3"
+                  },
+                  {
+                    "offset": 11500,
+                    "instruction": "str\tq0, [x8, x1]"
+                  },
+                  {
+                    "offset": 11504,
+                    "instruction": "add\tx0, x0, #2"
+                  },
+                  {
+                    "offset": 11508,
+                    "instruction": "b\t0x1de8 <_mech_canonical_program_entry_v1+0x1de8>"
+                  },
+                  {
+                    "offset": 11512,
+                    "instruction": "madd\tx11, x2, x10, x5"
+                  },
+                  {
+                    "offset": 11516,
+                    "instruction": "ldr\td1, [x6, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11520,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6592,
+                "samples": 36,
+                "percent": 1.592215833701902,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx10, x4",
+                "window": [
+                  {
+                    "offset": 6560,
+                    "instruction": "ldr\tx8, [x3, #72]"
+                  },
+                  {
+                    "offset": 6564,
+                    "instruction": "mov\tx10, #1"
+                  },
+                  {
+                    "offset": 6568,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6572,
+                    "instruction": "ccmp\tx6, x10, #2, ls"
+                  },
+                  {
+                    "offset": 6576,
+                    "instruction": "b.ls\t0x1a48 <_mech_canonical_program_entry_v1+0x1a48>"
+                  },
+                  {
+                    "offset": 6580,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 6584,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 6588,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 6592,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 6596,
+                    "instruction": "b.hs\t0x1b68 <_mech_canonical_program_entry_v1+0x1b68>"
+                  },
+                  {
+                    "offset": 6600,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 6604,
+                    "instruction": "b.eq\t0x19fc <_mech_canonical_program_entry_v1+0x19fc>"
+                  },
+                  {
+                    "offset": 6608,
+                    "instruction": "cbz\tx5, 0x35d4 <_mech_canonical_program_entry_v1+0x35d4>"
+                  },
+                  {
+                    "offset": 6612,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6616,
+                    "instruction": "cbz\tx5, 0x35d8 <_mech_canonical_program_entry_v1+0x35d8>"
+                  },
+                  {
+                    "offset": 6620,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6624,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6656,
+                "samples": 30,
+                "percent": 1.3268465280849182,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx6, #0",
+                "window": [
+                  {
+                    "offset": 6624,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6628,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 6632,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6636,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6640,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 6644,
+                    "instruction": "ldr\td21, [x2, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 6648,
+                    "instruction": "b\t0x1a00 <_mech_canonical_program_entry_v1+0x1a00>"
+                  },
+                  {
+                    "offset": 6652,
+                    "instruction": "mov.16b\tv21, v0"
+                  },
+                  {
+                    "offset": 6656,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 6660,
+                    "instruction": "b.eq\t0x1a34 <_mech_canonical_program_entry_v1+0x1a34>"
+                  },
+                  {
+                    "offset": 6664,
+                    "instruction": "cbz\tx5, 0x35dc <_mech_canonical_program_entry_v1+0x35dc>"
+                  },
+                  {
+                    "offset": 6668,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6672,
+                    "instruction": "cbz\tx5, 0x35e0 <_mech_canonical_program_entry_v1+0x35e0>"
+                  },
+                  {
+                    "offset": 6676,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6680,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6684,
+                    "instruction": "cmp\tx6, #2"
+                  },
+                  {
+                    "offset": 6688,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1868,
+                "samples": 29,
+                "percent": 1.2826183104820876,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx6, #0",
+                "window": [
+                  {
+                    "offset": 1836,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1840,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 1844,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 1848,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1852,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 1856,
+                    "instruction": "ldr\td2, [x2, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 1860,
+                    "instruction": "b\t0x74c <_mech_canonical_program_entry_v1+0x74c>"
+                  },
+                  {
+                    "offset": 1864,
+                    "instruction": "mov.16b\tv2, v0"
+                  },
+                  {
+                    "offset": 1868,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 1872,
+                    "instruction": "b.eq\t0x780 <_mech_canonical_program_entry_v1+0x780>"
+                  },
+                  {
+                    "offset": 1876,
+                    "instruction": "cbz\tx5, 0x359c <_mech_canonical_program_entry_v1+0x359c>"
+                  },
+                  {
+                    "offset": 1880,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1884,
+                    "instruction": "cbz\tx5, 0x35a0 <_mech_canonical_program_entry_v1+0x35a0>"
+                  },
+                  {
+                    "offset": 1888,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1892,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1896,
+                    "instruction": "cmp\tx6, #2"
+                  },
+                  {
+                    "offset": 1900,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1804,
+                "samples": 24,
+                "percent": 1.0614772224679345,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx10, x4",
+                "window": [
+                  {
+                    "offset": 1772,
+                    "instruction": "ldr\tx8, [x3, #72]"
+                  },
+                  {
+                    "offset": 1776,
+                    "instruction": "mov\tx10, #1"
+                  },
+                  {
+                    "offset": 1780,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1784,
+                    "instruction": "ccmp\tx6, x10, #2, ls"
+                  },
+                  {
+                    "offset": 1788,
+                    "instruction": "b.ls\t0x794 <_mech_canonical_program_entry_v1+0x794>"
+                  },
+                  {
+                    "offset": 1792,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 1796,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 1800,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 1804,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 1808,
+                    "instruction": "b.hs\t0x8b4 <_mech_canonical_program_entry_v1+0x8b4>"
+                  },
+                  {
+                    "offset": 1812,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 1816,
+                    "instruction": "b.eq\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+                  },
+                  {
+                    "offset": 1820,
+                    "instruction": "cbz\tx5, 0x3594 <_mech_canonical_program_entry_v1+0x3594>"
+                  },
+                  {
+                    "offset": 1824,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1828,
+                    "instruction": "cbz\tx5, 0x3598 <_mech_canonical_program_entry_v1+0x3598>"
+                  },
+                  {
+                    "offset": 1832,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1836,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 7424,
+                "samples": 23,
+                "percent": 1.017249004865104,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx0, x4",
+                "window": [
+                  {
+                    "offset": 7392,
+                    "instruction": "cmp\tx0, x7"
+                  },
+                  {
+                    "offset": 7396,
+                    "instruction": "cset\tx0, ls"
+                  },
+                  {
+                    "offset": 7400,
+                    "instruction": "cmp\tx1, x6"
+                  },
+                  {
+                    "offset": 7404,
+                    "instruction": "cset\tx1, ls"
+                  },
+                  {
+                    "offset": 7408,
+                    "instruction": "orr\tw0, w0, w1"
+                  },
+                  {
+                    "offset": 7412,
+                    "instruction": "uxtb\tw0, w0"
+                  },
+                  {
+                    "offset": 7416,
+                    "instruction": "cbz\tx0, 0x3308 <_mech_canonical_program_entry_v1+0x3308>"
+                  },
+                  {
+                    "offset": 7420,
+                    "instruction": "mov\tx0, #0"
+                  },
+                  {
+                    "offset": 7424,
+                    "instruction": "cmp\tx0, x4"
+                  },
+                  {
+                    "offset": 7428,
+                    "instruction": "b.lo\t0x2d20 <_mech_canonical_program_entry_v1+0x2d20>"
+                  },
+                  {
+                    "offset": 7432,
+                    "instruction": "mov\tx1, #31"
+                  },
+                  {
+                    "offset": 7436,
+                    "instruction": "mov\tx2, #-56"
+                  },
+                  {
+                    "offset": 7440,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 7444,
+                    "instruction": "ldur\tx0, [sp, #24]"
+                  },
+                  {
+                    "offset": 7448,
+                    "instruction": "ldur\tx6, [sp, #16]"
+                  },
+                  {
+                    "offset": 7452,
+                    "instruction": "blr\tx21"
+                  },
+                  {
+                    "offset": 7456,
+                    "instruction": "cmp\tx0, #0"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 8488,
+                "samples": 22,
+                "percent": 0.9730207872622734,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx13, x4",
+                "window": [
+                  {
+                    "offset": 8456,
+                    "instruction": "cmp\tw14, #0"
+                  },
+                  {
+                    "offset": 8460,
+                    "instruction": "cset\tx14, eq"
+                  },
+                  {
+                    "offset": 8464,
+                    "instruction": "orr\tw13, w13, w14"
+                  },
+                  {
+                    "offset": 8468,
+                    "instruction": "uxtb\tw13, w13"
+                  },
+                  {
+                    "offset": 8472,
+                    "instruction": "cbnz\tx13, 0x2124 <_mech_canonical_program_entry_v1+0x2124>"
+                  },
+                  {
+                    "offset": 8476,
+                    "instruction": "mov\tx4, x19"
+                  },
+                  {
+                    "offset": 8480,
+                    "instruction": "b\t0x2184 <_mech_canonical_program_entry_v1+0x2184>"
+                  },
+                  {
+                    "offset": 8484,
+                    "instruction": "mov\tx13, #0"
+                  },
+                  {
+                    "offset": 8488,
+                    "instruction": "cmp\tx13, x4"
+                  },
+                  {
+                    "offset": 8492,
+                    "instruction": "b.lo\t0x213c <_mech_canonical_program_entry_v1+0x213c>"
+                  },
+                  {
+                    "offset": 8496,
+                    "instruction": "str\tx4, [x3, #96]"
+                  },
+                  {
+                    "offset": 8500,
+                    "instruction": "mov\tx4, #0"
+                  },
+                  {
+                    "offset": 8504,
+                    "instruction": "b\t0x2184 <_mech_canonical_program_entry_v1+0x2184>"
+                  },
+                  {
+                    "offset": 8508,
+                    "instruction": "cbz\tx7, 0x35e4 <_mech_canonical_program_entry_v1+0x35e4>"
+                  },
+                  {
+                    "offset": 8512,
+                    "instruction": "udiv\tx14, x13, x7"
+                  },
+                  {
+                    "offset": 8516,
+                    "instruction": "msub\tx15, x14, x7, x13"
+                  },
+                  {
+                    "offset": 8520,
+                    "instruction": "add\tx27, x15, x6"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11556,
+                "samples": 21,
+                "percent": 0.9287925696594427,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx1, x0, x8",
+                "window": [
+                  {
+                    "offset": 11524,
+                    "instruction": "lsl\tx11, x11, #3"
+                  },
+                  {
+                    "offset": 11528,
+                    "instruction": "ldr\tq2, [x7, x11]"
+                  },
+                  {
+                    "offset": 11532,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11536,
+                    "instruction": "dup.2d\tv1, v1[0]"
+                  },
+                  {
+                    "offset": 11540,
+                    "instruction": "fmul.2d\tv1, v1, v2"
+                  },
+                  {
+                    "offset": 11544,
+                    "instruction": "fadd.2d\tv0, v0, v1"
+                  },
+                  {
+                    "offset": 11548,
+                    "instruction": "b\t0x2ce0 <_mech_canonical_program_entry_v1+0x2ce0>"
+                  },
+                  {
+                    "offset": 11552,
+                    "instruction": "cbz\tx8, 0x35f4 <_mech_canonical_program_entry_v1+0x35f4>"
+                  },
+                  {
+                    "offset": 11556,
+                    "instruction": "udiv\tx1, x0, x8"
+                  },
+                  {
+                    "offset": 11560,
+                    "instruction": "cbz\tx8, 0x35f8 <_mech_canonical_program_entry_v1+0x35f8>"
+                  },
+                  {
+                    "offset": 11564,
+                    "instruction": "udiv\tx2, x0, x8"
+                  },
+                  {
+                    "offset": 11568,
+                    "instruction": "msub\tx2, x2, x8, x0"
+                  },
+                  {
+                    "offset": 11572,
+                    "instruction": "madd\tx1, x2, x9, x1"
+                  },
+                  {
+                    "offset": 11576,
+                    "instruction": "ldr\tx1, [x6, x1, lsl #3]"
+                  },
+                  {
+                    "offset": 11580,
+                    "instruction": "str\tx1, [x7, x0, lsl #3]"
+                  },
+                  {
+                    "offset": 11584,
+                    "instruction": "add\tx0, x0, #1"
+                  },
+                  {
+                    "offset": 11588,
+                    "instruction": "b\t0x1d00 <_mech_canonical_program_entry_v1+0x1d00>"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6608,
+                "samples": 17,
+                "percent": 0.7518796992481203,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx5, 0x35d4 <_mech_canonical_program_entry_v1+0x35d4>",
+                "window": [
+                  {
+                    "offset": 6576,
+                    "instruction": "b.ls\t0x1a48 <_mech_canonical_program_entry_v1+0x1a48>"
+                  },
+                  {
+                    "offset": 6580,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 6584,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 6588,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 6592,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 6596,
+                    "instruction": "b.hs\t0x1b68 <_mech_canonical_program_entry_v1+0x1b68>"
+                  },
+                  {
+                    "offset": 6600,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 6604,
+                    "instruction": "b.eq\t0x19fc <_mech_canonical_program_entry_v1+0x19fc>"
+                  },
+                  {
+                    "offset": 6608,
+                    "instruction": "cbz\tx5, 0x35d4 <_mech_canonical_program_entry_v1+0x35d4>"
+                  },
+                  {
+                    "offset": 6612,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6616,
+                    "instruction": "cbz\tx5, 0x35d8 <_mech_canonical_program_entry_v1+0x35d8>"
+                  },
+                  {
+                    "offset": 6620,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6624,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6628,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 6632,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6636,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6640,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6612,
+                "samples": 16,
+                "percent": 0.7076514816452897,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx8, x10, x5",
+                "window": [
+                  {
+                    "offset": 6580,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 6584,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 6588,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 6592,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 6596,
+                    "instruction": "b.hs\t0x1b68 <_mech_canonical_program_entry_v1+0x1b68>"
+                  },
+                  {
+                    "offset": 6600,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 6604,
+                    "instruction": "b.eq\t0x19fc <_mech_canonical_program_entry_v1+0x19fc>"
+                  },
+                  {
+                    "offset": 6608,
+                    "instruction": "cbz\tx5, 0x35d4 <_mech_canonical_program_entry_v1+0x35d4>"
+                  },
+                  {
+                    "offset": 6612,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6616,
+                    "instruction": "cbz\tx5, 0x35d8 <_mech_canonical_program_entry_v1+0x35d8>"
+                  },
+                  {
+                    "offset": 6620,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6624,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6628,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 6632,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6636,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6640,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 6644,
+                    "instruction": "ldr\td21, [x2, x8, lsl #3]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6600,
+                "samples": 15,
+                "percent": 0.6634232640424591,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx7, #0",
+                "window": [
+                  {
+                    "offset": 6568,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6572,
+                    "instruction": "ccmp\tx6, x10, #2, ls"
+                  },
+                  {
+                    "offset": 6576,
+                    "instruction": "b.ls\t0x1a48 <_mech_canonical_program_entry_v1+0x1a48>"
+                  },
+                  {
+                    "offset": 6580,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 6584,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 6588,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 6592,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 6596,
+                    "instruction": "b.hs\t0x1b68 <_mech_canonical_program_entry_v1+0x1b68>"
+                  },
+                  {
+                    "offset": 6600,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 6604,
+                    "instruction": "b.eq\t0x19fc <_mech_canonical_program_entry_v1+0x19fc>"
+                  },
+                  {
+                    "offset": 6608,
+                    "instruction": "cbz\tx5, 0x35d4 <_mech_canonical_program_entry_v1+0x35d4>"
+                  },
+                  {
+                    "offset": 6612,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6616,
+                    "instruction": "cbz\tx5, 0x35d8 <_mech_canonical_program_entry_v1+0x35d8>"
+                  },
+                  {
+                    "offset": 6620,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6624,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6628,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 6632,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1812,
+                "samples": 14,
+                "percent": 0.6191950464396285,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx7, #0",
+                "window": [
+                  {
+                    "offset": 1780,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1784,
+                    "instruction": "ccmp\tx6, x10, #2, ls"
+                  },
+                  {
+                    "offset": 1788,
+                    "instruction": "b.ls\t0x794 <_mech_canonical_program_entry_v1+0x794>"
+                  },
+                  {
+                    "offset": 1792,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 1796,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 1800,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 1804,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 1808,
+                    "instruction": "b.hs\t0x8b4 <_mech_canonical_program_entry_v1+0x8b4>"
+                  },
+                  {
+                    "offset": 1812,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 1816,
+                    "instruction": "b.eq\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+                  },
+                  {
+                    "offset": 1820,
+                    "instruction": "cbz\tx5, 0x3594 <_mech_canonical_program_entry_v1+0x3594>"
+                  },
+                  {
+                    "offset": 1824,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1828,
+                    "instruction": "cbz\tx5, 0x3598 <_mech_canonical_program_entry_v1+0x3598>"
+                  },
+                  {
+                    "offset": 1832,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1836,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1840,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 1844,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 8556,
+                "samples": 14,
+                "percent": 0.6191950464396285,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "sub\tx27, x27, #1",
+                "window": [
+                  {
+                    "offset": 8524,
+                    "instruction": "add\tx28, x12, x14"
+                  },
+                  {
+                    "offset": 8528,
+                    "instruction": "cmp\tx27, x28"
+                  },
+                  {
+                    "offset": 8532,
+                    "instruction": "cset\tx25, eq"
+                  },
+                  {
+                    "offset": 8536,
+                    "instruction": "uxtb\tw25, w25"
+                  },
+                  {
+                    "offset": 8540,
+                    "instruction": "cmp\tx25, x0"
+                  },
+                  {
+                    "offset": 8544,
+                    "instruction": "b.eq\t0x2c60 <_mech_canonical_program_entry_v1+0x2c60>"
+                  },
+                  {
+                    "offset": 8548,
+                    "instruction": "cmp\tx25, x1"
+                  },
+                  {
+                    "offset": 8552,
+                    "instruction": "b.ne\t0x2180 <_mech_canonical_program_entry_v1+0x2180>"
+                  },
+                  {
+                    "offset": 8556,
+                    "instruction": "sub\tx27, x27, #1"
+                  },
+                  {
+                    "offset": 8560,
+                    "instruction": "sub\tx28, x28, #1"
+                  },
+                  {
+                    "offset": 8564,
+                    "instruction": "cmp\tx27, x10"
+                  },
+                  {
+                    "offset": 8568,
+                    "instruction": "ccmp\tx28, x11, #2, lo"
+                  },
+                  {
+                    "offset": 8572,
+                    "instruction": "b.lo\t0x2c54 <_mech_canonical_program_entry_v1+0x2c54>"
+                  },
+                  {
+                    "offset": 8576,
+                    "instruction": "mov\tx4, #1"
+                  },
+                  {
+                    "offset": 8580,
+                    "instruction": "mov\tx1, #38"
+                  },
+                  {
+                    "offset": 8584,
+                    "instruction": "mov\tx2, #-43"
+                  },
+                  {
+                    "offset": 8588,
+                    "instruction": "mov\tx5, #0"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1880,
+                "samples": 9,
+                "percent": 0.3980539584254755,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx8, x10, x5",
+                "window": [
+                  {
+                    "offset": 1848,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1852,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 1856,
+                    "instruction": "ldr\td2, [x2, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 1860,
+                    "instruction": "b\t0x74c <_mech_canonical_program_entry_v1+0x74c>"
+                  },
+                  {
+                    "offset": 1864,
+                    "instruction": "mov.16b\tv2, v0"
+                  },
+                  {
+                    "offset": 1868,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 1872,
+                    "instruction": "b.eq\t0x780 <_mech_canonical_program_entry_v1+0x780>"
+                  },
+                  {
+                    "offset": 1876,
+                    "instruction": "cbz\tx5, 0x359c <_mech_canonical_program_entry_v1+0x359c>"
+                  },
+                  {
+                    "offset": 1880,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1884,
+                    "instruction": "cbz\tx5, 0x35a0 <_mech_canonical_program_entry_v1+0x35a0>"
+                  },
+                  {
+                    "offset": 1888,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1892,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1896,
+                    "instruction": "cmp\tx6, #2"
+                  },
+                  {
+                    "offset": 1900,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 1904,
+                    "instruction": "cmp\tx6, #1"
+                  },
+                  {
+                    "offset": 1908,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 1912,
+                    "instruction": "ldr\td16, [x1, x8, lsl #3]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 12020,
+                "samples": 9,
+                "percent": 0.3980539584254755,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx6, x5",
+                "window": [
+                  {
+                    "offset": 11988,
+                    "instruction": "b\t0x354 <_mech_canonical_program_entry_v1+0x354>"
+                  },
+                  {
+                    "offset": 11992,
+                    "instruction": "madd\tx7, x6, x4, x0"
+                  },
+                  {
+                    "offset": 11996,
+                    "instruction": "ldr\td17, [x1, x7, lsl #3]"
+                  },
+                  {
+                    "offset": 12000,
+                    "instruction": "add\tx6, x6, #1"
+                  },
+                  {
+                    "offset": 12004,
+                    "instruction": "fadd\td0, d0, d17"
+                  },
+                  {
+                    "offset": 12008,
+                    "instruction": "b\t0x2ec4 <_mech_canonical_program_entry_v1+0x2ec4>"
+                  },
+                  {
+                    "offset": 12012,
+                    "instruction": "mov\tx6, #0"
+                  },
+                  {
+                    "offset": 12016,
+                    "instruction": "movi.16b\tv5, #0"
+                  },
+                  {
+                    "offset": 12020,
+                    "instruction": "cmp\tx6, x5"
+                  },
+                  {
+                    "offset": 12024,
+                    "instruction": "b.lo\t0x2f0c <_mech_canonical_program_entry_v1+0x2f0c>"
+                  },
+                  {
+                    "offset": 12028,
+                    "instruction": "lsl\tx6, x0, #3"
+                  },
+                  {
+                    "offset": 12032,
+                    "instruction": "str\tq5, [x2, x6]"
+                  },
+                  {
+                    "offset": 12036,
+                    "instruction": "add\tx0, x0, #2"
+                  },
+                  {
+                    "offset": 12040,
+                    "instruction": "b\t0x354 <_mech_canonical_program_entry_v1+0x354>"
+                  },
+                  {
+                    "offset": 12044,
+                    "instruction": "madd\tx7, x6, x4, x0"
+                  },
+                  {
+                    "offset": 12048,
+                    "instruction": "lsl\tx7, x7, #3"
+                  },
+                  {
+                    "offset": 12052,
+                    "instruction": "ldr\tq23, [x1, x7]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1820,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx5, 0x3594 <_mech_canonical_program_entry_v1+0x3594>",
+                "window": [
+                  {
+                    "offset": 1788,
+                    "instruction": "b.ls\t0x794 <_mech_canonical_program_entry_v1+0x794>"
+                  },
+                  {
+                    "offset": 1792,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 1796,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 1800,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 1804,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 1808,
+                    "instruction": "b.hs\t0x8b4 <_mech_canonical_program_entry_v1+0x8b4>"
+                  },
+                  {
+                    "offset": 1812,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 1816,
+                    "instruction": "b.eq\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+                  },
+                  {
+                    "offset": 1820,
+                    "instruction": "cbz\tx5, 0x3594 <_mech_canonical_program_entry_v1+0x3594>"
+                  },
+                  {
+                    "offset": 1824,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1828,
+                    "instruction": "cbz\tx5, 0x3598 <_mech_canonical_program_entry_v1+0x3598>"
+                  },
+                  {
+                    "offset": 1832,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1836,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1840,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 1844,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 1848,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1852,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6664,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx5, 0x35dc <_mech_canonical_program_entry_v1+0x35dc>",
+                "window": [
+                  {
+                    "offset": 6632,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6636,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6640,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 6644,
+                    "instruction": "ldr\td21, [x2, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 6648,
+                    "instruction": "b\t0x1a00 <_mech_canonical_program_entry_v1+0x1a00>"
+                  },
+                  {
+                    "offset": 6652,
+                    "instruction": "mov.16b\tv21, v0"
+                  },
+                  {
+                    "offset": 6656,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 6660,
+                    "instruction": "b.eq\t0x1a34 <_mech_canonical_program_entry_v1+0x1a34>"
+                  },
+                  {
+                    "offset": 6664,
+                    "instruction": "cbz\tx5, 0x35dc <_mech_canonical_program_entry_v1+0x35dc>"
+                  },
+                  {
+                    "offset": 6668,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6672,
+                    "instruction": "cbz\tx5, 0x35e0 <_mech_canonical_program_entry_v1+0x35e0>"
+                  },
+                  {
+                    "offset": 6676,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6680,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6684,
+                    "instruction": "cmp\tx6, #2"
+                  },
+                  {
+                    "offset": 6688,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6692,
+                    "instruction": "cmp\tx6, #1"
+                  },
+                  {
+                    "offset": 6696,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 8508,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx7, 0x35e4 <_mech_canonical_program_entry_v1+0x35e4>",
+                "window": [
+                  {
+                    "offset": 8476,
+                    "instruction": "mov\tx4, x19"
+                  },
+                  {
+                    "offset": 8480,
+                    "instruction": "b\t0x2184 <_mech_canonical_program_entry_v1+0x2184>"
+                  },
+                  {
+                    "offset": 8484,
+                    "instruction": "mov\tx13, #0"
+                  },
+                  {
+                    "offset": 8488,
+                    "instruction": "cmp\tx13, x4"
+                  },
+                  {
+                    "offset": 8492,
+                    "instruction": "b.lo\t0x213c <_mech_canonical_program_entry_v1+0x213c>"
+                  },
+                  {
+                    "offset": 8496,
+                    "instruction": "str\tx4, [x3, #96]"
+                  },
+                  {
+                    "offset": 8500,
+                    "instruction": "mov\tx4, #0"
+                  },
+                  {
+                    "offset": 8504,
+                    "instruction": "b\t0x2184 <_mech_canonical_program_entry_v1+0x2184>"
+                  },
+                  {
+                    "offset": 8508,
+                    "instruction": "cbz\tx7, 0x35e4 <_mech_canonical_program_entry_v1+0x35e4>"
+                  },
+                  {
+                    "offset": 8512,
+                    "instruction": "udiv\tx14, x13, x7"
+                  },
+                  {
+                    "offset": 8516,
+                    "instruction": "msub\tx15, x14, x7, x13"
+                  },
+                  {
+                    "offset": 8520,
+                    "instruction": "add\tx27, x15, x6"
+                  },
+                  {
+                    "offset": 8524,
+                    "instruction": "add\tx28, x12, x14"
+                  },
+                  {
+                    "offset": 8528,
+                    "instruction": "cmp\tx27, x28"
+                  },
+                  {
+                    "offset": 8532,
+                    "instruction": "cset\tx25, eq"
+                  },
+                  {
+                    "offset": 8536,
+                    "instruction": "uxtb\tw25, w25"
+                  },
+                  {
+                    "offset": 8540,
+                    "instruction": "cmp\tx25, x0"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 8540,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx25, x0",
+                "window": [
+                  {
+                    "offset": 8508,
+                    "instruction": "cbz\tx7, 0x35e4 <_mech_canonical_program_entry_v1+0x35e4>"
+                  },
+                  {
+                    "offset": 8512,
+                    "instruction": "udiv\tx14, x13, x7"
+                  },
+                  {
+                    "offset": 8516,
+                    "instruction": "msub\tx15, x14, x7, x13"
+                  },
+                  {
+                    "offset": 8520,
+                    "instruction": "add\tx27, x15, x6"
+                  },
+                  {
+                    "offset": 8524,
+                    "instruction": "add\tx28, x12, x14"
+                  },
+                  {
+                    "offset": 8528,
+                    "instruction": "cmp\tx27, x28"
+                  },
+                  {
+                    "offset": 8532,
+                    "instruction": "cset\tx25, eq"
+                  },
+                  {
+                    "offset": 8536,
+                    "instruction": "uxtb\tw25, w25"
+                  },
+                  {
+                    "offset": 8540,
+                    "instruction": "cmp\tx25, x0"
+                  },
+                  {
+                    "offset": 8544,
+                    "instruction": "b.eq\t0x2c60 <_mech_canonical_program_entry_v1+0x2c60>"
+                  },
+                  {
+                    "offset": 8548,
+                    "instruction": "cmp\tx25, x1"
+                  },
+                  {
+                    "offset": 8552,
+                    "instruction": "b.ne\t0x2180 <_mech_canonical_program_entry_v1+0x2180>"
+                  },
+                  {
+                    "offset": 8556,
+                    "instruction": "sub\tx27, x27, #1"
+                  },
+                  {
+                    "offset": 8560,
+                    "instruction": "sub\tx28, x28, #1"
+                  },
+                  {
+                    "offset": 8564,
+                    "instruction": "cmp\tx27, x10"
+                  },
+                  {
+                    "offset": 8568,
+                    "instruction": "ccmp\tx28, x11, #2, lo"
+                  },
+                  {
+                    "offset": 8572,
+                    "instruction": "b.lo\t0x2c54 <_mech_canonical_program_entry_v1+0x2c54>"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11528,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "ldr\tq2, [x7, x11]",
+                "window": [
+                  {
+                    "offset": 11496,
+                    "instruction": "lsl\tx1, x0, #3"
+                  },
+                  {
+                    "offset": 11500,
+                    "instruction": "str\tq0, [x8, x1]"
+                  },
+                  {
+                    "offset": 11504,
+                    "instruction": "add\tx0, x0, #2"
+                  },
+                  {
+                    "offset": 11508,
+                    "instruction": "b\t0x1de8 <_mech_canonical_program_entry_v1+0x1de8>"
+                  },
+                  {
+                    "offset": 11512,
+                    "instruction": "madd\tx11, x2, x10, x5"
+                  },
+                  {
+                    "offset": 11516,
+                    "instruction": "ldr\td1, [x6, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11520,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  },
+                  {
+                    "offset": 11524,
+                    "instruction": "lsl\tx11, x11, #3"
+                  },
+                  {
+                    "offset": 11528,
+                    "instruction": "ldr\tq2, [x7, x11]"
+                  },
+                  {
+                    "offset": 11532,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11536,
+                    "instruction": "dup.2d\tv1, v1[0]"
+                  },
+                  {
+                    "offset": 11540,
+                    "instruction": "fmul.2d\tv1, v1, v2"
+                  },
+                  {
+                    "offset": 11544,
+                    "instruction": "fadd.2d\tv0, v0, v1"
+                  },
+                  {
+                    "offset": 11548,
+                    "instruction": "b\t0x2ce0 <_mech_canonical_program_entry_v1+0x2ce0>"
+                  },
+                  {
+                    "offset": 11552,
+                    "instruction": "cbz\tx8, 0x35f4 <_mech_canonical_program_entry_v1+0x35f4>"
+                  },
+                  {
+                    "offset": 11556,
+                    "instruction": "udiv\tx1, x0, x8"
+                  },
+                  {
+                    "offset": 11560,
+                    "instruction": "cbz\tx8, 0x35f8 <_mech_canonical_program_entry_v1+0x35f8>"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11792,
+                "samples": 8,
+                "percent": 0.35382574082264484,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx7, x5",
+                "window": [
+                  {
+                    "offset": 11760,
+                    "instruction": "b\t0xd10 <_mech_canonical_program_entry_v1+0xd10>"
+                  },
+                  {
+                    "offset": 11764,
+                    "instruction": "madd\tx8, x7, x4, x6"
+                  },
+                  {
+                    "offset": 11768,
+                    "instruction": "ldr\td0, [x1, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 11772,
+                    "instruction": "add\tx7, x7, #1"
+                  },
+                  {
+                    "offset": 11776,
+                    "instruction": "fadd\td25, d25, d0"
+                  },
+                  {
+                    "offset": 11780,
+                    "instruction": "b\t0x2ddc <_mech_canonical_program_entry_v1+0x2ddc>"
+                  },
+                  {
+                    "offset": 11784,
+                    "instruction": "mov\tx7, #0"
+                  },
+                  {
+                    "offset": 11788,
+                    "instruction": "movi.16b\tv0, #0"
+                  },
+                  {
+                    "offset": 11792,
+                    "instruction": "cmp\tx7, x5"
+                  },
+                  {
+                    "offset": 11796,
+                    "instruction": "b.lo\t0x2e2c <_mech_canonical_program_entry_v1+0x2e2c>"
+                  },
+                  {
+                    "offset": 11800,
+                    "instruction": "lsl\tx7, x6, #3"
+                  },
+                  {
+                    "offset": 11804,
+                    "instruction": "str\tq0, [x2, x7]"
+                  },
+                  {
+                    "offset": 11808,
+                    "instruction": "add\tx6, x6, #2"
+                  },
+                  {
+                    "offset": 11812,
+                    "instruction": "mov\tx25, x0"
+                  },
+                  {
+                    "offset": 11816,
+                    "instruction": "b\t0xd10 <_mech_canonical_program_entry_v1+0xd10>"
+                  },
+                  {
+                    "offset": 11820,
+                    "instruction": "madd\tx8, x7, x4, x6"
+                  },
+                  {
+                    "offset": 11824,
+                    "instruction": "lsl\tx8, x8, #3"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11380,
+                "samples": 6,
+                "percent": 0.26536930561698363,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx9, 0x35e8 <_mech_canonical_program_entry_v1+0x35e8>",
+                "window": [
+                  {
+                    "offset": 11348,
+                    "instruction": "madd\tx25, x27, x11, x28"
+                  },
+                  {
+                    "offset": 11352,
+                    "instruction": "ldr\tx27, [x9, x25, lsl #3]"
+                  },
+                  {
+                    "offset": 11356,
+                    "instruction": "b\t0x2c64 <_mech_canonical_program_entry_v1+0x2c64>"
+                  },
+                  {
+                    "offset": 11360,
+                    "instruction": "mov\tx27, x2"
+                  },
+                  {
+                    "offset": 11364,
+                    "instruction": "madd\tx15, x15, x5, x14"
+                  },
+                  {
+                    "offset": 11368,
+                    "instruction": "str\tx27, [x8, x15, lsl #3]"
+                  },
+                  {
+                    "offset": 11372,
+                    "instruction": "add\tx13, x13, #1"
+                  },
+                  {
+                    "offset": 11376,
+                    "instruction": "b\t0x2128 <_mech_canonical_program_entry_v1+0x2128>"
+                  },
+                  {
+                    "offset": 11380,
+                    "instruction": "cbz\tx9, 0x35e8 <_mech_canonical_program_entry_v1+0x35e8>"
+                  },
+                  {
+                    "offset": 11384,
+                    "instruction": "udiv\tx1, x0, x9"
+                  },
+                  {
+                    "offset": 11388,
+                    "instruction": "msub\tx1, x1, x9, x0"
+                  },
+                  {
+                    "offset": 11392,
+                    "instruction": "sub\tx2, x9, x1"
+                  },
+                  {
+                    "offset": 11396,
+                    "instruction": "cmp\tx2, #2"
+                  },
+                  {
+                    "offset": 11400,
+                    "instruction": "b.hs\t0x2cd0 <_mech_canonical_program_entry_v1+0x2cd0>"
+                  },
+                  {
+                    "offset": 11404,
+                    "instruction": "cbz\tx9, 0x35ec <_mech_canonical_program_entry_v1+0x35ec>"
+                  },
+                  {
+                    "offset": 11408,
+                    "instruction": "udiv\tx2, x0, x9"
+                  },
+                  {
+                    "offset": 11412,
+                    "instruction": "mov\tx5, #0"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11472,
+                "samples": 6,
+                "percent": 0.26536930561698363,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx9, 0x35f0 <_mech_canonical_program_entry_v1+0x35f0>",
+                "window": [
+                  {
+                    "offset": 11440,
+                    "instruction": "madd\tx11, x2, x10, x5"
+                  },
+                  {
+                    "offset": 11444,
+                    "instruction": "ldr\td27, [x6, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11448,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  },
+                  {
+                    "offset": 11452,
+                    "instruction": "ldr\td28, [x7, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11456,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11460,
+                    "instruction": "fmul\td27, d27, d28"
+                  },
+                  {
+                    "offset": 11464,
+                    "instruction": "fadd\td0, d0, d27"
+                  },
+                  {
+                    "offset": 11468,
+                    "instruction": "b\t0x2c9c <_mech_canonical_program_entry_v1+0x2c9c>"
+                  },
+                  {
+                    "offset": 11472,
+                    "instruction": "cbz\tx9, 0x35f0 <_mech_canonical_program_entry_v1+0x35f0>"
+                  },
+                  {
+                    "offset": 11476,
+                    "instruction": "udiv\tx2, x0, x9"
+                  },
+                  {
+                    "offset": 11480,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 11484,
+                    "instruction": "movi.16b\tv0, #0"
+                  },
+                  {
+                    "offset": 11488,
+                    "instruction": "cmp\tx5, x10"
+                  },
+                  {
+                    "offset": 11492,
+                    "instruction": "b.lo\t0x2cf8 <_mech_canonical_program_entry_v1+0x2cf8>"
+                  },
+                  {
+                    "offset": 11496,
+                    "instruction": "lsl\tx1, x0, #3"
+                  },
+                  {
+                    "offset": 11500,
+                    "instruction": "str\tq0, [x8, x1]"
+                  },
+                  {
+                    "offset": 11504,
+                    "instruction": "add\tx0, x0, #2"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11496,
+                "samples": 6,
+                "percent": 0.26536930561698363,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "lsl\tx1, x0, #3",
+                "window": [
+                  {
+                    "offset": 11464,
+                    "instruction": "fadd\td0, d0, d27"
+                  },
+                  {
+                    "offset": 11468,
+                    "instruction": "b\t0x2c9c <_mech_canonical_program_entry_v1+0x2c9c>"
+                  },
+                  {
+                    "offset": 11472,
+                    "instruction": "cbz\tx9, 0x35f0 <_mech_canonical_program_entry_v1+0x35f0>"
+                  },
+                  {
+                    "offset": 11476,
+                    "instruction": "udiv\tx2, x0, x9"
+                  },
+                  {
+                    "offset": 11480,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 11484,
+                    "instruction": "movi.16b\tv0, #0"
+                  },
+                  {
+                    "offset": 11488,
+                    "instruction": "cmp\tx5, x10"
+                  },
+                  {
+                    "offset": 11492,
+                    "instruction": "b.lo\t0x2cf8 <_mech_canonical_program_entry_v1+0x2cf8>"
+                  },
+                  {
+                    "offset": 11496,
+                    "instruction": "lsl\tx1, x0, #3"
+                  },
+                  {
+                    "offset": 11500,
+                    "instruction": "str\tq0, [x8, x1]"
+                  },
+                  {
+                    "offset": 11504,
+                    "instruction": "add\tx0, x0, #2"
+                  },
+                  {
+                    "offset": 11508,
+                    "instruction": "b\t0x1de8 <_mech_canonical_program_entry_v1+0x1de8>"
+                  },
+                  {
+                    "offset": 11512,
+                    "instruction": "madd\tx11, x2, x10, x5"
+                  },
+                  {
+                    "offset": 11516,
+                    "instruction": "ldr\td1, [x6, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11520,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  },
+                  {
+                    "offset": 11524,
+                    "instruction": "lsl\tx11, x11, #3"
+                  },
+                  {
+                    "offset": 11528,
+                    "instruction": "ldr\tq2, [x7, x11]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11552,
+                "samples": 6,
+                "percent": 0.26536930561698363,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cbz\tx8, 0x35f4 <_mech_canonical_program_entry_v1+0x35f4>",
+                "window": [
+                  {
+                    "offset": 11520,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  },
+                  {
+                    "offset": 11524,
+                    "instruction": "lsl\tx11, x11, #3"
+                  },
+                  {
+                    "offset": 11528,
+                    "instruction": "ldr\tq2, [x7, x11]"
+                  },
+                  {
+                    "offset": 11532,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11536,
+                    "instruction": "dup.2d\tv1, v1[0]"
+                  },
+                  {
+                    "offset": 11540,
+                    "instruction": "fmul.2d\tv1, v1, v2"
+                  },
+                  {
+                    "offset": 11544,
+                    "instruction": "fadd.2d\tv0, v0, v1"
+                  },
+                  {
+                    "offset": 11548,
+                    "instruction": "b\t0x2ce0 <_mech_canonical_program_entry_v1+0x2ce0>"
+                  },
+                  {
+                    "offset": 11552,
+                    "instruction": "cbz\tx8, 0x35f4 <_mech_canonical_program_entry_v1+0x35f4>"
+                  },
+                  {
+                    "offset": 11556,
+                    "instruction": "udiv\tx1, x0, x8"
+                  },
+                  {
+                    "offset": 11560,
+                    "instruction": "cbz\tx8, 0x35f8 <_mech_canonical_program_entry_v1+0x35f8>"
+                  },
+                  {
+                    "offset": 11564,
+                    "instruction": "udiv\tx2, x0, x8"
+                  },
+                  {
+                    "offset": 11568,
+                    "instruction": "msub\tx2, x2, x8, x0"
+                  },
+                  {
+                    "offset": 11572,
+                    "instruction": "madd\tx1, x2, x9, x1"
+                  },
+                  {
+                    "offset": 11576,
+                    "instruction": "ldr\tx1, [x6, x1, lsl #3]"
+                  },
+                  {
+                    "offset": 11580,
+                    "instruction": "str\tx1, [x7, x0, lsl #3]"
+                  },
+                  {
+                    "offset": 11584,
+                    "instruction": "add\tx0, x0, #1"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 6668,
+                "samples": 5,
+                "percent": 0.22114108801415303,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx8, x10, x5",
+                "window": [
+                  {
+                    "offset": 6636,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 6640,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 6644,
+                    "instruction": "ldr\td21, [x2, x8, lsl #3]"
+                  },
+                  {
+                    "offset": 6648,
+                    "instruction": "b\t0x1a00 <_mech_canonical_program_entry_v1+0x1a00>"
+                  },
+                  {
+                    "offset": 6652,
+                    "instruction": "mov.16b\tv21, v0"
+                  },
+                  {
+                    "offset": 6656,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 6660,
+                    "instruction": "b.eq\t0x1a34 <_mech_canonical_program_entry_v1+0x1a34>"
+                  },
+                  {
+                    "offset": 6664,
+                    "instruction": "cbz\tx5, 0x35dc <_mech_canonical_program_entry_v1+0x35dc>"
+                  },
+                  {
+                    "offset": 6668,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 6672,
+                    "instruction": "cbz\tx5, 0x35e0 <_mech_canonical_program_entry_v1+0x35e0>"
+                  },
+                  {
+                    "offset": 6676,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 6680,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 6684,
+                    "instruction": "cmp\tx6, #2"
+                  },
+                  {
+                    "offset": 6688,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 6692,
+                    "instruction": "cmp\tx6, #1"
+                  },
+                  {
+                    "offset": 6696,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 6700,
+                    "instruction": "ldr\td2, [x1, x8, lsl #3]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 11476,
+                "samples": 5,
+                "percent": 0.22114108801415303,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx2, x0, x9",
+                "window": [
+                  {
+                    "offset": 11444,
+                    "instruction": "ldr\td27, [x6, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11448,
+                    "instruction": "madd\tx11, x5, x9, x1"
+                  },
+                  {
+                    "offset": 11452,
+                    "instruction": "ldr\td28, [x7, x11, lsl #3]"
+                  },
+                  {
+                    "offset": 11456,
+                    "instruction": "add\tx5, x5, #1"
+                  },
+                  {
+                    "offset": 11460,
+                    "instruction": "fmul\td27, d27, d28"
+                  },
+                  {
+                    "offset": 11464,
+                    "instruction": "fadd\td0, d0, d27"
+                  },
+                  {
+                    "offset": 11468,
+                    "instruction": "b\t0x2c9c <_mech_canonical_program_entry_v1+0x2c9c>"
+                  },
+                  {
+                    "offset": 11472,
+                    "instruction": "cbz\tx9, 0x35f0 <_mech_canonical_program_entry_v1+0x35f0>"
+                  },
+                  {
+                    "offset": 11476,
+                    "instruction": "udiv\tx2, x0, x9"
+                  },
+                  {
+                    "offset": 11480,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 11484,
+                    "instruction": "movi.16b\tv0, #0"
+                  },
+                  {
+                    "offset": 11488,
+                    "instruction": "cmp\tx5, x10"
+                  },
+                  {
+                    "offset": 11492,
+                    "instruction": "b.lo\t0x2cf8 <_mech_canonical_program_entry_v1+0x2cf8>"
+                  },
+                  {
+                    "offset": 11496,
+                    "instruction": "lsl\tx1, x0, #3"
+                  },
+                  {
+                    "offset": 11500,
+                    "instruction": "str\tq0, [x8, x1]"
+                  },
+                  {
+                    "offset": 11504,
+                    "instruction": "add\tx0, x0, #2"
+                  },
+                  {
+                    "offset": 11508,
+                    "instruction": "b\t0x1de8 <_mech_canonical_program_entry_v1+0x1de8>"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 1824,
+                "samples": 4,
+                "percent": 0.17691287041132242,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "udiv\tx8, x10, x5",
+                "window": [
+                  {
+                    "offset": 1792,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 1796,
+                    "instruction": "fmov\td0, x9"
+                  },
+                  {
+                    "offset": 1800,
+                    "instruction": "fmov\td1, x8"
+                  },
+                  {
+                    "offset": 1804,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 1808,
+                    "instruction": "b.hs\t0x8b4 <_mech_canonical_program_entry_v1+0x8b4>"
+                  },
+                  {
+                    "offset": 1812,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 1816,
+                    "instruction": "b.eq\t0x748 <_mech_canonical_program_entry_v1+0x748>"
+                  },
+                  {
+                    "offset": 1820,
+                    "instruction": "cbz\tx5, 0x3594 <_mech_canonical_program_entry_v1+0x3594>"
+                  },
+                  {
+                    "offset": 1824,
+                    "instruction": "udiv\tx8, x10, x5"
+                  },
+                  {
+                    "offset": 1828,
+                    "instruction": "cbz\tx5, 0x3598 <_mech_canonical_program_entry_v1+0x3598>"
+                  },
+                  {
+                    "offset": 1832,
+                    "instruction": "udiv\tx9, x10, x5"
+                  },
+                  {
+                    "offset": 1836,
+                    "instruction": "msub\tx9, x9, x5, x10"
+                  },
+                  {
+                    "offset": 1840,
+                    "instruction": "cmp\tx7, #2"
+                  },
+                  {
+                    "offset": 1844,
+                    "instruction": "csel\tx8, x8, x9, eq"
+                  },
+                  {
+                    "offset": 1848,
+                    "instruction": "cmp\tx7, #1"
+                  },
+                  {
+                    "offset": 1852,
+                    "instruction": "csel\tx8, x10, x8, eq"
+                  },
+                  {
+                    "offset": 1856,
+                    "instruction": "ldr\td2, [x2, x8, lsl #3]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 2632,
+                "samples": 4,
+                "percent": 0.17691287041132242,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "sub\tx5, x4, x10",
+                "window": [
+                  {
+                    "offset": 2600,
+                    "instruction": "str\td23, [x0, x10, lsl #3]"
+                  },
+                  {
+                    "offset": 2604,
+                    "instruction": "add\tx10, x10, #1"
+                  },
+                  {
+                    "offset": 2608,
+                    "instruction": "b\t0x9ac <_mech_canonical_program_entry_v1+0x9ac>"
+                  },
+                  {
+                    "offset": 2612,
+                    "instruction": "cmp\tx7, #0"
+                  },
+                  {
+                    "offset": 2616,
+                    "instruction": "b.eq\t0xad8 <_mech_canonical_program_entry_v1+0xad8>"
+                  },
+                  {
+                    "offset": 2620,
+                    "instruction": "cmp\tx6, #0"
+                  },
+                  {
+                    "offset": 2624,
+                    "instruction": "b.eq\t0xa8c <_mech_canonical_program_entry_v1+0xa8c>"
+                  },
+                  {
+                    "offset": 2628,
+                    "instruction": "mov\tx10, #0"
+                  },
+                  {
+                    "offset": 2632,
+                    "instruction": "sub\tx5, x4, x10"
+                  },
+                  {
+                    "offset": 2636,
+                    "instruction": "cmp\tx5, #2"
+                  },
+                  {
+                    "offset": 2640,
+                    "instruction": "b.hs\t0xa70 <_mech_canonical_program_entry_v1+0xa70>"
+                  },
+                  {
+                    "offset": 2644,
+                    "instruction": "cmp\tx10, x4"
+                  },
+                  {
+                    "offset": 2648,
+                    "instruction": "b.hs\t0xb54 <_mech_canonical_program_entry_v1+0xb54>"
+                  },
+                  {
+                    "offset": 2652,
+                    "instruction": "ldr\td0, [x2, x10, lsl #3]"
+                  },
+                  {
+                    "offset": 2656,
+                    "instruction": "ldr\td1, [x1, x10, lsl #3]"
+                  },
+                  {
+                    "offset": 2660,
+                    "instruction": "fmul\td0, d0, d1"
+                  },
+                  {
+                    "offset": 2664,
+                    "instruction": "str\td0, [x0, x10, lsl #3]"
+                  }
+                ]
+              },
+              {
+                "symbol": "mech_canonical_program_entry_v1",
+                "offset": 7656,
+                "samples": 4,
+                "percent": 0.17691287041132242,
+                "instruction_identical": true,
+                "surrounding_68_bytes_identical": true,
+                "instruction": "cmp\tx0, x4",
+                "window": [
+                  {
+                    "offset": 7624,
+                    "instruction": "ldr\tx4, [x3, #24]"
+                  },
+                  {
+                    "offset": 7628,
+                    "instruction": "ldr\tx9, [x3, #32]"
+                  },
+                  {
+                    "offset": 7632,
+                    "instruction": "ldr\tx10, [x3, #48]"
+                  },
+                  {
+                    "offset": 7636,
+                    "instruction": "ldr\tx10, [x3, #56]"
+                  },
+                  {
+                    "offset": 7640,
+                    "instruction": "ldr\tx10, [x3, #64]"
+                  },
+                  {
+                    "offset": 7644,
+                    "instruction": "ldr\tx10, [x3, #72]"
+                  },
+                  {
+                    "offset": 7648,
+                    "instruction": "ldr\tx10, [x3, #40]"
+                  },
+                  {
+                    "offset": 7652,
+                    "instruction": "mov\tx0, #0"
+                  },
+                  {
+                    "offset": 7656,
+                    "instruction": "cmp\tx0, x4"
+                  },
+                  {
+                    "offset": 7660,
+                    "instruction": "b.lo\t0x2c74 <_mech_canonical_program_entry_v1+0x2c74>"
+                  },
+                  {
+                    "offset": 7664,
+                    "instruction": "mov\tx1, #32"
+                  },
+                  {
+                    "offset": 7668,
+                    "instruction": "mov\tx2, #-56"
+                  },
+                  {
+                    "offset": 7672,
+                    "instruction": "mov\tx5, #0"
+                  },
+                  {
+                    "offset": 7676,
+                    "instruction": "ldur\tx0, [sp, #24]"
+                  },
+                  {
+                    "offset": 7680,
+                    "instruction": "ldur\tx6, [sp, #16]"
+                  },
+                  {
+                    "offset": 7684,
+                    "instruction": "blr\tx21"
+                  },
+                  {
+                    "offset": 7688,
+                    "instruction": "cmp\tx0, #0"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "complete": true,
+    "source_unchanged": true
+  },
+  "profile": {
+    "schema": "mech.polybench.accepted-optimization-profile.v1",
+    "plan": {
+      "schema": "mech.polybench.accepted-optimization-profile-plan.v1",
+      "created_at": "2026-11-28T07:08:36.991754+00:00",
+      "accepted_round": 50,
+      "source_commit": "6a415339d2e78024f32fde16c3af4ca5bbdb204e",
+      "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+      "cases": [
+        "correlation"
+      ],
+      "selection": "Next highest accepted50 optimization15 Mech/C margin after the already sampled Gram-Schmidt, Durbin and MVT. No holdout diagnosis or selection.",
+      "optimization_rank": 4,
+      "recorded_mech_over_c": 17.86051305960265,
+      "method": "Reuse the byte-pinned accepted50 public-API residence host wrapper. Sample one owned warm checked-call process3s at1ms, then stop only after sampling, capture its named native executable ranges and resume the same PID to real terminal exit. Compare sampled instructions/full code with genuine accepted50 Objects and validate warmup/final finite C values and frozen counters. No Rust source/build changes or timing samples.",
+      "seconds_per_process": 30,
+      "sample_seconds": 3,
+      "driver": "/private/tmp/mech-polybench-optimization/round-50/accepted50-optimization-profile/residence-driver",
+      "driver_sha256": "cd509ac753b94a39fede1c65d4980a66d1373bdf5e2304e7658228b4d5d86e85",
+      "source_native_generator": "Maintained Cranelift public JIT/Object APIs; Rust compiled only the existing host wrapper.",
+      "hypothesis_to_check": "The ordinary centered*centered matrix materializes before ordered sum. Profile whether preparation/ownership and/or the complete intermediate pass justify general producer-to-reduction fusion; preserve +0 and each output term order, full original source fees and fallback. No speedup is inferred.",
+      "official_performance_observations": 0,
+      "holdout_profiling": false,
+      "scope_limit": "Warm residence includes output reset/drop outside the formal kernel timer; sample shares are not exact timer shares or retired instruction counts."
+    },
+    "compiler_fingerprint": "9650f0dcdbcdc90b7a1e9522da376c51c54ee44827f88da12d482ca84b787005",
+    "driver_sha256": "cd509ac753b94a39fede1c65d4980a66d1373bdf5e2304e7658228b4d5d86e85",
+    "complete": true,
+    "official_performance_observations": 0,
+    "source_and_history_unchanged": true,
+    "processes": {
+      "cases": {
+        "correlation": {
+          "pid": 50563,
+          "launch_error": null,
+          "started_ns": 1795849765276522000,
+          "sample_exit_code": 0,
+          "driver_exit_code": 0,
+          "complete": true,
+          "sample_command": [
+            "/usr/bin/sample",
+            "50563",
+            "3",
+            "1",
+            "-file",
+            "/private/tmp/mech-polybench-optimization/round-52/accepted50-correlation-profile/correlation.sample.txt"
+          ],
+          "code_capture_same_pid": true,
+          "captured_code_bytes": 13820,
+          "warmup_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "final_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "residence_calls": 652288,
+          "frozen_execution_counters_match": true
+        }
+      },
+      "complete": true
+    },
+    "analysis": {
+      "correlation.sample.txt": {
+        "all_thread_samples": 2276,
+        "execution_samples": 2261,
+        "excluded_samples": 15,
+        "action_categories": [
+          {
+            "name": "Other execution and generated code",
+            "samples": 826,
+            "percent": 36.53250773993808
+          },
+          {
+            "name": "Canonical library calls",
+            "samples": 679,
+            "percent": 30.03095975232198
+          },
+          {
+            "name": "Other helper dispatch",
+            "samples": 670,
+            "percent": 29.632905793896505
+          },
+          {
+            "name": "Comprehension collection bookkeeping",
+            "samples": 50,
+            "percent": 2.21141088014153
+          },
+          {
+            "name": "Source visits and admission",
+            "samples": 36,
+            "percent": 1.592215833701902
+          }
+        ],
+        "self_time_mechanisms": [
+          {
+            "name": "Generated code, resolved function",
+            "samples": 710,
+            "percent": 31.40203449800973
+          },
+          {
+            "name": "Other runtime self time",
+            "samples": 569,
+            "percent": 25.165855816010616
+          },
+          {
+            "name": "Allocation and deallocation",
+            "samples": 402,
+            "percent": 17.779743476337902
+          },
+          {
+            "name": "Memory planning, schema and snapshot validation",
+            "samples": 354,
+            "percent": 15.656789031402035
+          },
+          {
+            "name": "Byte copy and zeroing",
+            "samples": 127,
+            "percent": 5.616983635559487
+          },
+          {
+            "name": "Resource bookkeeping and locks",
+            "samples": 99,
+            "percent": 4.37859354268023
+          }
+        ],
+        "top_self_functions": [
+          {
+            "name": "JIT::mech_canonical_program_entry_v1",
+            "samples": 710,
+            "percent": 31.40203449800973
+          },
+          {
+            "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+            "samples": 128,
+            "percent": 5.6612118531623175
+          },
+          {
+            "name": "_xzm_free",
+            "samples": 96,
+            "percent": 4.245908889871738
+          },
+          {
+            "name": "_platform_memmove",
+            "samples": 69,
+            "percent": 3.051747014595312
+          },
+          {
+            "name": "<deduplicated_symbol>",
+            "samples": 59,
+            "percent": 2.6094648385670056
+          },
+          {
+            "name": "_xzm_xzone_malloc",
+            "samples": 52,
+            "percent": 2.2998673153471914
+          },
+          {
+            "name": "_malloc_zone_malloc",
+            "samples": 37,
+            "percent": 1.6364440513047325
+          },
+          {
+            "name": "_free",
+            "samples": 34,
+            "percent": 1.5037593984962405
+          },
+          {
+            "name": "_platform_memset",
+            "samples": 31,
+            "percent": 1.3710747456877488
+          },
+          {
+            "name": "<mech_core::snapshot::data::F64Bits as alloc::vec::spec_from_elem::SpecFromElem>::from_elem::<alloc::alloc::Global>",
+            "samples": 29,
+            "percent": 1.2826183104820876
+          },
+          {
+            "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "samples": 27,
+            "percent": 1.1941618752764263
+          },
+          {
+            "name": "mech_core::schema::shape::evaluate_body_extents",
+            "samples": 25,
+            "percent": 1.105705440070765
+          },
+          {
+            "name": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+            "samples": 24,
+            "percent": 1.0614772224679345
+          },
+          {
+            "name": "mech_core::type_system::resolved_value::shape_for_resolved_extents",
+            "samples": 23,
+            "percent": 1.017249004865104
+          },
+          {
+            "name": "sha2::sha256::aarch64_sha2::compress",
+            "samples": 22,
+            "percent": 0.9730207872622734
+          },
+          {
+            "name": "_malloc_zone_realloc",
+            "samples": 21,
+            "percent": 0.9287925696594427
+          },
+          {
+            "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "samples": 20,
+            "percent": 0.8845643520566121
+          },
+          {
+            "name": "DYLD-STUB$$free",
+            "samples": 20,
+            "percent": 0.8845643520566121
+          },
+          {
+            "name": "xzm_realloc",
+            "samples": 20,
+            "percent": 0.8845643520566121
+          },
+          {
+            "name": "<mech_core::schema::Schema>::validate_shape_parameters",
+            "samples": 19,
+            "percent": 0.8403361344537815
+          },
+          {
+            "name": "mech_core::memory_plan::derive::plan_call_memory",
+            "samples": 18,
+            "percent": 0.796107916850951
+          },
+          {
+            "name": "_xzm_xzone_malloc_tiny",
+            "samples": 17,
+            "percent": 0.7518796992481203
+          },
+          {
+            "name": "xzm_malloc_zone_size",
+            "samples": 16,
+            "percent": 0.7076514816452897
+          },
+          {
+            "name": "__bzero",
+            "samples": 15,
+            "percent": 0.6634232640424591
+          },
+          {
+            "name": "__rustc::__rdl_alloc",
+            "samples": 14,
+            "percent": 0.6191950464396285
+          }
+        ],
+        "top_inclusive_functions": [
+          {
+            "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "samples": 2261,
+            "percent": 100.0
+          },
+          {
+            "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "samples": 2155,
+            "percent": 95.31180893409996
+          },
+          {
+            "name": "JIT::mech_canonical_program_entry_v1",
+            "samples": 2143,
+            "percent": 94.78107032286599
+          },
+          {
+            "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "samples": 1399,
+            "percent": 61.87527642636002
+          },
+          {
+            "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "samples": 679,
+            "percent": 30.03095975232198
+          },
+          {
+            "name": "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "samples": 677,
+            "percent": 29.94250331711632
+          },
+          {
+            "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current",
+            "samples": 676,
+            "percent": 29.89827509951349
+          },
+          {
+            "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "samples": 676,
+            "percent": 29.89827509951349
+          },
+          {
+            "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "samples": 673,
+            "percent": 29.765590446704998
+          },
+          {
+            "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+            "samples": 552,
+            "percent": 24.413976116762495
+          },
+          {
+            "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "samples": 490,
+            "percent": 21.671826625387
+          },
+          {
+            "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "samples": 486,
+            "percent": 21.494913754975673
+          },
+          {
+            "name": "mech_core::memory_plan::derive::plan_call_memory",
+            "samples": 257,
+            "percent": 11.366651923927465
+          },
+          {
+            "name": "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "samples": 252,
+            "percent": 11.145510835913313
+          },
+          {
+            "name": "mech_engine::resident::numeric::square_root_f32",
+            "samples": 225,
+            "percent": 9.951348960636887
+          },
+          {
+            "name": "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "samples": 211,
+            "percent": 9.332153914197258
+          },
+          {
+            "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "samples": 201,
+            "percent": 8.889871738168951
+          },
+          {
+            "name": "mech_engine::memory_planner::turn::derive_turn_memory",
+            "samples": 199,
+            "percent": 8.80141530296329
+          },
+          {
+            "name": "mech_core::memory_plan::derive::resolve_current_call_memory",
+            "samples": 177,
+            "percent": 7.828394515701017
+          },
+          {
+            "name": "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "samples": 163,
+            "percent": 7.209199469261389
+          },
+          {
+            "name": "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "samples": 161,
+            "percent": 7.120743034055727
+          },
+          {
+            "name": "<mech_core::schema::Schema>::key",
+            "samples": 153,
+            "percent": 6.7669172932330826
+          },
+          {
+            "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "samples": 148,
+            "percent": 6.54577620521893
+          },
+          {
+            "name": "_xzm_free",
+            "samples": 146,
+            "percent": 6.457319770013268
+          },
+          {
+            "name": "mech_engine::resident::general::native_collection_calls::bind_current",
+            "samples": 138,
+            "percent": 6.103494029190624
+          },
+          {
+            "name": "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "samples": 127,
+            "percent": 5.616983635559487
+          },
+          {
+            "name": "<mech_core::schema::Schema>::canonical_bytes",
+            "samples": 114,
+            "percent": 5.042016806722689
+          },
+          {
+            "name": "_realloc",
+            "samples": 108,
+            "percent": 4.776647501105705
+          },
+          {
+            "name": "<alloc::raw_vec::RawVecInner>::finish_grow",
+            "samples": 99,
+            "percent": 4.37859354268023
+          },
+          {
+            "name": "mech_core::memory_plan::derive::plan_value_layout",
+            "samples": 90,
+            "percent": 3.9805395842547546
+          }
+        ],
+        "top_leaf_stacks": [
+          {
+            "samples": 710,
+            "percent": 31.40203449800973,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1"
+            ]
+          },
+          {
+            "samples": 128,
+            "percent": 5.6612118531623175,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper"
+            ]
+          },
+          {
+            "samples": 28,
+            "percent": 1.238390092879257,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::snapshot::data::F64Bits as alloc::vec::spec_from_elem::SpecFromElem>::from_elem::<alloc::alloc::Global>"
+            ]
+          },
+          {
+            "samples": 24,
+            "percent": 1.0614772224679345,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper"
+            ]
+          },
+          {
+            "samples": 22,
+            "percent": 0.9730207872622734,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::schema::Schema>::key",
+              "sha2::sha256::aarch64_sha2::compress"
+            ]
+          },
+          {
+            "samples": 17,
+            "percent": 0.7518796992481203,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "mech_core::type_system::resolved_value::shape_for_resolved_extents"
+            ]
+          },
+          {
+            "samples": 15,
+            "percent": 0.6634232640424591,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget_inner"
+            ]
+          },
+          {
+            "samples": 11,
+            "percent": 0.4865103936311367,
+            "stack": [
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+              "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+              "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current",
+              "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+              "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+              "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+              "mech_engine::resident::general::native_collection_calls::bind_current",
+              "mech_core::memory_plan::derive::plan_call_memory"
+            ]
+          },
+          {
+            "samples": 10,
+            "percent": 0.44228217602830605,
+            "stack": [
+              "<mech_core::schema::Schema>::key",
+              "<mech_core::schema::Schema>::canonical_bytes",
+              "mech_core::dimension::encode_dimension_parameters",
+              "<alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>",
+              "<alloc::raw_vec::RawVecInner>::finish_grow",
+              "_realloc",
+              "_malloc_zone_realloc",
+              "xzm_realloc"
+            ]
+          },
+          {
+            "samples": 9,
+            "percent": 0.3980539584254755,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::admit",
+              "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+            ]
+          },
+          {
+            "samples": 9,
+            "percent": 0.3980539584254755,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::schema::Schema>::key"
+            ]
+          },
+          {
+            "samples": 8,
+            "percent": 0.35382574082264484,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+              "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map",
+              "_platform_memmove"
+            ]
+          },
+          {
+            "samples": 7,
+            "percent": 0.30959752321981426,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::new_with_budget",
+              "<mech_core::snapshot::validation::Value>::into_independent_memory_budget",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget_inner"
+            ]
+          },
+          {
+            "samples": 7,
+            "percent": 0.30959752321981426,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+              "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}"
+            ]
+          },
+          {
+            "samples": 7,
+            "percent": 0.30959752321981426,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+              "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map"
+            ]
+          },
+          {
+            "samples": 6,
+            "percent": 0.26536930561698363,
+            "stack": [
+              "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current",
+              "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+              "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+              "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+              "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+              "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+              "mech_engine::memory_planner::turn::derive_turn_memory",
+              "<alloc::vec::Vec<mech_core::memory_plan::model::AllocationPlan> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::memory_plan::model::AllocationPlan, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<core::slice::iter::Iter<mech_core::memory_plan::model::AllocationPlan>, mech_engine::memory_planner::turn::derive_turn_memory::{closure#10}>, mech_engine::memory_planner::turn::derive_turn_memory::{closure#11}>>>::from_iter"
+            ]
+          },
+          {
+            "samples": 6,
+            "percent": 0.26536930561698363,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper",
+              "<mech_gpu::native_artifact::program::runtime::collections::State>::helper"
+            ]
+          },
+          {
+            "samples": 6,
+            "percent": 0.26536930561698363,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "<mech_core::schema::Schema>::key",
+              "<mech_core::schema::Schema>::canonical_bytes",
+              "mech_core::schema::encoding::encode_schema_body"
+            ]
+          },
+          {
+            "samples": 6,
+            "percent": 0.26536930561698363,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "mech_core::type_system::resolved_value::shape_for_resolved_extents",
+              "mech_core::type_system::resolved_value::assign_dimension_witness_preserving"
+            ]
+          },
+          {
+            "samples": 6,
+            "percent": 0.26536930561698363,
+            "stack": [
+              "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+              "JIT::mech_canonical_program_entry_v1",
+              "mech_gpu::native_artifact::program::runtime::hooks::helper",
+              "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_binary_helper",
+              "mech_core::type_system::resolved_value::shape_for_resolved_extents",
+              "mech_core::type_system::resolved_value::dimension_witness_mismatch"
+            ]
+          }
+        ],
+        "jit_self_samples": 710,
+        "jit_functions": [
+          {
+            "name": "mech_canonical_program_entry_v1",
+            "samples": 710,
+            "percent": 31.40203449800973
+          }
+        ],
+        "top_jit_sites": [
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11488,
+            "samples": 307,
+            "percent": 13.578062804068995
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6592,
+            "samples": 36,
+            "percent": 1.592215833701902
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6656,
+            "samples": 30,
+            "percent": 1.3268465280849182
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1868,
+            "samples": 29,
+            "percent": 1.2826183104820876
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1804,
+            "samples": 24,
+            "percent": 1.0614772224679345
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 7424,
+            "samples": 23,
+            "percent": 1.017249004865104
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 8488,
+            "samples": 22,
+            "percent": 0.9730207872622734
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11556,
+            "samples": 21,
+            "percent": 0.9287925696594427
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6608,
+            "samples": 17,
+            "percent": 0.7518796992481203
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6612,
+            "samples": 16,
+            "percent": 0.7076514816452897
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6600,
+            "samples": 15,
+            "percent": 0.6634232640424591
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1812,
+            "samples": 14,
+            "percent": 0.6191950464396285
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 8556,
+            "samples": 14,
+            "percent": 0.6191950464396285
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1880,
+            "samples": 9,
+            "percent": 0.3980539584254755
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 12020,
+            "samples": 9,
+            "percent": 0.3980539584254755
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1820,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6664,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 8508,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 8540,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11528,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11792,
+            "samples": 8,
+            "percent": 0.35382574082264484
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11380,
+            "samples": 6,
+            "percent": 0.26536930561698363
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11472,
+            "samples": 6,
+            "percent": 0.26536930561698363
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11496,
+            "samples": 6,
+            "percent": 0.26536930561698363
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11552,
+            "samples": 6,
+            "percent": 0.26536930561698363
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 6668,
+            "samples": 5,
+            "percent": 0.22114108801415303
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 11476,
+            "samples": 5,
+            "percent": 0.22114108801415303
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 1824,
+            "samples": 4,
+            "percent": 0.17691287041132242
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 2632,
+            "samples": 4,
+            "percent": 0.17691287041132242
+          },
+          {
+            "symbol": "mech_canonical_program_entry_v1",
+            "offset": 7656,
+            "samples": 4,
+            "percent": 0.17691287041132242
+          }
+        ],
+        "sample_sha256": "39e3840278ab785cb93288ae412e87cbb60faa65381d7a269517cff8b1094691",
+        "jit_map_sha256": "c87ec04661eedd114d304e1b60bfc89ee9f1edcac60478c37a7261ff807d1fa1",
+        "jit_map_functions": 1
+      }
+    }
+  },
+  "interpretation": {
+    "scope": "Optimization15 current accepted50 diagnosis only; no holdout diagnosis or performance selection.",
+    "sample_scope": "Warm checked calls plus output reset/drop. Statistical self-time, not exact frozen timer fractions, retired instructions, IPC, cache misses or measured memory traffic.",
+    "generated_self_percent": 31.40203449800973,
+    "allocation_deallocation_self_percent": 17.779743476337902,
+    "planning_schema_validation_self_percent": 15.656789031402035,
+    "copy_zeroing_self_percent": 5.616983635559487,
+    "dominant_native_loop": {
+      "symbol": "mech_canonical_program_entry_v1",
+      "offset": "0x2ce0",
+      "self_samples": 307,
+      "all_execution_samples": 2261,
+      "self_percent": 13.578062804068995,
+      "mechanism": "Ordered matrix-product reduction: shared scalar left load, contiguous two-column right SIMD load, splat, separate fmul.2d and fadd.2d, one accumulator and k-loop per output-column pair. Exact same-PID Object bytes and annotated hot window."
+    },
+    "byte_binding": "Complete13820-byte generated function and all sampled windows byte-identical to the actual Object; diagnostic Object identical to accepted50 qualified Object.",
+    "next_physical_work": "Group two independent product output rows, reuse each right scalar/SIMD load and k-loop control, retain one ordered +0-seeded accumulator per independent row/output lane; one-column products get two independent scalar accumulators. Preserve scalar row/column tails, epilogues, buffers, source fees, source arithmetic and admission/publication.",
+    "fusion_context": "centered*centered remains a separate matrix before sum, and host preparation/ownership is substantial. That remains a separate producer-consumer opportunity; current sampling identifies a stronger direct product loop and existing MVT product-loop evidence supports sharing across matrix/vector shapes.",
+    "prior_experiment": "Native transpose induction was unselected on its single210 optimization probe and fully restored; no retry or holdout-based decision.",
+    "limits": "No speedup forecast from sample fractions/static work; one prospective probe only after full qualification, then strict optimization-only formal promotion. Goal remains below1.0x C holdout, not yet met."
+  },
+  "official_performance_observations": 0,
+  "performance_history_entries_unchanged": 51,
+  "archives": {
+    "collect.py": {
+      "path": "qualification/round-52-accepted50-correlation-profile/collect.py.gz",
+      "sha256": "d0298890d0029069bd7e775463b4f7347042d652d2dc2e2b6b07522dabc84ddb",
+      "compressed_sha256": "caca300d4c558059079454f165447c3496d8795416604e266ac5015cf1966e11"
+    },
+    "collection-exit.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/collection-exit.json.gz",
+      "sha256": "79fa4f4772b6cf9c815c0aacabc8d9d6e22b55d3a4ef10657bf659fe1e797380",
+      "compressed_sha256": "0151dff74360b4d15e8812c614a4e2f440f4d7e23c13929ae0edb891631cdb77"
+    },
+    "correlation-cpu.stderr": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-cpu.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "correlation-cpu.stdout": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-cpu.stdout.gz",
+      "sha256": "454c83edb6bf4fb5d084a2952f24718d18498e851f75c366753bf9067c65122b",
+      "compressed_sha256": "7ecbee09d3bc515ed672461c9866f6f7a8f420addfe3b7c4626abcf966e269bf"
+    },
+    "correlation-inputs.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-inputs.json.gz",
+      "sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "compressed_sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62"
+    },
+    "correlation-residence.metadata.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-residence.metadata.json.gz",
+      "sha256": "238e17549d0e9449aa3b5be380184dd4c6f7d0906274424f14f312e11d825dce",
+      "compressed_sha256": "eeec821eb46ec3aa82507955a4dabf2a8763d0c746fe57b62dd1a91ddcd298cb"
+    },
+    "correlation-residence.o": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-residence.o.gz",
+      "sha256": "c070f721a4f2b86e5923a6255d88a6af7806d1230fdf79196ca7ee4151f37c74",
+      "compressed_sha256": "c87510165889672c50932e7b6dc40cded40cc4bf22657a963cfaa4d79ae59d45"
+    },
+    "correlation-sample.log": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation-sample.log.gz",
+      "sha256": "0bdd263c6f097165045f07098ed66408966569216084d90436f786c83826ee4c",
+      "compressed_sha256": "e7680ba54747bd44a6bde2145886221b3d9ffbc69d597f5ef24156cdd0697701"
+    },
+    "correlation.perf.map": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation.perf.map.gz",
+      "sha256": "c87ec04661eedd114d304e1b60bfc89ee9f1edcac60478c37a7261ff807d1fa1",
+      "compressed_sha256": "5d67e9034ce9e343bd1aa9255d9f71f2da3f6a09867ba11d550188390dc25c58"
+    },
+    "correlation.sample.txt": {
+      "path": "qualification/round-52-accepted50-correlation-profile/correlation.sample.txt.gz",
+      "sha256": "39e3840278ab785cb93288ae412e87cbb60faa65381d7a269517cff8b1094691",
+      "compressed_sha256": "6629f0b08d06114b059ece984c3e93848811f7d8233e87fd64c3ee805096625d"
+    },
+    "cpu-analysis.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/cpu-analysis.json.gz",
+      "sha256": "1541b58c7ced10247a5d097313cff3a2a1cb1ae37adcce0d03d4b1e102604298",
+      "compressed_sha256": "c0f9c4267fdc0e260bee24be3b9fc62f3164d292f9fafcf173009f21aa66bca5"
+    },
+    "cpu-analyzer.log": {
+      "path": "qualification/round-52-accepted50-correlation-profile/cpu-analyzer.log.gz",
+      "sha256": "e5f2b9732369eb691e48d2fafd46ccc9f5e5de398354d86babfd941c838bf412",
+      "compressed_sha256": "4d3becbc8dbeb629d2e33365f26bb3e98adb5c0be5c1e24607099e933123acdb"
+    },
+    "cpu-processes.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/cpu-processes.json.gz",
+      "sha256": "183bb0a4412c74de88fa1af2147449eb806c1e4ba9be1ffea291f630a82f051a",
+      "compressed_sha256": "4f770c7507b0490e4a19e03207be72b02b69b43ad2a1d60e1e27c546d5e718ab"
+    },
+    "interpretation.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/interpretation.json.gz",
+      "sha256": "a89938706fdce04471d679581890cbf266f482c8b27be7bc69e76224c88586e4",
+      "compressed_sha256": "ae6e3d6fe09f85e480f631fd9dfa66435128eaf49440d3f948004bd0077770d0"
+    },
+    "jit-object-verification.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/jit-object-verification.json.gz",
+      "sha256": "9d2178b72bd58c6fb04284de03c85f32a880b60849b5f257a28c31fae304067e",
+      "compressed_sha256": "592a1046edffc23600b4222397e773356c0eb46872c43da313b227423acdbfe6"
+    },
+    "live-code/correlation/jit-code.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/live-code/correlation/jit-code.json.gz",
+      "sha256": "1b4cc2f0f40d1389a737fd0f8d777d1e3ee953f7d8173ba3082a571af963ed84",
+      "compressed_sha256": "bfb1fb17074432dec397593efa28b8178e97c1c11ffef5e69b28799077263677"
+    },
+    "live-code/correlation/mech_canonical_program_entry_v1.bin": {
+      "path": "qualification/round-52-accepted50-correlation-profile/live-code/correlation/mech_canonical_program_entry_v1.bin.gz",
+      "sha256": "8365ca81ddf09e2665798f7aa5a7c6846172c197948b526de40c62e56b705f7a",
+      "compressed_sha256": "ebe6409aa2a9b50df162bdffa45ed21ed56be042bafec75adfad17ef510678b9"
+    },
+    "lldb-collection.log": {
+      "path": "qualification/round-52-accepted50-correlation-profile/lldb-collection.log.gz",
+      "sha256": "c863cb9e9395604fe5f0cb6f45193d2c2fd1292bcd98ff24758a2b9c7a4b3b87",
+      "compressed_sha256": "79e52b50a084ab06ab013105ef9c056ba8e70263acfa525b5002f0f4c25ea1a7"
+    },
+    "object-emission.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/object-emission.json.gz",
+      "sha256": "c3ac94b7c50a0a3fab111a5febd19af6ce1328c72296a56e6228f153fa5a72eb",
+      "compressed_sha256": "45ca0ba3788d98b73723c7a5fb6d39aeb7fdf51ba597d0001f0ab27b98cec208"
+    },
+    "object-emission.stderr": {
+      "path": "qualification/round-52-accepted50-correlation-profile/object-emission.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "object-emission.stdout": {
+      "path": "qualification/round-52-accepted50-correlation-profile/object-emission.stdout.gz",
+      "sha256": "8b0f176b241c79e2c44f3ee496af2f25bbf27f1c901c205d3c50015ab4d74548",
+      "compressed_sha256": "09a2eee04317e4f7e2d89e99dfc34ca72acd4fe8599fa0dbf28b9be69531c709"
+    },
+    "plan.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/plan.json.gz",
+      "sha256": "f0e88317c927a79c89b879b8b3c3b69ea1f76261c32344eeecf7529b3fcc7c24",
+      "compressed_sha256": "411ec177a1729603d5dd27ea41c889e29484dd07f20f7a2390b6ca0c07d5a6d1"
+    },
+    "preserve.py": {
+      "path": "qualification/round-52-accepted50-correlation-profile/preserve.py.gz",
+      "sha256": "b2b97983579234a33bfe8211da7a8c4d201333de2ad9ebd42a90e5d2f61cfa08",
+      "compressed_sha256": "a14a47a045ffe5e56102748ad6cf998f3075bdc117ffcefbb2089737f9e1b422"
+    },
+    "profile-config.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/profile-config.json.gz",
+      "sha256": "b00600223d0e6e7c47e67ea0600d32cdbdf58813f118a5b12f50a4125a4f3a39",
+      "compressed_sha256": "113579590ba679059bc16c3c1cc794035479398c904c868dbc112680c00faf4b"
+    },
+    "profile-result.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/profile-result.json.gz",
+      "sha256": "c1fe557b924db12290a19a745480ea17b947b16a1d15fa00fff6edcaf2c194e0",
+      "compressed_sha256": "b1f0b93ac559230dafbfa82ef7c2f9aa51b663763ba6e8098fb2624db361a2f3"
+    },
+    "profile_owned.py": {
+      "path": "qualification/round-52-accepted50-correlation-profile/profile_owned.py.gz",
+      "sha256": "18107d3faefe6438c977032e06f51afbd92834aacab5478cb5c93726c170478c",
+      "compressed_sha256": "d4fd4295caa5a69483d970b82bdda1701c609532674e995c00e7239e35b42fdf"
+    },
+    "residence-build.json": {
+      "path": "qualification/round-52-accepted50-correlation-profile/residence-build.json.gz",
+      "sha256": "859211e3f59b25fa83b9a20b3eecff0ab2df86febb2e3c4de15ef14ac37678f7",
+      "compressed_sha256": "d377863ee270bc32c0e746df3159d40af4d416f4c7d5c8fbb38f3c20bc43523e"
+    },
+    "verify-and-annotate.py": {
+      "path": "qualification/round-52-accepted50-correlation-profile/verify-and-annotate.py.gz",
+      "sha256": "b3b333185be7d395a2ede9b26de6362b8b58290e278db5a42fe45961571905fc",
+      "compressed_sha256": "a133f304b74502a2c53b91d9efe496b4acf43d3a935e0de26ae19a466d45f5fa"
+    }
+  }
+}
