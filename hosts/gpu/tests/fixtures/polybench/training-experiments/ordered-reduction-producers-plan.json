@@ -78,5 +78,21 @@
     "selected": false,
     "difference": "That candidate retained all operators/buffers and removed duplicate checked-read guard work; the accepted backend already shared the data load. This experiment removes whole producer matrices and execution/publication boundaries."
   },
-  "performance_observations": 0
+  "performance_observations": 0,
+  "versions": {
+    "ir": 421,
+    "work": 157,
+    "abi": 48
+  },
+  "implementation": {
+    "transformation": "Extend independently source-derived bounded expression recipes: a pure F64 elementwise DAG, a sole ordered row/column sum consumer, no escaping intermediates and exact straight CFG. Generate each original rounded cell expression directly as the term of its original +0-seeded ordered output accumulation. Reuse existing current-owner checked private source-closed expression loan, complete source resource envelope, input owners, initialized final bank and cancellation/replay. Remove intermediate Values, buffers, full passes and individual operator boundaries. No per-op native dispatch or new ABI/frame/state.",
+    "invariants": [
+      "Original all30 ports, inputs, C flags/binaries, limits/tolerances/arithmetic/timer/cache boundaries and15/15 split unchanged; no benchmark names or fixed MINI dimensions in compiler rules.",
+      "Pure source closures and exact read-role escape/dominance proof derived again from source and every image path. Ambiguous joins/cycles, additional uses, incompatible geometry, unsupported operations or missing admission retain original source.",
+      "Both reduction axes preserve each output term order and +0 seed. SIMD lanes are independent outputs only. No FMA, reassociation or split horizontal sums; finite producer intermediates retain exact node order/rounding.",
+      "Nonfinite consumed producer terms cancel all private output and replay unchanged source with original first-error/alias/atomicity behavior. Full issued frame/epoch/context/owner/schema/type/geometry validation remains.",
+      "Every original logical work/comparison/copy/publication/retirement obligation remains funded; only source-proved physical visits may decrease. Other counters equal. Finite/missing/zero/spent limits must preserve original errors and cleanup/retry.",
+      "Cranelift remains sole Mech generator. Efficient scalar/compression paths unchanged. Reuse existing expression loan and native sum kernel; no new retained runtime field or authority-bearing wire data. IR421/work157/ABI48."
+    ]
+  }
 }

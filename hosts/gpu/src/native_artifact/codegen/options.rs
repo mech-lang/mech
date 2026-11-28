@@ -62,6 +62,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ProductRowPairs,
     /// Fuse source-closed cell expressions into ordered product accumulators.
     ProductEpilogues,
+    /// Fuse nonescaping pointwise producers into original ordered sum terms.
+    ReductionProducers,
     /// Evaluate nonidentity matrix regions through the original checked scratch DAG.
     MaskedMatrixMaps,
     /// Omit identity-complement scratch copies only for selected same-bank publication.

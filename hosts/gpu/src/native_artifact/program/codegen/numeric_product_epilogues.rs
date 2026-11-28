@@ -1,4 +1,4 @@
-//! Fuse the original cell expression into an ordered product accumulator.
+//! Fuse original pointwise expressions into product epilogues or sum terms.
 //! All operation selection is compile time. No native operation dispatch/table.
 use super::{hooks::Hooks, numeric_binary::address};
 use crate::native_artifact::program::{
@@ -104,21 +104,19 @@ impl Leaf {
     }
 }
 impl Epilogue<'_> {
-    pub(super) fn apply(
+    fn expression(
         &self,
         b: &mut FunctionBuilder<'_>,
-        product: Value,
+        mut values: Vec<Value>,
+        end: usize,
         row: Value,
         column: Value,
         index: Value,
         vector: bool,
     ) -> Value {
-        // A consumed nonfinite temporary must replay the ordinary native/host
-        // path to preserve its exact NaN operand/payload behavior.
-        finite(b, product, vector, self.cancelled);
-        let mut values = vec![product];
+        let start = values.len();
         let mut external = vec![None; self.leaves.len()];
-        for (at, node) in self.recipe.nodes.iter().enumerate().skip(1) {
+        for (at, node) in self.recipe.nodes.iter().take(end).enumerate().skip(start) {
             let args = node.inputs.map(|source| match source {
                 Source::Node(n) => values[n],
                 Source::External(n) => match external[n] {
@@ -134,12 +132,53 @@ impl Epilogue<'_> {
                 unreachable!("source-closed cell expression")
             };
             let value = f64_arithmetic(b, op, args[0], args[1]);
+            // Every consumed intermediate must be finite; otherwise discard
+            // private output and replay the unchanged original source, whose
+            // input validation and NaN payload behavior remain authoritative.
             if at + 1 < self.recipe.nodes.len() {
                 finite(b, value, vector, self.cancelled);
             }
             values.push(value);
         }
         *values.last().unwrap()
+    }
+    pub(super) fn apply(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        product: Value,
+        row: Value,
+        column: Value,
+        index: Value,
+        vector: bool,
+    ) -> Value {
+        finite(b, product, vector, self.cancelled);
+        self.expression(
+            b,
+            vec![product],
+            self.recipe.nodes.len(),
+            row,
+            column,
+            index,
+            vector,
+        )
+    }
+    pub(super) fn term(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        row: Value,
+        column: Value,
+        index: Value,
+        vector: bool,
+    ) -> Value {
+        self.expression(
+            b,
+            Vec::new(),
+            self.recipe.nodes.len() - 1,
+            row,
+            column,
+            index,
+            vector,
+        )
     }
 }
 fn get(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
@@ -158,7 +197,8 @@ pub(in crate::native_artifact) fn emit_entry(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     if recipe.entry as usize != site
-        || recipe.nodes.first().is_none_or(|n| n.kind != Kind::Product)
+        || (recipe.reduction_axis().is_none()
+            && recipe.nodes.first().is_none_or(|n| n.kind != Kind::Product))
         || recipe.nodes.len() < 2
     {
         return Err(backend("product epilogue lost source entry"));
@@ -205,9 +245,15 @@ pub(in crate::native_artifact) fn emit_entry(
         leaves,
         cancelled,
     };
-    super::numeric_product::emit_epilogue(
-        b, left, right, output, count, columns, inner, &epilogue, row_pairs, complete,
-    );
+    if let Some(axis) = recipe.reduction_axis() {
+        super::numeric_reduction_producers::emit(
+            b, output, count, inner, axis, &epilogue, complete,
+        );
+    } else {
+        super::numeric_product::emit_epilogue(
+            b, left, right, output, count, columns, inner, &epilogue, row_pairs, complete,
+        );
+    }
     for (block, cancel, ready, target) in [(complete, 0, 1, target), (cancelled, 1, 0, ordinary)] {
         b.switch_to_block(block);
         let status = b.ins().iconst(types::I64, cancel);

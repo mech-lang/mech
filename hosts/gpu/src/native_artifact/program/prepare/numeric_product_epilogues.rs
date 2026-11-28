@@ -1,4 +1,5 @@
-//! Source-closed ordered product epilogues. Private facts only; no pointers,
+//! Source-closed product epilogues and pointwise producers of ordered sums.
+//! Private facts only; no pointers,
 //! current shape, owners, fees, serialized authority or execution permission.
 use super::numeric_binary::{Kind, Layout};
 use mech_engine::native_artifact::{
@@ -23,6 +24,15 @@ pub(in crate::native_artifact) struct Node {
     pub inputs: [Source; 2],
     pub output: Value,
     pub kind: Kind,
+}
+impl Node {
+    pub fn operands(&self) -> &[Source] {
+        &self.inputs[..if matches!(self.kind, Kind::Sum { .. }) {
+            1
+        } else {
+            2
+        }]
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) enum Step {
@@ -58,6 +68,14 @@ pub(in crate::native_artifact) struct Candidate {
     pub steps: Vec<Step>,
     pub output: Value,
     pub elided_values: Vec<u32>,
+}
+impl Candidate {
+    pub fn reduction_axis(&self) -> Option<usize> {
+        match self.nodes.last()?.kind {
+            Kind::Sum { axis, .. } => Some(axis),
+            _ => None,
+        }
+    }
 }
 fn typed(plan: &Plan, value: Value) -> bool {
     let ty = &plan.values()[value.get() as usize];
@@ -129,7 +147,7 @@ fn output(
         if !used.insert(at) {
             continue;
         }
-        pending.extend(nodes[at].inputs.iter().filter_map(|s| match s {
+        pending.extend(nodes[at].operands().iter().filter_map(|s| match s {
             Source::Node(n) => Some(*n),
             _ => None,
         }));
@@ -137,12 +155,14 @@ fn output(
     (used.len() == nodes.len()).then_some(*value)
 }
 fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> Option<Candidate> {
-    if operators.at(entry as usize)?.kind != Kind::Product {
+    let first = operators.at(entry as usize)?.kind;
+    if !matches!(first, Kind::Product | Kind::Elementwise(_)) {
         return None;
     }
+    let product = first == Kind::Product;
     let parent = plan.blocks()[entry as usize].iteration();
     let mut external = Vec::new();
-    let mut nodes = Vec::new();
+    let mut nodes: Vec<Node> = Vec::new();
     let mut steps = Vec::new();
     let mut bindings = BTreeMap::new();
     let mut sites = BTreeSet::new();
@@ -169,11 +189,16 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                 let Some(op) = operators.at(at as usize) else {
                     break;
                 };
+                let sum = matches!(op.kind, Kind::Sum { .. });
                 if nodes.len() == MAX_NODES
                     || !typed(plan, *output)
-                    || operands.len() != 2
-                    || (!nodes.is_empty() && !matches!(op.kind, Kind::Elementwise(_)))
-                    || (nodes.is_empty() && op.kind != Kind::Product)
+                    || operands.len() != if sum { 1 } else { 2 }
+                    || nodes
+                        .last()
+                        .is_some_and(|n| matches!(n.kind, Kind::Sum { .. }))
+                    || (nodes.is_empty() && op.kind != first)
+                    || (!nodes.is_empty() && product && !matches!(op.kind, Kind::Elementwise(_)))
+                    || (!product && !matches!(op.kind, Kind::Elementwise(_) | Kind::Sum { .. }))
                 {
                     break;
                 }
@@ -191,7 +216,7 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                 let Some(right) = source(
                     plan,
                     facts,
-                    operands[1],
+                    operands[if sum { 0 } else { 1 }],
                     entry,
                     parent,
                     &bindings,
@@ -199,6 +224,9 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
                 ) else {
                     break;
                 };
+                if sum && !matches!(left, Source::Node(_)) {
+                    break;
+                }
                 let node = nodes.len();
                 nodes.push(Node {
                     site: at,
@@ -235,7 +263,12 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
         };
         sites.insert(at);
         steps.push(step);
-        if let Some(output) = output(facts, &bindings, &sites, &nodes) {
+        if (product
+            || nodes
+                .last()
+                .is_some_and(|n| matches!(n.kind, Kind::Sum { .. })))
+            && let Some(output) = output(facts, &bindings, &sites, &nodes)
+        {
             best = Some(Candidate {
                 entry,
                 end: steps.last()?.site(),
@@ -266,7 +299,22 @@ fn discover(plan: &Plan, facts: &Facts<'_>, operators: &Layout, entry: u32) -> O
     best
 }
 pub(in crate::native_artifact) fn derive(plan: &Plan, operators: &Layout) -> Vec<Candidate> {
+    let mut covered = BTreeSet::new();
     (0..plan.blocks().len())
         .filter_map(|at| discover(plan, &plan.facts(), operators, u32::try_from(at).ok()?))
+        .filter(|recipe| {
+            // Prefer the earliest closed producer and its longest proved
+            // continuation. The ordinary fallback stays complete; do not emit
+            // overlapping suffix loans inside the same source expression.
+            if recipe
+                .steps
+                .iter()
+                .any(|step| covered.contains(&step.site()))
+            {
+                return false;
+            }
+            covered.extend(recipe.steps.iter().map(Step::site));
+            true
+        })
         .collect()
 }

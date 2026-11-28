@@ -66,6 +66,7 @@ mod numeric_matrix_sums;
 mod numeric_outlining;
 mod numeric_product_epilogues;
 mod numeric_product_rows;
+mod numeric_reduction_producers;
 mod numeric_summary_branches;
 mod numeric_transpose;
 mod numeric_tree;

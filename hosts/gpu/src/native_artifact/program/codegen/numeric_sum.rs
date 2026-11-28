@@ -6,9 +6,40 @@ use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntC
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeScalarOp;
 
+/// A compile-time term emitter. Implementations emit direct typed arithmetic,
+/// never a runtime operation table. Lanes always name independent outputs.
+pub(super) trait Terms {
+    fn emit(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        row: Value,
+        column: Value,
+        index: Value,
+        vector: bool,
+    ) -> Value;
+}
+struct Input(Value);
+impl Terms for Input {
+    fn emit(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        _row: Value,
+        _column: Value,
+        index: Value,
+        vector: bool,
+    ) -> Value {
+        let pointer = address(b, self.0, index);
+        let ty = if vector {
+            types::F64.by(2).unwrap()
+        } else {
+            types::F64
+        };
+        b.ins().load(ty, MemFlags::new(), pointer, 0)
+    }
+}
 fn cell(
     b: &mut FunctionBuilder<'_>,
-    input: Value,
+    terms: &impl Terms,
     output: Value,
     index: Value,
     count: Value,
@@ -52,16 +83,20 @@ fn cell(
     } else {
         b.ins().iadd(base, offset)
     };
-    let pointer = address(b, input, ordinal);
+    let (row, column) = if axis == 0 {
+        (offset, index)
+    } else {
+        (index, offset)
+    };
     let term = if vector && axis == 1 {
-        let first = b.ins().load(types::F64, MemFlags::new(), pointer, 0);
-        let next_row = b.ins().iadd(ordinal, inner);
-        let pointer = address(b, input, next_row);
-        let second = b.ins().load(types::F64, MemFlags::new(), pointer, 0);
+        let first = terms.emit(b, row, column, ordinal, false);
+        let next_ordinal = b.ins().iadd(ordinal, inner);
+        let next_row = b.ins().iadd_imm(row, 1);
+        let second = terms.emit(b, next_row, column, next_ordinal, false);
         let pair = b.ins().splat(ty, first);
         b.ins().insertlane(pair, second, 1)
     } else {
-        b.ins().load(ty, MemFlags::new(), pointer, 0)
+        terms.emit(b, row, column, ordinal, vector)
     };
     let prior = b.use_var(sum);
     let next = f64_arithmetic(b, NativeScalarOp::F64Add, prior, term);
@@ -81,6 +116,17 @@ pub(super) fn emit(
     count: Value,
     inner: Value,
     axis: usize,
+    done: Block,
+) {
+    emit_terms(b, output, count, inner, axis, &Input(input), done);
+}
+pub(super) fn emit_terms(
+    b: &mut FunctionBuilder<'_>,
+    output: Value,
+    count: Value,
+    inner: Value,
+    axis: usize,
+    terms: &impl Terms,
     done: Block,
 ) {
     let index = b.declare_var(types::I64);
@@ -103,7 +149,7 @@ pub(super) fn emit(
     b.ins().brif(two, pair, &[], single, &[]);
     for (block, vector, width) in [(pair, true, 2), (single, false, 1)] {
         b.switch_to_block(block);
-        cell(b, input, output, at, count, inner, axis, vector);
+        cell(b, terms, output, at, count, inner, axis, vector);
         let next = b.ins().iadd_imm(at, width);
         b.def_var(index, next);
         b.ins().jump(header, &[]);

@@ -1,4 +1,4 @@
-//! One checked source-closed product/cell-expression loan. No intermediate
+//! One checked source-closed product/cell-expression or producer/sum loan. No intermediate
 //! matrix owner or payload exists; only the final initialized bank publishes.
 use super::numeric_binary::{cells, dims, fits};
 use super::{Error, Invocation, invalid};
@@ -53,6 +53,7 @@ impl Invocation<'_, '_, '_> {
             .numeric_binary
             .epilogue(site)
             .ok_or_else(|| invalid("product epilogue outside source proof"))?;
+        let reduction_axis = recipe.reduction_axis();
         if tag != GlobalHelper::NumericProductPrepare
             || args != [self.arguments as u64, recipe.scalars.len() as u64, 0]
             || self.arguments.is_null()
@@ -123,6 +124,7 @@ impl Invocation<'_, '_, '_> {
             let mut demands: Vec<ResourceDemand> = Vec::with_capacity(recipe.nodes.len());
             let mut modes = [1u64; MAX_INPUTS];
             let mut product_axes = [0u64; 3];
+            let mut domain_axes = [0usize; 2];
             for (index, node) in recipe.nodes.iter().enumerate() {
                 let call = m.calls[node.site as usize].as_ref()?;
                 let inputs = node
@@ -135,15 +137,21 @@ impl Invocation<'_, '_, '_> {
                         (r, c, k)
                     }
                     Kind::Elementwise(op)
-                        if index > 0 && call.template().f64_matrix_binary_op() == Some(op) =>
+                        if (index > 0 || reduction_axis.is_some())
+                            && call.template().f64_matrix_binary_op() == Some(op) =>
                     {
                         let [r, c, left, right] =
                             call.f64_matrix_binary_geometry(inputs[0], inputs[1])?;
-                        if (r != 1 && r != product_axes[0]) || (c != 1 && c != product_axes[1]) {
+                        if reduction_axis.is_none()
+                            && ((r != 1 && r != product_axes[0])
+                                || (c != 1 && c != product_axes[1]))
+                        {
                             return None;
                         }
                         for (input, source) in node.inputs.iter().enumerate() {
-                            if let Source::External(at) = *source {
+                            if reduction_axis.is_none()
+                                && let Source::External(at) = *source
+                            {
                                 modes[at] = call.f64_matrix_binary_input_mode(
                                     input,
                                     external_dims[at],
@@ -157,12 +165,27 @@ impl Invocation<'_, '_, '_> {
                         let _ = (left, right);
                         (r, c, 0)
                     }
+                    Kind::Sum { axis, .. }
+                        if reduction_axis == Some(axis)
+                            && index + 1 == recipe.nodes.len()
+                            && call.template().f64_matrix_sum_axis() == Some(axis) =>
+                    {
+                        let [r, c, input_count, k] = call.f64_matrix_sum_geometry(inputs[0])?;
+                        if r.checked_mul(c)?.checked_mul(k)? != input_count {
+                            return None;
+                        }
+                        domain_axes = inputs[0];
+                        product_axes = [r, c, k];
+                        (r, c, k)
+                    }
                     _ => return None,
                 };
                 let count = rows.checked_mul(columns)?;
-                let input_count = inputs.iter().try_fold(0u64, |sum, axes| {
-                    sum.checked_add((axes[0] as u64).checked_mul(axes[1] as u64)?)
-                })?;
+                let input_count = inputs[..node.operands().len()]
+                    .iter()
+                    .try_fold(0u64, |sum, axes| {
+                        sum.checked_add((axes[0] as u64).checked_mul(axes[1] as u64)?)
+                    })?;
                 let (demand, replay) = match node.kind {
                     Kind::Product => {
                         call.f64_matrix_product_source_bound(input_count, count, inner)?
@@ -170,6 +193,7 @@ impl Invocation<'_, '_, '_> {
                     Kind::Elementwise(_) => {
                         call.f64_matrix_binary_source_bound(input_count, count)?
                     }
+                    Kind::Sum { .. } => call.f64_matrix_sum_source_bound(input_count, count)?,
                     _ => return None,
                 };
                 // Every omitted logical factory still has its original shape.
@@ -184,6 +208,33 @@ impl Invocation<'_, '_, '_> {
                 demands.push(demand);
                 // No per-node replay arrays are required after this preflight.
                 let _ = replay;
+            }
+            if reduction_axis.is_some() {
+                // Every pointwise node is evaluated at coordinates in the
+                // original sum input. Only ordinary scalar/row/column/exact
+                // broadcasting can repeat a smaller producer at those cells.
+                for (index, node) in recipe.nodes.iter().enumerate() {
+                    if !matches!(node.kind, Kind::Elementwise(_)) {
+                        continue;
+                    }
+                    if node_dims[index]
+                        .iter()
+                        .zip(domain_axes)
+                        .any(|(&a, d)| a != 1 && a != d)
+                    {
+                        return None;
+                    }
+                    let call = m.calls[node.site as usize].as_ref()?;
+                    for (input, source) in node.operands().iter().enumerate() {
+                        if let Source::External(at) = *source {
+                            modes[at] = call.f64_matrix_binary_input_mode(
+                                input,
+                                external_dims[at],
+                                domain_axes,
+                            )?;
+                        }
+                    }
+                }
             }
             let [rows, columns, inner] = product_axes;
             if node_dims.last().copied()
@@ -216,15 +267,16 @@ impl Invocation<'_, '_, '_> {
                 let ds = node
                     .inputs
                     .map(|s| source_dims(s, &external_dims, &node_dims));
-                let inputs = ds.iter().try_fold(0u64, |n, a| {
+                let inputs = ds[..node.operands().len()].iter().try_fold(0u64, |n, a| {
                     n.checked_add((a[0] as u64).checked_mul(a[1] as u64)?)
                 })?;
-                let (_, bound) = if index == 0 {
-                    call.f64_matrix_product_source_bound(inputs, count, inner)?
-                } else {
-                    let output =
-                        (node_dims[index][0] as u64).checked_mul(node_dims[index][1] as u64)?;
-                    call.f64_matrix_binary_source_bound(inputs, output)?
+                let output =
+                    (node_dims[index][0] as u64).checked_mul(node_dims[index][1] as u64)?;
+                let (_, bound) = match node.kind {
+                    Kind::Product => call.f64_matrix_product_source_bound(inputs, output, inner)?,
+                    Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(inputs, output)?,
+                    Kind::Sum { .. } => call.f64_matrix_sum_source_bound(inputs, output)?,
+                    _ => return None,
                 };
                 replay = replay.checked_add(bound)?;
                 compute = compute.checked_add(demand.work.compute)?;
@@ -239,7 +291,7 @@ impl Invocation<'_, '_, '_> {
                 // Ordinary input copies and canonical puts/retirements remain
                 // source obligations even when their physical owners disappear.
                 let managed = node
-                    .inputs
+                    .operands()
                     .iter()
                     .filter(|source| match **source {
                         Source::Node(_) => true,
@@ -282,9 +334,15 @@ impl Invocation<'_, '_, '_> {
             // ordered product itself is never repeated across output cells.
             let native_steps =
                 (recipe.nodes.len() as u64).checked_add(recipe.external.len() as u64)?;
-            compute = compute.checked_add(count.checked_mul(native_steps.checked_mul(128)?)?)?;
-            comparison =
-                comparison.checked_add(count.checked_mul(native_steps.checked_mul(4)?)?)?;
+            let physical_cells = if reduction_axis.is_some() {
+                count.checked_mul(inner)?
+            } else {
+                count
+            };
+            compute =
+                compute.checked_add(physical_cells.checked_mul(native_steps.checked_mul(128)?)?)?;
+            comparison = comparison
+                .checked_add(physical_cells.checked_mul(native_steps.checked_mul(4)?)?)?;
             let credit = compute
                 .checked_mul(3)?
                 .checked_add(replay.checked_mul(2)?)?;
