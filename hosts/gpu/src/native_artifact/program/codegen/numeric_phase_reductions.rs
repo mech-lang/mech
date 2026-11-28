@@ -29,6 +29,7 @@ pub(super) fn emit(
     proof: &Proof,
     fold: &Fold,
     plan: &Plan,
+    typed_folds: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
@@ -48,7 +49,17 @@ pub(super) fn emit(
         .iter()
         .map(|&v| (v, words.read(b, v as usize)))
         .collect::<BTreeMap<_, _>>();
-    let value = emit_from_views(b, source, plan, first, last, &matrices, &captures, miss)?;
+    let value = emit_from_views(
+        b,
+        source,
+        plan,
+        first,
+        last,
+        &matrices,
+        &captures,
+        typed_folds,
+        miss,
+    )?;
     words.write(
         b,
         source
@@ -72,6 +83,7 @@ pub(super) fn emit_from_views(
     last: Value,
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
+    typed_folds: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let region = &source.region;
@@ -103,7 +115,16 @@ pub(super) fn emit_from_views(
         count
     };
     let frame = emit_region(
-        b, region, plan, first, count, matrices, captures, None, miss,
+        b,
+        region,
+        plan,
+        first,
+        count,
+        matrices,
+        captures,
+        typed_folds,
+        None,
+        miss,
     )?;
     let value = b.ins().load(
         types::I64,
@@ -124,11 +145,23 @@ pub(super) fn emit_region(
     count: Value,
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
+    typed_folds: bool,
     output: Option<(Value, Value)>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     emit_region_with_selection(
-        b, region, plan, first, count, matrices, captures, output, None, None, miss,
+        b,
+        region,
+        plan,
+        first,
+        count,
+        matrices,
+        captures,
+        typed_folds,
+        output,
+        None,
+        None,
+        miss,
     )
 }
 pub(super) fn emit_region_with_selection(
@@ -139,6 +172,7 @@ pub(super) fn emit_region_with_selection(
     count: Value,
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
+    typed_folds: bool,
     output: Option<(Value, Value)>,
     selection: Option<&super::numeric_map::selection::Selection>,
     whole_output_initialized: Option<Value>,
@@ -264,6 +298,7 @@ pub(super) fn emit_region_with_selection(
         region,
         plan,
         captures,
+        typed_folds,
         selection,
         whole_output_initialized,
         complete,

@@ -3,7 +3,7 @@ use super::hooks::Hooks;
 #[path = "numeric_map_selection.rs"]
 pub(super) mod selection;
 use crate::native_artifact::NativeCompileError;
-use crate::native_artifact::compiler::{backend, offset, primitive};
+use crate::native_artifact::compiler::{backend, f64_arithmetic, offset, primitive};
 use crate::native_artifact::program::prepare::numeric_maps::{RectangleBounds, Region};
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::NativeNumericMapFrame as Frame;
@@ -16,6 +16,48 @@ use mech_engine::native_artifact::{
 };
 use std::{collections::BTreeMap, mem::offset_of};
 
+/// An emission-only choice, never a runtime value or new source proof. All
+/// admitted map reductions are ordered F64 sums. Keep that sum in its native
+/// register class until the existing raw-word frame boundary. Source terms
+/// and all their checked scalar operations retain their original word DAG.
+#[derive(Clone, Copy)]
+struct Fold {
+    variable: Variable,
+    typed: bool,
+}
+impl Fold {
+    fn new(b: &mut FunctionBuilder<'_>, zero: Value, typed: bool) -> Self {
+        let variable = b.declare_var(if typed { types::F64 } else { types::I64 });
+        let initial = if typed {
+            b.ins()
+                .f64const(cranelift_codegen::ir::immediates::Ieee64::with_bits(0))
+        } else {
+            zero
+        };
+        b.def_var(variable, initial);
+        Self { variable, typed }
+    }
+    fn push(self, b: &mut FunctionBuilder<'_>, term: Value, miss: Block) {
+        use mech_engine::native_artifact::NativeScalarOp::F64Add;
+        let prior = b.use_var(self.variable);
+        let next = if self.typed {
+            let term = b.ins().bitcast(types::F64, MemFlags::new(), term);
+            f64_arithmetic(b, F64Add, prior, term)
+        } else {
+            primitive(b, F64Add, &[prior, term], miss)
+        };
+        b.def_var(self.variable, next);
+    }
+    fn word(self, b: &mut FunctionBuilder<'_>) -> Value {
+        let value = b.use_var(self.variable);
+        if self.typed {
+            b.ins().bitcast(types::I64, MemFlags::new(), value)
+        } else {
+            value
+        }
+    }
+}
+
 pub(in crate::native_artifact) fn emit_entry(
     b: &mut FunctionBuilder<'_>,
     locals: Value,
@@ -24,6 +66,7 @@ pub(in crate::native_artifact) fn emit_entry(
     region: &Region,
     plan: &Plan,
     counter_slot: usize,
+    typed_folds: bool,
     exit: Block,
     error: Block,
 ) -> Result<(), NativeCompileError> {
@@ -87,7 +130,17 @@ pub(in crate::native_artifact) fn emit_entry(
     let settle = b.create_block();
     b.append_block_param(miss, types::I64);
     b.append_block_param(settle, types::I64);
-    emit(b, frame, region, plan, &captures, complete, miss, malformed)?;
+    emit(
+        b,
+        frame,
+        region,
+        plan,
+        &captures,
+        typed_folds,
+        complete,
+        miss,
+        malformed,
+    )?;
     b.switch_to_block(complete);
     b.ins().jump(settle, &[zero.into()]);
     b.switch_to_block(miss);
@@ -141,12 +194,23 @@ pub(super) fn emit(
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    typed_folds: bool,
     complete: Block,
     miss: Block,
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
     emit_with_selection(
-        b, frame, region, plan, captures, None, None, complete, miss, malformed,
+        b,
+        frame,
+        region,
+        plan,
+        captures,
+        typed_folds,
+        None,
+        None,
+        complete,
+        miss,
+        malformed,
     )
 }
 pub(super) fn emit_with_selection(
@@ -155,6 +219,7 @@ pub(super) fn emit_with_selection(
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    typed_folds: bool,
     selection: Option<&selection::Selection>,
     whole_output_initialized: Option<Value>,
     complete: Block,
@@ -358,13 +423,10 @@ pub(super) fn emit_with_selection(
     let cursor = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(cursor, zero);
-    let fold = if region.reduction.is_some() {
-        let var = b.declare_var(types::I64);
-        b.def_var(var, zero);
-        Some(var)
-    } else {
-        None
-    };
+    let fold = region
+        .reduction
+        .as_ref()
+        .map(|_| Fold::new(b, zero, typed_folds));
     let head = b.create_block();
     let body = b.create_block();
     let done = b.create_block();
@@ -447,6 +509,7 @@ pub(super) fn emit_with_selection(
                 last,
                 &views,
                 &captures,
+                typed_folds,
                 index_miss,
             )?;
             b.def_var(words[&child.output(plan).get()], value);
@@ -490,14 +553,7 @@ pub(super) fn emit_with_selection(
                         require(b, valid, malformed);
                     }
                     if let Some(fold) = fold {
-                        let prior = b.use_var(fold);
-                        let next = primitive(
-                            b,
-                            mech_engine::native_artifact::NativeScalarOp::F64Add,
-                            &[prior, result],
-                            miss,
-                        );
-                        b.def_var(fold, next);
+                        fold.push(b, result, miss);
                     } else {
                         let value = if region.output_width == 8 {
                             result
@@ -579,7 +635,7 @@ pub(super) fn emit_with_selection(
     b.ins().jump(head, &[]);
     b.switch_to_block(done);
     if let Some(fold) = fold {
-        let value = b.use_var(fold);
+        let value = fold.word(b);
         b.ins().store(
             MemFlags::new(),
             value,

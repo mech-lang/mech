@@ -1,0 +1,335 @@
+{
+  "schema": "mech.polybench.typed-map-fold-emission-audit.v1",
+  "compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+  "passed": true,
+  "performance_observations": 0,
+  "scope": "Source-derived ordered F64 reduction transport, genuine checked Objects, no timing or hardware-retirement inference",
+  "proof": "Existing numeric_map_reductions::candidate requires F64 region.result and exact sole-consumer F64 sum/extraction. Compiler Fold carries F64 only under this unchanged proof; private TypedMapFolds ablation preserves old I64 fold. Every term/scalar/read/guard/order and original scratch/frame/ABI remains.",
+  "actual_numeric_loop_evidence": {
+    "gramschmidt": {
+      "numeric_function": "numeric_5",
+      "projection": {
+        "zero_seed": "3254",
+        "header": "3258",
+        "ordered_fadd": "3404",
+        "backedge": "3408",
+        "word_serialization_on_done": "3260",
+        "instruction_evidence": {
+          "zero_seed": "    3254:      \tmovi.2s\tv0, #0",
+          "header": "    3258:      \tcmp\tx4, x15",
+          "ordered_fadd": "    3404:      \tfadd\td0, d0, d16",
+          "backedge": "    3408:      \tb\t0x3258 <_mech_canonical_program_entry_v1_numeric_5+0x3258>",
+          "word_serialization_on_done": "    3260:      \tmov.d\tx3, v0[0]"
+        }
+      },
+      "norm": {
+        "zero_seed": "ad8",
+        "header": "adc",
+        "ordered_fadd": "36f8",
+        "backedge": "36fc",
+        "word_serialization_on_done": "ae4",
+        "instruction_evidence": {
+          "zero_seed": "     ad8:      \tmovi.2s\tv0, #0",
+          "header": "     adc:      \tcmp\tx7, x4",
+          "ordered_fadd": "    36f8:      \tfadd\td0, d0, d1",
+          "backedge": "    36fc:      \tb\t0xadc <_mech_canonical_program_entry_v1_numeric_5+0xadc>",
+          "word_serialization_on_done": "     ae4:      \tmov.d\tx10, v0[0]"
+        }
+      },
+      "original_numeric_bridge_pairs": 2,
+      "candidate_numeric_bridge_pairs": 0
+    },
+    "durbin": {
+      "numeric_function": "numeric_4",
+      "sum": {
+        "zero_seed": "8f4",
+        "header": "8f8",
+        "ordered_fadd": "1238",
+        "backedge": "1244",
+        "word_serialization_on_done": "900",
+        "instruction_evidence": {
+          "zero_seed": "     8f4:      \tmovi.2s\tv0, #0",
+          "header": "     8f8:      \tcmp\tx14, x9",
+          "ordered_fadd": "    1238:      \tfadd\td0, d0, d1",
+          "backedge": "    1244:      \tb\t0x8f8 <_mech_canonical_program_entry_v1_numeric_4+0x8f8>",
+          "word_serialization_on_done": "     900:      \tmov.d\tx0, v0[0]"
+        }
+      },
+      "original_numeric_bridge_pairs": 1,
+      "candidate_numeric_bridge_pairs": 0
+    }
+  },
+  "source_derived_terms": {
+    "gramschmidt_norm": 600,
+    "gramschmidt_projection": 8700,
+    "durbin_sum": 780
+  },
+  "per_reached_term": "Two running-sum FP/GPR bridges disappear; original input conversions remain and the final raw-word serialization remains outside the loop. Counts are loop/source-derived, not measured retired instructions or speedup predictions.",
+  "native_code_changed_cases": [
+    "cholesky",
+    "durbin",
+    "gramschmidt"
+  ],
+  "static_changes": {
+    "2mm": {
+      "code_bytes": {
+        "before": 9476,
+        "after": 9476,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 2369,
+        "after": 2369,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "3mm": {
+      "code_bytes": {
+        "before": 4060,
+        "after": 4060,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1015,
+        "after": 1015,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "atax": {
+      "code_bytes": {
+        "before": 3612,
+        "after": 3612,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 903,
+        "after": 903,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "bicg": {
+      "code_bytes": {
+        "before": 3560,
+        "after": 3560,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 890,
+        "after": 890,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 96,
+        "after": 96,
+        "delta": 0
+      }
+    },
+    "cholesky": {
+      "code_bytes": {
+        "before": 19944,
+        "after": 19904,
+        "delta": -40
+      },
+      "static_instruction_count": {
+        "before": 4986,
+        "after": 4976,
+        "delta": -10
+      },
+      "reported_native_stack_bytes": {
+        "before": 1600,
+        "after": 1648,
+        "delta": 48
+      }
+    },
+    "correlation": {
+      "code_bytes": {
+        "before": 15016,
+        "after": 15016,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 3754,
+        "after": 3754,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 128,
+        "after": 128,
+        "delta": 0
+      }
+    },
+    "covariance": {
+      "code_bytes": {
+        "before": 5552,
+        "after": 5552,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1388,
+        "after": 1388,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "deriche": {
+      "code_bytes": {
+        "before": 62308,
+        "after": 62308,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 15577,
+        "after": 15577,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 496,
+        "after": 496,
+        "delta": 0
+      }
+    },
+    "doitgen": {
+      "code_bytes": {
+        "before": 1864,
+        "after": 1864,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 466,
+        "after": 466,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 96,
+        "after": 96,
+        "delta": 0
+      }
+    },
+    "durbin": {
+      "code_bytes": {
+        "before": 20968,
+        "after": 20960,
+        "delta": -8
+      },
+      "static_instruction_count": {
+        "before": 5242,
+        "after": 5240,
+        "delta": -2
+      },
+      "reported_native_stack_bytes": {
+        "before": 2032,
+        "after": 2032,
+        "delta": 0
+      }
+    },
+    "gemm": {
+      "code_bytes": {
+        "before": 7216,
+        "after": 7216,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1804,
+        "after": 1804,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": {
+        "before": 52992,
+        "after": 52936,
+        "delta": -56
+      },
+      "static_instruction_count": {
+        "before": 13248,
+        "after": 13234,
+        "delta": -14
+      },
+      "reported_native_stack_bytes": {
+        "before": 23104,
+        "after": 23104,
+        "delta": 0
+      }
+    },
+    "mvt": {
+      "code_bytes": {
+        "before": 9980,
+        "after": 9980,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 2495,
+        "after": 2495,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      }
+    },
+    "nussinov": {
+      "code_bytes": {
+        "before": 19360,
+        "after": 19360,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 4840,
+        "after": 4840,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 320,
+        "after": 320,
+        "delta": 0
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": {
+        "before": 16104,
+        "after": 16104,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 4026,
+        "after": 4026,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 288,
+        "after": 288,
+        "delta": 0
+      }
+    }
+  },
+  "fma_instructions_introduced": false,
+  "execution_counters": "All15 reports and every counter exactly accepted53; all17002 finite C outputs match.",
+  "material_stack_change": "Reported native stack_bytes Cholesky1600->1648 (+48B); other14 unchanged. Code/instruction reductions do not establish runtime or peak-memory improvement. No new runtime/frame/helper/data buffer exists; compiler register allocation may change machine spills.",
+  "heap_measurement": "Not remeasured for this candidate. Static stack field is not complete measured dynamic stack/peak RSS.",
+  "prior_work_distinction": "Rejected41 direct SSA/frame-adapter composition retained an I64 fold variable. This changes that accumulator register class and preserves the adapter; no bounds/read-reuse retry."
+}

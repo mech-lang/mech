@@ -54,6 +54,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Emission-only ablation retains the ordinary collection error path.
     UniformWords,
     NumericCollections,
+    /// Keep proved ordered map-reduction sums in F64 SSA until word publication.
+    TypedMapFolds,
     /// Complete fixed matrix generators containing bounded numeric FSMs.
     NumericGenerators,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.

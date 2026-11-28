@@ -380,3 +380,99 @@ fn numeric_map_cell_reads_share_one_bounds_branch_and_keep_non_square_bits_and_e
         }
     }
 }
+
+fn fold_function(typed: bool) -> Function {
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 2];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let zero = b.ins().iconst(types::I64, 0);
+        let fold = Fold::new(&mut b, zero, typed);
+        let cursor = b.declare_var(types::I64);
+        b.def_var(cursor, zero);
+        let head = b.create_block();
+        let body = b.create_block();
+        let done = b.create_block();
+        let bad = b.create_block();
+        b.append_block_param(bad, types::I64);
+        b.ins().jump(head, &[]);
+        b.switch_to_block(head);
+        let at = b.use_var(cursor);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, at, args[1]);
+        b.ins().brif(more, body, &[], done, &[]);
+        b.switch_to_block(body);
+        let bytes = b.ins().imul_imm(at, 8);
+        let address = b.ins().iadd(args[0], bytes);
+        let term = b.ins().load(types::I64, MemFlags::new(), address, 0);
+        fold.push(&mut b, term, bad);
+        let next = b.ins().iadd_imm(at, 1);
+        b.def_var(cursor, next);
+        b.ins().jump(head, &[]);
+        b.switch_to_block(done);
+        let result = fold.word(&mut b);
+        b.ins().return_(&[result]);
+        b.switch_to_block(bad);
+        let sentinel = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[sentinel]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+#[test]
+fn typed_map_folds_runtime_shaped_ssa_keeps_float_phi_and_exact_word_boundary() {
+    type Sum = unsafe extern "C" fn(*const u64, u64) -> u64;
+    let mut modules = Vec::new();
+    let mut sums = Vec::new();
+    for typed in [false, true] {
+        let function = fold_function(typed);
+        let text = function.display().to_string();
+        let float_phi = function.layout.blocks().any(|block| {
+            function
+                .dfg
+                .block_params(block)
+                .iter()
+                .any(|&p| function.dfg.value_type(p) == types::F64)
+        });
+        assert_eq!(float_phi, typed, "{text}");
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func = function;
+        context.func.signature.call_conv = module.make_signature().call_conv;
+        let id = module
+            .declare_function("ordered_map_fold", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: exact two-word signature; all inputs remain live for each call.
+        let sum =
+            unsafe { core::mem::transmute::<*const u8, Sum>(module.get_finalized_function(id)) };
+        sums.push(sum);
+        modules.push(module);
+    }
+    for bits in [
+        vec![],
+        vec![1u64 << 63; 3],
+        vec![1, 2, 0x8000_0000_0000_0001],
+        vec![1e16f64.to_bits(), 1f64.to_bits(), (-1e16f64).to_bits()],
+        vec![0x7ff0_0000_0000_0000, 0xfff0_0000_0000_0000],
+        vec![0x7ff0_0000_0000_0037, 0x7ff8_0000_0000_0041],
+    ] {
+        // SAFETY: checked extent exactly matches this immutable backing slice.
+        let a = unsafe { sums[0](bits.as_ptr(), bits.len() as u64) };
+        let b = unsafe { sums[1](bits.as_ptr(), bits.len() as u64) };
+        assert_eq!(a, b, "raw words {bits:x?}");
+    }
+}

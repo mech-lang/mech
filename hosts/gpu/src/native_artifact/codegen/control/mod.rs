@@ -1354,6 +1354,9 @@ impl<'plan> CfgDefinition<'plan> {
                     region,
                     prepared.plan(),
                     plan.value_count() + iteration as usize,
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::TypedMapFolds,
+                    ),
                     blocks[exit as usize].expect("reachable numeric map exit"),
                     error,
                 )?;

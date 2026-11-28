@@ -662,6 +662,7 @@ mod numeric_maps;
 mod numeric_phase_maps;
 mod numeric_phase_reductions;
 mod rectangular_numeric_maps;
+mod typed_map_folds;
 
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
