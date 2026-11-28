@@ -2851,3 +2851,11 @@ General source-closed pointwise DAGs feed original ordered sum terms without pro
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.9645700557118566x C, independent holdout24.5203097801984526x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-52-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted52.
 
 [Qualification](round-52-qualification.json) · [Audit](round-52-audit.json) · [Progress](round-52-progress.json) · [Complete experiment](training-experiments/ordered-reduction-producers-formal.json)
+
+Accepted52 correlation CPU profile
+
+One owned warm checked-call process was sampled and its entire14620-byte JIT range captured from that same PID after sampling. All bytes match the accepted52 Object; warmup/final finite C outputs and frozen counters match. Generated self-time28.53%, allocation/free19.29%, planning/schema/validation16.62%. Complete PC attribution places11.91% in the two-row product k region,1.13% in the new producer/sum region and5.10% in an ordinary broadcast loop. No official timing sample or history entry was added.
+
+The next proposed source-derived experiment shares RHS loads/k control across four independent ordered output rows, retaining all existing guards/tails/fees/ownership/publication and exact per-cell arithmetic order. These profiles are warm diagnostics and no runtime/generalization gain is inferred.
+
+[CPU telemetry](round-52-correlation-cpu-telemetry.json) · [Full same-process profile/code evidence](training-experiments/accepted52-correlation-profile.json)
