@@ -139,3 +139,6 @@ mod numeric_product;
 mod numeric_sum;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_transpose;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod numeric_product_epilogues;

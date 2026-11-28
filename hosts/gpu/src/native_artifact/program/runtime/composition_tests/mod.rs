@@ -51,6 +51,7 @@ mod nested_phase_handoff;
 mod nested_scalar_array;
 mod nullary_phases;
 mod numeric_binary;
+mod numeric_product_epilogues;
 mod numeric_bindings;
 mod numeric_boolean_relations;
 mod numeric_call_cache;

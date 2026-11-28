@@ -318,6 +318,7 @@ impl NativeProgramObject {
         metadata["compiled_count_value_loops"] = serde_json::json!(&self.codegen.count_value_loops);
         metadata["compiled_loop_constants"] = serde_json::json!(&self.codegen.loop_constants);
         metadata["compiled_steady_loops"] = serde_json::json!(&self.codegen.steady_loops);
+        metadata["compiled_product_epilogues"] = serde_json::json!(&self.codegen.product_epilogues);
         metadata["compiled_numeric_map_regions"] =
             serde_json::to_value(&self.descriptor.metadata().numeric_maps.regions).unwrap();
         metadata["compiled_join_map_copies"] = serde_json::json!(&self.codegen.join_map_copies);

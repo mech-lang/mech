@@ -24,6 +24,7 @@ pub(in crate::native_artifact) struct Operation {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Layout {
     sites: Box<[Option<Operation>]>,
+    epilogues: Box<[Option<super::numeric_product_epilogues::Candidate>]>,
 }
 fn constant_axes(
     template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
@@ -90,7 +91,26 @@ impl Layout {
                 }))
             })
             .collect::<Result<Box<[_]>, &'static str>>()?;
-        Ok(Self { sites })
+        let mut result = Self {
+            epilogues: vec![None; sites.len()].into_boxed_slice(),
+            sites,
+        };
+        for recipe in super::numeric_product_epilogues::derive(plan, &result) {
+            let entry = recipe.entry as usize;
+            result.epilogues[entry] = Some(recipe);
+        }
+        Ok(result)
+    }
+    pub fn epilogue(&self, site: usize) -> Option<&super::numeric_product_epilogues::Candidate> {
+        self.epilogues.get(site)?.as_ref()
+    }
+    pub fn epilogue_arguments(&self) -> usize {
+        self.epilogues
+            .iter()
+            .flatten()
+            .map(|r| r.scalars.len())
+            .max()
+            .unwrap_or(0)
     }
     pub fn at(&self, site: usize) -> Option<&Operation> {
         self.sites.get(site)?.as_ref()

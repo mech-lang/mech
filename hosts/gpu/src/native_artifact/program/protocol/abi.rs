@@ -25,7 +25,7 @@ use core::ffi::c_void;
 // ABI43 adds paired typed matrix arithmetic loans; the root Frame is unchanged.
 // ABI45 adds paired complete numeric-generator loans; the root Frame is unchanged.
 // ABI47 admits ordered reduction geometry in the same 80-byte matrix frame.
-pub(in crate::native_artifact) const VERSION: u64 = 47;
+pub(in crate::native_artifact) const VERSION: u64 = 48;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;
@@ -106,4 +106,22 @@ pub(in crate::native_artifact) struct NumericBinaryFrame {
     pub right_mode: u64,
     pub left_scalar: u64,
     pub right_scalar: u64,
+}
+
+/// Private currently pinned leaf; mode is ordinary scalar/exact/column/row.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(in crate::native_artifact) struct NumericProductLeaf {
+    pub pointer: u64,
+    pub scalar: u64,
+    pub mode: u64,
+}
+/// ABI48: ordered accumulator and source-proved cell epilogue share one loan.
+/// The original80-byte product prefix and scalar root Frame remain unchanged.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(in crate::native_artifact) struct NumericProductFrame {
+    pub product: NumericBinaryFrame,
+    pub leaves: [NumericProductLeaf;
+        crate::native_artifact::program::prepare::numeric_product_epilogues::MAX_INPUTS],
 }

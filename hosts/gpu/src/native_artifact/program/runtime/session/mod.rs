@@ -1344,6 +1344,7 @@ impl<'a> Prepared<'a> {
             closed_tail: None,
             numeric_prepaid: None,
             numeric_binary: None,
+            numeric_product: None,
             parent_continuation: Default::default(),
             selected_join: None,
             prefix: prefix_input.map(|input| {

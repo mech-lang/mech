@@ -1626,3 +1626,15 @@ pub(super) fn rejects_malformed_helper_image(image: &[u8]) -> bool {
 }
 #[path = "admitted_helper_tests.rs"]
 mod admitted_helper_tests;
+
+#[test]
+fn ordered_product_frame_preserves_product_and_scalar_prefixes() {
+    use crate::native_artifact::program::protocol::abi::{NumericBinaryFrame,NumericProductFrame,NumericProductLeaf};
+    assert_eq!(core::mem::size_of::<NumericBinaryFrame>(),80);
+    assert_eq!(core::mem::size_of::<NumericProductLeaf>(),24);
+    assert_eq!(core::mem::size_of::<NumericProductFrame>(),272);
+    assert_eq!(core::mem::align_of::<NumericProductFrame>(),8);
+    assert_eq!(core::mem::offset_of!(NumericProductFrame,product),0);
+    assert_eq!(core::mem::offset_of!(NumericProductFrame,leaves),80);
+    assert_eq!(core::mem::size_of::<Frame>(),144);
+}

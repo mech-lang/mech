@@ -14,6 +14,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub lookup_facts: LookupFacts,
     pub cfg_cleanup: Option<CfgCleanup>,
     pub scalar_selects: usize,
+    pub product_epilogues: Vec<ProductEpilogue>,
     pub unsigned_guards: usize,
     pub utf8_histogram: Option<Utf8Histogram>,
     pub utf8_word_chunk_sites: Vec<usize>,
@@ -744,4 +745,16 @@ pub(in crate::native_artifact) struct ClassifiedHistogram {
     pub stack_bytes: u64,
     pub code_bytes: u64,
     pub sites: Vec<usize>,
+}
+
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct ProductEpilogue {
+    pub entry: u32,
+    pub end: u32,
+    pub resume: u32,
+    pub parent: Option<u32>,
+    pub operators: Vec<u32>,
+    pub sites: Vec<u32>,
+    pub external: Vec<u32>,
+    pub elided_values: Vec<u32>,
 }

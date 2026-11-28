@@ -862,6 +862,9 @@ fn decode_inner<
             )
         }
     };
+    if w.max_library_inputs < numeric_binary.epilogue_arguments() {
+        return Err("restored product epilogue arguments exceed admitted backing".into());
+    }
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }

@@ -1,6 +1,7 @@
 //! Ordered products over admitted row-major F64 banks. SIMD lanes compute
 //! independent columns; each cell keeps the ordinary +0 identity and k order.
 use super::numeric_binary::address;
+use super::numeric_product_epilogues::Epilogue;
 use crate::native_artifact::compiler::f64_arithmetic;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
@@ -15,6 +16,7 @@ fn cell(
     columns: Value,
     inner: Value,
     vector: bool,
+    epilogue: Option<&Epilogue<'_>>,
 ) {
     let kind = if vector {
         types::F64.by(2).unwrap()
@@ -61,6 +63,11 @@ fn cell(
     b.ins().jump(header, &[]);
     b.switch_to_block(finish);
     let result = b.use_var(accumulator);
+    let result = if let Some(epilogue) = epilogue {
+        epilogue.apply(b, result, row, column, index, vector)
+    } else {
+        result
+    };
     let destination = address(b, output, index);
     b.ins().store(MemFlags::new(), result, destination, 0);
 }
@@ -73,6 +80,42 @@ pub(super) fn emit(
     count: Value,
     columns: Value,
     inner: Value,
+    done: Block,
+) {
+    emit_body(b, left, right, output, count, columns, inner, None, done);
+}
+pub(super) fn emit_epilogue(
+    b: &mut FunctionBuilder<'_>,
+    left: Value,
+    right: Value,
+    output: Value,
+    count: Value,
+    columns: Value,
+    inner: Value,
+    epilogue: &Epilogue<'_>,
+    done: Block,
+) {
+    emit_body(
+        b,
+        left,
+        right,
+        output,
+        count,
+        columns,
+        inner,
+        Some(epilogue),
+        done,
+    );
+}
+fn emit_body(
+    b: &mut FunctionBuilder<'_>,
+    left: Value,
+    right: Value,
+    output: Value,
+    count: Value,
+    columns: Value,
+    inner: Value,
+    epilogue: Option<&Epilogue<'_>>,
     done: Block,
 ) {
     let index = b.declare_var(types::I64);
@@ -98,7 +141,7 @@ pub(super) fn emit(
     b.ins().brif(two, pair, &[], single, &[]);
     for (block, vector, width) in [(pair, true, 2), (single, false, 1)] {
         b.switch_to_block(block);
-        cell(b, left, right, output, at, columns, inner, vector);
+        cell(b, left, right, output, at, columns, inner, vector, epilogue);
         let advanced = b.ins().iadd_imm(at, width);
         b.def_var(index, advanced);
         b.ins().jump(header, &[]);

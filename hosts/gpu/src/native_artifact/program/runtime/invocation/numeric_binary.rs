@@ -20,10 +20,10 @@ pub(in crate::native_artifact::program::runtime) struct Pending {
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
 }
-fn fits(value: u64, cap: Option<u64>) -> bool {
+pub(super) fn fits(value: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| value <= cap)
 }
-fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
+pub(super) fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
     let (
         SchemaBody::Matrix {
             element,
@@ -55,7 +55,7 @@ fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
     };
     (rows.checked_mul(columns)? == cells.len()).then_some([rows, columns])
 }
-fn cells(value: &Value) -> Option<&[F64Bits]> {
+pub(super) fn cells(value: &Value) -> Option<&[F64Bits]> {
     let mech_core::ValueData::Matrix(matrix) = value.data() else {
         return None;
     };

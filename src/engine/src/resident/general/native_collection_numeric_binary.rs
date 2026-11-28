@@ -180,6 +180,28 @@ impl NativePreparedLibraryCall {
         }
         Some([rows, columns, left_mode, right_mode])
     }
+    /// Source-selected projection of one original binary operand into a
+    /// consumer's cell domain. Geometry alone grants no owner/view permission.
+    /// Each original operator must still validate its own logical geometry.
+    pub fn f64_matrix_binary_input_mode(
+        &self,
+        input: usize,
+        dimensions: [usize; 2],
+        output: [usize; 2],
+    ) -> Option<u64> {
+        self.template().f64_matrix_binary_op()?;
+        let schema = self.template().inputs().get(input)?;
+        if matches!(schema.body(), SchemaBody::FloatingPoint(_)) {
+            return (dimensions == [1, 1]).then_some(0);
+        }
+        let [rows, columns, mode, _] = crate::resident::numeric::native_binary_geometry(
+            (dimensions[0], dimensions[1]),
+            (output[0], output[1]),
+        )
+        .ok()?;
+        ([rows, columns] == output.map(|n| n as u64)).then_some(mode)
+    }
+
     /// Complete original metadata, draft/canonical construction, current source
     /// copies, physical staging and publication. This retains the old source
     /// prices even though generated arithmetic needs only one typed result bank.

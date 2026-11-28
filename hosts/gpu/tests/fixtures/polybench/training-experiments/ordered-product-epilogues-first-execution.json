@@ -1,0 +1,934 @@
+{
+  "schema": "mech.polybench.product-epilogues-first-execution.v1",
+  "created_at": "2026-11-28T03:24:13.757304+00:00",
+  "compiler_fingerprint": "00056f420963c996061b68469a52579370bca6c4c927df8ee94d81eb02f079c6",
+  "effective_plan": {
+    "schema": "mech.polybench.ordered-product-epilogues-plan.v1",
+    "created_at": "2026-11-28T02:55:49.335199+00:00",
+    "status": "Prospective before source edits or timing",
+    "source_parent": "7817aeee10e425a43455f4503677110f54039ea2",
+    "accepted_round": 47,
+    "accepted_scores": {
+      "optimization": 9.575943659594117,
+      "holdout": 27.506517683644883
+    },
+    "accepted_compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+    "accepted_driver": "/private/tmp/mech-polybench-optimization/round-47/masked-matrix-maps/masked-matrix-maps-driver",
+    "accepted_driver_sha256": "02aa97071380a36b86347bcfc817d774e86f2747557334a4a189e051fb37f611",
+    "formal_history_entries": 48,
+    "selection_policy": "performance-selection-policy-v4.json",
+    "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+      "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+      "hosts/gpu/src/native_artifact/program/image/wire/mod.rs",
+      "hosts/gpu/src/native_artifact/program/protocol/abi.rs",
+      "hosts/gpu/src/native_artifact/program/protocol/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs",
+      "hosts/gpu/src/native_artifact/program/compiler.rs",
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/tests.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+      "src/engine/src/resident/general/native_collection_numeric_binary.rs"
+    ],
+    "accepted_source_sha256": {
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs": null,
+      "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "9976fd622538419ba41ccb797a8097ce3b00af2f032de34e295f42871cf874b6",
+      "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "32645075fd02a2d6d1a849bbff1657cbf355c67c83dd0d8cd7d3446c91cc50df",
+      "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "7297be93c784f5b9ceddfd6dfedceee5d909c8522cb0ad7986d929e6c30d12ab",
+      "hosts/gpu/src/native_artifact/program/protocol/abi.rs": "58a035644615df4e92a8c4c3c5c7b3c3b88b711c33521298babddfe745e7bcc7",
+      "hosts/gpu/src/native_artifact/program/protocol/mod.rs": "e26fa599792a06406d40f448d7effe3611ee6ad64326a8adc4c16eeb791e5772",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": null,
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "598d963257d93944bf0acb55d12845e6019fa7dab3ffb7489d42f85af88d03ea",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs": "5a2ccb90965cc9b335f0d2b58bb4d7cfec5a9d3750d9ba2f2e2d917538c224c7",
+      "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "6ca7599155803d52a308dea68fb08acd8de5d1cc74c229c24e981ed7303bf683",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "740ef8759493dcedda7d97b7eb3c0fa8b374c17f7036b965673457ff8715a4fd",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": null,
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "7bd5157eb7b2676b06cf228d743a152102fe5a52606daa2d58c46ec9b2fbcf4d",
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "c19df2cab342c02aece792763b813a9f3e9452db38591aee8045af3874bc74aa",
+      "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "ee6c0c8c38441d6cbf7ea2e8b545a6ca4f6fba59a46f304426c702983899746e",
+      "hosts/gpu/src/native_artifact/program/compiler.rs": "1e734f74445394245d696e94c3a5dab0bc5c5f497bd44e01257f434ec69f162a",
+      "hosts/gpu/src/native_artifact/codegen/options.rs": "f4007038c261259c8d59aa27a0d8ab593345ee22eab7d2af8c895c27cee2a8fc",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs": "c293ea9bfa7b8f66faac3bf562ccfe9460be24a6b5f94858b183d5bb685ec0ab",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f87ce2044ec3772051b71a596723709002b040daf5a69549dcb18c751b0cfd1b",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs": null,
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "bf73902193406b331709f07f90e2e248693383d3eb28ca7fb66ab54680f392ba",
+      "hosts/gpu/src/native_artifact/program/runtime/tests.rs": "e48dd28bd3473732664277b08a278cb677b7fd2dd8a877b54a0de133eefedda4",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "59c1cbeba27e6587a1846f9faedf62e1eff0f46ceef1d3e2faab646afe003378",
+      "src/engine/src/resident/general/native_collection_numeric_binary.rs": "a08436842451bdbec8a7bbe363ae56678b64ff8f5b1334018bb81a6df3e3ef09"
+    },
+    "versions": {
+      "ir": 415,
+      "work": 157,
+      "abi": 48
+    },
+    "scope": "General source-closed sole-output elementwise expression DAG with exactly one ordered F64 product. Reuse resident source factories/bounds and maintained Cranelift product scalar/SIMD emission. Optimize optimization15 only; unchanged ports, input shapes/data, C binaries, limits, tolerance, timing/cache boundaries.",
+    "physical_work_removed": [
+      "Product accumulator feeds its original scalar/exact/broadcast arithmetic consumers before the final store.",
+      "No product-result or elementwise intermediate payload buffers, initialization, complete write/read passes, canonical Values or separate per-operator prepare/finish boundaries on the admitted path.",
+      "Retain a materialized result for later products or other consumers; never recompute a product across downstream reductions."
+    ],
+    "source_proof": [
+      "Private nonserialized recipe rederived from exact same-plan selected product/elementwise factories, genuine operands, liveness and same-context straight-line CFG. Bounded nodes/leaves/steps, no activation boundary or outside predecessor.",
+      "All external operands must be immutable and available before entry. Total same-schema aliases may be substituted only with complete read-role accounting. Intermediates must be private; the only escaping matrix expression is the final output. Unsupported scalar definitions, branches, extra products, captures or escaping intermediates decline until independently proved.",
+      "The final current output must have the admitted product shape. Intermediate elementwise shapes may be scalar/row/column projections of that shape, independently validated by their original factories; shared resident geometry composes leaf projections into the final cell domain. Intermediate node arithmetic and term order remain exactly the Mech source tree, independent of algebraic C equivalence."
+    ],
+    "implementation": [
+      "A new paired exact synchronous product-epilogue loan and frame; preserve ordinary NumericBinaryFrame/Pending layout and the frozen scalar root prefix. Pin current original owners; only final output cells allocate. No interpreter, generic per-element operation dispatch or per-operation allocation.",
+      "Use existing numeric_product scalar/SIMD ordered +0/k accumulation; add a compile-time epilogue emitter with direct maintained f64_arithmetic instructions and independent output lanes. Ordinary no-epilogue emission remains the accepted form.",
+      "Prove/admit complete original factory geometries, shapes, demands, current owners, alias/publication/retirement obligations, skipped source visit fees, all logical work/comparison fees, full coexistence/metadata/node/clone bounds and replay credit before mutation. Overflow or caps decline to the original entry.",
+      "Retain intermediate rounding. Any nonfinite intermediate before a consumer cancels the private result and replays the original source, with adequate prepaid admission, no partial publication and no reassociation/FMA. Final nonfinite arithmetic follows the maintained emitted operation; NaN inputs decline.",
+      "Finish binds issued frame, pointer/count, exact entry visit epoch/context/source proof, current budget and final output. Interleaved helper/visit and forged images/lanes/loans must reject. A genuine fused transition reports honest physical visits; no padded counters.",
+      "Broadcast composition: retain each original intermediate logical shape and factory demand; compute cheap pure elementwise intermediates per final output cell with composed shared resident input projection modes. Never recompute the expensive product. Explicitly admit/charge a checked per-final-cell bound for native epilogue work/comparisons, in addition to every original source obligation.",
+      "Only genuine external scalar words use the existing helper argument lane. Managed inputs resolve through the private source proof and current canonical arena. Cache scalar slot/ID mapping at preparation, derive only the scalar capacity floor on image loading, and preserve the fixed corpus transport geometry; no extra managed zero-word transport slots."
+    ],
+    "required_qualification": [
+      "Original/decoded source proof, positive scalar/exact/broadcast epilogues and DAGs, negative escapes/extra products/non-dominating leaves/branches/contexts/activation/source mutations. Inspect optimization graphs untimed before runtime implementation if needed.",
+      "Native versus ablated and ordinary exact bits over rectangular/odd/empty axes, zero inner dimension, scalar/row/column/1x1 leaves, alias repeats and genuine restored helpers. Test intermediate overflow/NaNs and cancellation/replay, atomic shape/cap failure, cleanup and retry.",
+      "Finite/missing/zero/spent source budgets, physical bytes/nodes, clone/coexistence limits, complete logical fee preservation, full-frame/epoch/context/interleaving/metadata corruption tests.",
+      "Maintained scalar/compression/general numeric regressions, both feature configurations, all30 C cases and restored forms. Actual checked Object census certifies actual fused regions, only final bank/publication, and no new FMA."
+    ],
+    "untimed_gate": "All optimization15 C liveouts; source work and comparison never decrease, all other counters equal except exact independently source-proved physical visit reductions. Actual Object/loan/bank census establishes which buffers and operator boundaries disappear.",
+    "training_probe": {
+      "actors": [
+        "accepted47",
+        "candidate"
+      ],
+      "observations": 210,
+      "samples_per_actor_case": 7,
+      "selection": "One prospective probe per fully qualified fingerprint; raw equal-weight geometric mean accepted47/candidate medians must strictly exceed1. No retries/exclusions. Preserve all samples/regressions."
+    },
+    "formal_acceptance": "Only optimization15 kernel Mech/C geometric mean strictly below9.575943659594117 promotes. Holdout is reported independently and cannot veto, select, tune or trigger rollback. Selected source must be qualified, committed, pushed, clean and frozen before one900-observation formal evaluation; append immutable history.",
+    "prior_evidence": [
+      {
+        "candidate": "initial transpose views",
+        "fingerprint": "95bb12a9533b8bfc1d4c882997c028de7b38af122dae318f1c89ffe3bf6b1c15",
+        "probe_speedup": 0.9957168176603722,
+        "selected": false
+      },
+      {
+        "candidate": "hoisted transpose views",
+        "fingerprint": "742a83d252fd83fc130fc030ed9f7b120e3d2406878a33010c0b51a93d092c55",
+        "probe_speedup": 0.9883820880980985,
+        "selected": false
+      },
+      "Rejected36 grouped kernels retained all physical matrices; this experiment removes genuine producer/consumer intermediates."
+    ],
+    "profiling_basis": [
+      "Accepted44 optimization profiles: allocation/planning around MVT/BiCG small operators",
+      "User review: product epilogues in GEMM/2mm",
+      "Current shared resident factory/source-bound/product emitter inspection"
+    ],
+    "performance_observations": 0,
+    "prospective_refinement": "Share the maintained runtime cells/dims/fits helpers with the new paired loan by sibling visibility only; ordinary NumericBinaryFrame/Pending fields remain exact. New source proof confirms full four-operator GEMM and two 2mm regions before runtime implementation.",
+    "broadcast_refinement": {
+      "basis": "Untimed execution attempt05: exact-shape enabled/ablated/ordinary bits and bank/fee/visit census passed all six repeated original/restored runs. Row broadcast was correctly declined by the initial same-shape admission and failed the stronger test; extend geometry rather than removing that case.",
+      "performance_observations": 0,
+      "new_shared_method": "NativePreparedLibraryCall::f64_matrix_binary_input_mode",
+      "extra_path": "src/engine/src/resident/general/native_collection_numeric_binary.rs"
+    }
+  },
+  "versions": {
+    "ir": 415,
+    "work": 157,
+    "abi": 48
+  },
+  "focused_result": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "numeric_product_epilogues",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 93.9568151673302,
+    "compiler_fingerprint": "00056f420963c996061b68469a52579370bca6c4c927df8ee94d81eb02f079c6",
+    "source_unchanged": true,
+    "passed_tests": [
+      6
+    ],
+    "scope": "Untimed source proof, actual ordered scalar/SIMD execution, bank/callback census, source fees, aliases and original/decoded/restored forms; broader failure/resource qualification pending; no candidate performance observations"
+  },
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs": "0b9d17d9d74d724d3bbaf6c17701603dc944475f64d8fa2ff0e83524dc77dc05",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs": "66fb2fb382b3b12a76598a9ea9029024658b0eebb707a04acdb39b62d112ff08",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "c75bd3da8bf43d21e93fa292a2578d1498720e20e9915875e019359148b6eb3c",
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "255380522b23d280bb3f221c49db96277f407e038449dc6e230ff403df95a0f3",
+    "hosts/gpu/src/native_artifact/program/protocol/abi.rs": "5c77f83b8ea390613b5f1c11113dc6e8fc5f24a815e80c69349d2af67825908c",
+    "hosts/gpu/src/native_artifact/program/protocol/mod.rs": "ce271982db5890ab7a225c82cbd691fd83e97685fb4792b7b5fd5b63949f71c4",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "54a57faa7cae98a5a7b7db660258a0bceba02e15bfb8cf137bcfc75c0a97edf7",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs": "f50dcf07197741df2ec2846ff555ff04b9e02c9653f66446faf606347ee76a62",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs": "0d44f862a79edbdc514a44753c4abb9fe1b7a19f143b6e8e61f253bb01e6b701",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "dafd989091e24eb5607e2b396d6dcddbc16e03a8dc8868272947c54f4e70827b",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "d71c1f1a71b83db082186463fa13ecfe1610f93d01aeccebea64e9f9d10c6b77",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "6fece19af7ee9efcb26a9d70eadc9e100c3b5d3e86b5cd55c94cd7b5aaaa81b5",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "dfc0b0d7840ecf4fbc1c6d1d1727f580089bc172ef871ff17acefe56fc7e2ed8",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "f1797e48858c934f3e4fcb29ce01277ac6a222b30db04c75e4b4b4265b13795c",
+    "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "4a36bf964cfef3979af70b753bd83b43eb0f2ca3927772cf8a109ebdb76bb6d3",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "3e15083d34df2a55cbf2c33f7bcb13013dd4b70e7264cf3a611c77aa9c184553",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "15cf9ce560f3239fbe26956fbcc269c9bc6eb1ba9fbaad8985a6bf407ffcea66",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "5a81afc9662af5cf29fd70879cda78d79cb16e856f0305c96986c3b1b8e67717",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "d62260e5f1d81e41866b3874d19cf99e9397bc4534a9c4da9c69bea57f6cc06e",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs": "4b3045362d3231907d9bbb2ae6a03eae06e69c80efc18b19b75f43157c570e5a",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs": "dd41c14b586da9b9540dd7f666a5e7a94118b1f417797aea5e08a7909a547f00",
+    "hosts/gpu/src/native_artifact/program/runtime/tests.rs": "fcb992d23adc5491a7cb9dbc2ecb66ef5ecac6f8b2e230b76429d989318f130e",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "af638fda232fe78d999b5e907bc2c866471ee14a746a523838aba01b7bf5648a",
+    "src/engine/src/resident/general/native_collection_numeric_binary.rs": "8eabdd6504814317dc74df90aa53bd4e0a944691d5f5e1130a82b9041e9d2633"
+  },
+  "attempts": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 16.229501250199974,
+      "compiler_fingerprint": "fbad1f9dfecb91fa2f53c44fd9ac0688f55e5eebd8896d4deb79c07b2c16edd3",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "scope": "Untimed private source discovery and optimization operator graph inspection only; no fused runtime or candidate performance observations yet"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 94.48237604089081,
+      "compiler_fingerprint": "f9b7de76a56e6aeec4ede3bde1676d2be382b287a5dc9eaa6d9dc7a95df9dff0",
+      "source_unchanged": true,
+      "passed_tests": [
+        2
+      ],
+      "scope": "Untimed private source discovery and optimization operator graph inspection only; no fused runtime or candidate performance observations yet"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 15.367789291776717,
+      "compiler_fingerprint": "870c9f249c80d8551770de6bcf1dc45f15c47f41dc574412c778988780753bc8",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "scope": "Untimed source proof and code-generation entry checks only; actual paired runtime execution not yet qualified; no candidate performance observations"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 96.66517070913687,
+      "compiler_fingerprint": "2c6bacb5e47819700b5bcdcfbd3f5364a21c216eed4ddec10f1342ca8c0499e2",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "scope": "Untimed source proof, actual ordered scalar/SIMD execution, bank/callback census, source fees, aliases and original/decoded/restored forms; broader failure/resource qualification pending; no candidate performance observations"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "wall_seconds": 97.67710520932451,
+      "compiler_fingerprint": "6155b5bb920d8072e60f6a15acb07284a75f258a14f2e6ba1dc1bcbca27f6f01",
+      "source_unchanged": true,
+      "passed_tests": [],
+      "scope": "Untimed source proof, actual ordered scalar/SIMD execution, bank/callback census, source fees, aliases and original/decoded/restored forms; broader failure/resource qualification pending; no candidate performance observations"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 214.61216529086232,
+      "compiler_fingerprint": "3a1365879947d3290557f7ca1f4b60e7de771a02fbd3ebe37245e2f4427243df",
+      "source_unchanged": true,
+      "passed_tests": [
+        4
+      ],
+      "scope": "Untimed source proof, actual ordered scalar/SIMD execution, bank/callback census, source fees, aliases and original/decoded/restored forms; broader failure/resource qualification pending; no candidate performance observations"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric_product_epilogues",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 93.9568151673302,
+      "compiler_fingerprint": "00056f420963c996061b68469a52579370bca6c4c927df8ee94d81eb02f079c6",
+      "source_unchanged": true,
+      "passed_tests": [
+        6
+      ],
+      "scope": "Untimed source proof, actual ordered scalar/SIMD execution, bank/callback census, source fees, aliases and original/decoded/restored forms; broader failure/resource qualification pending; no candidate performance observations"
+    }
+  ],
+  "scope": "Six focused groups pass; original/decoded/restored ordered scalar/SIMD execution, exact bits, row/column/scalar matrix broadcasts, zero axes/inner, full bank/callback/visit/fee census, aliases, fixed shapes, intermediate nonfinite cancellation/replay, final nonfinite division, atomic shape failures, 19 finite-cap cases, spent comparison and physical byte/node sweeps, cleanup/retry. Object source tests verify actual emission. Forged loan/image checks and broad regression/C/Object qualification remain; no performance qualification or claims.",
+  "archives": {
+    "attempt-01/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-01/focused.log.gz",
+      "sha256": "b856b4df3455d7359bf8b89ccfe10172ee8b9c297b6e372eea256fa160844634",
+      "compressed_sha256": "5352fe86f7c672394336e4c33fbb5cf1c8663fa921f96452f54d286fe8245448"
+    },
+    "attempt-01/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-01/result.json.gz",
+      "sha256": "cad7d89e1aadc8319d7127d47b10d6eb1bf7e67bbbe45bfb3975ae7003228394",
+      "compressed_sha256": "a3deffd6ac26f71755f865abd2911000ca54ac2fa24f4247963645076d4e14ac"
+    },
+    "attempt-02/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-02/focused.log.gz",
+      "sha256": "034733da6f5e07cafe85e16ab238727cb137a038047b424f2916a6c0976e13f7",
+      "compressed_sha256": "05ce50306e9026d2084ebbba8be1752ac6068064c57107c39508671cb6a063d1"
+    },
+    "attempt-02/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-02/result.json.gz",
+      "sha256": "7268d7b2fbbd1116903bcbc6a38e19971e043eed41e5da734777658e5dac83a3",
+      "compressed_sha256": "75c3e790f700f99fa8ca81ce5144782c5e6813f0b99eb50badc578370da913d6"
+    },
+    "attempt-03/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-03/focused.log.gz",
+      "sha256": "fc6d4e2de09eea614f91dcbb354fd4bf245265020cdee7c7b802ed46c0076e30",
+      "compressed_sha256": "c3e19dc23587b4fb4c7486c23864c8fcb6b160a6673cd82d33f0d36fc94b07bb"
+    },
+    "attempt-03/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-03/result.json.gz",
+      "sha256": "b92918e6115020b8892692152793c0465ca05d1290ebeb5f361d5699d919d2e2",
+      "compressed_sha256": "784de6e0ab562c1277a2211226fcde2b907989459b01db75436b02bdd1c8c4fc"
+    },
+    "attempt-04/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/focused.log.gz",
+      "sha256": "491044e1d9a28241443c2aabd9b7fdee1dc02fb791f876955354c7ab24d525e3",
+      "compressed_sha256": "225aa7849deba2c9f4e6bf8ada3e665b9dd07ad0a134651e2c9be8effd3aeb5c"
+    },
+    "attempt-04/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/result.json.gz",
+      "sha256": "0aa1bbc6aad1746c0bb198b25f03b9ae9eaddcf7f40c859e9db2baed3dfa9cb7",
+      "compressed_sha256": "ef986158a63d47b05d084435083ccc5f7080b5a377e1aae16962c4744792ca14"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "bb66e51f6245ea7bc89297e48b0b2e471f5aef521e0e330df0f8996d439513dc",
+      "compressed_sha256": "34d32c8a341349913f682ef34a3cccb94260e9e03c1ad397f358f55c14140ab1"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz.gz",
+      "sha256": "e79c6c593692390ac6193f4b1f6b255fc91c4b724dfe0ec12ce7c68eaad92e43",
+      "compressed_sha256": "e1022e8684fc826e10b110271753e208210813ce93b2c16b85f66ecaee10a07d"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "8f68df74afe0e0798a119a6425e98beed6045b2d71391bd99c95ef111525b0e0",
+      "compressed_sha256": "39ad3acab78da1886502c4ed5af9ed2cdffe0ccb8ffa86cc4aa9729c8d09920a"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "c09d06d751ea3648e06fd82945c29b02b161ece2e71b3e7a6969106617395a26",
+      "compressed_sha256": "388b3bba0ece9f6b6ccedc2371505a6f5215d25a1b5fc4a8e582250d58586cbd"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz.gz",
+      "sha256": "94e141f42dfa412cf7380828e9447a5b2d6325cc46545293fcbc7608b64194e5",
+      "compressed_sha256": "a3952e03685919bfea35ae8242aab516a2bd198cf6b5779962ef71678576a803"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "e5f5cd23b0765e046173afa16e71dd8b37e12b7b0581d4f0a2717ad13f9a672e",
+      "compressed_sha256": "2eedc781c5171d0c6a01790f3674831d17a76919a7da021a9813419d2bd42c81"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz.gz",
+      "sha256": "90f349ad037f23489d7cf9c366421353cd8612307b8bdb87948326268dc5b359",
+      "compressed_sha256": "cdf71393f0041c04791404ccabedd5cc72896899a6ab9098aa33f57292d55ce2"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "9c7f16eeb43ac5003952f6b7a584302307ee3c90ef478ccc5c0fcf8603b8a6a5",
+      "compressed_sha256": "ec61a8dd9bf092627f247878e9908d275cf0770dbea23fb1c78eca7a2ba2be60"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz.gz",
+      "sha256": "929c4b9764fc8a08508250934f068cac226eec17ad1294d3e5154a408357088d",
+      "compressed_sha256": "f1bcddce3139cd7a81677acfa6f6c9847589622e902ac20e076a1b44dc3e8b5a"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz.gz",
+      "sha256": "de5c1cd5568053896efd553db6f6b3123b4e6bc5ab5a350a119b2e092a276d59",
+      "compressed_sha256": "640c531ea38948d23b01072601e153695df069230fcab0534d70913f2de41b3f"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz.gz",
+      "sha256": "1cacefe551a1ac961a928ad10e2d9fcc7b7ad7a0572bef54a5d2280dfd389337",
+      "compressed_sha256": "263a5f904fe171bdb7d1ec60b91831c61706448049a9f8aea3a5d03b935c4b41"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "382d533c3db225d0e791fe0acf4246033eb5fe33ff03d5128a089421fd31861b",
+      "compressed_sha256": "d1c627b4df152d39878097ef3b6b51f1e96043cd109d7cc502ac93c98d86e6a3"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz.gz",
+      "sha256": "4e0bc38514685e3fb9b492e31db310246d35dff685e3b04f652a1687313af271",
+      "compressed_sha256": "fd4e83cfd488703119a71c9f6738697b569a90b92871ea2854becf5dcbce8f2a"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz.gz",
+      "sha256": "3120a599a10ddb961099df2c7ef19dfc8f6be654d6f500902fe6a99b02a569e9",
+      "compressed_sha256": "e4cd47438757939254c2b3ccedc675c584673d17f4ac2d358c984294a40ebb3a"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "81541ad32a6361c8c8a55e7c4f63c3e7a0d49f7c70b58f3b1b171c577a312561",
+      "compressed_sha256": "5cb2f641a79a4f82616fd5ce282fa5e5d78d8bcb86e753887a597b08fce0ebd6"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "9e1ebb34f952dbd0d4a12ae327b2ef6d34d06ead5294d36deb49ccc6ca892c28",
+      "compressed_sha256": "a88b3480f79c4df9d7d03ccac277e12d6f031789ae6ae862591bd8f133f8fc45"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz.gz",
+      "sha256": "9e12074bc658a1ea9d3f90cb0777592a4ff9a8a13d3e671550f15b77e313f0e2",
+      "compressed_sha256": "00d7dc97e879bcbb59268f805e242b66e24e4cb0c124a45dcb054e8930b2ea41"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz.gz",
+      "sha256": "b370a3bb5ef370bb85287a5b5825f96f851ea5365a996975a2c6afc610235b64",
+      "compressed_sha256": "a775b97035651b9e8addf852bcca9a3ac54cb2188381a5ac2a82f474a183e2ac"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz.gz",
+      "sha256": "5de0ee2566f640bd14552d660d2b9cd2ce887caa3ba7b599d1a79bcb61722402",
+      "compressed_sha256": "0672aa6eca7395f9e54e8490846c0814c4a822b243122a5c81d6c2990db722e7"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz.gz",
+      "sha256": "69ee3f9930e8c3769b9e8438045160dd92e29511d38589204da9a1531982a0e2",
+      "compressed_sha256": "a5bc549e973ca2db52df6000815fe6907df65fe5a7f2e23386393cebe6c0b35e"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "6b6ee3ec081ed17caa58b8676e0eef2c201cd240076bef36d087ab3ab5ff1438",
+      "compressed_sha256": "cd66216568151f7d4f1ace4ad936b3168575f9e3535f8dd28f6ee614d89a1da0"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz.gz",
+      "sha256": "f79c1003b9cdc5e3997f5e2d7d6af77d6f90042c1ff0fa963d10575b60ffd3e3",
+      "compressed_sha256": "23d724d6d86c8b62be222cb39b7243f2237bcf0ca2dd3a410633959cb22d777e"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz.gz",
+      "sha256": "7b6bd312e44ab26970f444c8964ec093ed2f4bd9224594a311374630dca28ab8",
+      "compressed_sha256": "98735b96ca8d4b9c8bb9794c1881b6b62697474537111f125a7cbed8ff9c3c22"
+    },
+    "attempt-05/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/focused.log.gz",
+      "sha256": "ae5f0e28e6dc07fb2c06f567ab685b6b7205ea66a890f2450796a2bdcc6ada3b",
+      "compressed_sha256": "4da084f36daec833cc28e68a1457deaa359ea8cfc5890075f5ec4b81718802fe"
+    },
+    "attempt-05/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/result.json.gz",
+      "sha256": "f42c066067e8877607a6903acdca3a63d7cf7da6403fbc33899b81d86633260c",
+      "compressed_sha256": "6204f8bcba5f40765f8238092f111bbee55f8f4c0d7527b3d30158e1879e282a"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "bb66e51f6245ea7bc89297e48b0b2e471f5aef521e0e330df0f8996d439513dc",
+      "compressed_sha256": "34d32c8a341349913f682ef34a3cccb94260e9e03c1ad397f358f55c14140ab1"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz.gz",
+      "sha256": "e79c6c593692390ac6193f4b1f6b255fc91c4b724dfe0ec12ce7c68eaad92e43",
+      "compressed_sha256": "e1022e8684fc826e10b110271753e208210813ce93b2c16b85f66ecaee10a07d"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "8f68df74afe0e0798a119a6425e98beed6045b2d71391bd99c95ef111525b0e0",
+      "compressed_sha256": "39ad3acab78da1886502c4ed5af9ed2cdffe0ccb8ffa86cc4aa9729c8d09920a"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "c09d06d751ea3648e06fd82945c29b02b161ece2e71b3e7a6969106617395a26",
+      "compressed_sha256": "388b3bba0ece9f6b6ccedc2371505a6f5215d25a1b5fc4a8e582250d58586cbd"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz.gz",
+      "sha256": "94e141f42dfa412cf7380828e9447a5b2d6325cc46545293fcbc7608b64194e5",
+      "compressed_sha256": "a3952e03685919bfea35ae8242aab516a2bd198cf6b5779962ef71678576a803"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "e5f5cd23b0765e046173afa16e71dd8b37e12b7b0581d4f0a2717ad13f9a672e",
+      "compressed_sha256": "2eedc781c5171d0c6a01790f3674831d17a76919a7da021a9813419d2bd42c81"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz.gz",
+      "sha256": "90f349ad037f23489d7cf9c366421353cd8612307b8bdb87948326268dc5b359",
+      "compressed_sha256": "cdf71393f0041c04791404ccabedd5cc72896899a6ab9098aa33f57292d55ce2"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "9c7f16eeb43ac5003952f6b7a584302307ee3c90ef478ccc5c0fcf8603b8a6a5",
+      "compressed_sha256": "ec61a8dd9bf092627f247878e9908d275cf0770dbea23fb1c78eca7a2ba2be60"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz.gz",
+      "sha256": "929c4b9764fc8a08508250934f068cac226eec17ad1294d3e5154a408357088d",
+      "compressed_sha256": "f1bcddce3139cd7a81677acfa6f6c9847589622e902ac20e076a1b44dc3e8b5a"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz.gz",
+      "sha256": "de5c1cd5568053896efd553db6f6b3123b4e6bc5ab5a350a119b2e092a276d59",
+      "compressed_sha256": "640c531ea38948d23b01072601e153695df069230fcab0534d70913f2de41b3f"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz.gz",
+      "sha256": "1cacefe551a1ac961a928ad10e2d9fcc7b7ad7a0572bef54a5d2280dfd389337",
+      "compressed_sha256": "263a5f904fe171bdb7d1ec60b91831c61706448049a9f8aea3a5d03b935c4b41"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "382d533c3db225d0e791fe0acf4246033eb5fe33ff03d5128a089421fd31861b",
+      "compressed_sha256": "d1c627b4df152d39878097ef3b6b51f1e96043cd109d7cc502ac93c98d86e6a3"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz.gz",
+      "sha256": "4e0bc38514685e3fb9b492e31db310246d35dff685e3b04f652a1687313af271",
+      "compressed_sha256": "fd4e83cfd488703119a71c9f6738697b569a90b92871ea2854becf5dcbce8f2a"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz.gz",
+      "sha256": "3120a599a10ddb961099df2c7ef19dfc8f6be654d6f500902fe6a99b02a569e9",
+      "compressed_sha256": "e4cd47438757939254c2b3ccedc675c584673d17f4ac2d358c984294a40ebb3a"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "81541ad32a6361c8c8a55e7c4f63c3e7a0d49f7c70b58f3b1b171c577a312561",
+      "compressed_sha256": "5cb2f641a79a4f82616fd5ce282fa5e5d78d8bcb86e753887a597b08fce0ebd6"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "d6592d1c491e55daea1b78084924e1358dbe16ac11415b4c7fa9224a03922fe9",
+      "compressed_sha256": "8f3107a9fc4c6f3f1878701255a32a205d0c97d2bcf3a70a461e4388f1ea6fcc"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz.gz",
+      "sha256": "9e12074bc658a1ea9d3f90cb0777592a4ff9a8a13d3e671550f15b77e313f0e2",
+      "compressed_sha256": "00d7dc97e879bcbb59268f805e242b66e24e4cb0c124a45dcb054e8930b2ea41"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz.gz",
+      "sha256": "b370a3bb5ef370bb85287a5b5825f96f851ea5365a996975a2c6afc610235b64",
+      "compressed_sha256": "a775b97035651b9e8addf852bcca9a3ac54cb2188381a5ac2a82f474a183e2ac"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz.gz",
+      "sha256": "5de0ee2566f640bd14552d660d2b9cd2ce887caa3ba7b599d1a79bcb61722402",
+      "compressed_sha256": "0672aa6eca7395f9e54e8490846c0814c4a822b243122a5c81d6c2990db722e7"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz.gz",
+      "sha256": "69ee3f9930e8c3769b9e8438045160dd92e29511d38589204da9a1531982a0e2",
+      "compressed_sha256": "a5bc549e973ca2db52df6000815fe6907df65fe5a7f2e23386393cebe6c0b35e"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "a1eb0a1bb86490f4b2e6e354ac68c026426e0ee086047f366cc302d30596b696",
+      "compressed_sha256": "6bc6b7bd493090b7f1167978dd9578bd78347e6d4a55b7ccac4ce1cd9afa4723"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz.gz",
+      "sha256": "f79c1003b9cdc5e3997f5e2d7d6af77d6f90042c1ff0fa963d10575b60ffd3e3",
+      "compressed_sha256": "23d724d6d86c8b62be222cb39b7243f2237bcf0ca2dd3a410633959cb22d777e"
+    },
+    "attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-05/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz.gz",
+      "sha256": "7b6bd312e44ab26970f444c8964ec093ed2f4bd9224594a311374630dca28ab8",
+      "compressed_sha256": "98735b96ca8d4b9c8bb9794c1881b6b62697474537111f125a7cbed8ff9c3c22"
+    },
+    "attempt-06/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/focused.log.gz",
+      "sha256": "976d368274b60096b5cce1a8fa80f180c66702d9d36900067a3ce7c89a300c78",
+      "compressed_sha256": "0f7ee0516c38cbefcff2c7e0444cd40c87ff1651c221aad0ed40ea66fb44d4fe"
+    },
+    "attempt-06/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/result.json.gz",
+      "sha256": "7bfaa4f705198a6c5d949b635cef0ecf41fe67d0e28ff86ab218161274a7df41",
+      "compressed_sha256": "5d1b075e40b7b454ad57ebb9281eb36b8c2df04e47963d20f07aa1f21b754ee8"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "bb66e51f6245ea7bc89297e48b0b2e471f5aef521e0e330df0f8996d439513dc",
+      "compressed_sha256": "34d32c8a341349913f682ef34a3cccb94260e9e03c1ad397f358f55c14140ab1"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz.gz",
+      "sha256": "e79c6c593692390ac6193f4b1f6b255fc91c4b724dfe0ec12ce7c68eaad92e43",
+      "compressed_sha256": "e1022e8684fc826e10b110271753e208210813ce93b2c16b85f66ecaee10a07d"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "8f68df74afe0e0798a119a6425e98beed6045b2d71391bd99c95ef111525b0e0",
+      "compressed_sha256": "39ad3acab78da1886502c4ed5af9ed2cdffe0ccb8ffa86cc4aa9729c8d09920a"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "c09d06d751ea3648e06fd82945c29b02b161ece2e71b3e7a6969106617395a26",
+      "compressed_sha256": "388b3bba0ece9f6b6ccedc2371505a6f5215d25a1b5fc4a8e582250d58586cbd"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz.gz",
+      "sha256": "94e141f42dfa412cf7380828e9447a5b2d6325cc46545293fcbc7608b64194e5",
+      "compressed_sha256": "a3952e03685919bfea35ae8242aab516a2bd198cf6b5779962ef71678576a803"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "e5f5cd23b0765e046173afa16e71dd8b37e12b7b0581d4f0a2717ad13f9a672e",
+      "compressed_sha256": "2eedc781c5171d0c6a01790f3674831d17a76919a7da021a9813419d2bd42c81"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz.gz",
+      "sha256": "90f349ad037f23489d7cf9c366421353cd8612307b8bdb87948326268dc5b359",
+      "compressed_sha256": "cdf71393f0041c04791404ccabedd5cc72896899a6ab9098aa33f57292d55ce2"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "9c7f16eeb43ac5003952f6b7a584302307ee3c90ef478ccc5c0fcf8603b8a6a5",
+      "compressed_sha256": "ec61a8dd9bf092627f247878e9908d275cf0770dbea23fb1c78eca7a2ba2be60"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz.gz",
+      "sha256": "929c4b9764fc8a08508250934f068cac226eec17ad1294d3e5154a408357088d",
+      "compressed_sha256": "f1bcddce3139cd7a81677acfa6f6c9847589622e902ac20e076a1b44dc3e8b5a"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz.gz",
+      "sha256": "de5c1cd5568053896efd553db6f6b3123b4e6bc5ab5a350a119b2e092a276d59",
+      "compressed_sha256": "640c531ea38948d23b01072601e153695df069230fcab0534d70913f2de41b3f"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz.gz",
+      "sha256": "1cacefe551a1ac961a928ad10e2d9fcc7b7ad7a0572bef54a5d2280dfd389337",
+      "compressed_sha256": "263a5f904fe171bdb7d1ec60b91831c61706448049a9f8aea3a5d03b935c4b41"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "382d533c3db225d0e791fe0acf4246033eb5fe33ff03d5128a089421fd31861b",
+      "compressed_sha256": "d1c627b4df152d39878097ef3b6b51f1e96043cd109d7cc502ac93c98d86e6a3"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz.gz",
+      "sha256": "4e0bc38514685e3fb9b492e31db310246d35dff685e3b04f652a1687313af271",
+      "compressed_sha256": "fd4e83cfd488703119a71c9f6738697b569a90b92871ea2854becf5dcbce8f2a"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz.gz",
+      "sha256": "3120a599a10ddb961099df2c7ef19dfc8f6be654d6f500902fe6a99b02a569e9",
+      "compressed_sha256": "e4cd47438757939254c2b3ccedc675c584673d17f4ac2d358c984294a40ebb3a"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "81541ad32a6361c8c8a55e7c4f63c3e7a0d49f7c70b58f3b1b171c577a312561",
+      "compressed_sha256": "5cb2f641a79a4f82616fd5ce282fa5e5d78d8bcb86e753887a597b08fce0ebd6"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "d6592d1c491e55daea1b78084924e1358dbe16ac11415b4c7fa9224a03922fe9",
+      "compressed_sha256": "8f3107a9fc4c6f3f1878701255a32a205d0c97d2bcf3a70a461e4388f1ea6fcc"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz.gz",
+      "sha256": "9e12074bc658a1ea9d3f90cb0777592a4ff9a8a13d3e671550f15b77e313f0e2",
+      "compressed_sha256": "00d7dc97e879bcbb59268f805e242b66e24e4cb0c124a45dcb054e8930b2ea41"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz.gz",
+      "sha256": "b370a3bb5ef370bb85287a5b5825f96f851ea5365a996975a2c6afc610235b64",
+      "compressed_sha256": "a775b97035651b9e8addf852bcca9a3ac54cb2188381a5ac2a82f474a183e2ac"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz.gz",
+      "sha256": "5de0ee2566f640bd14552d660d2b9cd2ce887caa3ba7b599d1a79bcb61722402",
+      "compressed_sha256": "0672aa6eca7395f9e54e8490846c0814c4a822b243122a5c81d6c2990db722e7"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz.gz",
+      "sha256": "69ee3f9930e8c3769b9e8438045160dd92e29511d38589204da9a1531982a0e2",
+      "compressed_sha256": "a5bc549e973ca2db52df6000815fe6907df65fe5a7f2e23386393cebe6c0b35e"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "4b4cbae33a70f298d2d2df4c6da46332da899f2e93ef3692aceeef455289fd2e",
+      "compressed_sha256": "429588216b70042f81e1fafaac37edfb56cb2c7e414fff23897807fbe1467ba8"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz.gz",
+      "sha256": "f79c1003b9cdc5e3997f5e2d7d6af77d6f90042c1ff0fa963d10575b60ffd3e3",
+      "compressed_sha256": "23d724d6d86c8b62be222cb39b7243f2237bcf0ca2dd3a410633959cb22d777e"
+    },
+    "attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz.gz",
+      "sha256": "7b6bd312e44ab26970f444c8964ec093ed2f4bd9224594a311374630dca28ab8",
+      "compressed_sha256": "98735b96ca8d4b9c8bb9794c1881b6b62697474537111f125a7cbed8ff9c3c22"
+    },
+    "attempt-06/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-06/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz.gz",
+      "sha256": "1a1fcdd78c47ace1dc12081a7ed64fa99afb86f1084b5d12e4b7b5b1a76709cc",
+      "compressed_sha256": "bd0f40010e89d25c0202e121c5f2cde51f4d1c1b95a0fec6755b2189a0199f66"
+    },
+    "attempt-07/focused.log": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/focused.log.gz",
+      "sha256": "1f01daa788e3375ba2a31ed765a4e6b78144a0f6fdbeab3de539273c45cbbde7",
+      "compressed_sha256": "6bba0a8ece1ebcfb0bf5a7bea951ed98d9235d6ab74d89bb7cc06bff6361d8d7"
+    },
+    "attempt-07/result.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/result.json.gz",
+      "sha256": "39b443507da02b23d360c7284cd34dd1296b82c0267210e2b1a9154c6712ac05",
+      "compressed_sha256": "5ef66b9afe697c1db1fde65793beeaa2311845a52437b56cd845591c18c4137d"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "bb66e51f6245ea7bc89297e48b0b2e471f5aef521e0e330df0f8996d439513dc",
+      "compressed_sha256": "34d32c8a341349913f682ef34a3cccb94260e9e03c1ad397f358f55c14140ab1"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/codegen/control/report/mod.rs.gz.gz",
+      "sha256": "e79c6c593692390ac6193f4b1f6b255fc91c4b724dfe0ec12ce7c68eaad92e43",
+      "compressed_sha256": "e1022e8684fc826e10b110271753e208210813ce93b2c16b85f66ecaee10a07d"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "8f68df74afe0e0798a119a6425e98beed6045b2d71391bd99c95ef111525b0e0",
+      "compressed_sha256": "39ad3acab78da1886502c4ed5af9ed2cdffe0ccb8ffa86cc4aa9729c8d09920a"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "c09d06d751ea3648e06fd82945c29b02b161ece2e71b3e7a6969106617395a26",
+      "compressed_sha256": "388b3bba0ece9f6b6ccedc2371505a6f5215d25a1b5fc4a8e582250d58586cbd"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs.gz.gz",
+      "sha256": "94e141f42dfa412cf7380828e9447a5b2d6325cc46545293fcbc7608b64194e5",
+      "compressed_sha256": "a3952e03685919bfea35ae8242aab516a2bd198cf6b5779962ef71678576a803"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "b63f102aae5eb662ce870b34f33f959b5d41baace6f459d1994f7bd7bc9c22b4",
+      "compressed_sha256": "36a3a0c43c1a525c00e654cdc027f7f562f69664694c95d85eff0b9b222c329a"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/compiler.rs.gz.gz",
+      "sha256": "90f349ad037f23489d7cf9c366421353cd8612307b8bdb87948326268dc5b359",
+      "compressed_sha256": "cdf71393f0041c04791404ccabedd5cc72896899a6ab9098aa33f57292d55ce2"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "9c7f16eeb43ac5003952f6b7a584302307ee3c90ef478ccc5c0fcf8603b8a6a5",
+      "compressed_sha256": "ec61a8dd9bf092627f247878e9908d275cf0770dbea23fb1c78eca7a2ba2be60"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz.gz",
+      "sha256": "929c4b9764fc8a08508250934f068cac226eec17ad1294d3e5154a408357088d",
+      "compressed_sha256": "f1bcddce3139cd7a81677acfa6f6c9847589622e902ac20e076a1b44dc3e8b5a"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz.gz",
+      "sha256": "de5c1cd5568053896efd553db6f6b3123b4e6bc5ab5a350a119b2e092a276d59",
+      "compressed_sha256": "640c531ea38948d23b01072601e153695df069230fcab0534d70913f2de41b3f"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs.gz.gz",
+      "sha256": "ceec0df4403c254c20ce335b74d126c0e5b7ab7acb17643b11b104a326a92f05",
+      "compressed_sha256": "bb8dda620bd34249a3d450e23fb5cc13decad2621f1ca1c3c149f64e78a42363"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "7d041cc325639061067444b4727f9f1f02c9c5c1961532c7c71f142c26bec702",
+      "compressed_sha256": "c7da7c743be54c647cb95f80abf3d163a93a07581386d52a84e1a5cfc29ef6a5"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/protocol/abi.rs.gz.gz",
+      "sha256": "4e0bc38514685e3fb9b492e31db310246d35dff685e3b04f652a1687313af271",
+      "compressed_sha256": "fd4e83cfd488703119a71c9f6738697b569a90b92871ea2854becf5dcbce8f2a"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/protocol/mod.rs.gz.gz",
+      "sha256": "3120a599a10ddb961099df2c7ef19dfc8f6be654d6f500902fe6a99b02a569e9",
+      "compressed_sha256": "e4cd47438757939254c2b3ccedc675c584673d17f4ac2d358c984294a40ebb3a"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "81541ad32a6361c8c8a55e7c4f63c3e7a0d49f7c70b58f3b1b171c577a312561",
+      "compressed_sha256": "5cb2f641a79a4f82616fd5ce282fa5e5d78d8bcb86e753887a597b08fce0ebd6"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "58e3ae182a0010746a893074362542e24c9d17b2f71d514996ec004062eb64c2",
+      "compressed_sha256": "25df9d76f5585a3b00eef90d87d8f1dea15eb05d789cac49102f1898baef4e69"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/observe.rs.gz.gz",
+      "sha256": "9e12074bc658a1ea9d3f90cb0777592a4ff9a8a13d3e671550f15b77e313f0e2",
+      "compressed_sha256": "00d7dc97e879bcbb59268f805e242b66e24e4cb0c124a45dcb054e8930b2ea41"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/caller_geometry/mod.rs.gz.gz",
+      "sha256": "b370a3bb5ef370bb85287a5b5825f96f851ea5365a996975a2c6afc610235b64",
+      "compressed_sha256": "a775b97035651b9e8addf852bcca9a3ac54cb2188381a5ac2a82f474a183e2ac"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs.gz.gz",
+      "sha256": "5de0ee2566f640bd14552d660d2b9cd2ce887caa3ba7b599d1a79bcb61722402",
+      "compressed_sha256": "0672aa6eca7395f9e54e8490846c0814c4a822b243122a5c81d6c2990db722e7"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs.gz.gz",
+      "sha256": "69ee3f9930e8c3769b9e8438045160dd92e29511d38589204da9a1531982a0e2",
+      "compressed_sha256": "a5bc549e973ca2db52df6000815fe6907df65fe5a7f2e23386393cebe6c0b35e"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs.gz.gz",
+      "sha256": "3669a73b56964ca6c2a3a8c66449715a35b9853999d973a64433de1f13f7efdc",
+      "compressed_sha256": "e2160c45eb16648517c5210ed84f8e1a3fa6b2b9b3a7c2ac0c647d8b4958671b"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/session/mod.rs.gz.gz",
+      "sha256": "f79c1003b9cdc5e3997f5e2d7d6af77d6f90042c1ff0fa963d10575b60ffd3e3",
+      "compressed_sha256": "23d724d6d86c8b62be222cb39b7243f2237bcf0ca2dd3a410633959cb22d777e"
+    },
+    "attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/hosts/gpu/src/native_artifact/program/runtime/tests.rs.gz.gz",
+      "sha256": "7b6bd312e44ab26970f444c8964ec093ed2f4bd9224594a311374630dca28ab8",
+      "compressed_sha256": "98735b96ca8d4b9c8bb9794c1881b6b62697474537111f125a7cbed8ff9c3c22"
+    },
+    "attempt-07/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/attempt-07/source/src/engine/src/resident/general/native_collection_numeric_binary.rs.gz.gz",
+      "sha256": "1a1fcdd78c47ace1dc12081a7ed64fa99afb86f1084b5d12e4b7b5b1a76709cc",
+      "compressed_sha256": "bd0f40010e89d25c0202e121c5f2cde51f4d1c1b95a0fec6755b2189a0199f66"
+    },
+    "current-work.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/current-work.json.gz",
+      "sha256": "972bc0d5bdab0045d8dc26d0a067318f409329a7c56053294e1941bd1544f084",
+      "compressed_sha256": "c263b8910e366960360ea2602f6442d544d7bc00ef2d3fdfeabb5538bd644ca0"
+    },
+    "plan.json": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/plan.json.gz",
+      "sha256": "8923796e4f5fc42d38f1886b784bf6e5fb455fe1343dd06e400f66d20806e995",
+      "compressed_sha256": "6104809bd9ddc1aadeaf35964e7a85539abb01cb585ff0269520b4c914417e29"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-48-ordered-product-epilogues/first-execution/run-focused.py.gz",
+      "sha256": "e3f3c5e052faab9943ff0871052af9f78b0e49dc01af43811f52ac5ce24adc11",
+      "compressed_sha256": "6493ef52b737132a261eaaade8c39f272b283acfd7fa60b8da722320cdf51a5b"
+    }
+  },
+  "performance_observations": 0,
+  "accepted_round": 47,
+  "accepted_scores": {
+    "optimization": 9.575943659594117,
+    "holdout": 27.506517683644883
+  },
+  "formal_history_entries": 48
+}
