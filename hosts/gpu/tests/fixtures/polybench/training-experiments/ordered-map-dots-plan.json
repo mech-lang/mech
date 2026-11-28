@@ -1,0 +1,121 @@
+{
+  "schema": "mech.polybench.ordered-map-dots-plan.v1",
+  "created_at": "2026-11-28T11:12:55.474542+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "f0eec8471c5da39124c02e7e79f2f66dde56d97d",
+  "accepted_round": 54,
+  "accepted_scores": {
+    "optimization": 8.365861893301812,
+    "holdout": 24.599383003745523
+  },
+  "accepted_compiler_fingerprint": "36cca6b1a3121843378cf702f7c6a17a97490277882a88931f167044212dc028",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+  "accepted_driver_sha256": "6b4a671cdf6dea29e05264c091d79a8a706a6e3e8203cbb25302a6ad84d04fd2",
+  "formal_history_entries": 56,
+  "formal_history_next_index": 56,
+  "private_trial": 62,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dots.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dot_batches.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_maps.rs": "8d7e774dabe80ed6141cea050e9a62adc0630c55bf7293d951f2ccad4a944876",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/mod.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/affine.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/batch.rs": null,
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_map_dots/tests.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "9b934a7f5ae7d814e4d6b4f69805e803d4f58d4afe023569025f310d180bc156",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/mod.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/streams.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_dots/batch.rs": null,
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "87eb599ae4c1e7fd8ad0f8b949b4eb7c724dbb60dca2d922cdf6444f80b52b78",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs": "290488204dc1a19f912935e569a86abb5f65214829ddaf5651656dfa8590a0bf",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs": "f097694f87c38cf341d1006f3e1cd0c78986a82636f2d8b2dc54a579075dfe27",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs": "993c8ef183c2ff4fe2ea106ad0c311b4e5c31adaff4dd1a786354bd4a974ca97",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "bb92dcc99915b4c6c2b7541ae5437feb20294a40bf8bd7bef842552844b4bef9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "9232662f455de400f14fa77577b9f9b3e0d20bc1b4617c3144ebc0afe7d2d618",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "7f7c7ca3fc2b381a192dfcefafbe8977e18c4711c6d9f85841c0d4d29f8902d9",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "6f44f561c13f7056ca3affad56e8cc0d2498302cfac666c2e168bfacaf0dd6e5",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "00fd4e61d913d4a04a4d249d60a58478ebed098e806789a0a1c9499068126f37",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "496fc990b9cd54f52cf3d7d0617f657a6f81d2b130d7199253d9b80448304115",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f17186abe51a60665c31d76bc6213fde478ac5b835e96b63ba8d9239b0a3d06a",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dots.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_map_dot_batches.rs": null
+  },
+  "versions": {
+    "ir": 425,
+    "work": 157,
+    "abi": 48
+  },
+  "profiling_basis": [
+    "accepted54-phase-profile.json: unchanged current accepted54 source, same-PID exact numeric code/caller bindings, Gram generated80.45% and projection-fold header9.33%; Durbin generated44.56% and ordered-fold header4.69%. Original checked per-term word DAG/read/bounds/control remains after restoring rejected55. No holdout diagnosis/tuning.",
+    "ordered-map-dot-source-research.json: exact accepted54 Objects decoded with maintained public reader. Five straight pure F64 multiply/reduce bodies across Gram/Durbin/Cholesky; affine reversed/strided/contiguous reads and one conditional independent-output parent projection map. No performance observation."
+  ],
+  "transformation": "Recognize source-closed ordered F64 multiplication reductions with checked affine U64 selectors. Prove first/last selector/subexpression bounds once, derive exact immutable strided streams, and emit the shared strict native ordered product core instead of the per-term checked word DAG. Recognize pure parent maps selecting that child dot or invariant F64 alternative; batch independent adjacent outputs into two F64 lanes when source-derived physical strides permit. Share the same reduction core with existing native scalar/column-SIMD/product-row tiles. Retain old checked map DAG on any proof, endpoint/current-view or nonfinite-result decline. No new runtime loans/helpers/frames/buffers/ABI.",
+  "invariants": [
+    "All30 Mech ports/inputs/C flags/binaries/tolerances/limits/cache/timing boundaries/split remain fixed. Compiler rules use source operators, selectors, captures, geometry and ownership; no benchmark names or MINI dimensions.",
+    "Every admitted dot body action must belong to the exact closed term/index expression or harmless source control inventory. Unknown/dead checked operations, nonlinear selectors, mutations, calls or unproved paths retain old DAG; no original source error is removed.",
+    "Each checked affine selector subexpression and logical axis must be valid at all endpoints (four corners for batched two-axis affine selectors). Affine interiors are then safe. Canonical linear selection is column-major: require vector geometry or a proved same-logical-column stream, otherwise fall back. Full current geometry/span/epoch/context/owner guards remain.",
+    "Each output starts original +0 and traverses original term order with separate common strict F64Mul/F64Add. SIMD lanes represent independent outputs, never split partial sums. No reassociation, FMA, arithmetic casts or NaN canonicalization. Any nonfinite fast result resumes the original checked DAG before publication; product admission/epilogues remain unchanged.",
+    "Batch parent must follow its exact U64-comparison/Boolean source CFG to exactly one admitted child dot or invariant F64 alternative. Fill every original output position. Original source evaluation/first-failure/resource semantics remain; only proved pure admitted physical work changes.",
+    "Preserve full scratch/private-bank boundaries and old simultaneous reads. No source/owner mutation or publication before complete checked success. Partial fast scratch can be discarded/overwritten by the old DAG; no cached values, retained state or per-operation native dispatch/allocation.",
+    "Every optimization15 execution counter must exactly match accepted54, including source work/comparison/visits. Existing complete replay/physical admission, fees, caps, atomic outputs, aliases, cleanup/retry and direct efficient scalar/compression paths remain. IR425/work157/ABI48. Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles."
+  ],
+  "implementation_stages": [
+    "Extract/share ordered scalar/column-SIMD/row-tile reduction core; qualify runtime strided/broadcast inputs and original ordered scalar oracles before integrating new source proof.",
+    "Derive bounded private source-dot/affine proof and endpoint-checked stream emission for standalone, phase and nested reductions, preserving old generic DAG ablation/fallback.",
+    "Derive exact pure parent control proof and batch independent outputs with contiguous lane views, invariant alternatives and nonfinite replay. No timing or source selection until the complete pass is qualified."
+  ],
+  "qualification": "Meaningful direct shared-kernel runtime tests for zero/null/odd/strided/reversed/constant streams and independent1/2/4 rows/two lanes, exact ordered floating words and canaries; source reconstruction/negative/forged-metadata closure/affine proof tests; original/decoded/restored public JIT scalar and batched dots, all comparators/active polarities, invariant alternatives, dynamic/fixed/vector/2D layouts, source integer overflow/underflow/bounds/empty/failing branches, signed zero/subnormal/nonfinite payload replay, partial scratch, caps/aliases/atomic cleanup/retry. Maintained full matrix/numeric/scalar/compression/type/image/source/protocol checks, both features, all30 finite C cases. Preserve every attempted source/build/test failure.",
+  "untimed_gate": "All17002 optimization15 finite C liveouts and exact equality of every execution counter versus accepted54. Genuine Objects/runtime-shaped SSA certify checked affine preflight plus direct ordered loads/multiply/add, shared product core and actual independent-output SIMD; original source callback/resource obligations remain. Report code/instruction/stack changes and any changed product code; no static-speedup inference.",
+  "training_probe": {
+    "actors": [
+      "accepted54",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one fully qualified fresh-process prospective probe for the complete materially changed fingerprint. Select iff raw equal-weight GM accepted54/candidate median-runtime speedup>1; retain all210 observations and regressions, no retries/exclusions."
+  },
+  "formal_acceptance": "If selected and fully qualified, commit/push clean exact source+driver and freeze before one900-observation formal run,29482 finite C liveouts, immutable history index56. Promote solely optimization15 Mech/C strictly below8.365861893301812. Holdout independently reported; cannot select/veto/diagnose/tune/trigger rollback or retry.",
+  "prior_related_work": "Rejected38 generic hoisted map bounds and41 frame/SSA composition did not recognize aggregate ordered dots or batch parent outputs through shared product SIMD. Rejected55 changed only completed publication and is absent. This changes the physical arithmetic/read/control loops and shares the native product kernel; no observed fingerprint retry.",
+  "performance_observations": 0,
+  "implementation": {
+    "transformation": "Recognize source-closed ordered F64 multiplication reductions with checked affine U64 selectors. Prove first/last selector/subexpression bounds once, derive exact immutable strided streams, and emit the shared strict native ordered product core instead of the per-term checked word DAG. Recognize pure parent maps selecting that child dot or invariant F64 alternative; batch independent adjacent outputs into two F64 lanes when source-derived physical strides permit. Share the same reduction core with existing native scalar/column-SIMD/product-row tiles. Retain old checked map DAG on any proof, endpoint/current-view or nonfinite-result decline. No new runtime loans/helpers/frames/buffers/ABI.",
+    "invariants": [
+      "All30 Mech ports/inputs/C flags/binaries/tolerances/limits/cache/timing boundaries/split remain fixed. Compiler rules use source operators, selectors, captures, geometry and ownership; no benchmark names or MINI dimensions.",
+      "Every admitted dot body action must belong to the exact closed term/index expression or harmless source control inventory. Unknown/dead checked operations, nonlinear selectors, mutations, calls or unproved paths retain old DAG; no original source error is removed.",
+      "Each checked affine selector subexpression and logical axis must be valid at all endpoints (four corners for batched two-axis affine selectors). Affine interiors are then safe. Canonical linear selection is column-major: require vector geometry or a proved same-logical-column stream, otherwise fall back. Full current geometry/span/epoch/context/owner guards remain.",
+      "Each output starts original +0 and traverses original term order with separate common strict F64Mul/F64Add. SIMD lanes represent independent outputs, never split partial sums. No reassociation, FMA, arithmetic casts or NaN canonicalization. Any nonfinite fast result resumes the original checked DAG before publication; product admission/epilogues remain unchanged.",
+      "Batch parent must follow its exact U64-comparison/Boolean source CFG to exactly one admitted child dot or invariant F64 alternative. Fill every original output position. Original source evaluation/first-failure/resource semantics remain; only proved pure admitted physical work changes.",
+      "Preserve full scratch/private-bank boundaries and old simultaneous reads. No source/owner mutation or publication before complete checked success. Partial fast scratch can be discarded/overwritten by the old DAG; no cached values, retained state or per-operation native dispatch/allocation.",
+      "Every optimization15 execution counter must exactly match accepted54, including source work/comparison/visits. Existing complete replay/physical admission, fees, caps, atomic outputs, aliases, cleanup/retry and direct efficient scalar/compression paths remain. IR425/work157/ABI48. Cranelift sole Mech native generator; Rust hosts/tests only wrappers/oracles."
+    ]
+  }
+}
