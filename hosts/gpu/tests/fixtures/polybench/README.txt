@@ -3007,3 +3007,9 @@ Single-column cache-token prototype
 The material one-word cache-control prototype passed13 focused groups, including actual native zero/empty/extreme token guards and source original/decoded/restored failure/ownership behavior. A genuine Object retains nine-to-three source-read reuse and zero vector stack accesses, and has16236B code/272B reported stack. It still loads/subtracts/stores work credit throughSP+8 per point, failing the preregistered physical gate. No broad performance qualification, timing probe, formal run or holdout timing was started. All source/Objects/tests retained and exact accepted59 restored. Control-flow representation/fusion is a different prospective way to remove complete state/ownership/credit work; scalar metadata reduction alone is insufficient.
 
 [Complete untimed prototype and restoration](training-experiments/single-column-cache-token-prototype.json)
+
+Rolling point expression prefixes: unselected probe
+
+The bounded-cache-lifetime compiler passed785 broad invocations,14 focused groups, both features, all30 source forms, and an exact17002-value optimization counter gate. Genuine Objects show CFG-encoded fresh/reusable/write entries, nine-to-three source-read reuse, zero vector stack accesses and register-held work credit. Actual code17152B/stack336B is larger than accepted59; static work removal is not a timing forecast. Its single210-observation optimization-only probe returned0.9852160114098022x raw speedup, with3 regressions over5%. It was not selected. All observations and attempted sources are retained. Exact accepted59 fingerprint5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f is restored; no formal history append or holdout observation. The recorded accepted scores remain7.852513248471486x /23.989161547848273x C.
+
+[Full probe and source restoration](training-experiments/control-flow-cell-cache-probe.json) · [Selection](training-experiments/control-flow-cell-cache-selection.json)

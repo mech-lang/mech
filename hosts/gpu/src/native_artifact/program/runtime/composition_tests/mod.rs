@@ -916,5 +916,3 @@ mod ordered_map_dot_batches;
 mod ordered_map_dots;
 
 mod affine_map_cells;
-
-mod cell_prefix;

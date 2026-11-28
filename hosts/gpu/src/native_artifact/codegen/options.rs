@@ -135,12 +135,6 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericTreeOwnerHandoff,
     /// Test private ownership before loading/comparing an old write target.
     PrivateWritesFirst,
-    /// Admit a closed pure multi-cell read expression once within its current loan.
-    CellExpressionPrefixes,
-    /// Reuse proved affine cell windows across one exact unit-column backedge.
-    RollingCellPrefixes,
-    /// Encode source-proved point-cache readiness in native CFG edges.
-    CellContextPrefixes,
     /// Stronger immutable-cell facts require the guarded-load optimization.
     MovableCaptureReads,
     DisjointState,
