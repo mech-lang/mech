@@ -2736,3 +2736,20 @@ The strict two-set gate rejects this run; exact accepted45 source and driver are
 [Qualification](round-46-qualification.json) · [Freeze](round-46-frozen.json) · [Acceptance](round-46-performance-acceptance.json) · [Development](training-experiments/prepared-type-slots-development.json)
 
 Fresh accepted45 Gram-Schmidt profile: 3829 canonical execution samples; 3436 generated-function self samples (89.74%). Same-process JIT capture verifies all 17,212 bytes / 4,303 decoded instructions and binds sampled offsets to actual executed code. C liveouts and accepted45 counters match; diagnostic times are excluded from scores. All 24 raw/analysis archives verify. No holdout diagnosis; formal history remains47 and accepted scores remain9.78419x /25.86145x C. See training-experiments/accepted45-gramschmidt-profile.json.
+
+Round47: source-proved conditional matrix maps (not promoted)
+
+The compiler independently derives row/column identity complements from actual source CFGs and evaluates selected coordinates through the maintained checked Cranelift map body. Complete private scratch starts from the exact immutable identity source. Publication occurs only after all checked actions succeed; selected stores require the destination to equal that base bank. Prior completed maps, aliases, exact scalar bits, finite source fees and replay boundaries remain checked. No benchmark-specific rule or source-port rewrite. IR412/work157/ABI47.
+
+All 720 broad/eight focused groups pass, including all30 original/decoded/restored C cases (60 restored forms and 58,964 finite liveouts), both features and every scalar width. All nine development attempts remain archived. The untimed optimization15 gate matches all 17,002 C liveouts and every execution counter; actual Objects show precisely three masks in the profiled Gram numeric_5, with no new FMA.
+
+One prospective probe retained all 210 fresh-process observations: raw GM speedup versus accepted45 1.049149x; all 0 regressions over5% remain. Selected source and driver were committed/pushed/frozen before both formal sets.
+
+| Set | Accepted45 x C | Round47 x C | Raw speedup vs45 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 9.78419x | 9.57594x | 1.05427x | 1.05211x |
+| Holdout | 25.86145x | 27.50652x | 0.90496x | 0.93400x |
+
+The strict two-set gate rejects this run; exact accepted45 source and driver are restored. All 900 observations, 29,482 finite liveouts, 48 append-only history entries and every regression remain. Holdout is the aggregate acceptance gate only; the below1.0x C goal requires a separate completion audit.
+
+[Qualification](round-47-qualification.json) · [Freeze](round-47-frozen.json) · [Acceptance](round-47-performance-acceptance.json) · [Development](training-experiments/masked-matrix-maps-development.json)

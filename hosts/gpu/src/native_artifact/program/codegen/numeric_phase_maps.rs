@@ -1,7 +1,6 @@
 //! Simultaneous whole-map replacement through the maintained native map DAG.
 //! Old current views remain read-only until every output cell succeeds. Only an
 //! already exclusive phase bank receives the final non-failing typed copy.
-//! Source-proved identity masks keep the entire checked scratch boundary.
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::{
     numeric_phase::matrix_maps::Replacement, readonly_numeric::Proof,
@@ -25,9 +24,8 @@ pub(super) fn emit(
     proof: &Proof,
     replacement: &Replacement,
     plan: &Plan,
-    masked_maps: bool,
     miss: Block,
-) -> Result<Option<(u32, u8)>, NativeCompileError> {
+) -> Result<(), NativeCompileError> {
     let source = &replacement.source;
     let target = replacement.target;
     let width = proof.arrays[target].width;
@@ -93,53 +91,7 @@ pub(super) fn emit(
         .iter()
         .map(|&v| (v, words.read(b, v as usize)))
         .collect::<BTreeMap<_, _>>();
-    let mask = if masked_maps {
-        crate::native_artifact::program::prepare::numeric_phase::masks::Mask::derive(
-            plan,
-            proof,
-            replacement,
-        )
-    } else {
-        None
-    };
-    let old = if mask.is_some() {
-        // The source proof uses literal one-based coordinates. Check the
-        // actual current first word too, not only the range cardinality.
-        let one = b.ins().icmp_imm(IntCC::Equal, first, 1);
-        require(b, one, miss);
-        let base_view = shadow + proof.view(mask.as_ref().unwrap().base());
-        for (lane, expected) in [
-            (1, source.elements),
-            (2, source.extents[0]),
-            (3, source.extents[1]),
-        ] {
-            let actual = words.read(b, base_view + lane);
-            let good = b.ins().icmp_imm(IntCC::Equal, actual, expected as i64);
-            require(b, good, miss);
-        }
-        let old = words.read(b, base_view);
-        span(b, old, bytes, miss);
-        let size = b.ins().iconst(types::I64, i64::from(bytes));
-        let old_end = b.ins().iadd(old, size);
-        let scratch_end = b.ins().iadd(scratch, size);
-        let before = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThanOrEqual, old_end, scratch);
-        let after = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThanOrEqual, scratch_end, old);
-        let disjoint = b.ins().bor(before, after);
-        require(b, disjoint, miss);
-        initialize_scratch(b, old, scratch, bytes, width)?;
-        Some(old)
-    } else {
-        None
-    };
-    let selection = mask
-        .as_ref()
-        .map(|mask| super::numeric_map::selection::Selection::new(b, mask, &captures))
-        .transpose()?;
-    super::numeric_phase_reductions::emit_region_with_selection(
+    super::numeric_phase_reductions::emit_region(
         b,
         &source.region,
         plan,
@@ -148,143 +100,12 @@ pub(super) fn emit(
         &matrices,
         &captures,
         Some((scratch, capacity)),
-        selection.as_ref(),
         miss,
     )?;
     // The complete checked map succeeded. No fallible source operation or
     // helper occurs after the first destination store, so reverse/overlapping
     // source reads observe the entire old vector and failures publish nothing.
     let base = words.read(b, owned.map_or(view, |bank| shadow + bank));
-    if let (Some(selection), Some(old)) = (&selection, old) {
-        span(b, base, bytes, miss);
-        let partial = b.create_block();
-        let full = b.create_block();
-        let published = b.create_block();
-        let current = b.ins().icmp(IntCC::Equal, base, old);
-        b.ins().brif(current, partial, &[], full, &[]);
-        b.switch_to_block(partial);
-        publish_selected(b, selection, scratch, base, width)?;
-        b.ins().jump(published, &[]);
-        b.switch_to_block(full);
-        publish_complete(b, scratch, base, width, bytes)?;
-        b.ins().jump(published, &[]);
-        b.switch_to_block(published);
-    } else {
-        publish_complete(b, scratch, base, width, bytes)?;
-    }
-    if owned.is_some() {
-        words.write(b, view, base);
-        let one = b.ins().iconst(types::I64, 1);
-        words.write(b, shadow + proof.private_flag(target), one);
-    }
-    Ok(mask.map(|mask| {
-        (
-            mask.selector(),
-            match mask.axis() {
-                crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Row => 0,
-                crate::native_artifact::program::prepare::numeric_phase::masks::Axis::Column => 1,
-            },
-        )
-    }))
-}
-
-fn span(
-    b: &mut FunctionBuilder<'_>,
-    pointer: cranelift_codegen::ir::Value,
-    bytes: u32,
-    miss: Block,
-) {
-    let nonnull = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
-    require(b, nonnull, miss);
-    let size = b.ins().iconst(types::I64, i64::from(bytes));
-    let (_, overflow) = b.ins().uadd_overflow(pointer, size);
-    let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
-    require(b, good, miss);
-}
-fn cell_type(width: u8) -> Result<cranelift_codegen::ir::Type, NativeCompileError> {
-    Ok(match width {
-        1 => types::I8,
-        2 => types::I16,
-        4 => types::I32,
-        8 => types::I64,
-        _ => return Err(backend("masked map lost its exact cell width")),
-    })
-}
-fn initialize_scratch(
-    b: &mut FunctionBuilder<'_>,
-    source: cranelift_codegen::ir::Value,
-    scratch: cranelift_codegen::ir::Value,
-    bytes: u32,
-    width: u8,
-) -> Result<(), NativeCompileError> {
-    // Same existing full scratch capacity; integer vectors preserve every bit
-    // including NaNs and signed zeros. Both complete spans are disjoint.
-    let packed = bytes / 16 * 16;
-    if packed != 0 {
-        let copy = b.create_block();
-        let done = b.create_block();
-        b.append_block_param(copy, types::I64);
-        let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(copy, &[zero.into()]);
-        b.switch_to_block(copy);
-        let offset = b.block_params(copy)[0];
-        let input = b.ins().iadd(source, offset);
-        let output = b.ins().iadd(scratch, offset);
-        let bits = b.ins().load(types::I8X16, MemFlags::new(), input, 0);
-        b.ins().store(MemFlags::new(), bits, output, 0);
-        let next = b.ins().iadd_imm(offset, 16);
-        let more = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedLessThan, next, i64::from(packed));
-        b.ins().brif(more, copy, &[next.into()], done, &[]);
-        b.switch_to_block(done);
-    }
-    for offset in (packed..bytes).step_by(width as usize) {
-        let bits = b
-            .ins()
-            .load(cell_type(width)?, MemFlags::new(), source, offset as i32);
-        b.ins().store(MemFlags::new(), bits, scratch, offset as i32);
-    }
-    Ok(())
-}
-fn publish_selected(
-    b: &mut FunctionBuilder<'_>,
-    selection: &super::numeric_map::selection::Selection,
-    scratch: cranelift_codegen::ir::Value,
-    base: cranelift_codegen::ir::Value,
-    width: u8,
-) -> Result<(), NativeCompileError> {
-    let head = b.create_block();
-    let body = b.create_block();
-    let done = b.create_block();
-    b.append_block_param(head, types::I64);
-    let zero = b.ins().iconst(types::I64, 0);
-    b.ins().jump(head, &[zero.into()]);
-    b.switch_to_block(head);
-    let ordinal = b.block_params(head)[0];
-    let more = b
-        .ins()
-        .icmp(IntCC::UnsignedLessThan, ordinal, selection.count());
-    b.ins().brif(more, body, &[], done, &[]);
-    b.switch_to_block(body);
-    let index = selection.output_index(b, ordinal);
-    let offset = b.ins().imul_imm(index, i64::from(width));
-    let input = b.ins().iadd(scratch, offset);
-    let output = b.ins().iadd(base, offset);
-    let bits = b.ins().load(cell_type(width)?, MemFlags::new(), input, 0);
-    b.ins().store(MemFlags::new(), bits, output, 0);
-    let next = b.ins().iadd_imm(ordinal, 1);
-    b.ins().jump(head, &[next.into()]);
-    b.switch_to_block(done);
-    Ok(())
-}
-fn publish_complete(
-    b: &mut FunctionBuilder<'_>,
-    scratch: cranelift_codegen::ir::Value,
-    base: cranelift_codegen::ir::Value,
-    width: u8,
-    bytes: u32,
-) -> Result<(), NativeCompileError> {
     let copy = b.create_block();
     let done = b.create_block();
     b.append_block_param(copy, types::I64);
@@ -309,5 +130,10 @@ fn publish_complete(
         .icmp_imm(IntCC::UnsignedLessThan, next, i64::from(bytes));
     b.ins().brif(more, copy, &[next.into()], done, &[]);
     b.switch_to_block(done);
+    if owned.is_some() {
+        words.write(b, view, base);
+        let one = b.ins().iconst(types::I64, 1);
+        words.write(b, shadow + proof.private_flag(target), one);
+    }
     Ok(())
 }

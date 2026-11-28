@@ -1,7 +1,5 @@
 //! A checked scalar DAG inside a native immutable-source collection loop.
 use super::hooks::Hooks;
-#[path = "numeric_map_selection.rs"]
-pub(super) mod selection;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::compiler::{backend, offset, primitive};
 use crate::native_artifact::program::prepare::numeric_maps::{RectangleBounds, Region};
@@ -145,21 +143,6 @@ pub(super) fn emit(
     miss: Block,
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
-    emit_with_selection(
-        b, frame, region, plan, captures, None, complete, miss, malformed,
-    )
-}
-pub(super) fn emit_with_selection(
-    b: &mut FunctionBuilder<'_>,
-    frame: Value,
-    region: &Region,
-    plan: &Plan,
-    captures: &BTreeMap<u32, Value>,
-    selection: Option<&selection::Selection>,
-    complete: Block,
-    miss: Block,
-    malformed: Block,
-) -> Result<(), NativeCompileError> {
     // Arithmetic failures carry the common emitter's diagnostic word. A
     // bounds miss needs no synthetic source error: ordinary replay owns it.
     let index_miss = b.create_block();
@@ -190,12 +173,6 @@ pub(super) fn emit_with_selection(
     require(b, good, malformed);
     let good = b.ins().icmp(IntCC::Equal, expected, count);
     require(b, good, malformed);
-    if let Some(selection) = selection {
-        let valid = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThanOrEqual, selection.count(), count);
-        require(b, valid, malformed);
-    }
     let input = get(b, frame, offset_of!(Frame, input));
     let output = get(b, frame, offset_of!(Frame, output));
     for (field, expected) in [
@@ -367,32 +344,22 @@ pub(super) fn emit_with_selection(
     b.ins().jump(head, &[]);
     b.switch_to_block(head);
     let at = b.use_var(cursor);
-    let iterations = selection.map_or(count, |selection| selection.count());
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, iterations);
+    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
     b.ins().brif(more, body, &[], done, &[]);
     b.switch_to_block(body);
-    let ordinal = b.use_var(cursor);
-    let at = ordinal;
-    let (source_at, rectangle_row) = if let Some(selection) = selection {
-        // Keep the actual source axes in SSA rather than flattening and then
-        // rediscovering them through an unnecessary quotient/remainder pair.
-        selection.cursors(b, ordinal)
-    } else if region.rectangle.is_some() {
+    let at = b.use_var(cursor);
+    let (source_at, rectangle_row) = if let Some(rectangle) = &region.rectangle {
         let column = b.ins().udiv(at, inner_count);
         // One quotient serves the source cursor and final row-major store.
         // 0 <= at < rows * source_count, so column * rows <= at.
         let consumed = b.ins().imul(column, inner_count);
         let row = b.ins().isub(at, consumed);
+        let inner = b.ins().iadd(row, inner_start);
+        b.def_var(words[&rectangle.inner_element], inner);
         (column, Some(row))
     } else {
         (at, None)
     };
-    if let Some(rectangle) = &region.rectangle {
-        let row = rectangle_row
-            .ok_or_else(|| backend("numeric map lost its current inner coordinate"))?;
-        let inner = b.ins().iadd(row, inner_start);
-        b.def_var(words[&rectangle.inner_element], inner);
-    }
     let word = if region.range {
         b.ins().iadd(start, source_at)
     } else {
@@ -509,7 +476,7 @@ pub(super) fn emit_with_selection(
                             let base = b.ins().imul(row, source_count);
                             b.ins().iadd(base, source_at)
                         } else {
-                            source_at
+                            at
                         };
                         let displacement =
                             b.ins().imul_imm(output_at, i64::from(region.output_width));
@@ -531,12 +498,6 @@ pub(super) fn emit_with_selection(
                     .ok_or_else(|| backend("numeric map branch leaves its exact body"))
             }
         };
-        if let Some(to) = selection.and_then(|selection| selection.selected_edge(site)) {
-            // Interval selection proves this source edge for every reached
-            // coordinate. Prefix work is total; active checked work is unchanged.
-            b.ins().jump(target(to)?, &[]);
-            continue;
-        }
         match plan.blocks()[site as usize].terminator() {
             Terminator::Scalar(Term::Jump(to)) => {
                 b.ins().jump(target(to)?, &[]);
@@ -568,7 +529,7 @@ pub(super) fn emit_with_selection(
         }
     }
     b.switch_to_block(latch);
-    let next = b.ins().iadd_imm(ordinal, 1);
+    let next = b.ins().iadd_imm(at, 1);
     b.def_var(cursor, next);
     b.ins().jump(head, &[]);
     b.switch_to_block(done);
@@ -581,9 +542,6 @@ pub(super) fn emit_with_selection(
             offset_of!(Frame, fold) as i32,
         );
     }
-    // A selected phase map first initialized the complete scratch bank from
-    // its exact identity source. Both skipped identity cells and evaluated cells
-    // are genuinely initialized here; this is not a source-visit counter.
     b.ins().store(
         MemFlags::new(),
         count,
