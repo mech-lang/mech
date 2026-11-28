@@ -172,7 +172,7 @@ impl PreparedNativeProgram {
     }
 
     #[cfg(feature = "canonical-native-program")]
-    pub(in crate::native_artifact) fn prepare_with_inputs(
+    pub(in crate::native_artifact::program) fn prepare_with_inputs(
         artifact: &ProgramArtifact,
         catalog: &FunctionCatalog,
         plan: NativeProgramArtifactPlan,

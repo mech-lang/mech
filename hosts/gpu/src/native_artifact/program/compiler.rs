@@ -1,5 +1,6 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
 use super::compact::profile_inputs::SelectedProfiles;
+use super::compilation::LoweredProgramCompilation;
 use super::compilation_report::{
     Measurements, NativeCompilationReport, NativeCompilerConfiguration,
 };
@@ -17,7 +18,6 @@ use crate::native_artifact::{
 use cranelift_module::{DataDescription, Linkage, Module};
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
-use mech_engine::native_artifact::lower_native_program_artifact_with_definition_table_limit;
 
 // Keep generated function placement independent of unrelated host link-size
 // changes on AArch64. 128-byte alignment covers both 64- and 128-byte cache
@@ -92,16 +92,15 @@ impl JitProgramArtifact {
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
         let inputs = CompilationInputs::legacy();
-        let plan = lower_native_program_artifact_with_definition_table_limit(
+        let lowered = LoweredProgramCompilation::lower(
             artifact,
             catalog,
             limits.max_definition_table_bytes,
-        )
-        .map_err(backend)?;
+            &inputs,
+        )?;
         let mut module = codegen_backend::jit_with_inputs(PROGRAM_CODEGEN_FLAGS, &inputs)?;
-        preflight(&plan, &module, limits)?;
-        let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
-            .map_err(backend)?;
+        preflight(lowered.plan(), &module, limits)?;
+        let prepared = lowered.prepare()?;
         let (function, stack, code, _codegen) =
             crate::native_artifact::codegen::control::define_cfg(
                 CodePlan::Program(&prepared),
@@ -382,17 +381,16 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
     let inputs = CompilationInputs::legacy();
-    let plan = lower_native_program_artifact_with_definition_table_limit(
+    let lowered = LoweredProgramCompilation::lower(
         artifact,
         catalog,
         limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
+        &inputs,
+    )?;
     let (mut module, _) =
         codegen_backend::object_with_isa("mech_canonical_program", PROGRAM_CODEGEN_FLAGS, &inputs)?;
-    preflight(&plan, &module, limits)?;
-    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
-        .map_err(backend)?;
+    preflight(lowered.plan(), &module, limits)?;
+    let prepared = lowered.prepare()?;
     let (entry, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
         CodePlan::Program(&prepared),
         ENTRY,
@@ -542,20 +540,18 @@ pub fn compact_native_layout_for_diagnostic(
 ) -> Result<serde_json::Value, NativeCompileError> {
     let compiler_inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
-    let plan = lower_native_program_artifact_with_definition_table_limit(
+    let lowered = LoweredProgramCompilation::lower(
         artifact,
         catalog,
         limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
-    let mut inventory = crate::native_artifact::program::compact::inventory(&plan)?;
+        &compiler_inputs,
+    )?;
+    let mut inventory = crate::native_artifact::program::compact::inventory(lowered.plan())?;
     if compiler_inputs
         .var_os("MECH_COMPACT_PROOF_INVENTORY")
         .is_some()
     {
-        let prepared =
-            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &compiler_inputs)
-                .map_err(backend)?;
+        let prepared = lowered.prepare()?;
         let meta = prepared.metadata();
         let complete_headers = compiler_inputs
             .var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
@@ -676,25 +672,20 @@ fn compile_compact(
     host_supported()?;
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
-    let plan = measurements
-        .stage("native_plan", || {
-            lower_native_program_artifact_with_definition_table_limit(
-                artifact,
-                catalog,
-                limits.max_definition_table_bytes,
-            )
-        })
-        .map_err(backend)?;
+    let lowered = measurements.stage("native_plan", || {
+        LoweredProgramCompilation::lower(
+            artifact,
+            catalog,
+            limits.max_definition_table_bytes,
+            compiler_inputs,
+        )
+    })?;
     eprintln!(
         "compact-stage: preparation blocks={} values={}",
-        plan.blocks().len(),
-        plan.values().len()
+        lowered.plan().blocks().len(),
+        lowered.plan().values().len()
     );
-    let prepared = measurements
-        .stage("prepare", || {
-            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, compiler_inputs)
-        })
-        .map_err(backend)?;
+    let prepared = measurements.stage("prepare", || lowered.prepare())?;
     eprintln!("compact-stage: native module");
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
@@ -869,14 +860,13 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
     host_supported()?;
     let inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
-    let plan = lower_native_program_artifact_with_definition_table_limit(
+    let lowered = LoweredProgramCompilation::lower(
         artifact,
         catalog,
         limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
-    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
-        .map_err(backend)?;
+        &inputs,
+    )?;
+    let prepared = lowered.prepare()?;
     let (mut module, _) = codegen_backend::object_with_isa(
         "mech_minimal_numeric_diagnostic",
         PROGRAM_CODEGEN_FLAGS,

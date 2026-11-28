@@ -10,6 +10,8 @@ pub(in crate::native_artifact) mod protocol;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod application;
 #[cfg(feature = "canonical-native-program")]
+mod compilation;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod compilation_report;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod compiler;

@@ -25,6 +25,9 @@ static ALLOCATOR: allocation_probe::ProbeAllocator = allocation_probe::ProbeAllo
 #[path = "support/canonical_program_binding_pressure.rs"]
 mod binding_pressure_qualification;
 
+#[path = "support/canonical_compilation_boundary.rs"]
+mod compilation_boundary;
+
 #[path = "support/canonical_program_argument_transport.rs"]
 mod argument_transport_qualification;
 

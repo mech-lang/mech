@@ -14,7 +14,8 @@ admission, ownership and resource guarantees for callers.
 
 ```mermaid
 flowchart TD
-  E[Engine: semantics and canonical source facts] --> P[program/prepare]
+  E[Engine: semantics and canonical source facts] --> B[program/compilation]
+  B --> P[program/prepare]
   P --> C[program/codegen]
   N[codegen/common: shared instructions] --> C
   P --> I[program/image: independent reconstruction]
@@ -28,6 +29,7 @@ flowchart TD
 | Owner | Responsibility | Authority it does not grant |
 |---|---|---|
 | Engine | Canonical semantics, selected factories, definitions, uses and source-bound proofs | Host representation selection or current exclusive ownership |
+| `program/compilation` | One checked plan bound to its artifact, catalog and captured inputs | Target selection or runtime admission |
 | `program/prepare` | Eligibility, representation inventories, physical consumers, prices and checked boundaries | Reusable current account/alias permission |
 | Shared codegen | Scalar instructions and common addressing; JIT/Object consume the same checked preparation | New operation semantics or permission to skip errors |
 | `program/runtime` | Current values, accounts, loans, funding, settlement, publication and cleanup | Trust in serialized eligibility or old invocation authority |
@@ -57,6 +59,19 @@ stage and proof ownership. The existing checked plans, Cranelift IR and
 artifact containers serve their current roles.
 
 ## Checked preparation
+
+For canonical Program compilation, `LoweredProgramCompilation` owns one
+checked native plan and borrows the exact artifact, catalog and captured inputs
+associated with it. Preparation consumes that owner. The definition-table
+allowance applies to the table built during lowering.
+
+Managed JIT and Object compilation capture inputs, lower the plan, create the
+target module, and preflight pointer width and counts before preparation.
+Compact compilation prepares before interpreting compact flags and constructing
+each attempt's module. Direct-literal retry borrows the same prepared Program
+and the coordinator's profile cache, including cached read failures. Layout
+diagnostics prepare when proof inventory is requested. The minimal numeric
+diagnostic prepares before module creation.
 
 One `PreparedNativeProgram` owns metadata and complete frontiers. Emission borrows it; finalization moves the checked inventories into the descriptor. Source-backed reconstruction uses the maintained preparer; build-owned restoration independently rebuilds the required facts without trusting serialized recipes.
 
