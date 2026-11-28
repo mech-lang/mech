@@ -2753,3 +2753,9 @@ One prospective probe retained all 210 fresh-process observations: raw GM speedu
 The strict two-set gate rejects this run; exact accepted45 source and driver are restored. All 900 observations, 29,482 finite liveouts, 48 append-only history entries and every regression remain. Holdout is the aggregate acceptance gate only; the below1.0x C goal requires a separate completion audit.
 
 [Qualification](round-47-qualification.json) · [Freeze](round-47-frozen.json) · [Acceptance](round-47-performance-acceptance.json) · [Development](training-experiments/masked-matrix-maps-development.json)
+
+User-directed selection correction after round47
+
+Round47 is accepted from its optimization improvement: 9.784192694066512x C ->9.575943659594117x C (1.0542683121826288x raw Mech speedup). Holdout is reported independently: 25.86144806723818x C ->27.506517683644883x C. Its regression does not select, veto, retune or roll back compiler changes. Exact qualified47 source/driver are restored without new observations. The earlier two-set decision remains in the immutable round47 receipts and archived prior global ledger; an explicit amendment changes promotion from history47 onward. Historical decisions through46, all900 observations, all29,482 finite C outputs, the48-entry append-only measurement history, fixed benchmark protocol and below1.0x C holdout goal remain.
+
+[Optimization acceptance](round-47-optimization-acceptance.json) · [Policy amendment](performance-selection-policy-v4.json)

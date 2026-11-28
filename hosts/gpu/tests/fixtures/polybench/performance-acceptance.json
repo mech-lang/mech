@@ -1,18 +1,19 @@
 {
-  "schema": "mech.polybench.performance-acceptance.v1",
+  "schema": "mech.polybench.performance-acceptance.v2",
   "adopted_at": "2026-11-26T22:36:04.587006+00:00",
   "retrospective_through_history_index": 22,
-  "interpretation": "Earlier runs are classified retrospectively under this newly adopted rule; their measurements and historical selection criteria are unchanged.",
+  "interpretation": "Original decisions through46 remain exact. The explicit user-directed amendment accepts measured round47 using optimization only and applies that rule to subsequent rounds. Immutable measurements are unchanged; holdout is report-only for selection.",
   "policy": {
     "metric": "geomean_mech_over_c_kernel",
     "lower_is_better": true,
-    "promotion": "Both scores must be strictly below the last accepted run.",
-    "failed_run": "Both scores increased versus the immediately preceding measured run.",
-    "ties_or_mixed_results": "Retain the measurements without promotion.",
-    "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
-    "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
-    "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
-    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+    "selection_partition": "optimization",
+    "promotion": "Optimization score must be strictly below the last accepted optimization score. Holdout never vetoes, selects or retunes a candidate.",
+    "failed_run": "Optimization score fails to strictly improve the last accepted optimization score.",
+    "comparison_threshold": "Strict optimization improvement; no post-hoc tolerance or observation exclusions.",
+    "scope": "Performance selection only; correctness and frozen-source qualification remain prerequisites. Both complete aggregate sets are reported.",
+    "holdout_use": "Report aggregate generalization and the below1.0x C goal separately; no promotion/rollback decision, per-case diagnosis, tuning or candidate retry based on holdout.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; selection uses the fixed optimization Mech/C score.",
+    "historical_decisions": "Retain the original two-set decisions through history46. An explicit user-directed amendment accepts round47 and applies optimization-only promotion from47 onward."
   },
   "history_sha256": "a0c7c5c3e02a65acd50ed2bc4e16b5767dd75dc30ef1ee7be913c56c6ad216bb",
   "history_entries": 48,
@@ -923,9 +924,21 @@
         "optimization": 0.9787157672601149,
         "holdout": 1.0636108856754511
       },
-      "performance_gate": "not_promoted",
-      "accepted_index_after_run": 45
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 47
     }
   ],
-  "accepted_history_index": 45
+  "accepted_history_index": 47,
+  "policy_amended_at": "2026-11-28T01:43:24.649475+00:00",
+  "policy_amendment": "performance-selection-policy-v4.json",
+  "policy_amendment_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "previous_ledger": {
+    "path": "qualification/selection-policy-v4/previous-performance-acceptance.json.gz",
+    "sha256": "b10a9dc87ca026787948d97b76ce5d3c105cf23abbe2f40e3a883b43d22cf3b6",
+    "compressed_sha256": "8129a3595eb347fa0fcedb627420cd96925396729a23e55bf874fe98d1547a1c"
+  }
 }

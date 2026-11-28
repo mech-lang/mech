@@ -1,0 +1,106 @@
+{
+  "schema": "mech.polybench.transpose-product-view-source-proof.v1",
+  "status": "Three pure original/decoded source-proof groups pass; native emission remains unchanged. Preserve while restoring accepted47 per user selection-policy correction, then carry proof work forward onto47.",
+  "compiler_fingerprint": "bb810861ae0da9e419bb3b5136c5440f5644b4423c1159ab13d0ecd8dc02da1e",
+  "focused_result": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "numeric_transpose_products",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 106.81611929181963,
+    "compiler_fingerprint": "bb810861ae0da9e419bb3b5136c5440f5644b4423c1159ab13d0ecd8dc02da1e",
+    "source_unchanged": true,
+    "passed_tests": [
+      3
+    ],
+    "scope": "Untimed pure source proof; native product execution unchanged; no candidate performance observations"
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs"
+  ],
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "2a4573f1899057576bcf0797f3aceadcc69ddb51b9e9b6af45bc4fc6908afdb9",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "36e949d4a6dc1df045143db3f8ced6e279a30d3cc638cf6254934b742b1b40cb",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs": "972e2995fc8aa25ecec4cfe2458bdad0499fead0ecf32371435f82471f6a853b",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs": "9783a98d8e1813fdbb4bd3830e76d2a4c196d4d0f5abb28894aa7d614fdee314"
+  },
+  "source_basis": "0c952a8bea96be6f0339d366ac6b463dbd2b3de7",
+  "scope": {
+    "positive_optimization_programs": [
+      "bicg",
+      "mvt",
+      "covariance",
+      "correlation"
+    ],
+    "atax": "Declines initial scope because a separate product intervenes; requires broader complete region proof.",
+    "negative": "Extra uses/escapes, duplicate product operand, other consumer, branch, intervening work; original/decoded, either transpose operand, fixed/dynamic schemas, copies."
+  },
+  "performance_observations": 0,
+  "archives": [
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/source-proof-before-accepted47/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz",
+      "sha256": "2a4573f1899057576bcf0797f3aceadcc69ddb51b9e9b6af45bc4fc6908afdb9",
+      "compressed_sha256": "ed2b94f14d6840b16cf13fb896116213bf37d07ce9853d1d04339936a3bd7711"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/source-proof-before-accepted47/hosts/gpu/src/native_artifact/program/prepare/numeric_transpose_products.rs.gz",
+      "sha256": "972e2995fc8aa25ecec4cfe2458bdad0499fead0ecf32371435f82471f6a853b",
+      "compressed_sha256": "2b40441a0ce187b9ca1d5a82d9ee4e9fd2eb6f61def92561f123ba7b0e3b06d4"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/source-proof-before-accepted47/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "36e949d4a6dc1df045143db3f8ced6e279a30d3cc638cf6254934b742b1b40cb",
+      "compressed_sha256": "4c82bce6088b4abbfa044164c2bc3036681d00170be20ee167745670570ece84"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/source-proof-before-accepted47/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_transpose_products.rs.gz",
+      "sha256": "9783a98d8e1813fdbb4bd3830e76d2a4c196d4d0f5abb28894aa7d614fdee314",
+      "compressed_sha256": "8017c7e5ef46f4b0e75c61290fb380cd8588880f82f21835db39c66d6524e2e1"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/source-proof-before-accepted47/tracked-source.patch.gz",
+      "sha256": "2eab6bf1ebc390273e74a33014ccd12b388822c9422f2b9fd04c8a7a1baeefe1",
+      "compressed_sha256": "fc621675734a87b3c24c31815d99dc2455a34290534e6b7747bb37d6af3a3d0c"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/attempt-01/focused.log.gz",
+      "sha256": "281d83b4aa432a9fb2c20475421236344effe515ad4814abbae9391404847660",
+      "compressed_sha256": "a1455287b8650ea933d0d46ef3bc09e3cb4c78a26b80303cb99cec5d84ddaaf2"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/attempt-01/result.json.gz",
+      "sha256": "e139aeba487774faa93d79d68cc30796da8c4ec6edf46c5e3fb2d22b6491659d",
+      "compressed_sha256": "f5be2c4be180ffd097a3df4f8c6c345258c6d9a950304e055d04cf97ba15028f"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/attempt-02/focused.log.gz",
+      "sha256": "3036d57bb48a20b7fb921a1471be85eb52f8d7f106da4ab96c1bd8c2222cf4e5",
+      "compressed_sha256": "9f73924ea1599ec836dba02d1db5c90b8f069a6f5f2b84c2b4f7499b48f0b39d"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/attempt-02/result.json.gz",
+      "sha256": "c58f8b016081002c2fe7d4a565395d2af64e31656072eb9ff04bc5889d104c59",
+      "compressed_sha256": "75a48bdaab01d5e97273895be8ed0c65fea5cce23b9471696eb52604e38be8d8"
+    },
+    {
+      "path": "qualification/experiments/transpose-product-views-source-proof/run-focused.py.gz",
+      "sha256": "5983ea87dad12b1fa4d787338d48691f4afd237cac825878dbf8af91cb0fdc49",
+      "compressed_sha256": "0b669c612304d6dd76c145409f6832a88563414531de92c033cd771563b5aa70"
+    }
+  ]
+}

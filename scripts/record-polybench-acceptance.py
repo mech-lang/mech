@@ -2,31 +2,28 @@
 """Record performance acceptance separately from immutable PolyBench measurements.
 
 Run after benchmark-polybench.py summarize. Correctness qualification and source
-freezing remain prerequisites; this gate evaluates the two aggregate scores only.
+freezing remain prerequisites. From round47, only optimization selects/promotes;
+holdout remains a separately reported generalization measurement.
 """
 import argparse
 import datetime
 import hashlib
+import gzip
 import json
 import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "hosts/gpu/tests/fixtures/polybench"
-SCHEMA = "mech.polybench.performance-acceptance.v1"
+SCHEMA = "mech.polybench.performance-acceptance.v2"
 PARTITIONS = ("optimization", "holdout")
 METRIC = "geomean_mech_over_c_kernel"
-POLICY = {
-    "metric": METRIC,
-    "lower_is_better": True,
-    "promotion": "Both scores must be strictly below the last accepted run.",
-    "failed_run": "Both scores increased versus the immediately preceding measured run.",
-    "ties_or_mixed_results": "Retain the measurements without promotion.",
-    "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
-    "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
-    "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
-    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric.",
-}
+AMENDMENT_PATH = FIXTURE / "performance-selection-policy-v4.json"
+AMENDMENT = json.loads(AMENDMENT_PATH.read_text())
+POLICY = AMENDMENT["policy"]
+FIRST_OPTIMIZATION_ONLY = AMENDMENT["effective_from_history_index"]
+assert FIRST_OPTIMIZATION_ONLY == 47
+
 
 
 def fingerprint(value):
@@ -65,7 +62,11 @@ def classify(entries):
             raise ValueError("duplicate candidate label")
         labels.add(label)
         current = scores(entry)
-        promoted = accepted is None or comparison(current, accepted) == "improved_both"
+        optimization_only = index >= FIRST_OPTIMIZATION_ONLY
+        promoted = accepted is None or (
+            current["optimization"] < accepted["optimization"] if optimization_only
+            else comparison(current, accepted) == "improved_both"
+        )
         decision = {
             "history_index": index,
             "label": label,
@@ -78,6 +79,13 @@ def classify(entries):
             "multipliers_vs_accepted": {p: current[p] / accepted[p] for p in PARTITIONS} if accepted is not None else None,
             "performance_gate": "accepted" if promoted else "not_promoted",
         }
+        if optimization_only:
+            decision.update(
+                selection_partition="optimization",
+                selection_outcome="optimization_improved" if promoted else "optimization_not_improved",
+                holdout_use="reported_only",
+                selection_policy="optimization-only-v4",
+            )
         if promoted:
             accepted, accepted_index = current, index
         decision["accepted_index_after_run"] = accepted_index
@@ -93,21 +101,37 @@ def record(history_path, output_path, check=False):
         raise ValueError("unknown performance history schema")
     decisions = classify(history["entries"])
     existing = json.loads(output_path.read_text()) if output_path.exists() else None
-    if existing is not None:
-        if existing["schema"] != SCHEMA or existing["policy"] != POLICY:
+    amendment_sha = hashlib.sha256(AMENDMENT_PATH.read_bytes()).hexdigest()
+    archive = AMENDMENT["previous_ledger"]
+    compressed = (FIXTURE / archive["path"]).read_bytes()
+    raw = gzip.decompress(compressed)
+    if hashlib.sha256(compressed).hexdigest() != archive["compressed_sha256"] or hashlib.sha256(raw).hexdigest() != archive["sha256"]:
+        raise ValueError("preserved prior acceptance ledger differs")
+    prior = json.loads(raw)
+    if prior["entries"][47] != AMENDMENT["previous_round47_decision"]:
+        raise ValueError("selection amendment differs from the original decision")
+    if prior["entries"][:FIRST_OPTIMIZATION_ONLY] != decisions[:FIRST_OPTIMIZATION_ONLY]:
+        raise ValueError("earlier acceptance decisions changed")
+    if existing is not None and existing["schema"] == SCHEMA:
+        if existing["policy"] != POLICY or existing["policy_amendment_sha256"] != amendment_sha:
             raise ValueError("acceptance policy changed; preserve the old ledger")
         old = existing["entries"]
         if old != decisions[:len(old)]:
             raise ValueError("recorded measurements or acceptance decisions changed")
         ledger = dict(existing)
     else:
-        ledger = {
-            "schema": SCHEMA,
-            "adopted_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "retrospective_through_history_index": len(decisions) - 1,
-            "interpretation": "Earlier runs are classified retrospectively under this newly adopted rule; their measurements and historical selection criteria are unchanged.",
-            "policy": POLICY,
-        }
+        if existing is not None and existing != prior:
+            raise ValueError("the migration source differs from the preserved ledger")
+        ledger = dict(prior)
+        ledger.update(
+            schema=SCHEMA,
+            policy=POLICY,
+            policy_amended_at=AMENDMENT["adopted_at"],
+            policy_amendment="performance-selection-policy-v4.json",
+            policy_amendment_sha256=amendment_sha,
+            previous_ledger=archive,
+            interpretation="Original decisions through46 remain exact. The explicit user-directed amendment accepts measured round47 using optimization only and applies that rule to subsequent rounds. Immutable measurements are unchanged; holdout is report-only for selection.",
+        )
     ledger.update({
         "history_sha256": hashlib.sha256(history_bytes).hexdigest(),
         "history_entries": len(decisions),
@@ -134,6 +158,7 @@ def main():
     accepted = ledger["entries"][ledger["accepted_history_index"]]
     print(json.dumps({"latest": latest["label"], "run_outcome": latest["run_outcome"],
                       "performance_gate": latest["performance_gate"],
+                      "selection_outcome": latest.get("selection_outcome", latest["run_outcome"]),
                       "accepted": accepted["label"], "accepted_scores": accepted["scores"]}))
     if args.require_latest_accepted and latest["performance_gate"] != "accepted":
         raise SystemExit(1)

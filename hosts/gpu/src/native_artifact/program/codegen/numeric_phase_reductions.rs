@@ -127,6 +127,22 @@ pub(super) fn emit_region(
     output: Option<(Value, Value)>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
+    emit_region_with_selection(
+        b, region, plan, first, count, matrices, captures, output, None, miss,
+    )
+}
+pub(super) fn emit_region_with_selection(
+    b: &mut FunctionBuilder<'_>,
+    region: &crate::native_artifact::program::prepare::numeric_maps::Region,
+    plan: &Plan,
+    first: Value,
+    count: Value,
+    matrices: &[[Value; 4]],
+    captures: &BTreeMap<u32, Value>,
+    output: Option<(Value, Value)>,
+    selection: Option<&super::numeric_map::selection::Selection>,
+    miss: Block,
+) -> Result<Value, NativeCompileError> {
     let slot = b.create_sized_stack_slot(StackSlotData::new(
         StackSlotKind::ExplicitSlot,
         size_of::<Frame>() as u32,
@@ -241,7 +257,9 @@ pub(super) fn emit_region(
     let complete = b.create_block();
     let arithmetic = b.create_block();
     b.append_block_param(arithmetic, types::I64);
-    super::numeric_map::emit(b, frame, region, plan, captures, complete, arithmetic, miss)?;
+    super::numeric_map::emit_with_selection(
+        b, frame, region, plan, captures, selection, complete, arithmetic, miss,
+    )?;
     b.switch_to_block(arithmetic);
     b.ins().jump(miss, &[]);
     b.switch_to_block(complete);
