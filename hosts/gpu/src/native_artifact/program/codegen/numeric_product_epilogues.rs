@@ -30,7 +30,9 @@ pub(super) struct Epilogue<'a> {
     leaves: Vec<Leaf>,
     cancelled: Block,
 }
-pub(super) fn finite(b: &mut FunctionBuilder<'_>, value: Value, vector: bool, cancelled: Block) {
+/// A lane mask for nonfinite values. Callers choose the validation boundary;
+/// ordinary product/epilogue guards retain their original immediate check.
+pub(super) fn nonfinite_mask(b: &mut FunctionBuilder<'_>, value: Value, vector: bool) -> Value {
     let kind = if vector {
         types::I64.by(2).unwrap()
     } else {
@@ -44,12 +46,16 @@ pub(super) fn finite(b: &mut FunctionBuilder<'_>, value: Value, vector: bool, ca
         mask
     };
     let exponent = b.ins().band(bits, mask);
-    let bad = b.ins().icmp(IntCC::Equal, exponent, mask);
+    b.ins().icmp(IntCC::Equal, exponent, mask)
+}
+pub(super) fn finite(b: &mut FunctionBuilder<'_>, value: Value, vector: bool, cancelled: Block) {
+    let bad = nonfinite_mask(b, value, vector);
     let bad = if vector { b.ins().vany_true(bad) } else { bad };
     let good = b.create_block();
     b.ins().brif(bad, cancelled, &[], good, &[]);
     b.switch_to_block(good);
 }
+
 impl Leaf {
     fn emit(
         &self,

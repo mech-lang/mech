@@ -1095,6 +1095,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     &program.metadata().plan,
                     controls.enabled(OptimizationPass::TypedMapFolds),
                     controls.enabled(OptimizationPass::OrderedMapDots),
+                    controls.enabled(OptimizationPass::AffineMapCells),
                     reduction_miss
                         .ok_or_else(|| backend("phase fold lost its original cold edge"))?,
                 )?;
@@ -1117,6 +1118,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     controls.enabled(OptimizationPass::CompoundMatrixMasks),
                     controls.enabled(OptimizationPass::TypedMapFolds),
                     controls.enabled(OptimizationPass::OrderedMapDots),
+                    controls.enabled(OptimizationPass::AffineMapCells),
                     reduction_miss
                         .ok_or_else(|| backend("phase map lost its original cold edge"))?,
                 )?;

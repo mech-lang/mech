@@ -1,0 +1,862 @@
+{
+  "policy": {
+    "schema": "mech.polybench.training-selection-policy.v3",
+    "scope": "Optimization15 only; no holdout performance or per-case diagnosis.",
+    "accepted_round": 58,
+    "samples_per_actor": 7,
+    "actors": [
+      "accepted58",
+      "candidate"
+    ],
+    "sampling": "A new driver process for each single checked-call sample; interleave actors within each pair, alternating order by case and pair. Same cache flush, warmup, finite limits and checked-call timer as formal evaluation.",
+    "selection": "Exactly one prospective probe per fully qualified fingerprint. Select only raw equal-weight GM accepted58/candidate median-runtime speedup >1 after the preregistered untimed source/fee/visit gate. All source execution counters must exactly match accepted58. No source visit or bill reduction is proposed. All210 observations/regressions retained, no retries/exclusions.",
+    "formal_gate": "If selected, commit/push clean exact source and driver then freeze one900-observation formal run,29482 finite C liveouts and immutable history59. Promote solely optimization Mech/C<8.144951071643966. Holdout independently reported, never selection/tuning/veto/rollback/retry. Report raw Mech and C/reference drift separately. On failed gate restore exact accepted58.",
+    "benchmark_protocol_unchanged": true,
+    "observations": 210,
+    "adopted_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+    "prospective_plan_sha256": "56b93bbce635efe1567e229c2c2fa999431de70a6a9d20fef6afecbfccdc0784"
+  },
+  "schedule": [
+    {
+      "case": "2mm",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "2mm",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "3mm",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "atax",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "bicg",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "cholesky",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "correlation",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "covariance",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "deriche",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "doitgen",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "durbin",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gemm",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "gramschmidt",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "mvt",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 0,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 1,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 2,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 3,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 4,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 5,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "nussinov",
+      "pair": 6,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 0,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 1,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 2,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 3,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 4,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 5,
+      "order": [
+        "candidate",
+        "accepted58"
+      ]
+    },
+    {
+      "case": "seidel-2d",
+      "pair": 6,
+      "order": [
+        "accepted58",
+        "candidate"
+      ]
+    }
+  ],
+  "performance_observations": 0
+}

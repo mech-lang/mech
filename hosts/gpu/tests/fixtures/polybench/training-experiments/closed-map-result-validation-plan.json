@@ -67,5 +67,11 @@
     "selection": "Exactly one fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted58/candidate medians>1 and exact counters/resources pass; keep every observation/regression, no retries/exclusions."
   },
   "formal_acceptance": "If selected, commit/push clean exact source and driver then freeze one900-observation formal run,29482 finite C liveouts and immutable history59. Promote solely optimization Mech/C<8.144951071643966. Holdout independently reported, never selection/tuning/veto/rollback/retry. Report raw Mech and C/reference drift separately. On failed gate restore exact accepted58.",
-  "performance_observations": 0
+  "performance_observations": 0,
+  "pre_timing_validation_clarification": {
+    "performance_observations": 0,
+    "failed_source_fingerprint": "b18f731996f14fa719ecc6f384f308a4c1d6923f7c655d3b8d024b9898b16aa7",
+    "attempt": "attempt-01/focused-result.json",
+    "finding": "Seven semantic groups passed; two direct groups stopped at an overly strict machine-instruction assertion. A single VanyTrue over accumulated masks lowers to two ARM UMAXP instructions, rather than the one-instruction lowering of an immediate compare mask. The new contract is exactly one IR reduction and its actual two-instruction ARM lowering, both before scratch completion; no reduction or branch per cell."
+  }
 }
