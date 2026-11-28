@@ -99,5 +99,5 @@ pub(super) fn fold(function: &mut Function, stores: &[Inst]) -> usize {
 }
 
 #[cfg(all(test, feature = "jit"))]
-#[path = "append_store_pairs/tests.rs"]
+#[path = "append_store_pairs_tests.rs"]
 mod tests;
