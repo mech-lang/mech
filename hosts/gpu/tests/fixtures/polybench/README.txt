@@ -2917,3 +2917,11 @@ Dynamic two-by-two I64 SIMD transpose tiles replace per-cell quotient/remainder 
 One210-observation optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history57. Optimization8.4256809456565076x C; independent holdout23.8119899277332685x C. V4 optimization-only decision: not_promoted. Raw Mech runtime and C/reference drift are recorded separately in round-57-audit.json. All observations/regressions preserved, no retry/exclusion. Exact accepted56 compiler restored solely because optimization failed its strict formal gate.
 
 [Qualification](round-57-qualification.json) · [Audit](round-57-audit.json) · [Progress](round-57-progress.json) · [Complete experiment](training-experiments/transpose-tiles-formal.json)
+
+Transpose operand views in shared product epilogues: formal evaluation
+
+One closed nonescaping left transpose is represented by logical geometry and real-source strides in the existing product/epilogue loan. Shared ordered1/2/4-row and adjacent-column kernels produce only the final matrix; no new helper/frame/ABI/mode/allocation class. All original source demands, shapes, current owners, full replay and atomic output remain. Existing arithmetic suffix recipes and their full16-operation/64-step limits remain. Source view metadata is sparse. 775 broad invocations,11 focused groups, both features, all30 original/decoded/restored C cases and the17002-output optimization fee/counter/Object gate passed. Source work/comparison never decrease; all other counters match accepted56 except one proved source visit removed in each of four optimization cases.
+
+One210-observation prospective optimization probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended immutable history58. Optimization8.1449510716439661x C; independent holdout24.7055755292320889x C. V4 optimization-only decision: accepted. Raw Mech and C/reference drift are separate in round-58-audit.json. All measurements/regressions retained; no fingerprint retry/exclusion. Compiler promoted to accepted58.
+
+[Qualification](round-58-qualification.json) · [Audit](round-58-audit.json) · [Progress](round-58-progress.json) · [Complete experiment](training-experiments/transpose-epilogue-views-formal.json)

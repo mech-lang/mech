@@ -15,8 +15,8 @@
     "controls": "Report raw Mech runtime, original-reference drift and C drift separately; selection uses the fixed optimization Mech/C score.",
     "historical_decisions": "Retain the original two-set decisions through history46. An explicit user-directed amendment accepts round47 and applies optimization-only promotion from47 onward."
   },
-  "history_sha256": "fd5505f8f7a1d7b80951572a4ae5ba15776164144d20b439a975490b9bcd9ada",
-  "history_entries": 58,
+  "history_sha256": "a2e51a51df13ed8f846e71628dc510dec6325607f78e6aba35aa2678455cba72",
+  "history_entries": 59,
   "entries": [
     {
       "history_index": 0,
@@ -1160,9 +1160,32 @@
       "holdout_use": "reported_only",
       "selection_policy": "optimization-only-v4",
       "accepted_index_after_run": 56
+    },
+    {
+      "history_index": 58,
+      "label": "round-58-transpose-epilogue-views",
+      "source_commit": "47a9e1c5be7d45404cbf923b91765defceca7ba2",
+      "history_entry_sha256": "751abca8364f035f7ef6e2083c2e338921cea08af6e5be8b335c574302b771e3",
+      "scores": {
+        "optimization": 8.144951071643966,
+        "holdout": 24.70557552923209
+      },
+      "previous_measured_index": 57,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 56,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9962312437828098,
+        "holdout": 1.0733842183877729
+      },
+      "performance_gate": "accepted",
+      "selection_partition": "optimization",
+      "selection_outcome": "optimization_improved",
+      "holdout_use": "reported_only",
+      "selection_policy": "optimization-only-v4",
+      "accepted_index_after_run": 58
     }
   ],
-  "accepted_history_index": 56,
+  "accepted_history_index": 58,
   "policy_amended_at": "2026-11-28T01:43:24.649475+00:00",
   "policy_amendment": "performance-selection-policy-v4.json",
   "policy_amendment_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
