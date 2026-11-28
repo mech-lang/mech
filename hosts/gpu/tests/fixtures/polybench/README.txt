@@ -2895,3 +2895,11 @@ After complete checked evaluation, source-proved selected domains publish exact 
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.6619113663216076x C, independent holdout24.8693352575657372x C. V4 optimization-only decision: not_promoted. Raw runtime and C/reference drift controls remain in round-55-audit.json. All observations and regressions are preserved, no retries/exclusions. Exact accepted54 compiler restored solely because optimization failed its strict formal score gate.
 
 [Qualification](round-55-qualification.json) · [Audit](round-55-audit.json) · [Progress](round-55-progress.json) · [Complete experiment](training-experiments/selected-map-spans-formal.json)
+
+Source-closed ordered map dots: formal evaluation
+
+Source-closed ordered F64 dots use endpoint/corner-checked immutable affine streams through the native product core. Independent adjacent parent outputs use SIMD lanes when physical strides permit. All original per-output arithmetic order, errors, guards, complete scratch/old-DAG fallback, owners and accounting remain. Original errors, arithmetic, source fees, current owners, bounds, full buffers and atomic completion remain. All764 broad/10 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history56 without altering earlier entries. Formal optimization8.1757635312827652x C, independent holdout23.0165257752158467x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-56-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted56.
+
+[Qualification](round-56-qualification.json) · [Audit](round-56-audit.json) · [Progress](round-56-progress.json) · [Complete experiment](training-experiments/ordered-map-dots-formal.json)
