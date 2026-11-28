@@ -1,0 +1,273 @@
+{
+  "schema": "mech.polybench.optimization-route-activation-evidence.v1",
+  "created_at": "2026-11-28T20:16:08.666008+00:00",
+  "plan": {
+    "schema": "mech.polybench.optimization-native-route-diagnostic-plan.v1",
+    "created_at": "2026-11-28T20:10:47.059751+00:00",
+    "source_parent": "c38c4b1dc561290409509b3f3c3ba9fc604f239f",
+    "compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+    "source_sha256": {
+      "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+      "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs": "aec43fa7bfcc14b85fba19325d3eeb8f171d40dc53d03cd01c13d1f84bd9a72f",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "2cca365d2c9b2d03fe8eb55204ac0dff544bbb7ffd3d52ec53d0821cadb52d5a"
+    },
+    "cases": [
+      "deriche"
+    ],
+    "driver": "/private/tmp/mech-polybench-optimization/round-84/round62-regression-profile/residence-driver",
+    "driver_sha256": "edcb8744748276146a73856970af8aa247c303c10652c273e58d9c7feeeb4df1",
+    "frozen_original_driver": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/single-pass-matrix-preflight-complete-driver",
+    "frozen_original_driver_sha256": "a4124616f98754541862071cec15ca5cb7d9b4af95a8a4fc8d4077243f9bdc3d",
+    "method": "Owned debugger process executes exact round62 warm residence host for5seconds under unchanged source/inputs/caps. Once fresh JIT maps appear, stop, install one-shot breakpoints at all four known numeric functions and the main entry, then continue the same process to real terminal0. Record whether each function was entered, finite C outputs and exact frozen counters. Breakpoints disable after their first hit. No official timings or rate claims; debugger overhead makes residence counts diagnostic only. No source instrumentation or generated code replacement.",
+    "hypothesis": "Exact same-PID CPU samples located Deriche in main generated entry; numeric recurrence helper changes in qualified R85 did not improve its sole O probe. Determine actual numeric-helper route entry before choosing further compiler work. If helpers do not run, inspect current ordinary/owner admission rather than further optimizing unused helpers.",
+    "reference_gate": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/untimed-counter-gate.json",
+    "functions": [
+      "mech_canonical_program_entry_v1_numeric_67",
+      "mech_canonical_program_entry_v1_numeric_142",
+      "mech_canonical_program_entry_v1_numeric_232",
+      "mech_canonical_program_entry_v1_numeric_307",
+      "mech_canonical_program_entry_v1"
+    ],
+    "performance_observations": 0,
+    "holdout_observations": 0,
+    "accepted_round_unchanged": 59,
+    "history_entries_unchanged": 63,
+    "no_source_changes_during_owned_job": true
+  },
+  "result": {
+    "schema": "mech.polybench.owned-native-route-diagnostic.v1",
+    "complete": true,
+    "hits": {
+      "1": {
+        "name": "mech_canonical_program_entry_v1_numeric_67",
+        "address": 34284470272,
+        "size": 3012,
+        "hit": false
+      },
+      "2": {
+        "name": "mech_canonical_program_entry_v1_numeric_142",
+        "address": 34284473344,
+        "size": 2744,
+        "hit": false
+      },
+      "3": {
+        "name": "mech_canonical_program_entry_v1_numeric_232",
+        "address": 34284476160,
+        "size": 3012,
+        "hit": false
+      },
+      "4": {
+        "name": "mech_canonical_program_entry_v1_numeric_307",
+        "address": 34284479232,
+        "size": 2744,
+        "hit": false
+      },
+      "5": {
+        "name": "mech_canonical_program_entry_v1",
+        "address": 34267529216,
+        "size": 53056,
+        "hit": true,
+        "pc": 34267529216,
+        "frame": null
+      },
+      "6": {
+        "name": "prepare_numeric_generator",
+        "locations": 1,
+        "hit": true,
+        "pc": 4404645240,
+        "frame": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_generator"
+      },
+      "7": {
+        "name": "numeric_array_owner",
+        "locations": 2,
+        "hit": false
+      }
+    },
+    "preflight_trace": [],
+    "performance_observations": 0,
+    "pid": 11383,
+    "driver": "/private/tmp/mech-polybench-optimization/round-84/round62-regression-profile/residence-driver",
+    "driver_sha256": "edcb8744748276146a73856970af8aa247c303c10652c273e58d9c7feeeb4df1",
+    "begin_breakpoint": 8,
+    "begin_hit": false,
+    "driver_exit_code": 0,
+    "warmup_validation": {
+      "count": 4096,
+      "finite": true,
+      "max_absolute_error": 4.85722573273506e-17
+    },
+    "final_validation": {
+      "count": 4096,
+      "finite": true,
+      "max_absolute_error": 4.85722573273506e-17
+    },
+    "residence_calls": 25600,
+    "source_unchanged": true,
+    "frozen_counters_match": true,
+    "interpretation": "One-shot entry breakpoints installed in the owned current JIT observed main entry and generator preparation, but none of four numeric helpers, numeric_array_owner or begin_numeric_views. All finite C outputs/counters match. Total residence25600 calls includes an uncounted prefix before breakpoint installation; do not claim exact monitored call count, call rate or latency. This identifies an earlier admission path to inspect, not the reason for refusal."
+  },
+  "archives": {
+    "attempt-01/debugger-exit.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/debugger-exit.json.gz",
+      "sha256": "502d373a46fc5e230d518eddb43b1bd1597ddcb291f466f3f161cac6e367251b",
+      "compressed_sha256": "3f43e43c55e77a84790e81f2e20f39350e4f92290ac102091017420653ae9f97"
+    },
+    "attempt-01/debugger.log": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/debugger.log.gz",
+      "sha256": "801eda48c64805bbad9deb17323333831324615d4247fa1e9bea2f878e0396e5",
+      "compressed_sha256": "ea13a682e9222c4707a51b2d4cf6fbb1211ceac8a2ebec14e418834e276d9923"
+    },
+    "attempt-01/deriche-inputs.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "attempt-01/driver.stderr": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "attempt-01/driver.stdout": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/driver.stdout.gz",
+      "sha256": "ad8433a56dd30d5cb0be12c09933039e169a3a210f729d779e69e8271f1b5080",
+      "compressed_sha256": "2b11de3de8b51c94d8f9331772fb28c2f5f1670d21c9126b1fc9392b8ee3c580"
+    },
+    "attempt-01/failure.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/failure.json.gz",
+      "sha256": "b0019abd3f2c7cc5f10ae75eb31019015f8a304e0612b7d22e18bdcbdd952bb5",
+      "compressed_sha256": "6bc02e7d3190d8330a8000893eb47c732043877637fd2d6d6a5a34f3bd52f09e"
+    },
+    "attempt-01/plan.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/plan.json.gz",
+      "sha256": "1489c014b602126a2d11b3ad265e6e980c9bea13c5427d3b0da137709b63978f",
+      "compressed_sha256": "c29dbaa15378330240161e6df9852c1da3f030b97964b53a8729e37a4a9b7720"
+    },
+    "attempt-01/route-trace.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/route-trace.json.gz",
+      "sha256": "01aa217d77e0ae5ade266fd0699397f64f16445fb664636092005a0f46c53791",
+      "compressed_sha256": "0025db368b65c3b398a5c8fe894cd7f94a4617336bbdaee00a0bccfce6003999"
+    },
+    "attempt-01/run-diagnostic.py": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "attempt-01/trace_route.py": {
+      "path": "qualification/round-86-native-route-activation/attempt-01/trace_route.py.gz",
+      "sha256": "348dda97fc80a74e3a22af4f5a5d0f11d338dd24585922236c408388ebf8da7d",
+      "compressed_sha256": "3f68e302b2cb6aab4a25da8ec209938560100388c611526d492264b144f7a825"
+    },
+    "attempt-02/debugger-exit.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/debugger-exit.json.gz",
+      "sha256": "ec58f1804c81ca37b815614865540749fd59d92a740814c36433ee4841d529bc",
+      "compressed_sha256": "e19a04706e9bcac1c0c21c4af14a9c556b84d03689a19149ad4d721c44dd09b9"
+    },
+    "attempt-02/debugger.log": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/debugger.log.gz",
+      "sha256": "c02059e23f8739719dab133ccd572c149e043ec2e54c8a8308e81867dd74f7d0",
+      "compressed_sha256": "b5538f699ec2afc116a01daaecc4e0899b9849bc3ed86833fbb88c908de85a5b"
+    },
+    "attempt-02/deriche-inputs.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "attempt-02/driver.stderr": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "attempt-02/driver.stdout": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/driver.stdout.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "attempt-02/failure.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/failure.json.gz",
+      "sha256": "2d8260328f26c7f182728dd7866a38d225bff0b7f37a0c38469c6dd8e5f281c6",
+      "compressed_sha256": "3038398998d7a930afa9bdda071b7bd2bf1b588a14d9b662439dad5a5e3f0d2f"
+    },
+    "attempt-02/plan.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/plan.json.gz",
+      "sha256": "1489c014b602126a2d11b3ad265e6e980c9bea13c5427d3b0da137709b63978f",
+      "compressed_sha256": "c29dbaa15378330240161e6df9852c1da3f030b97964b53a8729e37a4a9b7720"
+    },
+    "attempt-02/route-trace.json": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/route-trace.json.gz",
+      "sha256": "0d24c8ff8e83cc10dcb2ec15e184e459bec66cf00da3137c95e287edc4a5293b",
+      "compressed_sha256": "dc5856b81fd862131f00b6b936584ac86c9535554e48f0ec720c9061018cb03b"
+    },
+    "attempt-02/run-diagnostic.py": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "attempt-02/trace_route.py": {
+      "path": "qualification/round-86-native-route-activation/attempt-02/trace_route.py.gz",
+      "sha256": "4efc4820945aa6a6d5091f8f1f1d7b6cd5785916f6c30ff81812c17bb3cf2533",
+      "compressed_sha256": "1f0750450821fe44b88407598ef10f3ae466f8995098b979c78cd1dc716a9dee"
+    },
+    "debugger-exit.json": {
+      "path": "qualification/round-86-native-route-activation/debugger-exit.json.gz",
+      "sha256": "ac9e3fee3d2efa31b1264315fa5176bcfb05195e713395c6fbc409656977f433",
+      "compressed_sha256": "5a292f03d474f0c247ba3a646e3aa31185643b73d909f366734d9298fb4ae26c"
+    },
+    "debugger.log": {
+      "path": "qualification/round-86-native-route-activation/debugger.log.gz",
+      "sha256": "f6bf03681b878af0be41fb3648c14d77c073cacf47791564de7730ededd9156d",
+      "compressed_sha256": "15d80b68a580c1d228d416979cf802d29c9661a0ffac3df300b55700949def5d"
+    },
+    "deriche-inputs.json": {
+      "path": "qualification/round-86-native-route-activation/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "deriche.perf.map": {
+      "path": "qualification/round-86-native-route-activation/deriche.perf.map.gz",
+      "sha256": "f7ce65c221349422495dbcdb45242887044e23ee47b84d4da32377934d4928ad",
+      "compressed_sha256": "52371dd41efefec4f3f25396228772b0f21692997a9c9229a6526321fce1b759"
+    },
+    "driver.stderr": {
+      "path": "qualification/round-86-native-route-activation/driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "driver.stdout": {
+      "path": "qualification/round-86-native-route-activation/driver.stdout.gz",
+      "sha256": "ac8d084eb8c349ea5708a736dd9fa8656e1126e74fbcaba55a67ce1fe279fdbd",
+      "compressed_sha256": "b119c8908ffd4892abbfde3c187b096e1cc5267f07a5fe044077674681ac58f0"
+    },
+    "plan.json": {
+      "path": "qualification/round-86-native-route-activation/plan.json.gz",
+      "sha256": "1489c014b602126a2d11b3ad265e6e980c9bea13c5427d3b0da137709b63978f",
+      "compressed_sha256": "c29dbaa15378330240161e6df9852c1da3f030b97964b53a8729e37a4a9b7720"
+    },
+    "route-trace.json": {
+      "path": "qualification/round-86-native-route-activation/route-trace.json.gz",
+      "sha256": "bb7462b86ae17c417635523b10c8e8610af37881441c6646df275221bbe16d64",
+      "compressed_sha256": "a11407e2b21a75df5721969daeb17123ffc031eef38e7295b79d8a1d4a255e78"
+    },
+    "run-diagnostic.py": {
+      "path": "qualification/round-86-native-route-activation/run-diagnostic.py.gz",
+      "sha256": "850d7ac828105f657c08b483c21815ceb17df8c0cef53f9a5207faf8afe77e9f",
+      "compressed_sha256": "8ae0089ff410952a4ebcfbea07f744f8c11f0fb061603cf4821b95a7f6b5c4f9"
+    },
+    "trace_route.py": {
+      "path": "qualification/round-86-native-route-activation/trace_route.py.gz",
+      "sha256": "8dc6a3644ee8eecb43cadb910c70a238a2dd9880c9438d0719810ff611e099cc",
+      "compressed_sha256": "1d65ed33c38d3f5a07ec1d569ea3a44ae1c23c3b10d4da614ec90eef61d20a0d"
+    }
+  },
+  "performance_observations": 0,
+  "holdout_observations": 0,
+  "accepted_round_unchanged": 59,
+  "history_entries_unchanged": 63,
+  "failed_launcher_attempts_retained": 2
+}
