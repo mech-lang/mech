@@ -36,6 +36,7 @@ pub(super) fn emit(
     selective_initialization: bool,
     compound_domains: bool,
     typed_folds: bool,
+    selected_spans: bool,
     miss: Block,
 ) -> Result<MapEmission, NativeCompileError> {
     let source = &replacement.source;
@@ -215,7 +216,11 @@ pub(super) fn emit(
         let current = b.ins().icmp(IntCC::Equal, base, old);
         b.ins().brif(current, partial, &[], full, &[]);
         b.switch_to_block(partial);
-        publish_selected(b, selection, scratch, base, width)?;
+        if selected_spans {
+            selection.publish_spans(b, scratch, base, width)?;
+        } else {
+            publish_selected(b, selection, scratch, base, width)?;
+        }
         b.ins().jump(published, &[]);
         b.switch_to_block(full);
         if let Some(initialized) = whole_output_initialized {
@@ -310,7 +315,7 @@ fn initialize_scratch(
     }
     Ok(())
 }
-fn publish_selected(
+pub(super) fn publish_selected(
     b: &mut FunctionBuilder<'_>,
     selection: &super::numeric_map::selection::Selection,
     scratch: cranelift_codegen::ir::Value,

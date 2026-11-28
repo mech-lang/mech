@@ -1,0 +1,389 @@
+{
+  "schema": "mech.polybench.selected-map-span-emission-audit.v1",
+  "compiler_fingerprint": "753588da2d93b2045dcdadd8c66a23756d34cd839ef5024dbc3833e351548f24",
+  "passed": true,
+  "performance_observations": 0,
+  "scope": "Optimization15 source/actual Object/native-loop audit; no timing or hardware-retirement inference",
+  "proof": "Existing clipped axis ranges contain one interval or two disjoint Ne intervals, all inside admitted constant extents. Their Cartesian product is exactly the old selected ordinal set. Full-column bands coalesce; singleton axes copy one cell/span only after nonempty checks. Only completed nonfallible private publication traversal changes; original source evaluation/FP/arithmetic/read order and first failures remain.",
+  "memory_proof": "Original whole-bank spans, base==identity source, scratch disjointness and complete successful checked evaluation remain. Every vector offset starts0, steps16, and is below bytes&-16; whole-cell tails start exactly there and step width until bytes. All reads/writes lie inside one initialized selected span; empty bands/spans access no memory. No complement/padding/other row is touched. Runtime-bound independent selected-set and old production-emitter oracles verify all comparators, widths, splits, compound/singleton/full/linear axes, zero/MAX bounds, unaligned banks, poisoned holes and canaries.",
+  "actual_numeric_loop_evidence": {
+    "gramschmidt": {
+      "numeric_function": "numeric_5",
+      "raw_vector_pairs_before": 3,
+      "raw_vector_pairs_after": 5,
+      "new_completed_publication_pairs": [
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "offset": "2a24",
+          "load": "    2a24:      \tldr\tq0, [x0, x7]",
+          "store": "    2a28:      \tstr\tq0, [x1, x7]"
+        },
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_5",
+          "offset": "2c54",
+          "load": "    2c54:      \tldr\tq16, [x6, x0]",
+          "store": "    2c60:      \tstr\tq16, [x4, x0]"
+        }
+      ]
+    },
+    "durbin": {
+      "numeric_function": "numeric_4",
+      "raw_vector_pairs_before": 0,
+      "raw_vector_pairs_after": 1,
+      "new_completed_publication_pairs": [
+        {
+          "function": "mech_canonical_program_entry_v1_numeric_4",
+          "offset": "f2c",
+          "load": "     f2c:      \tldr\tq31, [x20, x0]",
+          "store": "     f30:      \tstr\tq31, [x7, x0]"
+        }
+      ]
+    }
+  },
+  "actual_residual_work": "Gram selected vector copy2c54 retains rematerialized row selection/address/spill operations per vector. The rule removes selected ordinal division/remainder and batches copies; it does not remove every address computation. Source map evaluation still retains all original checked coordinates.",
+  "unchanged_source_copy_functions": {
+    "initialize_scratch": true,
+    "publish_complete": true,
+    "publish_selected": true
+  },
+  "native_code_changed_cases": [
+    "durbin",
+    "gramschmidt"
+  ],
+  "static_changes": {
+    "2mm": {
+      "code_bytes": {
+        "before": 9476,
+        "after": 9476,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 2369,
+        "after": 2369,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "3mm": {
+      "code_bytes": {
+        "before": 4060,
+        "after": 4060,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1015,
+        "after": 1015,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "atax": {
+      "code_bytes": {
+        "before": 3612,
+        "after": 3612,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 903,
+        "after": 903,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 1,
+        "after": 1,
+        "delta": 0
+      }
+    },
+    "bicg": {
+      "code_bytes": {
+        "before": 3560,
+        "after": 3560,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 890,
+        "after": 890,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 96,
+        "after": 96,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 1,
+        "after": 1,
+        "delta": 0
+      }
+    },
+    "cholesky": {
+      "code_bytes": {
+        "before": 19904,
+        "after": 19904,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 4976,
+        "after": 4976,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 1648,
+        "after": 1648,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 10,
+        "after": 10,
+        "delta": 0
+      }
+    },
+    "correlation": {
+      "code_bytes": {
+        "before": 15016,
+        "after": 15016,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 3754,
+        "after": 3754,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 128,
+        "after": 128,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 9,
+        "after": 9,
+        "delta": 0
+      }
+    },
+    "covariance": {
+      "code_bytes": {
+        "before": 5552,
+        "after": 5552,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1388,
+        "after": 1388,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 2,
+        "after": 2,
+        "delta": 0
+      }
+    },
+    "deriche": {
+      "code_bytes": {
+        "before": 62308,
+        "after": 62308,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 15577,
+        "after": 15577,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 496,
+        "after": 496,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 24,
+        "after": 24,
+        "delta": 0
+      }
+    },
+    "doitgen": {
+      "code_bytes": {
+        "before": 1864,
+        "after": 1864,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 466,
+        "after": 466,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 96,
+        "after": 96,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "durbin": {
+      "code_bytes": {
+        "before": 20960,
+        "after": 21276,
+        "delta": 316
+      },
+      "static_instruction_count": {
+        "before": 5240,
+        "after": 5319,
+        "delta": 79
+      },
+      "reported_native_stack_bytes": {
+        "before": 2032,
+        "after": 2032,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 12,
+        "after": 12,
+        "delta": 0
+      }
+    },
+    "gemm": {
+      "code_bytes": {
+        "before": 7216,
+        "after": 7216,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 1804,
+        "after": 1804,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": {
+        "before": 52936,
+        "after": 52928,
+        "delta": -8
+      },
+      "static_instruction_count": {
+        "before": 13234,
+        "after": 13232,
+        "delta": -2
+      },
+      "reported_native_stack_bytes": {
+        "before": 23104,
+        "after": 23088,
+        "delta": -16
+      },
+      "multiply_high_sites": {
+        "before": 69,
+        "after": 67,
+        "delta": -2
+      }
+    },
+    "mvt": {
+      "code_bytes": {
+        "before": 9980,
+        "after": 9980,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 2495,
+        "after": 2495,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 112,
+        "after": 112,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 1,
+        "after": 1,
+        "delta": 0
+      }
+    },
+    "nussinov": {
+      "code_bytes": {
+        "before": 19360,
+        "after": 19360,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 4840,
+        "after": 4840,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 320,
+        "after": 320,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": {
+        "before": 16104,
+        "after": 16104,
+        "delta": 0
+      },
+      "static_instruction_count": {
+        "before": 4026,
+        "after": 4026,
+        "delta": 0
+      },
+      "reported_native_stack_bytes": {
+        "before": 288,
+        "after": 288,
+        "delta": 0
+      },
+      "multiply_high_sites": {
+        "before": 0,
+        "after": 0,
+        "delta": 0
+      }
+    }
+  },
+  "fma_instructions_introduced": false,
+  "execution_counters": "Every optimization15 execution counter exactly accepted54, including work/comparisons/visits;17002 finite C outputs match. No runtime frame/helper/state/ABI/buffer/per-op allocation or fee change.",
+  "limitations": "Durbin grows316 code bytes/79 instructions with reported stack2032 unchanged; Gram shrinks8 bytes/2 instructions and reported stack23104->23088. Others13 native code/stack unchanged. Static totals include cold variants and do not establish retired instructions, memory traffic, full dynamic stack/peak RSS or runtime speedup. No heap probe was rerun.",
+  "prior_work_distinction": "Older32/40 complete-bank packed copy/source-constant candidates predate selected/compound domains. This changes selected publication coordinates/store traversal only; complete publication and initialization source remain unchanged. No observed fingerprint is retried."
+}

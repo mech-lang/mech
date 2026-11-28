@@ -74,6 +74,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     SelectiveScratchInitialization,
     /// Factor source-proved identity complements into intersected axis domains.
     CompoundMatrixMasks,
+    /// Publish completed selected maps through bounded physical row spans.
+    SelectedMapSpans,
     /// Omit capacity guards at a proved frontier with no append operation.
     ZeroAppendFrontiers,
     /// Refine a declined static capacity frontier using only a bounded pure

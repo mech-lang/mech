@@ -1,0 +1,2412 @@
+{
+  "schema": "mech.polybench.untimed-counter-gate.v3",
+  "created_at": "2026-11-28T10:45:45.447632+00:00",
+  "compiler_fingerprint": "753588da2d93b2045dcdadd8c66a23756d34cd839ef5024dbc3833e351548f24",
+  "driver_sha256": "9094a424db75d9edd4819b565ec7f1897f9a3afdbc2b6d278a96696860c90379",
+  "scope": "Optimization15 exact execution-counter and finite C-output gate only; no holdout diagnosis or tuning.",
+  "plan_sha256": "bf0976cc51187ac192979c14c68867e740b4cf4b35b83a339f4a9441b64762a6",
+  "cases": {
+    "2mm": {
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "inputs_sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/2mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/2mm-inputs.json",
+            "0"
+          ],
+          "pid": 64516,
+          "exit_code": 0,
+          "stdout_sha256": "24e3322ec1bc443b2e7abe3412e588ee022cb81328c85a4dce811b3240948934",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 18887754868,
+            "comparison_work": 791804433,
+            "visits": 5,
+            "transport_bytes": 1528,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 18887754868, comparison_work: 791804433, visits: 5, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/2mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/2mm-inputs.json",
+            "0"
+          ],
+          "pid": 64517,
+          "exit_code": 0,
+          "stdout_sha256": "8f2549d10bed0e92150a1f125b5d141d1c66987b1a91dfbb8eb17f24da6e7486",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 18887754868,
+            "comparison_work": 791804433,
+            "visits": 5,
+            "transport_bytes": 1528,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 18887754868, comparison_work: 791804433, visits: 5, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "958",
+            "load": "     958:      \tldr\tq7, [x2, x7]",
+            "store": "     964:      \tstr\tq7, [x0, x7]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "9a0",
+            "load": "     9a0:      \tldr\tq17, [x2, x5]",
+            "store": "     9b0:      \tstr\tq17, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "9f4",
+            "load": "     9f4:      \tldr\tq29, [x1, x5]",
+            "store": "     a04:      \tstr\tq29, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1748",
+            "load": "    1748:      \tldr\tq0, [x8, x1]",
+            "store": "    1754:      \tstr\tq0, [x6, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1790",
+            "load": "    1790:      \tldr\tq0, [x8, x0]",
+            "store": "    17a0:      \tstr\tq0, [x6, x0]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "17e4",
+            "load": "    17e4:      \tldr\tq2, [x7, x2]",
+            "store": "    17f4:      \tstr\tq2, [x6, x2]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "19e8",
+            "load": "    19e8:      \tldr\tq16, [x2, x12]",
+            "store": "    19f4:      \tstr\tq16, [x0, x12]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1a30",
+            "load": "    1a30:      \tldr\tq22, [x2, x5]",
+            "store": "    1a40:      \tstr\tq22, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1a84",
+            "load": "    1a84:      \tldr\tq0, [x1, x5]",
+            "store": "    1a94:      \tstr\tq0, [x0, x5]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "3mm": {
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "inputs_sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/3mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/3mm-inputs.json",
+            "0"
+          ],
+          "pid": 64518,
+          "exit_code": 0,
+          "stdout_sha256": "52af34ef7e427da7f879963cfdf1dea3e734476569e727c22d6b23e28f179c84",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 11553881420,
+            "comparison_work": 485131095,
+            "visits": 6,
+            "transport_bytes": 1096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 11553881420, comparison_work: 485131095, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/3mm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/3mm-inputs.json",
+            "0"
+          ],
+          "pid": 64519,
+          "exit_code": 0,
+          "stdout_sha256": "635cd0029d5a80364e321b03a04ea1c2d55b7037b048dfa57c2de0ca5e871569",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 11553881420,
+            "comparison_work": 485131095,
+            "visits": 6,
+            "transport_bytes": 1096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 11553881420, comparison_work: 485131095, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "atax": {
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "inputs_sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/atax.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/atax-inputs.json",
+            "0"
+          ],
+          "pid": 64520,
+          "exit_code": 0,
+          "stdout_sha256": "a161b49081d310a411e9fbcd0285380fe39a8b20d12146187fbdc10ce3ff6610",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 10989191932,
+            "comparison_work": 463742807,
+            "visits": 6,
+            "transport_bytes": 920,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10989191932, comparison_work: 463742807, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/atax.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/atax-inputs.json",
+            "0"
+          ],
+          "pid": 64521,
+          "exit_code": 0,
+          "stdout_sha256": "4a1454c50fc7eae356c1d406c2d74d69d49cdc6fe73a6b13b67e3c386d2efd12",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 10989191932,
+            "comparison_work": 463742807,
+            "visits": 6,
+            "transport_bytes": 920,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10989191932, comparison_work: 463742807, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "bicg": {
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "inputs_sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/bicg.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/bicg-inputs.json",
+            "0"
+          ],
+          "pid": 64522,
+          "exit_code": 0,
+          "stdout_sha256": "88ed02accb3d74bd595d76a39e57c6aa30f904a9e9598ee775b745217476002d",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15085010616,
+            "comparison_work": 635036028,
+            "visits": 7,
+            "transport_bytes": 1136,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15085010616, comparison_work: 635036028, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/bicg.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/bicg-inputs.json",
+            "0"
+          ],
+          "pid": 64523,
+          "exit_code": 0,
+          "stdout_sha256": "aaa56ddbef9e610b35938b8a1fe6c8ce707d6e6db2fc219d69136ca4f1f3524b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15085010616,
+            "comparison_work": 635036028,
+            "visits": 7,
+            "transport_bytes": 1136,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15085010616, comparison_work: 635036028, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "cholesky": {
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "inputs_sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/cholesky.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/cholesky-inputs.json",
+            "0"
+          ],
+          "pid": 64524,
+          "exit_code": 0,
+          "stdout_sha256": "14370e2d6673310b4992a263acd2bcc069f35eaa65a131d7f7009da1f926477a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 9701738153400,
+            "comparison_work": 1620005485,
+            "visits": 7,
+            "transport_bytes": 14256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 9701738153400, comparison_work: 1620005485, visits: 7, transport_bytes: 14256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/cholesky.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/cholesky-inputs.json",
+            "0"
+          ],
+          "pid": 64525,
+          "exit_code": 0,
+          "stdout_sha256": "5ff4c5f862d4fd936fdc9e59fcf622edd5a6c6b76d622a58aab336a66def57e2",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 9701738153400,
+            "comparison_work": 1620005485,
+            "visits": 7,
+            "transport_bytes": 14256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 9701738153400, comparison_work: 1620005485, visits: 7, transport_bytes: 14256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "correlation": {
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "inputs_sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/correlation.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/correlation-inputs.json",
+            "0"
+          ],
+          "pid": 64526,
+          "exit_code": 0,
+          "stdout_sha256": "eb55c1b38e95b35886d8575f52dc2d4eb9607d88d9427fa0ac5fbb29980326d4",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 107847610004,
+            "comparison_work": 5082112974,
+            "visits": 27,
+            "transport_bytes": 8256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 107847610004, comparison_work: 5082112974, visits: 27, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/correlation.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/correlation-inputs.json",
+            "0"
+          ],
+          "pid": 64527,
+          "exit_code": 0,
+          "stdout_sha256": "f5e35b3bf9321d83c29a26f4ae16fb8f5c97c9be6e8b08ee5bbe6fce1fe0f361",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 107847610004,
+            "comparison_work": 5082112974,
+            "visits": 27,
+            "transport_bytes": 8256,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 107847610004, comparison_work: 5082112974, visits: 27, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "534",
+            "load": "     534:      \tldr\tq0, [x15, x1]",
+            "store": "     540:      \tstr\tq0, [x13, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "57c",
+            "load": "     57c:      \tldr\tq0, [x15, x1]",
+            "store": "     58c:      \tstr\tq0, [x13, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "5d0",
+            "load": "     5d0:      \tldr\tq16, [x14, x9]",
+            "store": "     5e0:      \tstr\tq16, [x13, x9]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "7d4",
+            "load": "     7d4:      \tldr\tq19, [x2, x6]",
+            "store": "     7e0:      \tstr\tq19, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "81c",
+            "load": "     81c:      \tldr\tq29, [x2, x5]",
+            "store": "     82c:      \tstr\tq29, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "870",
+            "load": "     870:      \tldr\tq0, [x1, x5]",
+            "store": "     880:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "c5c",
+            "load": "     c5c:      \tldr\tq0, [x12, x1]",
+            "store": "     c68:      \tstr\tq0, [x10, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "ca4",
+            "load": "     ca4:      \tldr\tq0, [x12, x2]",
+            "store": "     cb4:      \tstr\tq0, [x10, x2]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "cf8",
+            "load": "     cf8:      \tldr\tq6, [x11, x6]",
+            "store": "     d08:      \tstr\tq6, [x10, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "10cc",
+            "load": "    10cc:      \tldr\tq17, [x2, x5]",
+            "store": "    10d8:      \tstr\tq17, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1114",
+            "load": "    1114:      \tldr\tq27, [x2, x5]",
+            "store": "    1124:      \tstr\tq27, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1168",
+            "load": "    1168:      \tldr\tq0, [x1, x5]",
+            "store": "    1178:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "19d4",
+            "load": "    19d4:      \tldr\tq0, [x2, x6]",
+            "store": "    19e0:      \tstr\tq0, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1a1c",
+            "load": "    1a1c:      \tldr\tq1, [x2, x1]",
+            "store": "    1a2c:      \tstr\tq1, [x0, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1a70",
+            "load": "    1a70:      \tldr\tq16, [x1, x13]",
+            "store": "    1a80:      \tstr\tq16, [x0, x13]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1c70",
+            "load": "    1c70:      \tldr\tq23, [x2, x6]",
+            "store": "    1c7c:      \tstr\tq23, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1cb8",
+            "load": "    1cb8:      \tldr\tq0, [x2, x1]",
+            "store": "    1cc8:      \tstr\tq0, [x0, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1d0c",
+            "load": "    1d0c:      \tldr\tq0, [x1, x5]",
+            "store": "    1d1c:      \tstr\tq0, [x0, x5]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "covariance": {
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "inputs_sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/covariance.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/covariance-inputs.json",
+            "0"
+          ],
+          "pid": 64528,
+          "exit_code": 0,
+          "stdout_sha256": "9dc14ce88e4f6e69cbf82df5eea75f9e1b4e887145c06a5086c7bf9783ef0731",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 21313497752,
+            "comparison_work": 896970226,
+            "visits": 10,
+            "transport_bytes": 1464,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21313497752, comparison_work: 896970226, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/covariance.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/covariance-inputs.json",
+            "0"
+          ],
+          "pid": 64529,
+          "exit_code": 0,
+          "stdout_sha256": "801a1f4c82418055390118ba3b57a4988adffd7220c6064b9aae715c397ef2ff",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 21313497752,
+            "comparison_work": 896970226,
+            "visits": 10,
+            "transport_bytes": 1464,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21313497752, comparison_work: 896970226, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "580",
+            "load": "     580:      \tldr\tq16, [x2, x12]",
+            "store": "     58c:      \tstr\tq16, [x0, x12]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "5c8",
+            "load": "     5c8:      \tldr\tq22, [x2, x5]",
+            "store": "     5d8:      \tstr\tq22, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "61c",
+            "load": "     61c:      \tldr\tq0, [x1, x5]",
+            "store": "     62c:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "844",
+            "load": "     844:      \tldr\tq0, [x9, x1]",
+            "store": "     850:      \tstr\tq0, [x7, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "88c",
+            "load": "     88c:      \tldr\tq0, [x9, x1]",
+            "store": "     89c:      \tstr\tq0, [x7, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "8e0",
+            "load": "     8e0:      \tldr\tq3, [x8, x5]",
+            "store": "     8f0:      \tstr\tq3, [x7, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "e40",
+            "load": "     e40:      \tldr\tq0, [x0, x2]",
+            "store": "     e4c:      \tstr\tq0, [x14, x2]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "e88",
+            "load": "     e88:      \tldr\tq0, [x0, x1]",
+            "store": "     e98:      \tstr\tq0, [x14, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "edc",
+            "load": "     edc:      \tldr\tq16, [x15, x10]",
+            "store": "     eec:      \tstr\tq16, [x14, x10]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "deriche": {
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "inputs_sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/deriche.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/deriche-inputs.json",
+            "0"
+          ],
+          "pid": 64530,
+          "exit_code": 0,
+          "stdout_sha256": "ad59259a360f5d4e091b29919cd62b0493e234cbdd527832b77b8a57e6ab8036",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 314669088788039,
+            "comparison_work": 13112212093200,
+            "visits": 32,
+            "transport_bytes": 48144,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 314669088788039, comparison_work: 13112212093200, visits: 32, transport_bytes: 48144, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/deriche.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/deriche-inputs.json",
+            "0"
+          ],
+          "pid": 64531,
+          "exit_code": 0,
+          "stdout_sha256": "677181ed96c53aaee4758835be3d14f9b204ed076eb8ea8fb97acb252c30f823",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 314669088788039,
+            "comparison_work": 13112212093200,
+            "visits": 32,
+            "transport_bytes": 48144,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 314669088788039, comparison_work: 13112212093200, visits: 32, transport_bytes: 48144, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "79f0",
+            "load": "    79f0:      \tldr\tq7, [x2, x7]",
+            "store": "    79fc:      \tstr\tq7, [x0, x7]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "7a38",
+            "load": "    7a38:      \tldr\tq17, [x2, x5]",
+            "store": "    7a48:      \tstr\tq17, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "7a8c",
+            "load": "    7a8c:      \tldr\tq29, [x1, x5]",
+            "store": "    7a9c:      \tstr\tq29, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "d4d8",
+            "load": "    d4d8:      \tldr\tq16, [x2, x12]",
+            "store": "    d4e4:      \tstr\tq16, [x0, x12]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "d520",
+            "load": "    d520:      \tldr\tq22, [x2, x5]",
+            "store": "    d530:      \tstr\tq22, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "d574",
+            "load": "    d574:      \tldr\tq0, [x1, x5]",
+            "store": "    d584:      \tstr\tq0, [x0, x5]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "doitgen": {
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "inputs_sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/doitgen.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/doitgen-inputs.json",
+            "0"
+          ],
+          "pid": 64532,
+          "exit_code": 0,
+          "stdout_sha256": "0799f50709e69da13812eb049faf91e69ca4da4ba6388fea18651aa6dc9092d9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 3890892356,
+            "comparison_work": 164115741,
+            "visits": 4,
+            "transport_bytes": 664,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 3890892356, comparison_work: 164115741, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/doitgen.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/doitgen-inputs.json",
+            "0"
+          ],
+          "pid": 64533,
+          "exit_code": 0,
+          "stdout_sha256": "b2b7970c2764893dcbf03204ff7202c8050102f90ce411b152d4745816e82379",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 3890892356,
+            "comparison_work": 164115741,
+            "visits": 4,
+            "transport_bytes": 664,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 3890892356, comparison_work: 164115741, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "durbin": {
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "inputs_sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/durbin.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/durbin-inputs.json",
+            "0"
+          ],
+          "pid": 64534,
+          "exit_code": 0,
+          "stdout_sha256": "564ba41a125d6e661da72947f5ab550f1fc27a59090e60c73dc86e88e4b26aef",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 910634770216,
+            "comparison_work": 20662991317,
+            "visits": 6,
+            "transport_bytes": 16096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 910634770216, comparison_work: 20662991317, visits: 6, transport_bytes: 16096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/durbin.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/durbin-inputs.json",
+            "0"
+          ],
+          "pid": 64535,
+          "exit_code": 0,
+          "stdout_sha256": "a2455bd729ef58477bc056c1c16bf020e82c8b2d456854e4251f6dc456feb2f7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 910634770216,
+            "comparison_work": 20662991317,
+            "visits": 6,
+            "transport_bytes": 16096,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 910634770216, comparison_work: 20662991317, visits: 6, transport_bytes: 16096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_4",
+            "offset": "f2c",
+            "load": "     f2c:      \tldr\tq31, [x20, x0]",
+            "store": "     f30:      \tstr\tq31, [x7, x0]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "gemm": {
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "inputs_sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gemm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/gemm-inputs.json",
+            "0"
+          ],
+          "pid": 64536,
+          "exit_code": 0,
+          "stdout_sha256": "47afced5d014e35274a1e04c82029826f100819db2d66080e2f7f6b17567805c",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15107392560,
+            "comparison_work": 634325700,
+            "visits": 4,
+            "transport_bytes": 1312,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15107392560, comparison_work: 634325700, visits: 4, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gemm.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/gemm-inputs.json",
+            "0"
+          ],
+          "pid": 64537,
+          "exit_code": 0,
+          "stdout_sha256": "18bda655800f2b15c148ecd1f4d735effa12975781c152a6d87e748cb9b9ed73",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 15107392560,
+            "comparison_work": 634325700,
+            "visits": 4,
+            "transport_bytes": 1312,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 15107392560, comparison_work: 634325700, visits: 4, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "fac",
+            "load": "     fac:      \tldr\tq1, [x2, x6]",
+            "store": "     fb8:      \tstr\tq1, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "ff4",
+            "load": "     ff4:      \tldr\tq16, [x2, x11]",
+            "store": "    1004:      \tstr\tq16, [x0, x11]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1048",
+            "load": "    1048:      \tldr\tq23, [x1, x5]",
+            "store": "    1058:      \tstr\tq23, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "125c",
+            "load": "    125c:      \tldr\tq0, [x2, x5]",
+            "store": "    1268:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "12a4",
+            "load": "    12a4:      \tldr\tq0, [x2, x5]",
+            "store": "    12b4:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "12f8",
+            "load": "    12f8:      \tldr\tq0, [x1, x5]",
+            "store": "    1308:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "14fc",
+            "load": "    14fc:      \tldr\tq2, [x2, x5]",
+            "store": "    1508:      \tstr\tq2, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1544",
+            "load": "    1544:      \tldr\tq16, [x2, x12]",
+            "store": "    1554:      \tstr\tq16, [x0, x12]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1598",
+            "load": "    1598:      \tldr\tq24, [x1, x5]",
+            "store": "    15a8:      \tstr\tq24, [x0, x5]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "gramschmidt": {
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "inputs_sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gramschmidt.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/gramschmidt-inputs.json",
+            "0"
+          ],
+          "pid": 64538,
+          "exit_code": 0,
+          "stdout_sha256": "3ff14bf080ad5a76329a7ea4b4e183a6028fdcc4f0ebd1cac98766b822aec977",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 14242762042768,
+            "comparison_work": 135488226805,
+            "visits": 10,
+            "transport_bytes": 33048,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 14242762042768, comparison_work: 135488226805, visits: 10, transport_bytes: 33048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gramschmidt.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/gramschmidt-inputs.json",
+            "0"
+          ],
+          "pid": 64539,
+          "exit_code": 0,
+          "stdout_sha256": "f4e867f8f8958bfbba8f1ea6320264eed8386978d579df7f9a6191ebfed29411",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 14242762042768,
+            "comparison_work": 135488226805,
+            "visits": 10,
+            "transport_bytes": 33048,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 14242762042768, comparison_work: 135488226805, visits: 10, transport_bytes: 33048, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_5",
+            "offset": "15f4",
+            "load": "    15f4:      \tldr\tq0, [x14, x0]",
+            "store": "    15f8:      \tstr\tq0, [x10, x0]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_5",
+            "offset": "1de4",
+            "load": "    1de4:      \tldr\tq20, [x4, x1]",
+            "store": "    1de8:      \tstr\tq20, [x9, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_5",
+            "offset": "2470",
+            "load": "    2470:      \tldr\tq0, [x21, x0]",
+            "store": "    2474:      \tstr\tq0, [x5, x0]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_5",
+            "offset": "2a24",
+            "load": "    2a24:      \tldr\tq0, [x0, x7]",
+            "store": "    2a28:      \tstr\tq0, [x1, x7]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1_numeric_5",
+            "offset": "2c54",
+            "load": "    2c54:      \tldr\tq16, [x6, x0]",
+            "store": "    2c60:      \tstr\tq16, [x4, x0]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "mvt": {
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "inputs_sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/mvt.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/mvt-inputs.json",
+            "0"
+          ],
+          "pid": 64540,
+          "exit_code": 0,
+          "stdout_sha256": "d7f2dffc1f5f82c0a62360ccd1c0d7241d4dcb0c0e069cda5d746c84f48e6353",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 22723952224,
+            "comparison_work": 953988474,
+            "visits": 7,
+            "transport_bytes": 1568,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 22723952224, comparison_work: 953988474, visits: 7, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/mvt.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/mvt-inputs.json",
+            "0"
+          ],
+          "pid": 64541,
+          "exit_code": 0,
+          "stdout_sha256": "2891789eac5850d8e14c7ec52ff24f6c713dfd2fb5893d7699ebf78e7b06f983",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 22723952224,
+            "comparison_work": 953988474,
+            "visits": 7,
+            "transport_bytes": 1568,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 22723952224, comparison_work: 953988474, visits: 7, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "cc8",
+            "load": "     cc8:      \tldr\tq24, [x2, x6]",
+            "store": "     cd4:      \tstr\tq24, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "d10",
+            "load": "     d10:      \tldr\tq0, [x2, x5]",
+            "store": "     d20:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "d64",
+            "load": "     d64:      \tldr\tq0, [x1, x5]",
+            "store": "     d74:      \tstr\tq0, [x0, x5]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1af0",
+            "load": "    1af0:      \tldr\tq24, [x2, x6]",
+            "store": "    1afc:      \tstr\tq24, [x0, x6]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1b38",
+            "load": "    1b38:      \tldr\tq0, [x2, x1]",
+            "store": "    1b48:      \tstr\tq0, [x0, x1]"
+          },
+          {
+            "function": "mech_canonical_program_entry_v1",
+            "offset": "1b8c",
+            "load": "    1b8c:      \tldr\tq0, [x1, x5]",
+            "store": "    1b9c:      \tstr\tq0, [x0, x5]"
+          }
+        ],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "nussinov": {
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "inputs_sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "actors": {
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/nussinov.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/nussinov-inputs.json",
+            "0"
+          ],
+          "pid": 64542,
+          "exit_code": 0,
+          "stdout_sha256": "285c4883508278960a50f58c573ea1c8872303da1283737ad8e55841beeef45d",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 4301681332,
+            "comparison_work": 37823,
+            "visits": 8,
+            "transport_bytes": 17224,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 4301681332, comparison_work: 37823, visits: 8, transport_bytes: 17224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/nussinov.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/nussinov-inputs.json",
+            "0"
+          ],
+          "pid": 64543,
+          "exit_code": 0,
+          "stdout_sha256": "17128eb3871dd911dc90d893d7333240ac1433876858aa543ad470edf79fa5c8",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 4301681332,
+            "comparison_work": 37823,
+            "visits": 8,
+            "transport_bytes": 17224,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 4301681332, comparison_work: 37823, visits: 8, transport_bytes: 17224, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    },
+    "seidel-2d": {
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "inputs_sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "actors": {
+        "accepted54": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-58/typed-map-folds/typed-map-folds-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/seidel-2d.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/seidel-2d-inputs.json",
+            "0"
+          ],
+          "pid": 64544,
+          "exit_code": 0,
+          "stdout_sha256": "7cb8885be65299df6be9830df8680979a979b7e324cb8df8c0fcdfe84c5b7a24",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 2360655156,
+            "comparison_work": 29663,
+            "visits": 7,
+            "transport_bytes": 13544,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2360655156, comparison_work: 29663, visits: 7, transport_bytes: 13544, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        },
+        "candidate": {
+          "command": [
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/selected-map-spans-driver",
+            "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/seidel-2d.mec",
+            "/private/tmp/mech-polybench-optimization/round-60/selected-map-spans/seidel-2d-inputs.json",
+            "0"
+          ],
+          "pid": 64545,
+          "exit_code": 0,
+          "stdout_sha256": "64fe2175ed2628bdaac366e749cebed78b6bbf0a84367e88e1b7d22e7fb07695",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "counters": {
+            "work": 2360655156,
+            "comparison_work": 29663,
+            "visits": 7,
+            "transport_bytes": 13544,
+            "hash_table_regions": 0,
+            "hash_table_updates": 0,
+            "packed_map_regions": 0,
+            "direct_lookup_regions": 0,
+            "packed_map_updates": 0,
+            "packed_ssa_regions": 0,
+            "guarded_loop_regions": 0,
+            "guarded_call_regions": 0,
+            "frozen_map_regions": 0,
+            "frozen_map_reads": 0,
+            "worker_credit_claims": 0,
+            "worker_credit_batches": 0,
+            "worker_credit_reclaims": 0,
+            "fused_string_map_bytes": 0,
+            "parallel_regions": 0,
+            "parallel_batches": 0,
+            "parallel_tasks": 0,
+            "parallel_peak_workers": 0,
+            "parallel_numeric_regions": 0,
+            "parallel_numeric_work": 0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2360655156, comparison_work: 29663, visits: 7, transport_bytes: 13544, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "timing_samples": 0
+        }
+      },
+      "deltas": {
+        "work": 0,
+        "comparison_work": 0,
+        "visits": 0,
+        "transport_bytes": 0,
+        "hash_table_regions": 0,
+        "hash_table_updates": 0,
+        "packed_map_regions": 0,
+        "direct_lookup_regions": 0,
+        "packed_map_updates": 0,
+        "packed_ssa_regions": 0,
+        "guarded_loop_regions": 0,
+        "guarded_call_regions": 0,
+        "frozen_map_regions": 0,
+        "frozen_map_reads": 0,
+        "worker_credit_claims": 0,
+        "worker_credit_batches": 0,
+        "worker_credit_reclaims": 0,
+        "fused_string_map_bytes": 0,
+        "parallel_regions": 0,
+        "parallel_batches": 0,
+        "parallel_tasks": 0,
+        "parallel_peak_workers": 0,
+        "parallel_numeric_regions": 0,
+        "parallel_numeric_work": 0
+      },
+      "all_counters_match": true,
+      "work_not_reduced": true,
+      "other_counters_match": true,
+      "visit_proof": {
+        "proved": true,
+        "kind": "unchanged",
+        "expected_delta": 0,
+        "actual_delta": 0,
+        "source_views": [],
+        "evidence": "Completed selected scratch is published as exact clipped physical row spans after all original checked evaluation. Source order/arithmetic, first failures, guards, callbacks, fees and visits remain; no runtime ABI or buffer change."
+      },
+      "passed": true
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "completed_at": "2026-11-28T10:45:48.509900+00:00",
+  "passed": true,
+  "finite_liveouts": 17002,
+  "source_and_driver_unchanged": true
+}
