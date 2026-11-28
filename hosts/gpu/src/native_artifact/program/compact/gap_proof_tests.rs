@@ -208,3 +208,112 @@ fn nonzero_pack_requires_both_cursor_updates_and_preserves_faults() {
     FuncCursor::new(&mut f).at_inst(skip).ins().udiv(one, zero);
     assert!(prove(&f).is_none());
 }
+
+fn code_price_loop(endpoint: i64) -> Function {
+    let mut f = Function::new();
+    f.signature.params.extend([AbiParam::new(types::I64); 3]);
+    f.signature.returns.extend([AbiParam::new(types::I64); 2]);
+    let mut context = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut f, &mut context);
+    let [
+        entry,
+        head,
+        entry_bound,
+        price_bound,
+        read,
+        lookup,
+        choose,
+        fallback,
+        short,
+        long,
+        store,
+        done,
+        error,
+    ] = core::array::from_fn(|_| b.create_block());
+    b.append_block_params_for_function_params(entry);
+    let index = b.append_block_param(head, types::I64);
+    let width = b.append_block_param(choose, types::I64);
+    let selected = b.append_block_param(store, types::I64);
+    b.switch_to_block(entry);
+    let packet = b.block_params(entry)[1];
+    let mem = MemFlags::new();
+    let mut field = |offset| b.ins().load(types::I64, mem, packet, offset);
+    let [at, prices, price_len, codes, code_len, entries, entry_len] =
+        [0, 8, 16, 40, 48, 72, 80].map(&mut field);
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    b.ins().jump(head, &[at.into()]);
+
+    b.switch_to_block(head);
+    let more = b.ins().icmp_imm(IntCC::UnsignedLessThan, index, endpoint);
+    b.ins().brif(more, entry_bound, &[], done, &[]);
+    b.switch_to_block(entry_bound);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThan, index, entry_len);
+    b.ins().brif(fits, price_bound, &[], error, &[]);
+    b.switch_to_block(price_bound);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThan, index, price_len);
+    b.ins().brif(fits, read, &[], error, &[]);
+
+    b.switch_to_block(read);
+    let offset = b.ins().ishl_imm(index, 1);
+    let address = b.ins().iadd(entries, offset);
+    let packed = b.ins().uload16(types::I64, mem, address, 0);
+    let symbol = b.ins().band_imm(packed, 511);
+    let extra = b.ins().ushr_imm(packed, 9);
+    let known = b.ins().icmp(IntCC::UnsignedLessThan, symbol, code_len);
+    b.ins().brif(known, lookup, &[], choose, &[zero.into()]);
+    b.switch_to_block(lookup);
+    let address = indexed(&mut b, codes, symbol);
+    let code = b.ins().uload32(mem, address, 0);
+    let code_width = b.ins().ushr_imm(code, 16);
+    b.ins().jump(choose, &[code_width.into()]);
+
+    b.switch_to_block(choose);
+    let nonzero = b.ins().icmp_imm(IntCC::NotEqual, width, 0);
+    b.ins().brif(nonzero, store, &[width.into()], fallback, &[]);
+    b.switch_to_block(fallback);
+    let small = b.ins().icmp_imm(IntCC::UnsignedLessThan, symbol, 288);
+    b.ins().brif(small, short, &[], long, &[]);
+    b.switch_to_block(short);
+    let short_width = b.ins().iconst(types::I64, 13);
+    b.ins().jump(store, &[short_width.into()]);
+    b.switch_to_block(long);
+    let long_width = b.ins().iconst(types::I64, 10);
+    b.ins().jump(store, &[long_width.into()]);
+    b.switch_to_block(store);
+    let price = b.ins().iadd(selected, extra);
+    let price = b.ins().imul_imm(price, 16);
+    let price = b.ins().ireduce(types::I32, price);
+    let address = indexed(&mut b, prices, index);
+    b.ins().store(mem, price, address, 0);
+    let next = b.ins().iadd_imm(index, 1);
+    b.ins().jump(head, &[next.into()]);
+    b.switch_to_block(done);
+    b.ins().return_(&[zero, zero]);
+    b.switch_to_block(error);
+    b.ins().return_(&[one, zero]);
+    b.seal_all_blocks();
+    b.finalize();
+    f
+}
+
+#[test]
+fn code_prices_require_the_exact_complete_endpoint() {
+    use super::price::code_prices;
+
+    assert!(code_prices(&code_price_loop(547)).is_some());
+    let accepted = [259, 515, 546, 548]
+        .into_iter()
+        .filter(|&end| {
+            let f = code_price_loop(end);
+            let original = f.display().to_string();
+            let accepted = code_prices(&f).is_some();
+            assert_eq!(f.display().to_string(), original);
+            accepted
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        accepted.is_empty(),
+        "incorrect endpoints admitted: {accepted:?}"
+    );
+}

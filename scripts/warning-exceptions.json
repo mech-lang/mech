@@ -961,7 +961,7 @@
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
       "path": "vendor/cranelift-codegen/src/context.rs",
-      "sha256": "c82549a34655ba3d39edd5832aeae3c6c59e874bbeabebc678477941be3a03d2"
+      "sha256": "e693bf7b36b5c23ed679c2822e72ce36db0f193a278df2d702bd6a2e211ee075"
     },
     {
       "attributes": [

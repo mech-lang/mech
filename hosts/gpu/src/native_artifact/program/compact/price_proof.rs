@@ -228,6 +228,17 @@ pub(crate) struct Codes {
     pub at: Value,
 }
 
+fn code_price_decision(word: Word, finish: bool) -> Option<bool> {
+    match word {
+        // Code prices have one fixed endpoint. The blend's intermediate
+        // segment boundaries cannot justify pricing through its final end.
+        Word::Compare(IntCC::UnsignedLessThan, index, end) if *index == INDEX => {
+            (*end == Word::Constant(ENDS[2])).then_some(!finish)
+        }
+        other => decision(other, if finish { ENDS.len() } else { 0 }),
+    }
+}
+
 pub(crate) fn code_prices(f: &Function) -> Option<Codes> {
     let entry = f.layout.entry_block()?;
     let [heap, packet, output] = f.dfg.block_params(entry) else {
@@ -331,7 +342,7 @@ pub(crate) fn code_prices(f: &Function) -> Option<Codes> {
                 if word == has_width {
                     return Some(nonzero);
                 }
-                decision(word, 0)
+                code_price_decision(word, false)
             },
             &effects,
         )?;
@@ -340,7 +351,7 @@ pub(crate) fn code_prices(f: &Function) -> Option<Codes> {
         &mut path.clone(),
         top,
         true,
-        |word| decision(word, ENDS.len()),
+        |word| code_price_decision(word, true),
         &[],
     )?;
     Some(Codes {

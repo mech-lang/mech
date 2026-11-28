@@ -80,7 +80,7 @@ fn general_numeric_addresses_emit_one_machine_division() {
             let emitted = assembly.split(";; REGALLOC_INPUT_BEGIN").next().unwrap();
             let divisions = emitted
                 .lines()
-                .filter(|line| line.contains("udiv "))
+                .filter(|line| line.trim_start().starts_with("udiv "))
                 .count();
             assert_eq!(divisions, 1, "width={width}\n{emitted}");
         }
