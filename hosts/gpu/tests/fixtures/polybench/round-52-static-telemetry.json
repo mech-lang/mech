@@ -1,0 +1,1295 @@
+{
+  "schema": "mech.polybench.reduction-producer-static-telemetry.v1",
+  "scope": "Optimization15 genuine checked Object exports and emitted static instructions only. No linked Object execution, timing samples, retired hardware instructions or measured memory traffic.",
+  "compiler_fingerprint": "3bc0dc1088d118108a81943224740ad1d37970f3122e8f4c054d191716b759a0",
+  "driver_sha256": "809f4d26ba44ff5423c9481c2f5dea1a366d7e416f82f69ca617dece916afb93",
+  "cases": {
+    "2mm": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 6776,
+          "object_file_bytes": 28408,
+          "static_instruction_count": 1694,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1694,
+              "disassembly_sha256": "b19949f9edc73cc54beb251e4aed266c28c5618f37573a8432fcdc424e32c2c1"
+            }
+          },
+          "object_sha256": "0e29059e995cc44c17b789ac88f4362195847a855f4415ef250a86873d644e43",
+          "metadata_sha256": "f4ef5af86e7b98c4e58928a5febd501a755926e343f47564e2526ad907764a91",
+          "disassembly_sha256": "f338b88290f90fa8707d7bb3ecae4d5a783b1b693c0a226456821aa4bb18b488",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "load_instruction_sites": 202,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 16,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 6776,
+          "object_file_bytes": 28408,
+          "static_instruction_count": 1694,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1694,
+              "disassembly_sha256": "b19949f9edc73cc54beb251e4aed266c28c5618f37573a8432fcdc424e32c2c1"
+            }
+          },
+          "object_sha256": "24a591a137cc42070872035a8f41fe797e63ae798b0e4f771f9d71da7bd1517f",
+          "metadata_sha256": "57dfd7d1b51201250accc01420ea39ecf8d67f829230381e674581ee73208383",
+          "disassembly_sha256": "96ce193ccdfe911d4cdba3222536b204d215d728560eff5b6126a8ae6d53b999",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                6
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                4
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8,
+                9
+              ],
+              "end": 6,
+              "entry": 4,
+              "external": [
+                7,
+                2,
+                5,
+                3
+              ],
+              "operators": [
+                4,
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                4,
+                5,
+                6
+              ]
+            }
+          ],
+          "load_instruction_sites": 202,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 16,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "3mm": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 2848,
+          "object_file_bytes": 17760,
+          "static_instruction_count": 712,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 712,
+              "disassembly_sha256": "608343ff774222b2f4c200c6bfafc7500129cc80e078263e75758261f88ec3d5"
+            }
+          },
+          "object_sha256": "45d60a7f1e6fca4930226284961c1582f6b6e291fb0d818675ebf229efed9a92",
+          "metadata_sha256": "1342034c14ee980ac21647cdd58ad270c6cdb310ceb648e3001465bc25adcc9a",
+          "disassembly_sha256": "011d235ee8fd0afd8d038b56ea6f75c1941de393bc4843fbdb0335bfd33e66c5",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 86,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2848,
+          "object_file_bytes": 17760,
+          "static_instruction_count": 712,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 712,
+              "disassembly_sha256": "608343ff774222b2f4c200c6bfafc7500129cc80e078263e75758261f88ec3d5"
+            }
+          },
+          "object_sha256": "1a83f74b570a3f690fafecad43a01f7cee9eafe2b2944c343c160648e6cb325c",
+          "metadata_sha256": "53747b7f48e0904ed54fa2018706b1f0626dc0481e7a0f3f1475ed3526e32322",
+          "disassembly_sha256": "bad2a3205cc2cb9533f1d340b47615b8d560b2c9ac67e617c64568dd82ff0723",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 86,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 3,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "atax": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 2792,
+          "object_file_bytes": 17648,
+          "static_instruction_count": 698,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 698,
+              "disassembly_sha256": "a2f9406b36e0af6f289dfb8cbca8c49a1a4393774c9429ceeb29d6add92bdc87"
+            }
+          },
+          "object_sha256": "d0a22598e7d7a3a7764ee9f564393fce29fd33cfa84664a1323272ea2731894f",
+          "metadata_sha256": "bb234547e332235e5ded04af49865b59767ac74eac0d01e410d76fa009f114d3",
+          "disassembly_sha256": "e98c9e16f94c052717453602a1a21cb0b975639da3ff0feea714c7aca3e87194",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 80,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2792,
+          "object_file_bytes": 17648,
+          "static_instruction_count": 698,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 698,
+              "disassembly_sha256": "a2f9406b36e0af6f289dfb8cbca8c49a1a4393774c9429ceeb29d6add92bdc87"
+            }
+          },
+          "object_sha256": "2121cbf897b9ea60bfdf461a8d55266fda00d38e9c11bfc34a1e83f134ec4b4e",
+          "metadata_sha256": "c67e126576a14d59aafe796166dbac84b168b52a3917e00b71313d30c9fb61b1",
+          "disassembly_sha256": "914ccd549e86d9ca3a1f0001bdfcf3eed45d02896ee308f07de278e699876c82",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 80,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "bicg": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 2764,
+          "object_file_bytes": 24712,
+          "static_instruction_count": 691,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 691,
+              "disassembly_sha256": "0ac6e57933da0e7d3e1bd06b6d896514d7190f833981c0ee81490ba9c4b453bf"
+            }
+          },
+          "object_sha256": "b89154c073dfa5056f1aa8e86355fa8bc2be5fc562834f42bae10d1ca6748cdb",
+          "metadata_sha256": "3f61df08fbe927f08fd19c84541c4d70fe746bcfa4816654862b4e5ae682f5e9",
+          "disassembly_sha256": "01b2edf7f762d50f4df02e43e92ad15868bc6bcaf5276d169b42382552b5e98d",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 80,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 2764,
+          "object_file_bytes": 24712,
+          "static_instruction_count": 691,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 691,
+              "disassembly_sha256": "0ac6e57933da0e7d3e1bd06b6d896514d7190f833981c0ee81490ba9c4b453bf"
+            }
+          },
+          "object_sha256": "d57743367e08306c5b16c75b176d8b9e7b678cc9189651aa4ee019ab106853fd",
+          "metadata_sha256": "c53c1beb4734fed611275e4b704686009dcac9732fbbeafb475cfde33a5e736c",
+          "disassembly_sha256": "2e005fadf9d13fffb6e1ccb04ac46460d9317cfda24d2d578076447530a32f32",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 80,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 4,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "cholesky": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 19944,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4986,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1650,
+              "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3336,
+              "disassembly_sha256": "ea3a0429ebef21e8421e5cf5688a8b4a9004a69c05b0b0f162c36451b54883f1"
+            }
+          },
+          "object_sha256": "a240302cab8ad2b06e215730d62a62064ac0c93e28f17a880e9e77c4f74e70f2",
+          "metadata_sha256": "cbae69ed6d05bddbd53d0a62e80906e40d29b134e232891b47eac3ec219a017f",
+          "disassembly_sha256": "2be076a400887e4052376417429d94d083e2fb7bee8e374bfd01ee47c7c99e66",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 1060,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19944,
+          "object_file_bytes": 134416,
+          "static_instruction_count": 4986,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1650,
+              "disassembly_sha256": "7692e589878e8cd15bd0dc9eecafb1d36473320387408b992402cdb5b729cac9"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3336,
+              "disassembly_sha256": "ea3a0429ebef21e8421e5cf5688a8b4a9004a69c05b0b0f162c36451b54883f1"
+            }
+          },
+          "object_sha256": "c2becb1654213353277ed1a1d3a4988dd509c3a1b5cedf8ae031fcb147c306c0",
+          "metadata_sha256": "04d0fdb65a6a0aff203d2d5f3ca30ccdf16a09c300f6e7bd45b3cb38d8ac2e19",
+          "disassembly_sha256": "88563bb8e686e2738c70cebd0cc9bede687b189afce167a5f4311809d7521bb3",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 1060,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "correlation": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 14096,
+          "object_file_bytes": 82960,
+          "static_instruction_count": 3524,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3524,
+              "disassembly_sha256": "866422e2794b41081829aa16b0726524ce8f0e9b352a0cf31af653194fe5435f"
+            }
+          },
+          "object_sha256": "8a2e3ac707d98a939553af0187bcdaee5c2181cf8693d24600315f0bea6f8a74",
+          "metadata_sha256": "9ee6602f6ee85d822cb2bc97c9f9cdaf3219af87a8b28cb4589602851d379f52",
+          "disassembly_sha256": "67f133fd83b8a0d7bc74f9a2c79e93932119c94b96da649744683364e148a772",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 650,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 28,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 14620,
+          "object_file_bytes": 83488,
+          "static_instruction_count": 3655,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3655,
+              "disassembly_sha256": "53e88c3236aef59cf18ee87d8e9f9e0306e75e2d1aac8ba1f92b18f2f71b5848"
+            }
+          },
+          "object_sha256": "6848037f53dd0b32586a050d4034d42a4f26f6cf1227273ac8724884a3daf1b9",
+          "metadata_sha256": "c4fc7bb9688f041302f37a0d64fefce30edfeeb350e02a9883748fdbebb1a60c",
+          "disassembly_sha256": "412850e753a5f1bb971558cd60c875f19974eee7bb7d845d347be85076fed8ac",
+          "object_executed": false,
+          "reduction_producers": [
+            {
+              "axis": 0,
+              "elided_values": [
+                11
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                10
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "product_epilogues": [],
+          "load_instruction_sites": 673,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 28,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": false,
+      "code_bytes_match": false,
+      "division_site_delta": 0
+    },
+    "covariance": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 5160,
+          "object_file_bytes": 30648,
+          "static_instruction_count": 1290,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1290,
+              "disassembly_sha256": "ac2f30d75cb8b995af2c1824680f048296aea07f0e26e1f0656e6692262dd32c"
+            }
+          },
+          "object_sha256": "f1c703ae274f7a8c20c4ba16f08c7f76fdfccfa636fe75f493b8ed26193d70b1",
+          "metadata_sha256": "3481317eb296095c92f80b4f92c7290ce88ee08e269592ac92adc6b4314795de",
+          "disassembly_sha256": "ac1b979ad7ee26fb41c6f72bd51fea7826c27bab9e825c8594760d4ffd0ed4fa",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 150,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 15,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 5160,
+          "object_file_bytes": 30648,
+          "static_instruction_count": 1290,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1290,
+              "disassembly_sha256": "ac2f30d75cb8b995af2c1824680f048296aea07f0e26e1f0656e6692262dd32c"
+            }
+          },
+          "object_sha256": "67a573a9a2eddd310f9f7bd46727cffc8723bf49fbf1bf13870cb4575c0b997a",
+          "metadata_sha256": "9222df9f75f7c516cb257686926968f880e095f8a0c3cf079a4ee1679d78918a",
+          "disassembly_sha256": "14150f89418f43aa89e95863bafdc050ed5f310e460763e0edc26bb1ba904614",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 150,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 15,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "deriche": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 62308,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "0206deff30b7725316c470442a898fac238bf842a5add47ef789f9b46b3977cf",
+          "metadata_sha256": "3ae34b81ad9f99b3f1c43a3381eef34b168f5e37caca328b0f779dd14f4c92d6",
+          "disassembly_sha256": "4fbf07d8138060bdace0a8330e8ad0912eddc3138ac83660efdae03f4f1470f1",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 3540,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 62308,
+          "object_file_bytes": 404840,
+          "static_instruction_count": 15577,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_67": {
+              "instructions": 753,
+              "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_142": {
+              "instructions": 686,
+              "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377"
+            },
+            "mech_canonical_program_entry_v1_numeric_232": {
+              "instructions": 753,
+              "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7"
+            },
+            "mech_canonical_program_entry_v1_numeric_307": {
+              "instructions": 686,
+              "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 12699,
+              "disassembly_sha256": "9ab138cbc285cf96056dc88d41f0736d0674538c7e1d82496a8f4030e9743d1f"
+            }
+          },
+          "object_sha256": "a8f7a7f1c6d4f3a8d9b9fa5bf12e7b52132124f8ede8bf9c0c9424e831d3c429",
+          "metadata_sha256": "8ad38be34c73e5529aa39599913ed4dbddc56361c34095a7d978aeaebd0eab12",
+          "disassembly_sha256": "d669bf5ef5acdfc236f7bffee7992ae52b2544d45b89efed4fdee2c23ad111e4",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 3540,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 8,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "doitgen": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 1464,
+          "object_file_bytes": 13000,
+          "static_instruction_count": 366,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 366,
+              "disassembly_sha256": "bc90af6eedabc56dc6d027741a413b23fd993aedf1ec49ef4481ec0a7f3a5edd"
+            }
+          },
+          "object_sha256": "1f363593806cd07848e80ad47ae8eb32987b1d7bcbb985e3992b5af684dbcebe",
+          "metadata_sha256": "65622f92d422b742ef18059e927449d14a3497b8c15c1ad1268785750f390c08",
+          "disassembly_sha256": "50c976a51ae2b855f84ce0d3162116ade82a1c9fa1cde842c84c92bdaf0dbc65",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 48,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 1,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 1464,
+          "object_file_bytes": 13000,
+          "static_instruction_count": 366,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 366,
+              "disassembly_sha256": "bc90af6eedabc56dc6d027741a413b23fd993aedf1ec49ef4481ec0a7f3a5edd"
+            }
+          },
+          "object_sha256": "8bfc81b0286aedb42853fe2c32fa6b46a1ae4d95068514729c8eefd8d1fc4da3",
+          "metadata_sha256": "a2be7dd86422b3a3e2dec3d08ea7a4370076733ed0775f102f43caac357c4417",
+          "disassembly_sha256": "2171ce422b2f6b488252aa953cdc84e0e9ed67d5543102dc25177809c5970be7",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 48,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 1,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "durbin": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 20968,
+          "object_file_bytes": 144800,
+          "static_instruction_count": 5242,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1902,
+              "disassembly_sha256": "a1cc7b7ebb5ac5305e8f258b2b2db2630bc185c20e7f5f8e2132bb8016b58d2f"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3340,
+              "disassembly_sha256": "d6d8a5a9e1b957d0215ffa1f2a5678f6fa368a08cb5e5c074ace43651300b44e"
+            }
+          },
+          "object_sha256": "65c3ddb20c3ffd0b20b8f6fe2f873fa33488aa01d78e7dd69451228c953fde76",
+          "metadata_sha256": "553af1d32141e1b1cbcf6d3da830e970e141eb3dfeb74d67e938783e0255862e",
+          "disassembly_sha256": "377da68629a142d9bbc7d00a59d22007c28ab7a525b45bab5875b2db98a9281f",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 1056,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 20968,
+          "object_file_bytes": 144800,
+          "static_instruction_count": 5242,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_4": {
+              "instructions": 1902,
+              "disassembly_sha256": "a1cc7b7ebb5ac5305e8f258b2b2db2630bc185c20e7f5f8e2132bb8016b58d2f"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3340,
+              "disassembly_sha256": "d6d8a5a9e1b957d0215ffa1f2a5678f6fa368a08cb5e5c074ace43651300b44e"
+            }
+          },
+          "object_sha256": "f41594458d20ec793c13171a64b62a6d8bb53ab02d7571b847c623816882a241",
+          "metadata_sha256": "e4d6719d96428af9ec12880b42ebbac4d9af0fcea5157e24290f164712e05dde",
+          "disassembly_sha256": "5bd4284baa333c5100e6ea2b3c149a3bc96eb294907aa719270f82c06f14a250",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 1056,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [
+            [
+              53,
+              58,
+              320
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              53,
+              0,
+              [
+                [
+                  0,
+                  31,
+                  3
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "gemm": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 5316,
+          "object_file_bytes": 25264,
+          "static_instruction_count": 1329,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1329,
+              "disassembly_sha256": "84e2ae5809a4b018459a06d3f6ff047cdd55ffc90f17658f02cc14b6d9433f51"
+            }
+          },
+          "object_sha256": "c3590f281a76e8bacdd455dbee1c651ff131733ff2b1afd8e6eaf81e1f336070",
+          "metadata_sha256": "5fec04870046824e1cf787f5070281026fefe250aeb995f38d9ada0cfa3841bc",
+          "disassembly_sha256": "a4867820f551b6f237a5d52056ec3324a5858838f47a32a420dabcf8f682f50b",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "load_instruction_sites": 160,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 5316,
+          "object_file_bytes": 25264,
+          "static_instruction_count": 1329,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1329,
+              "disassembly_sha256": "84e2ae5809a4b018459a06d3f6ff047cdd55ffc90f17658f02cc14b6d9433f51"
+            }
+          },
+          "object_sha256": "4a689ebce251e92ac61b6a6c57b78768dd15a8c81b4d22d8693e6027f06b12f2",
+          "metadata_sha256": "5d799aa538c8a21c1568744f6d0bb204b75b951aa74d1b584ca4f4f7ff1cd231",
+          "disassembly_sha256": "2528f98a44c1c9ce9da4a52754875383692c72cef168e9e518f6c7ca74c829f7",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5,
+                6,
+                7
+              ],
+              "end": 5,
+              "entry": 2,
+              "external": [
+                0,
+                1,
+                3,
+                4,
+                2
+              ],
+              "operators": [
+                2,
+                3,
+                4,
+                5
+              ],
+              "parent": null,
+              "resume": 6,
+              "sites": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ],
+          "load_instruction_sites": 160,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "gramschmidt": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 52992,
+          "object_file_bytes": 269904,
+          "static_instruction_count": 13248,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4866,
+              "disassembly_sha256": "654ba70ad4f873536f2b39685ee91514862cd0340f2115c216e57ab073fd7d1c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8382,
+              "disassembly_sha256": "5f15a27ee717b59f19d76f7d3db888e71abb970471f7f9d212640afe7befe6e9"
+            }
+          },
+          "object_sha256": "345f05f797fe8d84ac6d5946c885acaabdd77b07c0e20ee34a89b799d9882eae",
+          "metadata_sha256": "088bb44113e6bdf18f69fa51fc679236abe455c67e2e4db534eead4fc3d2c35a",
+          "disassembly_sha256": "efaf9956c19b9882ca108a5f0353653edd9f1fbcd02425d6aba65b9358c62aba",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 3230,
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 52992,
+          "object_file_bytes": 269904,
+          "static_instruction_count": 13248,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 4866,
+              "disassembly_sha256": "654ba70ad4f873536f2b39685ee91514862cd0340f2115c216e57ab073fd7d1c"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 8382,
+              "disassembly_sha256": "5f15a27ee717b59f19d76f7d3db888e71abb970471f7f9d212640afe7befe6e9"
+            }
+          },
+          "object_sha256": "8ec4ab0f337e1b4a99682ab68bbfe7245df097bd610d989dd27237d197f708d5",
+          "metadata_sha256": "66d6fe3ba4738f2d75188d353a989487ba6d0ef0d46462cab10a70065ef40cd8",
+          "disassembly_sha256": "8709fd862b6121529a6bb3cc5378f2d62979c5327313abf3c9288b691760774b",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 3230,
+          "masked_matrix_maps": [
+            [
+              84,
+              103,
+              1
+            ],
+            [
+              118,
+              137,
+              0
+            ],
+            [
+              171,
+              190,
+              1
+            ]
+          ],
+          "guarded_map_initializations": [
+            [
+              84,
+              103,
+              4800
+            ],
+            [
+              118,
+              137,
+              7200
+            ],
+            [
+              171,
+              190,
+              4800
+            ]
+          ],
+          "compound_matrix_maps": [
+            [
+              118,
+              1,
+              [
+                [
+                  0,
+                  22,
+                  2
+                ],
+                [
+                  1,
+                  22,
+                  6
+                ]
+              ]
+            ]
+          ],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "mvt": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 6940,
+          "object_file_bytes": 34248,
+          "static_instruction_count": 1735,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1735,
+              "disassembly_sha256": "b3955a3a2d3832b144d5c91d893cf0c45bc5ffd0ce8e67e69cbc9b0c8ce1dcf5"
+            }
+          },
+          "object_sha256": "f06dcac705d63facc9e5e64bc62903c54c21fd25d5536a59847fdb0682cd2780",
+          "metadata_sha256": "da6bbdf61c2ee4879463ea47017bbcd532dedd79e81db7597e391eab4e62f31d",
+          "disassembly_sha256": "3005cc0a93f3468297f2d6c1dd381854f394a56adf433cefad436764c0b1e4b3",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "load_instruction_sites": 187,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 6940,
+          "object_file_bytes": 34248,
+          "static_instruction_count": 1735,
+          "functions": {
+            "mech_canonical_program_entry_v1": {
+              "instructions": 1735,
+              "disassembly_sha256": "b3955a3a2d3832b144d5c91d893cf0c45bc5ffd0ce8e67e69cbc9b0c8ce1dcf5"
+            }
+          },
+          "object_sha256": "0b5e700437abab970aa914dbdab1303de953444fdd4ed6731585f22776fad30d",
+          "metadata_sha256": "cf7dee2652fa782005afe949928936112201351ca10c5dcbffb2ead60177db7f",
+          "disassembly_sha256": "eef70c5ee247da294d63b43ea46d0a903479ac8ba3b944e2f7eb2985bb666594",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [
+            {
+              "elided_values": [
+                5
+              ],
+              "end": 3,
+              "entry": 2,
+              "external": [
+                0,
+                2,
+                1
+              ],
+              "operators": [
+                2,
+                3
+              ],
+              "parent": null,
+              "resume": 4,
+              "sites": [
+                2,
+                3
+              ]
+            },
+            {
+              "elided_values": [
+                8
+              ],
+              "end": 6,
+              "entry": 5,
+              "external": [
+                7,
+                4,
+                3
+              ],
+              "operators": [
+                5,
+                6
+              ],
+              "parent": null,
+              "resume": 7,
+              "sites": [
+                5,
+                6
+              ]
+            }
+          ],
+          "load_instruction_sites": 187,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 14,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "nussinov": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 19360,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "a611bb62593370c2ab4ff377ea5ede795efdcc0012c06ed1815e2f2d097b8afd",
+          "metadata_sha256": "d0a29cd04cac3d3176e957b6d6990fc34db5be8d3bd6445e7bc396745e5d09a1",
+          "disassembly_sha256": "17a13a8e0efb84f0036b2d71764c455ecab36b55793a9f1c17b5ac81e2e73dcf",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 968,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 19360,
+          "object_file_bytes": 168504,
+          "static_instruction_count": 4840,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_6": {
+              "instructions": 1404,
+              "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 3436,
+              "disassembly_sha256": "e8590c0bb2ada954353ffab86dcc8efb4f4d7ab701f7b7355f21224c32fb09f8"
+            }
+          },
+          "object_sha256": "e59d348285a40c228b7452cc2bf46679f4c3f31b98ab2bf001b95fde730ab5c3",
+          "metadata_sha256": "7972edd2403e8f200fd378283dbd8ccaf8a7dbc64bc80e278c28f848e6ee7a34",
+          "disassembly_sha256": "26772ba7240122d776c8b07feb7b7e3dbb71cfff36fe9354b84f7378a53cc258",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 968,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    },
+    "seidel-2d": {
+      "actors": {
+        "accepted51": {
+          "code_bytes": 16104,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "22cf9f0148e4889aa9f525e95607df5a137a7953bb8017df5d6bc4a3cb4a173d",
+          "metadata_sha256": "3902af863987d87ed5ef87a0cba31170c93fab580f47cb63f2c4a483fd4601e4",
+          "disassembly_sha256": "9760069c534f706041adfbe2526f1d487af6f8a81830849442e099e5ba680338",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 790,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        },
+        "candidate": {
+          "code_bytes": 16104,
+          "object_file_bytes": 127208,
+          "static_instruction_count": 4026,
+          "functions": {
+            "mech_canonical_program_entry_v1_numeric_5": {
+              "instructions": 1367,
+              "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06"
+            },
+            "mech_canonical_program_entry_v1": {
+              "instructions": 2659,
+              "disassembly_sha256": "5ee674816ab19dde0c4c2bdb9ff54544edeb3e8894aa946757c6cb212ed9d2e4"
+            }
+          },
+          "object_sha256": "9998c810ae74f43c411903f0b77019e9955c94c8389c2ef26380bf5b18a5219f",
+          "metadata_sha256": "aecebaedb94407f09121a7d6273c6c0e817abcdd7bdad1372a4a998b029cd986",
+          "disassembly_sha256": "fea5062d80e26501093f8690abc6fd0c9059dd7427f0945a27a2f539973192b7",
+          "object_executed": false,
+          "reduction_producers": [],
+          "product_epilogues": [],
+          "load_instruction_sites": 790,
+          "masked_matrix_maps": [],
+          "guarded_map_initializations": [],
+          "compound_matrix_maps": [],
+          "hardware_division_sites": 0,
+          "fused_multiply_add_instructions": 0
+        }
+      },
+      "functions_match": true,
+      "code_bytes_match": true,
+      "division_site_delta": 0
+    }
+  },
+  "complete": true,
+  "performance_observations": 0,
+  "native_code_changed_cases": [
+    "correlation"
+  ],
+  "no_new_fma": true,
+  "reduction_producer_cases": [
+    "correlation"
+  ],
+  "reduction_producers_emitted": true,
+  "source_proof": "Pure F64 source closure, exact same-parent unique-predecessor CFG, complete read-role escape/liveness proof, independently source/image-derived recipe and original factory geometry. Shared ordered sum emission receives direct rounded source terms; only the final bank is allocated/published through the existing checked loan.",
+  "physical_source_work": "Complete producer matrices, their input/output passes and individual operator boundaries are absent on the admitted path. Final-only bank/helper observations and exact skipped-site counts are checked separately. Static Object totals include original fallback code; no hardware instruction or traffic claim is inferred.",
+  "source_unchanged": true,
+  "passed": true
+}

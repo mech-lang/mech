@@ -2843,3 +2843,11 @@ All748 broad/4 focused checks, both features, all30 C cases and restored images,
 The single210-observation optimization-only probe measured0.9906874989625698x raw GM speedup versus accepted51, with 2 regressions over5%. It fails the prospective selection rule. All observations remain; no exact fingerprint retry and no holdout/formal timing ran. Exact accepted51 source is restored. Accepted scores remain9.096908651052887x optimization /24.60099065552092x holdout, independently reported.
 
 [Unselected observations](training-experiments/immutable-map-read-reuse-unselected-probe.json) · [Qualification/restoration](training-experiments/immutable-map-read-reuse-unselected.json)
+
+Ordered reduction producers: formal evaluation
+
+General source-closed pointwise DAGs feed original ordered sum terms without producer materialization. Original errors, arithmetic, source fees, current owners, bounds, full buffers and atomic completion remain. All752 broad/8 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.9645700557118566x C, independent holdout24.5203097801984526x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-52-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted52.
+
+[Qualification](round-52-qualification.json) · [Audit](round-52-audit.json) · [Progress](round-52-progress.json) · [Complete experiment](training-experiments/ordered-reduction-producers-formal.json)
