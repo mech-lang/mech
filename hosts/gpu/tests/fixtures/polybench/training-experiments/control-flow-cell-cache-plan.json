@@ -1,0 +1,70 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T17:37:23.438571+00:00",
+  "name": "control-flow-cell-cache",
+  "source_parent": "1bbe396883746b263c3c974d63c8a9300259e6f6",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 61,
+  "versions": {
+    "ir": 434,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_rolling_tests.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_context.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "foundation": "Exact tested but untimed token prototype6dc0, whose13 focused checks pass and mandatory credit-placement gate failed. Material new CFG encoding eliminates all carried cache control words, rather than another token-size or global F64-home/private-first retry. All prior observed fingerprints remain unrepeated.",
+  "profiling_basis": "Accepted59 profile and actual same-PID5468 numeric bytes:1701/1761=96.59% generated self; work credit held in x3, owner flag stack load among hot sites. Token/call-lifetime prototypes remove F64 spills but still load/store work credit atSP+8 each point. Counter-state reductions alone did not fix it.",
+  "transformation": "Use source facts to derive a bounded reusable CFG: original fresh source graph, reusable copies of the root/header/dispatcher and exact post-store tail path, plus a finite point-producer/sole-write rendezvous. Both headers retain original exact funding/debits/phase counters. Fresh finite evaluation fills only F64 cache data and enters the rendezvous; reusable evaluation uses previous read data under source-derived current-column upper/checked-overflow guards, then fills F64 data and joins that same write. Original old-first/no-op/COW semantics stay. Private/no-op completion follows the proved tail into reusable header. Original lexical fallback and COW completion follow fresh tail/header; every other latch edge targets fresh. No runtime validity/pending/column token or permission crosses a call. Original sources/fees/first errors/F64 tree/outputs/aliases stay.",
+  "invariants": [
+    "Unchanged30 idiomatic ports,inputs,C binaries/flags,arithmetic/tolerance,finite caps,split,cache/timing/protocol/objective. Compiler admission uses source operations,types,CFG,current loans; no benchmark names,MINI dimensions or input-value assumptions.",
+    "Cranelift sole Mech generator. Reuse native scalar/F64 emission, same-plan facts and exact frame recipes, current numeric loan/provenance, original word bank and COW/no-op/error machinery. Cache is bounded compiler SSA within one synchronous loan, with no serialized authority, pointer persistence, new helper/frame/ABI/mode/cache across invocations or per-operation runtime allocation. Efficient scalar/compression paths remain.",
+    "Rolling eligibility requires source-proved same-row checked column+1 post-store continuation of this exact updated matrix, single tracked matrix mutation, fixed affine offsets in both source axes, bounded source steps/keys and a single source-observed F64 result. Every other latch entry invalidates; any cold numeric reentry starts empty. Read reuse cannot cross an unproved mutation, phase/owner boundary or reshape. Only the last successfully completed store result can replace the overwritten center.",
+    "A fresh point retains complete checked U64 intermediate/row/column admission before any load. Consecutive-point reuse proves unchanged row expressions and shifted-by-one column expressions; retain upper/overflow guards for all source checked subexpressions, including unused ones. Current full geometry/epoch/span/capacity/schema/owner admission stays. Static axes only from the existing exact source witness and never appending views. No global readonly/alias/alignment claims.",
+    "Original separate scalar F64 operands/tree/term order/rounding remain; no reassociation,FMA,reciprocal substitution or independent SIMD of dependent outputs. Nonfinite final results invalidate and replay the exact original prefix at current state before exports/store. Prior completed in-place updates cannot be rewound. Preserve source first failures, no-op/COW order, aliases, atomic previous external output, finite denials and cleanup/retry.",
+    "All execution counters exactly match accepted59; no source work/comparison/visit/bill reduction or padding. Actual compiled stack/code envelopes remain checked; cache auxiliary initialization/emission counts remain within existing independently priced bounds. No Rust edits while build/test/profile/timing live.",
+    "Closest-parity-first target stays Seidel until accepted<=1.0x C. Maintain attained optimization parity wins; current set empty. Optimization only diagnoses/selects/promotes. Holdout independently reports and cannot tune/veto/rollback/retry.",
+    "Cache is an optional derived representation. Discarding its full SSA state at a cold COW/state edge cannot change source values or completed writes; every later reuse requires a newly staged finite point and completed original store/no-op. Preserve current source word outputs/address/input before discarding private fields. No cache float must survive the original first-change helper solely to populate an invalid cache.",
+    "Induction for private token: entry/invalidation is0. Fresh staged token is the exact maximum admitted one-based read column in1..columns. A reused point has prior token<columns, so exact source unit-column continuation stages previous+1 in1..columns. No observer can reenter prefix between staging and the sole store; source errors exit the native loan, and COW clears token before its original call. Thus early private staging cannot authorize an uncompleted source write. Source source/read/CFG witnesses remain private and rederived; no new external authority.",
+    "Control-flow context is compiler-private and rederived from same-plan facts. Reusable entries are reachable only from successful finite producer plus completed original private/no-op write along the exact same-bank/same-row/checked unit-column source tail. COW, original lexical evaluation, every other latch, loan entry/reentry and source errors cannot enter reusable context. Fresh source still runs complete original preflight. Reusable bounds inherit prior complete row/lower validity and guard every advancing column checked intermediate against overflow plus current maximum read column against current columns before any load. F64 cache values are defined on each finite producer and never needed across COW/fresh edges. No integer cache word is read or updated in the CFG path."
+  ],
+  "qualification": "Retain13 focused groups and add actual CFG metadata/source and original/decoded/restored comparisons against token mode. Require native original fee/phase counters and finite C outputs exactly accepted59, errors at late upper/nonfinite/overflow/copy denial after noops, row/time/reset/cold-reentry, prior outputs/aliases/cleanup/retry. Source proof refuses unsupported transitions, extra writes, nested loops/versions, cross-boundaries and missing center read. Prototype genuine Object must expose CFG and9-to3 reuse, zero vector stack accesses and direct register work-credit compare/debit before broad performance qualification/timing. Then complete broad all30/restored and both features, O15 exact17002 C/counter gate, freeze/push and exactly one210 probe. No source edits during any owned build/profile/timing.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts, zero samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push clean exact source and driver, one frozen900-observation formal run/29482 finite C liveouts and append immutable history61. Strict optimization-only Mech/C<7.852513248471486; holdout report-only. Report raw Mech and C/reference drift separately; restore exact accepted59 if gate fails. No attained parity wins yet.",
+  "performance_observations": 0,
+  "static_gate": "Actual source-frozen Object must emit the fresh/reusable/write CFG, retain9-to3 source-read reuse and zero vector stack accesses, and eliminate hot work-credit stack roundtrip. Failure is archived/restored without a timing probe."
+}
