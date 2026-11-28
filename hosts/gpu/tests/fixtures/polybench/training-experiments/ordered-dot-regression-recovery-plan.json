@@ -1,0 +1,71 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T18:33:16.522611+00:00",
+  "name": "ordered-dot-regression-recovery",
+  "source_parent": "066c70448134f5cb89cc1f722c5f2367f6c802c4",
+  "foundation_commit": "0ac7194b99133281fc45a6439ebcf059c446f895",
+  "foundation_fingerprint": "93b8edecfb6233360716f132e51903d59c6b5f7dbaab5663b85f20b4e6548560",
+  "accepted_round": 59,
+  "accepted_scores": {
+    "optimization": 7.852513248471486,
+    "holdout": 23.989161547848273
+  },
+  "accepted_compiler_fingerprint": "5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-69/closed-map-result-validation/closed-map-result-validation-complete-driver",
+  "accepted_driver_sha256": "fd5cc466e803c5edcd8fa91065f39a3ad44386d8c568ffbec355568f32359c40",
+  "formal_history_index": 61,
+  "versions": {
+    "ir": 436,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_dot_core_tests.rs"
+  ],
+  "active_target": {
+    "case": "seidel-2d",
+    "mech_over_c": 1.7111946615974802,
+    "mech_median_seconds": 0.000184667,
+    "c_median_seconds": 0.00010791700333356857
+  },
+  "user_direction": "Recover the round60 Seidel1.661006x implementation and fix optimization regressions while retaining its lowering. Then resume closest parity first. No change to strict optimization-only acceptance or holdout report-only discipline.",
+  "profiling_basis": "Exact round60 source/same-PID seven-case CPU/code evidence in training-experiments/round60-regression-recovery-profile.json. Nussinov96.65percent generated; source prefixes2reads/2exports with no enclosed F64 arithmetic add admission/code/spills. Cholesky78.21percent generated, shared ordered-dot loop control prominent;3mm42.66percent, Durbin37.42percent, ATAX34.95percent. MVT/BiCG mostly preparation/allocation, with10.20/12.67percent generated; this experiment does not claim to remove those host costs.",
+  "transformation": "Keep round60 source-closed point fusion for expressions which actually remove a floating classification: count source F64 MatrixCellAccess/arithmetic outputs (not copies) versus distinct escaping F64 outputs. Decline a prefix when no classification disappears, leaving its original native scalar reads/control. Separately lower the shared ordered-dot core with carried stream addresses and two consecutive ordered terms per loop trip, followed by one guarded odd term. Remove per-term index*stride reconstruction and halve loop-control trips while preserving every output accumulator, original +0, exact k order and separate rounded multiply/add. No extra term is loaded when count is0/odd. Source immutable stream bounds/loans and all failure/replay paths remain.",
+  "invariants": [
+    "Unchanged30 idiomatic programs,inputs,C binaries/flags,arithmetic/tolerance,finite limits,split,cache,timing and objective. No benchmark-name or MINI-extent compiler rules.",
+    "Cranelift sole Mech generator; reuse current numeric loans, source facts, scalar vocabulary/F64 emission, native memory flags, word bank and existing store/error/ownership/replay machinery. No helper/frame/ABI/image authority/cache/per-operation allocation. Efficient Bool/U64/I64/F64 scalar and compression paths remain.",
+    "Require exact unique produced scalar definitions, single-entry straight-line source CFG, admitted pure operations, source-selected F64 cell reads, same current view identities, no effect/write/append/reduction/unsupported control or loop/phase/debit boundary inside. External reads determine exact exported words; keep every supported source operation/order and all original source fees.",
+    "Every checked U64 arithmetic subexpression and each independent one-based row/column bound is admitted before any speculative load. Current full geometry, owner/epoch/span/capacity admission remains unchanged. No global readonly, alignment, alias or cross-iteration memory claims.",
+    "Scalar F64 tree/operands/rounding unchanged, no reassociation,FMA,reciprocal substitute or independent SIMD across dependent cells. Pure admitted FP operations propagate used NaNs. Guard all escaping F64 outputs for nonfinite results before word-bank exports; decline to original checked prefix at the same current state, preserving exact payloads and first source errors.",
+    "No effect or scalar export precedes successful prefix admission/result guard. A failed prefix replays only its original lexical source at current state; cannot rewind any prior in-place updates. Existing no-op/COW first-change admission, aliases, atomic external output, finite denial, cleanup and retry remain.",
+    "All execution counters must exactly match accepted59. No source step/visit/bill reduction or padding. No Rust edits during build/test/profile/timing.",
+    "Closest-parity-first active target is Seidel2D until accepted<=1.0x C. Retain every attained optimization parity win; current set empty. Optimization only for diagnosis/selection; holdout independently reported and cannot tune/veto/trigger retry.",
+    "Cranelift remains sole Mech generator; source-derived compiler cost rule has no benchmark names, MINI dimensions or runtime-value assumptions. No per-op runtime allocation, new helper/frame/ABI/cache or reassociation/FMA/horizontal/partial reductions. Preserve all exact counters/resources/errors/source boundaries.",
+    "Seidel genuine emitted native functions and code/stack must match exact round60 compiler before timing. Its one9-read single-export prefix remains. Nussinov raw-load-only prefixes must disappear via the general no-work-removed rule, with ordinary source checks restored. New stream loop tests cover empty/null, odd/even lengths, negative/nonunit/zero strides, independent scalar/SIMD outputs and cancellation-sensitive exact bits. No source edits while any build/test/profile/timing lives.",
+    "The single prospective optimization15 probe still requires aggregate raw speedup>1 and active Seidel raw speedup>1 versus accepted59, exact counters, every observation/regression retained. No repeated probe of an observed fingerprint. Holdout cannot select/veto/tune/rollback."
+  ],
+  "qualification": "Nine focused groups (maintained six point-prefix groups, new raw-load-prefix refusal/public original-decoded-restored test, maintained two shared-dot core exact-order/SSA groups updated for paired/tail loops), full broad all30/restored/both features. Genuine Object verifies Seidel native code identical to round60, Nussinov raw-load-only fusion absent, actual shared-dot body has carried addresses and two ordered terms. Exact17002 O liveouts/all counters; commit/push; exactly one210 fresh-process O probe. If selected one900 formal/29482 C outputs at immutable history61.",
+  "untimed_gate": "Optimization15 exact accepted59 counters and17002 finite C liveouts; zero timing samples.",
+  "training_probe": {
+    "actors": [
+      "accepted59",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "Exactly one prospective fresh-process optimization15 probe per fully qualified materially changed fingerprint. Select iff raw equal-weight GM accepted59/candidate median speedup>1 AND active Seidel raw speedup>1 and all counters/resources match. Retain every observation/regression; no retries/exclusions."
+  },
+  "formal_acceptance": "If selected commit/push clean exact source and driver, one frozen900-observation formal run/29482 finite C liveouts and append immutable history61. Strict optimization-only Mech/C<7.852513248471486; holdout report-only. Report raw Mech and C/reference drift separately; restore exact accepted59 if gate fails. No attained parity wins yet.",
+  "performance_observations": 0,
+  "static_gate": "Seidel code/stack/function instructions match exact round60. Nussinov unproductive2-read/2-export prefixes absent. Shared-dot paired/tail SSA and actual generated native loop evidenced; all existing checked envelopes and no-new-FMA gates pass. Static instruction count is not latency prediction."
+}
