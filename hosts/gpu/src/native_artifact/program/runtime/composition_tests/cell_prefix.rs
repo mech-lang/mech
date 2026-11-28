@@ -286,3 +286,90 @@ fn cell_prefix_source_proof_declines_integer_reads_writes_and_branch_crossings()
         }
     }
 }
+
+#[test]
+fn cell_prefix_load_only_escaping_values_keep_original_checks_and_public_errors() {
+    let ordinary = source("a[r,c] + a[r,c + offset]", [2, 5]);
+    let text = ordinary.replace("value := a[r,c] + a[r,c + offset]", "left := a[r,c]\n        right := a[r,c + offset]\n        value := ((left < right)? | true => right | false => left)");
+    assert_ne!(ordinary, text);
+    let partial = text.replace(
+        "right := a[r,c + offset]",
+        "right := a[r,c + offset] + gain",
+    );
+    for text in [text, partial] {
+        for artifact in artifacts(&text) {
+            let catalog = mech_stdlib::source_catalog();
+            let fast = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            let old = JitProgramArtifact::compile_for_test(
+                &artifact,
+                &catalog,
+                OptimizationPass::CellExpressionPrefixes,
+            )
+            .unwrap();
+            let metadata = fast.descriptor().metadata();
+            assert!(
+                metadata
+                    .closed_tails
+                    .regions
+                    .iter()
+                    .filter_map(|r| r.numeric.as_ref())
+                    .all(
+                        |proof| numeric_cell_prefix::derive(&metadata.plan.facts(), proof)
+                            .is_empty()
+                    ),
+                "two escaping loads collapse no floating classifications"
+            );
+            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            assert!(
+                object.metadata()["compiled_numeric_write_loops"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|row| row["cell_expression_prefixes"]
+                        .as_array()
+                        .unwrap()
+                        .is_empty()),
+                "ordinary native checks actually emitted"
+            );
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            for special in [
+                None,
+                Some(0x7ff0_1234_5678_9abcu64),
+                Some(f64::INFINITY.to_bits()),
+            ] {
+                let mut cells = (0..10)
+                    .map(|n| Data::F64(F64Bits::from_f64(n as f64 / 13.0)))
+                    .collect::<Vec<_>>();
+                if let Some(bits) = special {
+                    cells[3] = Data::F64(F64Bits::from_bits(bits));
+                }
+                for last in [5, 6] {
+                    let args = numeric_maps::typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[
+                            ("input", Data::Matrix(cells.clone().into()), &[2, 5]),
+                            ("row", Data::U64(1), &[]),
+                            ("first", Data::U64(1), &[]),
+                            ("last", Data::U64(last), &[]),
+                            ("offset", Data::U64(1), &[]),
+                            ("gain", Data::F64(F64Bits::from_f64(9.0)), &[]),
+                        ],
+                    );
+                    for restored in [false, true] {
+                        compare(
+                            &fast,
+                            &old,
+                            &artifact,
+                            &args,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

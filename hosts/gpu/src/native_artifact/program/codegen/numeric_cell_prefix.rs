@@ -225,6 +225,25 @@ fn find(
     if exports.is_empty() || exports.len() > 8 || !exports.iter().any(|v| kinds[v] == Kind::F64) {
         return None;
     }
+    // A load-only group exporting every F64 value removes no checked float
+    // classification. Its speculative admission/fallback adds work and code;
+    // retain the original direct native reads/control for such source regions.
+    let checked_floats = reads.len()
+        + steps
+            .iter()
+            .filter(|(output, step)| {
+                kinds[output] == Kind::F64 && matches!(step, Step::Primitive(_, _))
+            })
+            .count();
+    let escaping_floats = exports
+        .iter()
+        .filter(|output| kinds[output] == Kind::F64)
+        .count();
+    // Require at least one eliminated classification per escaping word; weak
+    // partial closure otherwise duplicates admission and publication work.
+    if checked_floats < 2 * escaping_floats {
+        return None;
+    }
     Some(Prefix {
         first,
         next,
