@@ -1607,6 +1607,30 @@ impl<'plan> CfgDefinition<'plan> {
                         None
                     };
                     #[cfg(feature = "canonical-native-program")]
+                    if operation == GlobalHelper::Library.raw()
+                        && controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericMatrixArithmetic)
+                        && controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::TransposeProductViews)
+                        && let plan::CodePlan::Program(program) = plan
+                        && let Some(view) = program.metadata().numeric_binary.product_view(index)
+                    {
+                        let metadata = program.metadata();
+                        let consumer = metadata.numeric_binary.at(view.product as usize)
+                            .ok_or_else(|| backend("transpose view lacks its source product"))?;
+                        let source = view.source_operands(&metadata.plan)
+                            .ok_or_else(|| backend("transpose view lost genuine source operands"))?;
+                        let target = blocks.get(view.resume as usize).copied().flatten()
+                            .ok_or_else(|| backend("transpose view lacks its exact continuation"))?;
+                        crate::native_artifact::program::codegen::numeric_binary::emit_view_entry(
+                            b, hooks, index, view, consumer, &source, locals,
+                            |operand| plan.kind(operand).is_some(), target, error,
+                        )?;
+                        report.transpose_product_views.push(codegen_report::TransposeProductView {
+                            entry:view.entry,product:view.product,resume:view.resume,parent:view.parent,
+                            operands:view.operands,transposed_operand:view.transposed_operand,
+                            elided_sites:view.continuation.clone(),elided_values:view.elided_values.clone(),
+                        });
+                    }
+                    #[cfg(feature = "canonical-native-program")]
                     let numeric_binary_done = if controls.enabled(
                         crate::native_artifact::codegen::options::OptimizationPass::NumericMatrixArithmetic,
                     ) && operation == GlobalHelper::Library.raw() {

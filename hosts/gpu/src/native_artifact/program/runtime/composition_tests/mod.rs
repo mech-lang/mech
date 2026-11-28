@@ -66,6 +66,7 @@ mod numeric_matrix_sums;
 mod numeric_outlining;
 mod numeric_summary_branches;
 mod numeric_transpose;
+mod numeric_transpose_products;
 mod numeric_tree;
 mod numeric_tree_owner_handoff;
 pub(super) mod observe;

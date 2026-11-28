@@ -20,6 +20,7 @@ pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
 pub(in crate::native_artifact) mod numeric_binary;
+pub(in crate::native_artifact) mod numeric_transpose_products;
 pub(in crate::native_artifact) mod numeric_generators;
 pub(in crate::native_artifact) mod numeric_phase;
 pub(in crate::native_artifact) mod numeric_prefix;

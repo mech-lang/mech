@@ -29,6 +29,7 @@ pub(in crate::native_artifact) struct CodegenReport {
     pub loop_constants: LoopConstants,
     pub steady_loops: Vec<SteadyLoop>,
     pub join_map_copies: Vec<JoinMapCopy>,
+    pub transpose_product_views: Vec<TransposeProductView>,
     pub scalar_loops: Vec<ScalarLoop>,
     pub captured_numeric_loops:
         Vec<crate::native_artifact::program::codegen::captured_numeric::Report>,
@@ -41,6 +42,17 @@ pub(in crate::native_artifact) struct CodegenReport {
     tag_records: usize,
     guarded_records: usize,
     lookup_records: usize,
+}
+#[derive(serde::Serialize)]
+pub(in crate::native_artifact) struct TransposeProductView {
+    pub entry: u32,
+    pub product: u32,
+    pub resume: u32,
+    pub parent: Option<u32>,
+    pub operands: [u32; 2],
+    pub transposed_operand: usize,
+    pub elided_sites: Vec<u32>,
+    pub elided_values: Vec<u32>,
 }
 #[derive(serde::Serialize)]
 pub(in crate::native_artifact) struct ScalarLoop {

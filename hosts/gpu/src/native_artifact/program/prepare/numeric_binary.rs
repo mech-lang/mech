@@ -24,6 +24,7 @@ pub(in crate::native_artifact) struct Operation {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Layout {
     sites: Box<[Option<Operation>]>,
+    products: Box<[Option<super::numeric_transpose_products::ProductView>]>,
 }
 fn constant_axes(
     template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
@@ -90,7 +91,21 @@ impl Layout {
                 }))
             })
             .collect::<Result<Box<[_]>, &'static str>>()?;
-        Ok(Self { sites })
+        let mut layout = Self {
+            sites,
+            products: vec![None; plan.blocks().len()].into_boxed_slice(),
+        };
+        for view in super::numeric_transpose_products::derive_with_binary(plan, &layout)? {
+            let entry = view.entry as usize;
+            layout.products[entry] = Some(view);
+        }
+        Ok(layout)
+    }
+    pub fn product_view(
+        &self,
+        site: usize,
+    ) -> Option<&super::numeric_transpose_products::ProductView> {
+        self.products.get(site)?.as_ref()
     }
     pub fn at(&self, site: usize) -> Option<&Operation> {
         self.sites.get(site)?.as_ref()
