@@ -1,0 +1,24 @@
+{
+  "schema": "mech.polybench.training-selection.v3",
+  "created_at": "2026-11-28T08:50:51.227846+00:00",
+  "compiler_fingerprint": "3bc0dc1088d118108a81943224740ad1d37970f3122e8f4c054d191716b759a0",
+  "driver_sha256": "809f4d26ba44ff5423c9481c2f5dea1a366d7e416f82f69ca617dece916afb93",
+  "source_parent": "f2acfc7fddd7ee32d7907e41781a55844542b94a",
+  "policy_sha256": "28af20d076c6f6a150f2d355c03422455233448085c8ffbfac9174f952459fee",
+  "adopted_selection_policy_sha256": "9c3cda614649612594e8729cd55f8f91f9f930e4e971437d8e4ed43a7f071e36",
+  "selected": true,
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted51": 1.0111260534338053,
+    "regressions_over_five_percent": 1,
+    "all_visits_match": false,
+    "all_visit_changes_proved": true,
+    "all_other_counters_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "observations": 210,
+  "gate_passed": true,
+  "performance_score": "Raw equal-weight GM accepted51/candidate medians on optimization15; one prospective fresh-process probe, all samples and regressions retained.",
+  "formal_gate": "After full qualification and selected probe, commit/push and freeze exact clean source+driver. One900-observation formal run and29482 finite C liveouts, append immutable history at index52. Promote only optimization15 kernel Mech/C strictly below9.096908651052887. Holdout independently reported; cannot veto/select/diagnose/tune/trigger rollback or retry."
+}
