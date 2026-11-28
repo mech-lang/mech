@@ -1,0 +1,40 @@
+{
+  "schema": "mech.polybench.optimization-native-route-diagnostic-plan.v1",
+  "created_at": "2026-11-28T20:10:47.059751+00:00",
+  "source_parent": "c38c4b1dc561290409509b3f3c3ba9fc604f239f",
+  "compiler_fingerprint": "198656e1915bc319e03a1e98301804bb38277965ea3545f4659a7b25ea31236d",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "70f6f73fdebf987efbb51f74406fb4244eca2d1bc70b498ca965d7f5b7eea447",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e508e45403a9ad40d4ebfcf0f617fb5b9f1bd531b1effe9abfc7ae25488e9fc1",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "11925e85860d8877139b4d2c9ea0a58e69e8f7b312aab7f529e1e150219fb307",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix.rs": "3d8d203e34de86957525fc26057c1bf7bad55eaf126e23b3f354811f9f75e953",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_cell_prefix_tests.rs": "565c5beb398ac3dbc19c56b35897873d41aaf31b0d5939cb279d7ab2ace3ae1c",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "b1b7cb54bb6cd343dfa9a156d685af42ce243aeaad50304ea770df467d9a7bc2",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/cell_prefix.rs": "fcfcd2a0ddb6e3e415550dce3e0f04c273163bc07f43380c7d74a45833a2022f",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "aec43fa7bfcc14b85fba19325d3eeb8f171d40dc53d03cd01c13d1f84bd9a72f",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "ccc792209117ccc0ea4843bbf9930085c043a83ef566b50293b2be2e7e4742bf",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs": "2cca365d2c9b2d03fe8eb55204ac0dff544bbb7ffd3d52ec53d0821cadb52d5a"
+  },
+  "cases": [
+    "deriche"
+  ],
+  "driver": "/private/tmp/mech-polybench-optimization/round-84/round62-regression-profile/residence-driver",
+  "driver_sha256": "edcb8744748276146a73856970af8aa247c303c10652c273e58d9c7feeeb4df1",
+  "frozen_original_driver": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/single-pass-matrix-preflight-complete-driver",
+  "frozen_original_driver_sha256": "a4124616f98754541862071cec15ca5cb7d9b4af95a8a4fc8d4077243f9bdc3d",
+  "method": "Owned debugger process executes exact round62 warm residence host for5seconds under unchanged source/inputs/caps. Once fresh JIT maps appear, stop, install one-shot breakpoints at all four known numeric functions and the main entry, then continue the same process to real terminal0. Record whether each function was entered, finite C outputs and exact frozen counters. Breakpoints disable after their first hit. No official timings or rate claims; debugger overhead makes residence counts diagnostic only. No source instrumentation or generated code replacement.",
+  "hypothesis": "Exact same-PID CPU samples located Deriche in main generated entry; numeric recurrence helper changes in qualified R85 did not improve its sole O probe. Determine actual numeric-helper route entry before choosing further compiler work. If helpers do not run, inspect current ordinary/owner admission rather than further optimizing unused helpers.",
+  "reference_gate": "/private/tmp/mech-polybench-optimization/round-82/single-pass-matrix-preflight/untimed-counter-gate.json",
+  "functions": [
+    "mech_canonical_program_entry_v1_numeric_67",
+    "mech_canonical_program_entry_v1_numeric_142",
+    "mech_canonical_program_entry_v1_numeric_232",
+    "mech_canonical_program_entry_v1_numeric_307",
+    "mech_canonical_program_entry_v1"
+  ],
+  "performance_observations": 0,
+  "holdout_observations": 0,
+  "accepted_round_unchanged": 59,
+  "history_entries_unchanged": 63,
+  "no_source_changes_during_owned_job": true
+}
