@@ -49,6 +49,13 @@ impl Invocation<'_, '_, '_> {
         if words != [0, 0] {
             return Err(invalid("transpose/product managed inputs have native bits"));
         }
+        if view.source_operands(&m.plan).is_none()
+            || m.visits[view.product as usize].successors != [Some(view.resume), None]
+        {
+            return Err(invalid(
+                "transpose/product source operand or continuation differs",
+            ));
+        }
         let memory = self.state.library.memory_budget();
         let mut dimensions = [[0usize; 2]; 2];
         for (at, &id) in view.operands.iter().enumerate() {
@@ -158,6 +165,9 @@ impl Invocation<'_, '_, '_> {
                 )
             })
             .count() as u64;
+        if copies.checked_add(1) != Some(view.elided_values.len() as u64) {
+            return Err(invalid("transpose/product source alias funding differs"));
+        }
         // Source copy_current is32; put costs64 plus four times the complete
         // retained owner bound. Copies between the two operations cost96.
         // Charge these omitted source obligations using the genuine selected

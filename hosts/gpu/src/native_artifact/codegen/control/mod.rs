@@ -1624,6 +1624,11 @@ impl<'plan> CfgDefinition<'plan> {
                             b, hooks, index, view, consumer, &source, locals,
                             |operand| plan.kind(operand).is_some(), target, error,
                         )?;
+                        report.transpose_product_views.push(codegen_report::TransposeProductView {
+                            entry:view.entry,product:view.product,resume:view.resume,parent:view.parent,
+                            operands:view.operands,transposed_operand:view.transposed_operand,
+                            elided_sites:view.continuation.clone(),elided_values:view.elided_values.clone(),
+                        });
                     }
                     #[cfg(feature = "canonical-native-program")]
                     let numeric_binary_done = if controls.enabled(
