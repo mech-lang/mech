@@ -2867,3 +2867,9 @@ General F64 products group four independent output rows around one RHS load/k lo
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.8663442023512840x C, independent holdout24.8165403467171153x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-53-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted53.
 
 [Qualification](round-53-qualification.json) · [Audit](round-53-audit.json) · [Progress](round-53-progress.json) · [Complete experiment](training-experiments/ordered-product-four-rows-formal.json)
+
+Accepted53 phase profiles
+
+Owned Gram-Schmidt/Durbin warm checked-call samples attribute83.45%/53.16% self time to generated code. Both numeric functions match their genuine Objects byte-for-byte; complete caller code matches except expected BL relocations independently bound to captured same-PID targets. C liveouts and frozen counters match. Hot ordered sum loops round-trip their accumulator between integer and FP registers every term. The next proposed general pass keeps proved F64 reduction accumulators typed in SSA while retaining raw-word ABI boundaries and every source operation/error/fee. Rejected41 still used an I64 fold; this is a different physical computation. No benchmark timing observation/history entry was added or speedup inferred.
+
+[CPU telemetry](round-53-phase-cpu-telemetry.json) · [Profile and complete code binding](training-experiments/accepted53-phase-profile.json)
