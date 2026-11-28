@@ -2881,3 +2881,9 @@ Source-proved ordered F64 map sums remain in F64 SSA until the original raw-word
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history53 without altering earlier entries. Formal optimization8.3658618933018118x C, independent holdout24.5993830037455226x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-54-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted53.
 
 [Qualification](round-54-qualification.json) · [Audit](round-54-audit.json) · [Progress](round-54-progress.json) · [Complete experiment](training-experiments/typed-map-folds-formal.json)
+
+Accepted54 phase profiles
+
+Owned Gram-Schmidt/Durbin warm checked-call samples attribute80.45%/44.56% self time to generated code. Complete numeric code is Object-identical; every caller byte matches except verified same-PID call relocations. C outputs and frozen counters match. Selected publication still enumerates individual cells and reconstructs masked coordinates;234 identified Gram samples(13.07% of1790) fall on one publication header/store pair, and124 Durbin samples(5.44% of2280) on its publication header. The next proposed source-derived row-span publication removes per-cell selected-coordinate reconstruction only after checked evaluation succeeds, retaining source evaluation order, full scratch/fallback, logical fees and visits. No benchmark observation/history entry or speedup claim was added.
+
+[CPU telemetry](round-54-phase-cpu-telemetry.json) · [Profile and code binding](training-experiments/accepted54-phase-profile.json)
