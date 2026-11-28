@@ -80,7 +80,8 @@ pub(super) fn derive(
                 .or_insert(minimum);
         }
     }
-    if std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_some() {
+    if matches!(code, CodePlan::Program(prepared) if prepared.compiler_inputs().var_os("MECH_PHASE_ASSERTION_FLOORS").is_some())
+    {
         assertion_floors(code, proof, &mut floors);
     }
     floors.into_iter().collect()

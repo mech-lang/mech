@@ -53,6 +53,18 @@ type BoxExternalName = Box<ExternalName>;
 type VecArgPair = Vec<ArgPair>;
 type ComparisonChain = super::boolean_conjunction::Chain;
 
+#[derive(Clone, Copy)]
+enum ConditionalImmediate {
+    Compare(UImm5),
+    Add(UImm5),
+}
+
+#[derive(Clone, Copy)]
+enum ComparisonOperand {
+    Register(Reg),
+    Immediate(ConditionalImmediate),
+}
+
 /// The main entry point for lowering with ISLE.
 pub(crate) fn lower(
     lower_ctx: &mut Lower<MInst>,
@@ -65,19 +77,21 @@ pub(crate) fn lower(
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = i32_extensions::lower(lower_ctx, inst) {
+    if let Some(output) = i32_extensions::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = byte_extensions::lower(lower_ctx, inst) {
+    if let Some(output) = byte_extensions::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = bit_fields::lower(lower_ctx, inst) {
+    if let Some(output) =
+        bit_fields::lower(lower_ctx, inst, backend.compilation_options.masked_fields)
+    {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = narrow_packs::lower(lower_ctx, inst) {
+    if let Some(output) = narrow_packs::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
@@ -184,7 +198,7 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         let dfg = lower.dfg();
         if dfg.insts[inst].opcode() != Opcode::Bor
             || !matches!(lower.output_ty(inst, 0), I8 | I16 | I32 | I64)
-            || std::env::var_os("MECH_ARM64_CCMP_SHARED_BOOLEAN").is_none()
+            || !self.backend.compilation_options.ccmp_shared_boolean
         {
             return None;
         }
@@ -251,9 +265,7 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         else {
             return None;
         };
-        if lower.output_ty(inst, 0) != I64
-            || std::env::var_os("MECH_ARM64_CCMP_BRANCH_SELECT").is_none()
-        {
+        if lower.output_ty(inst, 0) != I64 || !self.backend.compilation_options.ccmp_branch_select {
             return None;
         }
         // A value that immediately controls a branch has a known next use.
@@ -330,6 +342,13 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         let mut prepared = [None; super::boolean_conjunction::MAX_COMPARISONS];
         let mut count = 0;
         for comparison in comparisons {
+            let immediate = self
+                .ccmp_immediate(comparison.right, comparison.ty)
+                .map(|imm| (comparison.left, imm, comparison.cc))
+                .or_else(|| {
+                    self.ccmp_immediate(comparison.left, comparison.ty)
+                        .map(|imm| (comparison.right, imm, comparison.cc.swap_args()))
+                });
             // CCMP has no extended-register form. Keep the exact existing
             // signed/unsigned normalization for both I8/I16 operands.
             let signed = matches!(
@@ -351,14 +370,21 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
                     self.put_in_reg(value)
                 }
             };
-            let left = operand(comparison.left);
-            let right = operand(comparison.right);
+            let (left, right, cc) = if let Some((left, imm, cc)) = immediate {
+                (operand(left), ComparisonOperand::Immediate(imm), cc)
+            } else {
+                (
+                    operand(comparison.left),
+                    ComparisonOperand::Register(operand(comparison.right)),
+                    comparison.cc,
+                )
+            };
             let size = if comparison.ty == I64 {
                 OperandSize::Size64
             } else {
                 OperandSize::Size32
             };
-            prepared[count] = Some((size, left, right, comparison.cc));
+            prepared[count] = Some((size, left, right, cc));
             count += 1;
         }
         // Retain the ordinary first ICMP lowering, including exact narrow
@@ -385,20 +411,40 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
             }
         }
         for &(size, left, right, next_cc) in prepared[..count].iter().flatten() {
-            instructions.push(MInst::CCmp {
-                size,
-                rn: left,
-                rm: right,
-                nzcv: super::boolean_conjunction::false_flags(next_cc),
-                cond: lower_condcode(cc),
+            let nzcv = super::boolean_conjunction::false_flags(next_cc);
+            let cond = lower_condcode(cc);
+            instructions.push(match right {
+                ComparisonOperand::Register(rm) => MInst::CCmp {
+                    size,
+                    rn: left,
+                    rm,
+                    nzcv,
+                    cond,
+                },
+                ComparisonOperand::Immediate(ConditionalImmediate::Compare(imm)) => {
+                    MInst::CCmpImm {
+                        size,
+                        rn: left,
+                        imm,
+                        nzcv,
+                        cond,
+                    }
+                }
+                ComparisonOperand::Immediate(ConditionalImmediate::Add(imm)) => MInst::CCmnImm {
+                    size,
+                    rn: left,
+                    imm,
+                    nzcv,
+                    cond,
+                },
             });
             cc = next_cc;
         }
         (instructions, lower_condcode(cc))
     }
 
-    fn ccmp_literal(&mut self, value: Value, ty: Type) -> Option<Reg> {
-        if !self.lower_ctx.f.aarch64_ccmp_literal_constants || !matches!(ty, I32 | I64) {
+    fn ccmp_integer_constant(&mut self, value: Value, ty: Type) -> Option<u64> {
+        if !matches!(ty, I32 | I64) {
             return None;
         }
         let (definition, 0) = self
@@ -416,11 +462,41 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         else {
             return None;
         };
-        let word = if ty == I32 {
+        Some(if ty == I32 {
             u64::from(imm.bits() as u32)
         } else {
             imm.bits() as u64
+        })
+    }
+
+    fn ccmp_immediate(&mut self, value: Value, ty: Type) -> Option<ConditionalImmediate> {
+        if !self.lower_ctx.f.aarch64_ccmp_immediates {
+            return None;
+        }
+        let word = self.ccmp_integer_constant(value, ty)?;
+        if word < 32 {
+            return Some(ConditionalImmediate::Compare(UImm5::maybe_from_u8(
+                word as u8,
+            )?));
+        }
+        let negative = if ty == I32 {
+            u64::from((word as u32).wrapping_neg())
+        } else {
+            word.wrapping_neg()
         };
+        // For nonzero k, x - (-k) and x + k produce identical NZCV,
+        // including unsigned carry. Addition by zero has a different carry
+        // from subtraction by zero, so zero must use CCMP above.
+        (1..32)
+            .contains(&negative)
+            .then(|| ConditionalImmediate::Add(UImm5::maybe_from_u8(negative as u8).unwrap()))
+    }
+
+    fn ccmp_literal(&mut self, value: Value, ty: Type) -> Option<Reg> {
+        if !self.lower_ctx.f.aarch64_ccmp_literal_constants {
+            return None;
+        }
+        let word = self.ccmp_integer_constant(value, ty)?;
         // Keep constants already encodable as a single move or logical immediate.
         if MInst::load_constant(writable_zero_reg(), word).len() == 1 {
             return None;

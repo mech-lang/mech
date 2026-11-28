@@ -1,3 +1,4 @@
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -224,7 +225,7 @@ fn append_hint_requires_the_exact_view_and_declines_unknown_writes_before_mutati
             .collect();
         let original = c.func.display().to_string();
         let hint = super::Hint::new(read, vec![append], base);
-        let result = hint.apply(&mut c, &loads, 0, 1);
+        let result = hint.apply(&CompilationInputs::capture([]), &mut c, &loads, 0, 1);
         assert_eq!(result.is_ok(), admitted, "shift={shift}, unknown={unknown}");
         if admitted {
             c.verify(module.isa()).unwrap();

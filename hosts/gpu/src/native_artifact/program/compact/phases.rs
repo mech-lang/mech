@@ -1,10 +1,13 @@
 //! Existing same-Plan numeric phases through a compact concrete array boundary.
 //! The generic source CFG remains the fallback when an actual writable owner
 //! is shared. Real unit append growth uses the existing concrete array helper.
+use super::profile_inputs::SelectedProfiles;
 use super::{
     arrays::Arrays, immutable_arrays::LiteralViews, layout::Layout, owner_flow::OwnerFlow,
     phase_bodies::PhaseBodies, phase_storage, vector_guard_facts,
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::codegen::{
     common::ssa_words::Words,
     control::plan::CodePlan,
@@ -173,6 +176,7 @@ enum Output {
 }
 
 pub(super) struct Phase {
+    compiler_inputs: CompilationInputs,
     pub header: usize,
     pub exit: usize,
     function: FuncId,
@@ -270,7 +274,12 @@ impl Phase {
                         updated.insert(destination);
                     }
                 }
-                if normal && std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some() {
+                if normal
+                    && self
+                        .compiler_inputs
+                        .var_os("MECH_PHASE_OWNER_TRANSFER")
+                        .is_some()
+                {
                     for (_, source) in self.owner_transfers(owners) {
                         effect.clear(source);
                     }
@@ -295,8 +304,14 @@ impl Phase {
     }
     pub fn summary(&self, owners: &OwnerFlow) -> serde_json::Value {
         let mut summary = self.summary.clone();
-        if std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some()
-            || std::env::var_os("MECH_PHASE_OWNER_MOVE_CENSUS").is_some()
+        if self
+            .compiler_inputs
+            .var_os("MECH_PHASE_OWNER_TRANSFER")
+            .is_some()
+            || self
+                .compiler_inputs
+                .var_os("MECH_PHASE_OWNER_MOVE_CENSUS")
+                .is_some()
         {
             summary["exit_owner_transfers"] = serde_json::json!(self.owner_transfers(owners));
         }
@@ -549,7 +564,10 @@ impl Phase {
         let dense = self.no_growth.as_ref().and_then(|growth| {
             (root_entry
                 && growth.function.is_none()
-                && std::env::var_os("MECH_COMPACT_GUARD_DENSE_BEFORE_PACKET").is_some())
+                && self
+                    .compiler_inputs
+                    .var_os("MECH_COMPACT_GUARD_DENSE_BEFORE_PACKET")
+                    .is_some())
             .then(|| {
                 (
                     growth,
@@ -599,25 +617,29 @@ impl Phase {
             .collect::<Vec<_>>();
         let input = b.ins().stack_addr(types::I64, input, 0);
         let out = packets.output_address(b, input_words, output_words)?;
-        let phase_timer =
-            if root_entry && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some() {
-                let mut signature = module.make_signature();
-                signature.params.extend([AbiParam::new(types::I64); 2]);
-                let callback = module
-                    .declare_function(
-                        "mech_compact_profile_phase_call",
-                        Linkage::Import,
-                        &signature,
-                    )
-                    .map_err(backend)?;
-                let callback = module.declare_func_in_func(callback, b.func);
-                let header = b.ins().iconst(types::I64, self.header as i64);
-                let enter = b.ins().iconst(types::I64, 0);
-                b.ins().call(callback, &[header, enter]);
-                Some((callback, header))
-            } else {
-                None
-            };
+        let phase_timer = if root_entry
+            && self
+                .compiler_inputs
+                .var_os("MECH_COMPACT_PROFILE_PHASE_CALLS")
+                .is_some()
+        {
+            let mut signature = module.make_signature();
+            signature.params.extend([AbiParam::new(types::I64); 2]);
+            let callback = module
+                .declare_function(
+                    "mech_compact_profile_phase_call",
+                    Linkage::Import,
+                    &signature,
+                )
+                .map_err(backend)?;
+            let callback = module.declare_func_in_func(callback, b.func);
+            let header = b.ins().iconst(types::I64, self.header as i64);
+            let enter = b.ins().iconst(types::I64, 0);
+            b.ins().call(callback, &[header, enter]);
+            Some((callback, header))
+        } else {
+            None
+        };
         let replay = self
             .fixed_transform_scalars
             .filter(|_| root_entry && observe.is_none() && phase_timer.is_none());
@@ -897,7 +919,10 @@ impl Phase {
         // Count only the exact one-result/one-prior settlement class. No
         // ownership operation changes in this diagnostic. The disabled emitter
         // must reproduce its parent Object exactly before measurements.
-        if std::env::var_os("MECH_PHASE_OWNER_CENSUS").is_some()
+        if self
+            .compiler_inputs
+            .var_os("MECH_PHASE_OWNER_CENSUS")
+            .is_some()
             && let ([slot], [old]) = (self.output_owners.as_slice(), prior.as_slice())
         {
             let mut signature = module.make_signature();
@@ -922,7 +947,11 @@ impl Phase {
             b.ins().call(observer, &[storage.heap, header, category]);
         }
         let exit_transfers = self.owner_transfers(owners);
-        if std::env::var_os("MECH_PHASE_OWNER_MOVE_CENSUS").is_some() {
+        if self
+            .compiler_inputs
+            .var_os("MECH_PHASE_OWNER_MOVE_CENSUS")
+            .is_some()
+        {
             let mut signature = module.make_signature();
             signature.params = vec![AbiParam::new(types::I64); 3];
             signature.returns = vec![AbiParam::new(types::I64)];
@@ -947,7 +976,10 @@ impl Phase {
                 b.ins().call(observer, &[storage.heap, header, category]);
             }
         }
-        let transfer = std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some();
+        let transfer = self
+            .compiler_inputs
+            .var_os("MECH_PHASE_OWNER_TRANSFER")
+            .is_some();
         for &slot in &self.output_owners {
             if transfer
                 && let Some(&(_, source)) = exit_transfers
@@ -987,6 +1019,9 @@ impl Phase {
 }
 pub(super) fn define<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     layout: &Layout,
     literals: &LiteralViews,
@@ -998,40 +1033,32 @@ pub(super) fn define<M: Module>(
     // Keep that choice in serial order; independent bodies can use the pool.
     // The inliner captures legalized IR on the coordinator. With a named
     // inlining scope, other function families can still compile in workers.
-    let inlining = std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").is_some();
-    let inline_symbols = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
+    let inlining = compiler_inputs
+        .var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
+        .is_some();
+    let inline_symbols = compiler_inputs.var("MECH_COMPACT_INLINE_SYMBOLS").ok();
     let pool = pool.filter(|_| !share_phase_bodies && (!inlining || inline_symbols.is_some()));
-    let compare_vector_ir =
-        !observe && std::env::var_os("MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR").is_some();
+    let compare_vector_ir = !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR")
+            .is_some();
     let skip_refused_general_ssa = !observe
         && !compare_vector_ir
-        && std::env::var_os("MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA").is_some()
-        && function::refused_general_ssa_unobserved();
-    // Selected LLVM exports read the verified IR on the coordinator. Keep all
-    // variants of those phases there while other phases can use the workers.
-    let exported_phases = std::env::var_os("MECH_COMPACT_DUMP_LLVM_DIRECTORY")
-        .and_then(|_| std::env::var("MECH_COMPACT_DUMP_LLVM_SYMBOLS").ok())
-        .map(|symbols| {
-            symbols
-                .split(',')
-                .filter_map(|symbol| {
-                    symbol
-                        .strip_prefix("mech_compact_numeric_")?
-                        .split('_')
-                        .next()?
-                        .parse::<usize>()
-                        .ok()
-                })
-                .collect::<BTreeSet<_>>()
-        })
-        .unwrap_or_default();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA")
+            .is_some()
+        && function::refused_general_ssa_unobserved(compiler_inputs);
     let facts = prepared.plan().facts();
     let closed = &prepared.metadata().closed_tails;
     let mut result = vec![];
     let mut dense_tables = cfg_cleanup::composed_reads::DenseTables::default();
-    let mut shared_bodies =
-        PhaseBodies::new(std::env::var_os("MECH_COMPACT_SHARE_PHASE_RELOCATIONS").is_some());
-    let mut refuse_general = std::env::var("MECH_COMPACT_REFUSE_GENERAL_VECTORS")
+    let mut shared_bodies = PhaseBodies::new(
+        compiler_inputs
+            .var_os("MECH_COMPACT_SHARE_PHASE_RELOCATIONS")
+            .is_some(),
+    );
+    let mut refuse_general = compiler_inputs
+        .var("MECH_COMPACT_REFUSE_GENERAL_VECTORS")
         .ok()
         .map(|headers| {
             headers
@@ -1046,14 +1073,17 @@ pub(super) fn define<M: Module>(
             "geometry refusal requires the unobserved compact entry",
         ));
     }
-    let fixed_packets = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET");
-    let selected_outputs = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS");
+    let fixed_packets = compiler_inputs.var_os("MECH_COMPACT_FIXED_PHASE_PACKET");
+    let selected_outputs = compiler_inputs.var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS");
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
             continue;
         };
-        let private = if std::env::var_os("MECH_PRIVATE_NESTED_PHASES").is_some() {
+        let private = if compiler_inputs
+            .var_os("MECH_PRIVATE_NESTED_PHASES")
+            .is_some()
+        {
             let compact_packet = fixed_packets.as_deref().is_some_and(|scope| {
                 scope != "refused" || refuse_general.contains(&(region.tail.header() as usize))
             });
@@ -1097,9 +1127,6 @@ pub(super) fn define<M: Module>(
         let region = &closed.regions[id];
         let header = region.tail.header() as usize;
         let pool = pool.filter(|_| {
-            if exported_phases.contains(&header) {
-                return false;
-            }
             !inlining
                 || !inline_symbols.as_deref().is_some_and(|symbols| {
                     let family = format!("mech_compact_numeric_{header}");
@@ -1165,7 +1192,10 @@ pub(super) fn define<M: Module>(
         // Only the admitted same-Plan proof constructs this contract. Unknown
         // operations/rebinding already decline that proof. All append/bulk
         // append arrays keep the original refresh, even on zero-trip visits.
-        let invariant_views = if std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some() {
+        let invariant_views = if compiler_inputs
+            .var_os("MECH_PHASE_INVARIANT_VIEWS")
+            .is_some()
+        {
             proof
                 .arrays
                 .iter()
@@ -1292,8 +1322,10 @@ pub(super) fn define<M: Module>(
         // their published identity. Diagnostics may also request the old body.
         let omit_general = refuse_general.contains(&header)
             && !share_phase_bodies
-            && std::env::var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE").is_none();
-        let vector_fast = std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE")
+                .is_none();
+        let vector_fast = compiler_inputs.var_os("MECH_PHASE_VECTOR_FAST").is_some();
         let literal_views = || -> BTreeMap<_, _> {
             arrays
                 .iter()
@@ -1308,19 +1340,29 @@ pub(super) fn define<M: Module>(
         };
         let refuse_growth = !observe
             && !share_phase_bodies
-            && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_none()
-            && std::env::var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PROFILE_PHASE_CALLS")
+                .is_none()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH")
+                .is_some();
         let unobserved_growth = refuse_growth
             && prepared.metadata().parallel.regions.is_empty()
-            && function::refused_general_ssa_unobserved();
-        let dense_only =
-            unobserved_growth && std::env::var_os("MECH_COMPACT_DENSE_NO_GROWTH_ONLY").is_some();
+            && function::refused_general_ssa_unobserved(compiler_inputs);
+        let dense_only = unobserved_growth
+            && compiler_inputs
+                .var_os("MECH_COMPACT_DENSE_NO_GROWTH_ONLY")
+                .is_some();
         let mut chosen = None;
         if unobserved_growth
             && !omit_general
             && private.is_none()
-            && std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
-            && std::env::var_os("MECH_COMPACT_PREPARE_DENSE_FIRST").is_some()
+            && compiler_inputs
+                .var_os("MECH_WHOLE_PHASE_CAPACITY")
+                .is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PREPARE_DENSE_FIRST")
+                .is_some()
             && let Some(pool) = pool
             && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
         {
@@ -1330,9 +1372,13 @@ pub(super) fn define<M: Module>(
                 // IDs together. An unadmitted body leaves the compiler state intact.
                 let mut recorded = pool.record(module)?;
                 let mut tables = dense_tables.clone();
-                let general = function::declare_refused_general(&mut recorded, header)?;
+                let general =
+                    function::declare_refused_general(compiler_inputs, &mut recorded, header)?;
                 let fast = function::prepare(
                     &mut recorded,
+                    compiler_inputs,
+                    selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1371,9 +1417,13 @@ pub(super) fn define<M: Module>(
                 .and_then(|bounds| {
                     VectorContract::additional(proof, &bounds).map(|mut contract| {
                         contract.extend_bounds = !observe
-                            && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some();
+                            && compiler_inputs
+                                .var_os("MECH_REUSE_ADMITTED_INDEX_RANGES")
+                                .is_some();
                         contract.extend_spans = !observe
-                            && std::env::var_os("MECH_REUSE_ADMITTED_INPUT_SPANS").is_some();
+                            && compiler_inputs
+                                .var_os("MECH_REUSE_ADMITTED_INPUT_SPANS")
+                                .is_some();
                         (bounds, contract)
                     })
                 })
@@ -1388,7 +1438,9 @@ pub(super) fn define<M: Module>(
             && omit_general
             && vector_fast
             && private.is_none()
-            && std::env::var_os("MECH_COMPACT_PREPARE_REFUSED_VECTOR_ONLY").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PREPARE_REFUSED_VECTOR_ONLY")
+                .is_some()
         {
             VectorContract::additional(proof, &[]).map(|contract| (Vec::new(), contract))
         } else {
@@ -1402,11 +1454,15 @@ pub(super) fn define<M: Module>(
             if let Some((general, _, fast)) = &chosen {
                 (None, *general, fast.entry_bounds().to_vec(), None)
             } else if let Some((bounds, contract)) = source_admission.or(vector_only) {
-                let declaration = function::declare_refused_general(module, header)?;
+                let declaration =
+                    function::declare_refused_general(compiler_inputs, module, header)?;
                 (None, declaration, bounds, Some(contract))
             } else {
                 let ready = function::prepare_general(
                     module,
+                    compiler_inputs,
+                    selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1435,7 +1491,9 @@ pub(super) fn define<M: Module>(
             };
         let pack_input = compact_packet
             && refuse_general.contains(&header)
-            && std::env::var_os("MECH_COMPACT_PACK_PHASE_INPUTS").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PACK_PHASE_INPUTS")
+                .is_some();
         let (general, fast) = if chosen.is_some() {
             (None, None)
         } else if omit_general && let Some(contract) = vector_contract.as_ref() {
@@ -1445,6 +1503,9 @@ pub(super) fn define<M: Module>(
             drop(ready);
             let fast = function::prepare(
                 module,
+                compiler_inputs,
+                selected_profiles,
+                route_work,
                 prepared,
                 id,
                 observe,
@@ -1481,6 +1542,9 @@ pub(super) fn define<M: Module>(
             let mut recorded = pool.record(module)?;
             let fast = function::prepare(
                 &mut recorded,
+                compiler_inputs,
+                selected_profiles,
+                route_work,
                 prepared,
                 id,
                 observe,
@@ -1511,6 +1575,9 @@ pub(super) fn define<M: Module>(
             let fast = if let Some(contract) = vector_contract.as_ref() {
                 Some(function::define(
                     module,
+                    compiler_inputs,
+                    selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1624,7 +1691,9 @@ pub(super) fn define<M: Module>(
         let planned = chosen
             .map(|(_, contract, ready)| (contract, Some(ready)))
             .or_else(|| {
-                if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
+                if compiler_inputs
+                    .var_os("MECH_WHOLE_PHASE_CAPACITY")
+                    .is_some()
                     && vector.is_none()
                     && private.is_none()
                     && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
@@ -1643,6 +1712,9 @@ pub(super) fn define<M: Module>(
             } else {
                 function::prepare(
                     module,
+                    compiler_inputs,
+                    selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1715,7 +1787,7 @@ pub(super) fn define<M: Module>(
         // result, no other effects, and the exact runtime replay packet.
         let fixed_transform_scalars = (|| {
             use crate::native_artifact::program::prepare::numeric_plan::ExitKind;
-            let enabled = std::env::var("MECH_COMPACT_FIXED_TRANSFORMS").ok()?;
+            let enabled = compiler_inputs.var("MECH_COMPACT_FIXED_TRANSFORMS").ok()?;
             if !cfg!(all(target_os = "macos", target_arch = "aarch64"))
                 || !enabled.split(',').any(|item| item.parse() == Ok(header))
                 || compact_packet
@@ -1765,6 +1837,7 @@ pub(super) fn define<M: Module>(
             summary["fixed_transform_scalar_words"] = serde_json::json!(scalars);
         }
         result.push(Phase {
+            compiler_inputs: compiler_inputs.clone(),
             header,
             exit: region.tail.exit() as usize,
             function,

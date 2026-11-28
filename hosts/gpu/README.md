@@ -189,7 +189,7 @@ remain unchanged. Paired median ratios are 0.99093/0.99902; the candidate wins
 11/12 and 8/12 pairs. RSS is the median of three separate processes; MB is decimal.
 The 0.0582-second 10M target and 200 MB RSS reference remain met.
 
-Cranelift compiles Mech source; LLVM compiles the linked Rust host and libraries.
+Cranelift is the only native code generator for Mech programs. Rust compiles the host and libraries.
 The existing capability/provider/transaction authority, finite accounts and
 work policy remain unchanged. Fresh original/decoded builds at `dcf8091393`
 produce identical executables and pass permission denials, launcher tests,

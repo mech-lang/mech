@@ -354,7 +354,7 @@ fn main() {
     let final_v = resident_f64_slot(&source_instance, velocity);
     // The resident/raw/legacy equivalence contract is intentionally frozen at
     // the same 1e-10 quantization as the trajectory. Exact floating-point bits
-    // may differ across supported CPU architectures because LLVM can contract
+    // may differ across supported CPU architectures because the Rust compiler can contract
     // arithmetic differently while preserving that semantic trajectory.
     let final_state_hash = quantized_state_hash(&final_x, &final_v);
     let energy_drift = raw.energy() - initial_energy;

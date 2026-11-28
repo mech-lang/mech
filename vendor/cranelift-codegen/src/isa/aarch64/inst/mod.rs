@@ -466,7 +466,7 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_use(rn);
             collector.reg_use(rm);
         }
-        Inst::CCmpImm { rn, .. } => {
+        Inst::CCmpImm { rn, .. } | Inst::CCmnImm { rn, .. } => {
             collector.reg_use(rn);
         }
         Inst::AtomicRMWLoop {
@@ -949,9 +949,11 @@ mod loop_live_ranges;
 
 impl MachInst for Inst {
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
-    fn preallocation_rewrite_enabled(flags: &settings::Flags) -> bool {
-        flags.opt_level() != settings::OptLevel::None
-            && std::env::var_os("MECH_ARM64_LOOP_LIVE_RANGES").is_some()
+    fn preallocation_rewrite_enabled(isa: &dyn crate::isa::TargetIsa) -> bool {
+        isa.flags().opt_level() != settings::OptLevel::None
+            && isa
+                .aarch64_compilation_options()
+                .is_some_and(|options| options.loop_live_ranges)
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
@@ -960,25 +962,28 @@ impl MachInst for Inst {
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
-    fn preallocation_branch_rewrite_enabled(flags: &settings::Flags) -> bool {
-        flags.opt_level() != settings::OptLevel::None
-            && (std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
-                || std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some())
+    fn preallocation_branch_rewrite_enabled(isa: &dyn crate::isa::TargetIsa) -> bool {
+        isa.flags().opt_level() != settings::OptLevel::None
+            && isa
+                .aarch64_compilation_options()
+                .is_some_and(|options| options.subtract_branch || options.subtract_immediate_branch)
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
     fn preallocation_rewrite_branch(
+        isa: &dyn crate::isa::TargetIsa,
         tail: &[Self],
         head: &[Self],
         canonical: impl Fn(Reg) -> Reg,
     ) -> Option<([Self; 2], usize, Self)> {
-        if std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
+        let options = isa.aarch64_compilation_options()?;
+        if options.subtract_branch
             && let Some((rewritten, successor)) =
                 loop_live_ranges::reuse_successor_subtract(tail, head.first()?, &canonical)
         {
             return Some((rewritten, 0, successor));
         }
-        if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
+        if options.subtract_immediate_branch {
             return loop_live_ranges::reuse_successor_decrement(tail, head, &canonical);
         }
         None
@@ -1749,6 +1754,19 @@ impl Inst {
                 let nzcv = nzcv.pretty_print(0);
                 let cond = cond.pretty_print(0);
                 format!("ccmp {rn}, {imm}, {nzcv}, {cond}")
+            }
+            &Inst::CCmnImm {
+                size,
+                rn,
+                imm,
+                nzcv,
+                cond,
+            } => {
+                let rn = pretty_print_ireg(rn, size);
+                let imm = imm.pretty_print(0);
+                let nzcv = nzcv.pretty_print(0);
+                let cond = cond.pretty_print(0);
+                format!("ccmn {rn}, {imm}, {nzcv}, {cond}")
             }
             &Inst::AtomicRMW {
                 rs, rt, rn, ty, op, ..

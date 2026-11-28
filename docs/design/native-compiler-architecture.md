@@ -2,11 +2,20 @@
 
 The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR177 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/docs/design/native-compression-status.md).
 
+Cranelift is the sole native code generator for Mech source. The compact
+diagnostic captures raw compiler settings at entry. Its coordinator resolves
+profile files when the corresponding consumers select them. Both object
+attempts share those bytes and read errors. The host report records this
+configuration and the actual native worker entries alongside the descriptor. The proposed library boundary records separate
+admission, ownership and resource guarantees for callers.
+[Compiler inputs](native-compiler-inputs.md) · [Closed library contract](native-closed-library.md)
+
 ## Responsibilities and authority
 
 ```mermaid
 flowchart TD
-  E[Engine: semantics and canonical source facts] --> P[program/prepare]
+  E[Engine: semantics and canonical source facts] --> B[program/compilation]
+  B --> P[program/prepare]
   P --> C[program/codegen]
   N[codegen/common: shared instructions] --> C
   P --> I[program/image: independent reconstruction]
@@ -20,6 +29,7 @@ flowchart TD
 | Owner | Responsibility | Authority it does not grant |
 |---|---|---|
 | Engine | Canonical semantics, selected factories, definitions, uses and source-bound proofs | Host representation selection or current exclusive ownership |
+| `program/compilation` | One checked plan bound to its artifact, catalog and captured inputs | Target selection or runtime admission |
 | `program/prepare` | Eligibility, representation inventories, physical consumers, prices and checked boundaries | Reusable current account/alias permission |
 | Shared codegen | Scalar instructions and common addressing; JIT/Object consume the same checked preparation | New operation semantics or permission to skip errors |
 | `program/runtime` | Current values, accounts, loans, funding, settlement, publication and cleanup | Trust in serialized eligibility or old invocation authority |
@@ -28,7 +38,40 @@ flowchart TD
 
 Representation modules do not own global dispatch. Session orchestration does not perform compiler analysis. Runtime-only features do not import parsing, Cranelift, JIT or Object emission. Engine proof constructors remain private; serialized proof bytes are not source authority.
 
+## Compact route sequencing
+
+| Owner | Responsibility |
+| --- | --- |
+| Compact entry and coordinator | Capture raw inputs, resolve selected files at their original consumer, share the results across direct-literal attempts and publish worker outputs in order. |
+| Final cleanup schedule | Interpret the one existing schedule setting. Preserve ordered cleanup, batched cleanup with ordered finish, and lean finish. |
+| Route sequence | Run loop threading and identity forwarding with their existing distinct cleanup policies. When the loop search changes zero edges, the following identity search may reuse its CFG and dominance. |
+| Route proof kernels and backend | Reconstruct current use inventories, apply the existing proofs, and keep the ordinary final backend optimization pass. |
+| Optional host report | Collect route-search requests and explicit graph builds per attempt, including discarded units and failed attempts. |
+
+The reuse ends at the next identity search or when the sequence is dropped.
+Zero rewritten edges preserves branch identities, destinations, successor
+order and block layout. The kernels can still rewrite argument storage and
+aliases. Identity forwarding resolves aliases and builds a fresh use inventory
+from the current function.
+
+The next architectural boundary is bounded IR-unit construction with explicit
+stage and proof ownership. The existing checked plans, Cranelift IR and
+artifact containers serve their current roles.
+
 ## Checked preparation
+
+For canonical Program compilation, `LoweredProgramCompilation` owns one
+checked native plan and borrows the exact artifact, catalog and captured inputs
+associated with it. Preparation consumes that owner. The definition-table
+allowance applies to the table built during lowering.
+
+Managed JIT and Object compilation capture inputs, lower the plan, create the
+target module, and preflight pointer width and counts before preparation.
+Compact compilation prepares before interpreting compact flags and constructing
+each attempt's module. Direct-literal retry borrows the same prepared Program
+and the coordinator's profile cache, including cached read failures. Layout
+diagnostics prepare when proof inventory is requested. The minimal numeric
+diagnostic prepares before module creation.
 
 One `PreparedNativeProgram` owns metadata and complete frontiers. Emission borrows it; finalization moves the checked inventories into the descriptor. Source-backed reconstruction uses the maintained preparer; build-owned restoration independently rebuilds the required facts without trusting serialized recipes.
 

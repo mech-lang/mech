@@ -163,6 +163,7 @@ fn analyze(
     let CodePlan::Program(program) = code else {
         return None;
     };
+    let compiler_inputs = program.compiler_inputs();
     let step = |site| {
         match numeric.action(site) {
             Some(Operation::Aggregate) => Some(Step::Aggregate(
@@ -224,7 +225,11 @@ fn analyze(
         .as_ref()
         .is_some_and(|p| p.sites != scope.sites || p.outside != scope.outside);
     let scope = prefix.as_ref().unwrap_or(scope);
-    if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+    if !floors.is_empty()
+        && compiler_inputs
+            .var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC")
+            .is_some()
+    {
         eprintln!(
             "TRAVERSAL_FLOOR header={} supported_sites={} order={} floors={floors:?}",
             scope.header,
@@ -241,7 +246,11 @@ fn analyze(
             .visit_predecessors()
             .first_outside_entry(&sites, scope.header)
         {
-            if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
+            if !floors.is_empty()
+                && compiler_inputs
+                    .var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC")
+                    .is_some()
+            {
                 eprintln!(
                     "TRAVERSAL_FLOOR header={} refusal=outside-entry site={site}",
                     scope.header

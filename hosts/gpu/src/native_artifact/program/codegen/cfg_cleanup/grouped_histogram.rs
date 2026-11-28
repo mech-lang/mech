@@ -4,6 +4,7 @@
 use super::composed_reads::{View, between, defaulted_read, scalar};
 use super::window_bounds::{comparison, sole_predecessor};
 use super::{MAX_CONSTANT_DEPTH, MAX_CONSTANT_STEPS, constant_integer};
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::ir::{
@@ -17,6 +18,9 @@ mod arm;
 
 #[path = "grouped_histogram_chunks.rs"]
 mod chunks;
+#[path = "grouped_histogram_fields.rs"]
+mod fields;
+pub(in crate::native_artifact) use fields::fold as fold_fields;
 #[path = "grouped_histogram_seed.rs"]
 pub(in crate::native_artifact) mod seeded;
 
@@ -31,6 +35,12 @@ pub(in crate::native_artifact) struct Admission {
     pub minimum_bins: u64,
     #[serde(skip)]
     pub end_word: Option<usize>,
+}
+
+pub(in crate::native_artifact) struct LiteralSample {
+    top_word: usize,
+    end_word: usize,
+    length_mask: u32,
 }
 
 pub(in crate::native_artifact) struct Options {
@@ -59,6 +69,7 @@ struct Group {
     length_mask: u32,
     key_mask: u32,
     key_shift: u32,
+    boundary: Inst,
     literal: Inst,
     selected: usize,
     admission: Admission,
@@ -274,6 +285,7 @@ fn recognize(
         length_mask: u32::try_from(length_mask).ok()?,
         key_mask: tail.key_mask,
         key_shift: tail.key_shift,
+        boundary,
         literal,
         selected,
         admission: Admission {
@@ -380,6 +392,7 @@ fn emit(f: &mut Function, group: Group, visits: usize, wide_keys: bool) {
 }
 
 pub(in crate::native_artifact) fn optimize(
+    compiler_inputs: &CompilationInputs,
     ctx: &mut Context,
     header: Block,
     loads: &BTreeMap<Value, (Inst, usize)>,
@@ -397,7 +410,7 @@ pub(in crate::native_artifact) fn optimize(
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
     if options.progressive && options.visits > 4 {
-        chunks::emit(&mut ctx.func, group, options);
+        chunks::emit(compiler_inputs, &mut ctx.func, group, options);
     } else {
         emit(&mut ctx.func, group, options.visits, options.wide_keys);
     }
@@ -406,12 +419,118 @@ pub(in crate::native_artifact) fn optimize(
     Some(admission)
 }
 
+pub(in crate::native_artifact) fn specialize_single_literals(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    nodes: &[View],
+    bins: &[View],
+) -> Option<LiteralSample> {
+    context.compute_cfg();
+    context.compute_domtree();
+    let group = recognize(context, header, loads, nodes, bins)?;
+    let sample = LiteralSample {
+        top_word: super::bounded_byte_histogram::fixed_word(
+            &context.func,
+            &context.cfg,
+            loads,
+            group.top,
+        )?,
+        end_word: group.admission.end_word?,
+        length_mask: group.length_mask,
+    };
+    if compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM_ADMITTED_PREFIX_READS")
+        .is_some()
+    {
+        admit_prefix_read(context, group, loads, nodes);
+    }
+    chunks::emit_single(&mut context.func, group);
+    context.flowgraph();
+    Some(sample)
+}
+
+fn admit_prefix_read(
+    context: &mut Context,
+    group: Group,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    nodes: &[View],
+) {
+    let f = &context.func;
+    let Some((branch, setup)) = between(f, &context.cfg, group.body) else {
+        return;
+    };
+    let Some(read) = defaulted_read(f, &context.cfg, loads, nodes, branch, Endianness::Little)
+    else {
+        return;
+    };
+    let bypassed = setup.into_iter().chain(read.arms).collect::<Vec<_>>();
+    let closed = f
+        .layout
+        .blocks()
+        .filter(|block| !bypassed.contains(block))
+        .all(|block| {
+            f.layout.block_insts(block).all(|inst| {
+                f.dfg.inst_values(inst).all(|value| {
+                    let definition = match f.dfg.value_def(f.dfg.resolve_aliases(value)) {
+                        ValueDef::Result(inst, _) => f.layout.inst_block(inst),
+                        ValueDef::Param(block, _) => Some(block),
+                        ValueDef::Union(..) => None,
+                    };
+                    definition.is_none_or(|block| !bypassed.contains(&block))
+                })
+            })
+        });
+    if !closed {
+        return;
+    }
+
+    // This alternative is entered only after top < node_len and
+    // end - 1 <= top. Every cursor below end therefore has an initialized
+    // node at top - cursor. The original branch handles the boundary and
+    // any cursor outside that interval.
+    let f = &mut context.func;
+    let unchecked = block(f);
+    let fallback = block(f);
+    let boundary = f.dfg.insts[group.boundary];
+    let original = f.dfg.make_inst(boundary);
+    f.layout.append_inst(original, fallback);
+    let mut c = FuncCursor::new(f).at_inst(group.boundary);
+    let active = c
+        .ins()
+        .icmp(IntCC::UnsignedLessThan, group.cursor, group.end);
+    c.func
+        .dfg
+        .replace(group.boundary)
+        .brif(active, unchecked, &[], fallback, &[]);
+
+    c.goto_bottom(unchecked);
+    let ordinal = c.ins().isub(group.top, group.cursor);
+    let offset = c.ins().ishl_imm(ordinal, 3);
+    let address = c.ins().iadd(group.nodes, offset);
+    let node = c
+        .ins()
+        .load(types::I64, MemFlags::new().with_notrap(), address, 0);
+    c.ins().jump(read.join, &[node.into()]);
+}
+
+fn call_phase(cursor: &mut FuncCursor<'_>, phase: FuncRef, inputs: &[Value; 3]) {
+    let call = cursor.ins().call(phase, inputs);
+    let [status, at] = *cursor.func.dfg.inst_results(call) else {
+        unreachable!("numeric phase alternatives have the same signature")
+    };
+    cursor.ins().return_(&[status, at]);
+}
+
 // Check the current packet once on entry. The phase caller has already
 // admitted exclusive writable owners and their initialized lengths.
 pub(in crate::native_artifact) fn guard_entry(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     admission: Admission,
     fast: FuncRef,
+    single: Option<(FuncRef, LiteralSample)>,
 ) {
     let f = &mut context.func;
     let original = f.layout.entry_block().expect("numeric phase has an entry");
@@ -422,7 +541,7 @@ pub(in crate::native_artifact) fn guard_entry(
     let [_, packet, _] = inputs;
     let mut cursor = FuncCursor::new(f);
     cursor.goto_bottom(entry);
-    let mut load = |word| {
+    let load = |cursor: &mut FuncCursor<'_>, word| {
         cursor.ins().load(
             types::I64,
             MemFlags::new(),
@@ -430,10 +549,10 @@ pub(in crate::native_artifact) fn guard_entry(
             i32::try_from(word * 8).expect("word was loaded from the input packet"),
         )
     };
-    let start = load(admission.node_word);
-    let len = load(admission.node_word + 1);
-    let bins = load(admission.bin_word);
-    let count = load(admission.bin_word + 1);
+    let start = load(&mut cursor, admission.node_word);
+    let len = load(&mut cursor, admission.node_word + 1);
+    let bins = load(&mut cursor, admission.bin_word);
+    let count = load(&mut cursor, admission.bin_word + 1);
     let fits = cursor
         .ins()
         .icmp_imm(IntCC::UnsignedLessThanOrEqual, len, (u64::MAX / 8) as i64);
@@ -466,11 +585,49 @@ pub(in crate::native_artifact) fn guard_entry(
         .ins()
         .brif(admitted, ready, &[], original, &inputs.map(Into::into));
     cursor.goto_bottom(ready);
-    let call = cursor.ins().call(fast, &inputs);
-    let [status, at] = *cursor.func.dfg.inst_results(call) else {
-        unreachable!("numeric phase alternatives have the same signature")
-    };
-    cursor.ins().return_(&[status, at]);
+    if let Some((single, sample)) = single {
+        let grouped = block(cursor.func);
+        let probe = block(cursor.func);
+        let scalar = block(cursor.func);
+        let top = load(&mut cursor, sample.top_word);
+        let end = load(&mut cursor, sample.end_word);
+        let last = cursor.ins().iadd_imm(end, -1);
+        // Sample only spans long enough to amortize the selection. The
+        // admitted node length bounds every word inspected below.
+        let enough = cursor
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, end, 8192);
+        let bounded = cursor.ins().icmp(IntCC::UnsignedLessThan, top, len);
+        let reaches = cursor.ins().icmp(IntCC::UnsignedLessThanOrEqual, last, top);
+        let within = cursor.ins().band(bounded, reaches);
+        let can_sample = cursor.ins().band(enough, within);
+        cursor.ins().brif(can_sample, probe, &[], grouped, &[]);
+
+        cursor.goto_bottom(probe);
+        // Each cursor is below end-4. With top >= end-1, the sampled
+        // ordinal and its three preceding records lie inside the view.
+        let mixed = [2, 1].map(|shift| {
+            let position = cursor.ins().ushr_imm(end, shift);
+            let ordinal = cursor.ins().isub(top, position);
+            let offset = cursor.ins().ishl_imm(ordinal, 3);
+            let address = cursor.ins().iadd(start, offset);
+            let words = chunks::vector_words(&mut cursor, address, -24);
+            chunks::vector_mixed(&mut cursor, sample.length_mask, words, None)
+        });
+        let prefer_scalar = if compiler_inputs
+            .var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_IF_EITHER")
+            .is_some()
+        {
+            cursor.ins().bor(mixed[0], mixed[1])
+        } else {
+            cursor.ins().band(mixed[0], mixed[1])
+        };
+        cursor.ins().brif(prefer_scalar, scalar, &[], grouped, &[]);
+        cursor.goto_bottom(scalar);
+        call_phase(&mut cursor, single, &inputs);
+        cursor.goto_bottom(grouped);
+    }
+    call_phase(&mut cursor, fast, &inputs);
     context.compute_cfg();
     context.compute_domtree();
 }

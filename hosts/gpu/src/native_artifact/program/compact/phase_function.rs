@@ -1,4 +1,5 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
+use super::super::profile_inputs::SelectedProfiles;
 use super::super::{
     arrays::ArrayImports,
     checked_region_discovery, checked_traversals,
@@ -6,6 +7,8 @@ use super::super::{
     phase_layout,
 };
 use super::*;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::{
     codegen::{common::unsigned_guard_facts, control::CfgCleanup, options::OptimizationPass},
     program::{
@@ -172,7 +175,7 @@ impl General {
                         None,
                         true,
                     )?;
-                    prepare_body(isa, &mut context)?;
+                    prepare_body(controls.inputs(), isa, &mut context)?;
                     // Send the input before lowering so different vector bodies can still
                     // start machine compilation while the general job is running.
                     if let Some(sender) = sender {
@@ -206,7 +209,7 @@ impl DeferredGeneral {
             None,
             true,
         )?;
-        prepare_body(isa, &mut self.context)?;
+        prepare_body(self.controls.inputs(), isa, &mut self.context)?;
         Ok(finish_preparation(
             self.context,
             &self.report,
@@ -384,6 +387,9 @@ impl Details {
 
 pub(super) fn define<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -402,6 +408,9 @@ pub(super) fn define<M: Module>(
 ) -> Result<Compiled, NativeCompileError> {
     prepare(
         module,
+        compiler_inputs,
+        selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -423,6 +432,9 @@ pub(super) fn define<M: Module>(
 
 pub(super) fn prepare<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -441,6 +453,9 @@ pub(super) fn prepare<M: Module>(
 ) -> Result<Prepared, NativeCompileError> {
     match prepare_impl(
         module,
+        compiler_inputs,
+        selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -465,6 +480,9 @@ pub(super) fn prepare<M: Module>(
 
 pub(super) fn prepare_general<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -484,6 +502,9 @@ pub(super) fn prepare_general<M: Module>(
 ) -> Result<General, NativeCompileError> {
     prepare_impl(
         module,
+        compiler_inputs,
+        selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -503,8 +524,12 @@ pub(super) fn prepare_general<M: Module>(
     )
 }
 
-fn select_phase_choices(function: &mut cranelift_codegen::ir::Function) -> usize {
-    let limits = std::env::var("MECH_COMPACT_PHASE_SELECT_LIMITS")
+fn select_phase_choices(
+    compiler_inputs: &CompilationInputs,
+    function: &mut cranelift_codegen::ir::Function,
+) -> usize {
+    let limits = compiler_inputs
+        .var("MECH_COMPACT_PHASE_SELECT_LIMITS")
         .ok()
         .and_then(|value| {
             let (instructions, selects) = value.split_once(':')?;
@@ -525,15 +550,93 @@ fn select_phase_choices(function: &mut cranelift_codegen::ir::Function) -> usize
     }
 }
 
-fn phase_selected(option: &str, symbol: &str) -> bool {
-    std::env::var(option).is_ok_and(|targets| {
+fn phase_selected(compiler_inputs: &CompilationInputs, option: &str, symbol: &str) -> bool {
+    compiler_inputs.var(option).is_ok_and(|targets| {
         targets
             .split(';')
             .any(|target| target == "all" || target == symbol)
     })
 }
 
-fn general_ir_observed() -> bool {
+enum ComparedReads<'a> {
+    Bytes(&'a [cfg_cleanup::compared_bytes::BoundedRead]),
+    Words(&'a [wide_equal::AdmittedWordMismatch], bool),
+}
+
+fn reuse_phase_compared_reads(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    proof: &Proof,
+    region: &Region,
+    private: &PrivatePhase,
+    input_words: usize,
+    source: ComparedReads<'_>,
+) -> Result<(usize, usize), NativeCompileError> {
+    let Some(loads) = phase_storage::input_word_loads(&context.func, input_words) else {
+        return Ok((0, 0));
+    };
+    // Only current fixed immutable byte views from this sealed caller
+    // qualify. Later defaults remain unless a current source read has
+    // already proved their exact logical bounds.
+    let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+    let views = private
+        .immutable_fixed_arrays(proof)
+        .into_iter()
+        .filter(|&array| proof.arrays[array].width == 1)
+        .filter_map(|array| {
+            Some((
+                array,
+                (
+                    packet.iter().position(|&word| word == proof.view(array))?,
+                    packet
+                        .iter()
+                        .position(|&word| word == proof.view(array) + 1)?,
+                ),
+            ))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let pointers = loads
+        .iter()
+        .filter_map(|(&value, &(_, word))| {
+            views
+                .values()
+                .any(|&(pointer, _)| pointer == word)
+                .then_some(value)
+        })
+        .collect();
+    let current_views = views
+        .into_iter()
+        .filter_map(|(array, (pointer, length))| {
+            let word = |at| {
+                loads
+                    .iter()
+                    .find_map(|(&value, &(_, word))| (word == at).then_some(value))
+            };
+            Some((array, (word(pointer)?, word(length)?)))
+        })
+        .collect();
+    Ok(match source {
+        ComparedReads::Bytes(bounded_reads) => (
+            cfg_cleanup::compared_bytes::fold(
+                compiler_inputs,
+                context,
+                &pointers,
+                bounded_reads,
+                &current_views,
+            ),
+            0,
+        ),
+        ComparedReads::Words(witnesses, reverse) => cfg_cleanup::compared_bytes::fold_word_order(
+            compiler_inputs,
+            context,
+            witnesses,
+            &current_views,
+            reverse,
+        ),
+    })
+}
+
+fn general_ir_observed(compiler_inputs: &CompilationInputs) -> bool {
     [
         "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
         "MECH_INSPECT_PHASE_CLIF",
@@ -541,18 +644,17 @@ fn general_ir_observed() -> bool {
         "MECH_COMPACT_FAILURE_DIR",
     ]
     .iter()
-    .any(|name| std::env::var_os(name).is_some())
+    .any(|name| compiler_inputs.var_os(name).is_some())
 }
 
-pub(super) fn refused_general_ssa_unobserved() -> bool {
-    !general_ir_observed()
+pub(super) fn refused_general_ssa_unobserved(compiler_inputs: &CompilationInputs) -> bool {
+    !general_ir_observed(compiler_inputs)
         && [
-            "MECH_COMPACT_DUMP_LLVM_DIRECTORY",
             "MECH_TRAVERSAL_FLOOR_DIAGNOSTIC",
             "MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS",
         ]
         .iter()
-        .all(|name| std::env::var_os(name).is_none())
+        .all(|name| compiler_inputs.var_os(name).is_none())
 }
 
 fn phase_signature<M: Module>(module: &M) -> Signature {
@@ -575,13 +677,14 @@ fn declare_phase<M: Module>(
 }
 
 pub(super) fn declare_refused_general<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     header: usize,
 ) -> Result<FuncId, NativeCompileError> {
     let signature = phase_signature(module);
     // The retained vector and the root still use the original module IDs.
     // Reserve the same imports and local declaration as phase_ir.
-    ArrayImports::declare(module, false)?;
+    ArrayImports::declare(compiler_inputs, module, false)?;
     let symbol = format!("mech_compact_numeric_{header}");
     let function = declare_phase(module, &symbol, &signature)?;
     eprintln!("compact-stage: skipped general numeric SSA {symbol}");
@@ -607,6 +710,9 @@ pub(super) fn refused_general_bounds(
 
 fn prepare_impl<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -632,8 +738,10 @@ fn prepare_impl<M: Module>(
         .numeric
         .as_ref()
         .ok_or_else(|| backend("phase lacks checked numeric proof"))?;
-    let controls = CompilationControls::new(OptimizationOptions::default());
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
+    let controls =
+        CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs)
+            .with_route_recorder(route_work.map(|work| work.register(&symbol)));
     let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, mut report) = phase_ir(
@@ -650,9 +758,10 @@ fn prepare_impl<M: Module>(
         false,
         error_origin_base,
     )?;
+    phase_layout::apply_comparison_options(compiler_inputs, &mut context, &symbol);
     let function = declare_phase(module, &symbol, &signature)?;
     if let Err(error) = context.verify(module.isa()) {
-        if let Some(path) = std::env::var_os("MECH_COMPACT_FAILURE_DIR") {
+        if let Some(path) = compiler_inputs.var_os("MECH_COMPACT_FAILURE_DIR") {
             let root = std::path::PathBuf::from(path);
             std::fs::create_dir_all(&root).map_err(backend)?;
             std::fs::write(
@@ -665,7 +774,9 @@ fn prepare_impl<M: Module>(
         }
         return Err(backend(format!("{symbol}: {error:?}")));
     }
-    let possible_histogram = std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
+    let possible_histogram = compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM")
+        .is_some()
         && !observe
         && proof.phase.is_none()
         && proof.exits.is_empty()
@@ -683,7 +794,9 @@ fn prepare_impl<M: Module>(
         && output_words == 11
         && fixed_count == 1
         && module.isa().name() == "aarch64"
-        && std::env::var_os("MECH_COMPACT_BOUNDED_U32_TREE").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_BOUNDED_U32_TREE")
+            .is_some();
     let byte_scatter = !observe
         && vectors.is_some()
         && private.is_none()
@@ -697,7 +810,9 @@ fn prepare_impl<M: Module>(
             .all(|view| view.width == 1 && !view.appends)
         && proof.arrays.iter().filter(|view| view.writable).count() == 1
         && module.isa().name() == "aarch64"
-        && std::env::var_os("MECH_COMPACT_CHECKED_BYTE_SCATTER").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_CHECKED_BYTE_SCATTER")
+            .is_some();
     let nonzero_pack = !observe
         && private.is_none()
         && proof.phase.is_none()
@@ -710,7 +825,9 @@ fn prepare_impl<M: Module>(
         && fixed_count == 1
         && module.isa().name() == "aarch64"
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
-        && std::env::var_os("MECH_COMPACT_NONZERO_U32_PACK").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_NONZERO_U32_PACK")
+            .is_some();
     let bounded_price = !observe
         && private.is_none()
         && proof.phase.is_none()
@@ -724,7 +841,9 @@ fn prepare_impl<M: Module>(
         && fixed_count == 1
         && module.isa().name() == "aarch64"
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
-        && std::env::var_os("MECH_COMPACT_BOUNDED_PRICE_BLEND").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_BOUNDED_PRICE_BLEND")
+            .is_some();
     let code_prices = !observe
         && private.is_none()
         && proof.phase.is_none()
@@ -738,7 +857,9 @@ fn prepare_impl<M: Module>(
         && fixed_count == 1
         && module.isa().name() == "aarch64"
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
-        && std::env::var_os("MECH_COMPACT_GROUP_CODE_PRICES").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_GROUP_CODE_PRICES")
+            .is_some();
     if defer_general
         && !bounded_tree
         && !nonzero_pack
@@ -746,7 +867,7 @@ fn prepare_impl<M: Module>(
         && !code_prices
         && !pack_input
         && bodies.is_none()
-        && !general_ir_observed()
+        && !general_ir_observed(compiler_inputs)
         && vectors.is_none()
         && no_growth.is_none()
         && literal_views.is_empty()
@@ -796,10 +917,16 @@ fn prepare_impl<M: Module>(
     let cleanup = &phase_cleanup.cleanup;
     let pack_halfwords = cfg!(target_arch = "aarch64")
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
-        && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
-    let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
-    let bitwise_indices = std::env::var_os("MECH_REUSE_ADMITTED_BITWISE_INDEX_RANGES").is_some();
-    let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
+        && compiler_inputs
+            .var_os("MECH_PACK_PRIVATE_HALFWORD_READS")
+            .is_some();
+    let reuse_lengths = compiler_inputs
+        .var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS")
+        .is_some();
+    let bitwise_indices = compiler_inputs
+        .var_os("MECH_REUSE_ADMITTED_BITWISE_INDEX_RANGES")
+        .is_some();
+    let pack_halfword_stores = compiler_inputs.var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
     let pack_zero_stores = pack_halfword_stores
         .as_deref()
         .and_then(|mode| mode.to_str())
@@ -890,7 +1017,7 @@ fn prepare_impl<M: Module>(
                 paired_halfword_stores = Some(stores);
                 if packed != 0 {
                     context.verify(module.isa()).map_err(backend)?;
-                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                         eprintln!("{symbol} packed private halfword loads: {packed}");
                     }
                 }
@@ -929,7 +1056,9 @@ fn prepare_impl<M: Module>(
             if !floors.is_empty() {
                 // Keep the later dense scorer composition's default-read structure.
                 let (folded, ranged) = if no_growth.is_none()
-                    && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_REUSE_ADMITTED_INDEX_RANGES")
+                        .is_some()
                 {
                     cfg_cleanup::admitted_lengths::fold_index_ranges(
                         &mut context.func,
@@ -954,7 +1083,7 @@ fn prepare_impl<M: Module>(
                         context.flowgraph();
                     }
                     context.verify(module.isa()).map_err(backend)?;
-                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                         eprintln!(
                             "{symbol} reused admitted view lengths: {folded} literal, {ranged} indexed"
                         );
@@ -966,7 +1095,9 @@ fn prepare_impl<M: Module>(
     if !observe
         && cleanup.enabled
         && vectors.is_some()
-        && std::env::var_os("MECH_SHARE_CLAMP_DECISIONS").is_some()
+        && compiler_inputs
+            .var_os("MECH_SHARE_CLAMP_DECISIONS")
+            .is_some()
     {
         context.flowgraph();
         let reused =
@@ -974,7 +1105,7 @@ fn prepare_impl<M: Module>(
         if reused != 0 {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} shared clamp decisions: {reused}");
             }
         }
@@ -983,7 +1114,9 @@ fn prepare_impl<M: Module>(
         && !observe
         && cleanup.enabled
         && vectors.is_some()
-        && std::env::var_os("MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES").is_some()
+        && compiler_inputs
+            .var_os("MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES")
+            .is_some()
     {
         context.flowgraph();
         let changed = cfg_cleanup::selected_continuations::comparison_chain::fold(
@@ -994,7 +1127,7 @@ fn prepare_impl<M: Module>(
         if changed != 0 {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} short-circuited comparison branches: {changed}");
             }
         }
@@ -1007,14 +1140,19 @@ fn prepare_impl<M: Module>(
         && let Some(vectors) = vectors
     {
         context.flowgraph();
-        if std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some() {
+        if compiler_inputs
+            .var_os("MECH_PREFETCH_PRIVATE_WRITES")
+            .is_some()
+        {
             future_write_hints = cfg_cleanup::future_store::insert(
                 &mut context.func,
                 &context.cfg,
                 &context.domtree,
                 &report.fixed_view_writes,
                 &vectors.admitted_lengths,
-                std::env::var_os("MECH_PREFETCH_SECOND_PRIVATE_WRITE").is_some(),
+                compiler_inputs
+                    .var_os("MECH_PREFETCH_SECOND_PRIVATE_WRITE")
+                    .is_some(),
             );
         }
         if !future_write_hints.is_empty() {
@@ -1025,7 +1163,8 @@ fn prepare_impl<M: Module>(
         && cleanup.enabled
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_NARROW_PRIVATE_ARITHMETIC")
+        && compiler_inputs
+            .var_os("MECH_NARROW_PRIVATE_ARITHMETIC")
             .is_some_and(|mode| mode == "after-prefetch")
     {
         // Admit future-write hints against the original address recurrence
@@ -1039,7 +1178,9 @@ fn prepare_impl<M: Module>(
     if !observe
         && cleanup.enabled
         && pack_halfwords
-        && std::env::var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS").is_some()
+        && compiler_inputs
+            .var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS")
+            .is_some()
         && let Some(vectors) = vectors
         && private.is_some_and(|contract| contract.permits(proof))
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
@@ -1092,12 +1233,14 @@ fn prepare_impl<M: Module>(
             &writes,
         ) {
             context.verify(module.isa()).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} scheduled independent private read");
             }
         }
     }
-    let bounded_histogram = if std::env::var_os("MECH_BOUNDED_BYTE_HISTOGRAM").is_some()
+    let bounded_histogram = if compiler_inputs
+        .var_os("MECH_BOUNDED_BYTE_HISTOGRAM")
+        .is_some()
         && !observe
         && vectors.is_some()
         && no_growth.is_none()
@@ -1108,6 +1251,7 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
     {
         bounded_histogram::prepare(
+            compiler_inputs,
             module,
             &mut context,
             proof,
@@ -1124,7 +1268,9 @@ fn prepare_impl<M: Module>(
     let word_loops = &report;
     let mut histogram = None;
     let mut seeded = None;
-    if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
+    if compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM")
+        .is_some()
         && !observe
         && no_growth.is_none()
         && proof.phase.is_none()
@@ -1159,7 +1305,9 @@ fn prepare_impl<M: Module>(
             }
         }
         if !nodes.is_empty() && !bins.is_empty() {
-            if std::env::var_os("MECH_COMPACT_SEEDED_HISTOGRAM").is_some()
+            if compiler_inputs
+                .var_os("MECH_COMPACT_SEEDED_HISTOGRAM")
+                .is_some()
                 && module.isa().name() == "aarch64"
                 && selected_output.is_some_and(BTreeSet::is_empty)
                 && private.is_none()
@@ -1178,38 +1326,62 @@ fn prepare_impl<M: Module>(
             let mut grouped = module.make_context();
             grouped.func = context.func.clone();
             if let Some(admission) = cfg_cleanup::grouped_histogram::optimize(
+                compiler_inputs,
                 &mut grouped,
                 word_loops.machine_header,
                 &loads,
                 &nodes,
                 &bins,
                 cfg_cleanup::grouped_histogram::Options {
-                    visits: std::env::var("MECH_GROUP_PACKED_HISTOGRAM_VISITS")
+                    visits: compiler_inputs
+                        .var("MECH_GROUP_PACKED_HISTOGRAM_VISITS")
                         .ok()
                         .and_then(|value| value.parse().ok())
                         .unwrap_or(4),
-                    wide_keys: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_WIDE_KEYS").is_some(),
-                    progressive: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_PROGRESSIVE")
+                    wide_keys: compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_WIDE_KEYS")
+                        .is_some(),
+                    progressive: compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_PROGRESSIVE")
                         .is_some(),
                     vector_chunks: module.isa().name() == "aarch64"
-                        && std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_VECTOR_CHUNKS").is_some(),
-                    stream_chunks: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_STREAM_CHUNKS")
+                        && compiler_inputs
+                            .var_os("MECH_GROUP_PACKED_HISTOGRAM_VECTOR_CHUNKS")
+                            .is_some(),
+                    stream_chunks: compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_STREAM_CHUNKS")
                         .is_some(),
-                    byte_keys: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_BYTE_KEYS").is_some(),
-                    pair_vector_chunks: std::env::var_os(
-                        "MECH_GROUP_PACKED_HISTOGRAM_PAIR_VECTOR_CHUNKS",
-                    )
-                    .is_some(),
+                    byte_keys: compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_BYTE_KEYS")
+                        .is_some(),
+                    pair_vector_chunks: compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_PAIR_VECTOR_CHUNKS")
+                        .is_some(),
                 },
             ) {
                 let name = format!("{symbol}_grouped");
-                phase_layout::apply_register_weights(&mut grouped, &name).map_err(backend)?;
+                let field_mode = compiler_inputs
+                    .var("MECH_GROUP_PACKED_HISTOGRAM_FOLD_FIELDS")
+                    .ok();
+                if let Some(mode) = &field_mode {
+                    let (masks, borrows) =
+                        cfg_cleanup::grouped_histogram::fold_fields(&mut grouped, mode);
+                    eprintln!("{name} proved tally fields: {masks} masks, {borrows} borrows");
+                }
+                phase_layout::apply_register_weights(
+                    compiler_inputs,
+                    selected_profiles,
+                    &mut grouped,
+                    &name,
+                )
+                .map_err(backend)?;
                 let grouped_id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
                 grouped.verify(module.isa()).map_err(backend)?;
-                let inspection = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
-                    .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
+                let inspection = compiler_inputs
+                    .var_os("MECH_INSPECT_PHASE_CLIF")
+                    .or_else(|| compiler_inputs.var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
                 if let Some(path) = &inspection {
@@ -1225,6 +1397,7 @@ fn prepare_impl<M: Module>(
                     grouped.set_disasm(true);
                 }
                 let (grouped_id, target) = define_body(
+                    compiler_inputs,
                     module,
                     grouped_id,
                     &name,
@@ -1251,7 +1424,64 @@ fn prepare_impl<M: Module>(
                     }),
                 ));
                 let fast = module.declare_func_in_func(grouped_id, &mut context.func);
-                cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast);
+                let single = if module.isa().name() == "aarch64"
+                    && compiler_inputs
+                        .var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_DISPATCH")
+                        .is_some()
+                {
+                    let mut scalar = module.make_context();
+                    scalar.func = context.func.clone();
+                    if let Some(sample) = cfg_cleanup::grouped_histogram::specialize_single_literals(
+                        compiler_inputs,
+                        &mut scalar,
+                        word_loops.machine_header,
+                        &loads,
+                        &nodes,
+                        &bins,
+                    ) {
+                        let name = format!("{symbol}_single_literals");
+                        if let Some(mode) = &field_mode {
+                            let (masks, borrows) =
+                                cfg_cleanup::grouped_histogram::fold_fields(&mut scalar, mode);
+                            eprintln!(
+                                "{name} proved tally fields: {masks} masks, {borrows} borrows"
+                            );
+                        }
+                        phase_layout::apply_register_weights(
+                            compiler_inputs,
+                            selected_profiles,
+                            &mut scalar,
+                            &name,
+                        )
+                        .map_err(backend)?;
+                        scalar.verify(module.isa()).map_err(backend)?;
+                        let id = module
+                            .declare_function(&name, Linkage::Local, &signature)
+                            .map_err(backend)?;
+                        let (id, _) = define_body(
+                            compiler_inputs,
+                            module,
+                            id,
+                            &name,
+                            &mut scalar,
+                            bodies.as_deref_mut(),
+                        )?;
+                        let single = module.declare_func_in_func(id, &mut context.func);
+                        eprintln!("{symbol} admitted separate literal tally");
+                        Some((single, sample))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                cfg_cleanup::grouped_histogram::guard_entry(
+                    compiler_inputs,
+                    &mut context,
+                    admission,
+                    fast,
+                    single,
+                );
                 context.verify(module.isa()).map_err(backend)?;
             }
         }
@@ -1306,7 +1536,7 @@ fn prepare_impl<M: Module>(
                 // proof and verify its own composition before substitution.
                 if admission.immutable_code_bytes.is_some()
                     && !word_loops.reduction_completions.is_empty()
-                    && std::env::var_os("MECH_REDUCTION_COUNTDOWN").is_some()
+                    && compiler_inputs.var_os("MECH_REDUCTION_COUNTDOWN").is_some()
                 {
                     let (mut fast, fast_report) = phase_ir(
                         module,
@@ -1357,7 +1587,9 @@ fn prepare_impl<M: Module>(
                 }
                 let name = format!("{symbol}_composed");
                 if admission.immutable_code_bytes.is_some()
-                    && std::env::var_os("MECH_FORWARD_ZERO_TRIP_REDUCTIONS").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_FORWARD_ZERO_TRIP_REDUCTIONS")
+                        .is_some()
                 {
                     candidate.flowgraph();
                     if cfg_cleanup::identity_routes::zero_trip::fold(
@@ -1367,7 +1599,7 @@ fn prepare_impl<M: Module>(
                     ) {
                         candidate.flowgraph();
                         candidate.verify(module.isa()).map_err(backend)?;
-                        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                             eprintln!("{name} forwarded zero-trip reduction");
                         }
                     }
@@ -1375,7 +1607,9 @@ fn prepare_impl<M: Module>(
                 if admission.immutable_code_bytes.is_some()
                     && module.isa().name() == "aarch64"
                     && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
-                    && std::env::var_os("MECH_NORMALIZE_DEFAULTED_READ_SETUP").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_NORMALIZE_DEFAULTED_READ_SETUP")
+                        .is_some()
                     && proof.arrays[contract.array].width == 8
                     && let Some(output_base) = word_at(proof.view(contract.array))
                     && let Some(loads) =
@@ -1397,12 +1631,14 @@ fn prepare_impl<M: Module>(
                     );
                     candidate.flowgraph();
                     candidate.verify(module.isa()).map_err(backend)?;
-                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                         eprintln!("{name} defaulted read setup: {changes:?}");
                     }
                 }
                 if admission.immutable_code_bytes.is_some()
-                    && std::env::var_os("MECH_CARRY_REDUCTION_BOUND").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_CARRY_REDUCTION_BOUND")
+                        .is_some()
                 {
                     candidate.flowgraph();
                     if cfg_cleanup::reduction_bound::carry(
@@ -1411,30 +1647,35 @@ fn prepare_impl<M: Module>(
                         &candidate.domtree,
                     ) {
                         candidate.verify(module.isa()).map_err(backend)?;
-                        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                             eprintln!("{name} carries an adjusted reduction bound");
                         }
                     }
                 }
                 if admission.immutable_code_bytes.is_some()
-                    && std::env::var_os("MECH_CARRY_REDUCTION_BOUND").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_CARRY_REDUCTION_BOUND")
+                        .is_some()
                 {
                     candidate.flowgraph();
                     if cfg_cleanup::reduction_rotation::rotate(
+                        compiler_inputs,
                         &mut candidate.func,
                         &candidate.cfg,
                         &candidate.domtree,
                     ) {
                         candidate.flowgraph();
                         candidate.verify(module.isa()).map_err(backend)?;
-                        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                             eprintln!("{name} rotated nested reduction");
                         }
                     }
                 }
                 if admission.immutable_code_bytes.is_some()
                     && module.isa().name() == "aarch64"
-                    && std::env::var_os("MECH_COMPOSE_SPLIT_COST_LENGTH").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_COMPOSE_SPLIT_COST_LENGTH")
+                        .is_some()
                     && let Some(loads) =
                         phase_storage::input_word_loads(&candidate.func, input_words)
                 {
@@ -1464,10 +1705,17 @@ fn prepare_impl<M: Module>(
                         phase_storage::input_word_loads(&candidate.func, input_words)
                 {
                     candidate.flowgraph();
-                    let forwarded =
-                        previous.apply(&mut candidate, &loads, output_word, length_word);
+                    let forwarded = previous.apply(
+                        compiler_inputs,
+                        &mut candidate,
+                        &loads,
+                        output_word,
+                        length_word,
+                    );
                     if forwarded.is_ok()
-                        && std::env::var_os("MECH_FORWARD_PREVIOUS_CLEANUP").is_some()
+                        && compiler_inputs
+                            .var_os("MECH_FORWARD_PREVIOUS_CLEANUP")
+                            .is_some()
                     {
                         cfg_cleanup::coalesce_equal_join_arguments(
                             &controls,
@@ -1486,14 +1734,16 @@ fn prepare_impl<M: Module>(
                         )?;
                     }
                     candidate.verify(module.isa()).map_err(backend)?;
-                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some()
-                        || std::env::var_os("MECH_APPEND_FORWARD_REPORT").is_some()
+                    if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some()
+                        || compiler_inputs
+                            .var_os("MECH_APPEND_FORWARD_REPORT")
+                            .is_some()
                     {
                         eprintln!("{name} late previous append forwarding: {forwarded:?}");
                     }
                 }
                 if admission.immutable_code_bytes.is_some()
-                    && let Some(mode) = std::env::var_os("MECH_FOLD_NARROW_PACKED_WORDS")
+                    && let Some(mode) = compiler_inputs.var_os("MECH_FOLD_NARROW_PACKED_WORDS")
                 {
                     // A low-word cost must not retain an independently packed
                     // high field. Full item/store uses keep the original word.
@@ -1504,7 +1754,9 @@ fn prepare_impl<M: Module>(
                     candidate.verify(module.isa()).map_err(backend)?;
                 }
                 if admission.immutable_code_bytes.is_some()
-                    && std::env::var_os("MECH_COMPOSE_FOLD_ADMITTED_COST_MINIMUM").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_COMPOSE_FOLD_ADMITTED_COST_MINIMUM")
+                        .is_some()
                     && let Some(loads) =
                         phase_storage::input_word_loads(&candidate.func, input_words)
                 {
@@ -1525,7 +1777,8 @@ fn prepare_impl<M: Module>(
                 }
                 if !observe
                     && cleanup.enabled
-                    && let Ok(mode) = std::env::var("MECH_COMPACT_NORMALIZE_COMPOSED_ADDRESSES")
+                    && let Ok(mode) =
+                        compiler_inputs.var("MECH_COMPACT_NORMALIZE_COMPOSED_ADDRESSES")
                     && matches!(mode.as_str(), "local" | "hoisted")
                 {
                     // This independently emitted body does not reach the
@@ -1537,29 +1790,57 @@ fn prepare_impl<M: Module>(
                     candidate.verify(module.isa()).map_err(backend)?;
                     eprintln!("{name} indexed addresses normalized: {changed}");
                 }
+                if !observe
+                    && cleanup.enabled
+                    && admission.immutable_code_bytes.is_some()
+                    && module.isa().name() == "aarch64"
+                    && phase_selected(
+                        compiler_inputs,
+                        "MECH_COMPACT_REBASE_BOUNDED_COMPOSED_INDICES",
+                        &name,
+                    )
+                {
+                    let changed = cfg_cleanup::indexed_addresses::rebase_bounded_comparisons(
+                        &mut candidate.func,
+                    );
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    eprintln!("{name} rebased bounded comparisons: {changed}");
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
                 if !observe && module.isa().name() == "aarch64" {
                     candidate.func.aarch64_branch_on_zero =
                         admission.immutable_code_bytes.is_some()
-                            && std::env::var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO").is_some();
-                    candidate.func.aarch64_hoist_indexed_load_bases =
-                        std::env::var_os("MECH_COMPACT_HOIST_INDEXED_LOAD_BASES")
-                            .is_some_and(|target| target == "all" || target == name.as_str());
+                            && compiler_inputs
+                                .var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO")
+                                .is_some();
+                    candidate.func.aarch64_hoist_indexed_load_bases = compiler_inputs
+                        .var_os("MECH_COMPACT_HOIST_INDEXED_LOAD_BASES")
+                        .is_some_and(|target| target == "all" || target == name.as_str());
                     // Numeric phases start with their own Function. The
                     // enclosing checked entry's register preference does not
                     // reach this independently admitted immutable-cost body.
                     if admission.immutable_code_bytes.is_some()
-                        && std::env::var_os("MECH_ORDERED_PREFER_PRESERVED_REGS").is_some()
+                        && compiler_inputs
+                            .var_os("MECH_ORDERED_PREFER_PRESERVED_REGS")
+                            .is_some()
                     {
                         candidate.func.aarch64_prefer_preserved_regs = true;
                     }
-                    phase_layout::apply(&mut candidate, &name).map_err(backend)?;
+                    phase_layout::apply(compiler_inputs, selected_profiles, &mut candidate, &name)
+                        .map_err(backend)?;
                 }
-                phase_layout::apply_register_weights(&mut candidate, &name).map_err(backend)?;
-                let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
-                    .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
+                phase_layout::apply_register_weights(
+                    compiler_inputs,
+                    selected_profiles,
+                    &mut candidate,
+                    &name,
+                )
+                .map_err(backend)?;
+                let inspect_path = compiler_inputs
+                    .var_os("MECH_INSPECT_PHASE_CLIF")
+                    .or_else(|| compiler_inputs.var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
                 if let Some(path) = &inspect_path {
@@ -1574,8 +1855,14 @@ fn prepare_impl<M: Module>(
                     std::fs::write(clif, candidate.func.display().to_string()).map_err(backend)?;
                     candidate.set_disasm(true);
                 }
-                let (id, target) =
-                    define_body(module, id, &name, &mut candidate, bodies.as_deref_mut())?;
+                let (id, target) = define_body(
+                    compiler_inputs,
+                    module,
+                    id,
+                    &name,
+                    &mut candidate,
+                    bodies.as_deref_mut(),
+                )?;
                 let machine = candidate
                     .compiled_code()
                     .ok_or_else(|| backend("composed phase lacks code"))?;
@@ -1609,13 +1896,18 @@ fn prepare_impl<M: Module>(
     } else {
         0
     };
-    let extrema = std::env::var_os("MECH_PRIVATE_VECTOR_PROVE_UNSIGNED_EXTREMA").is_some();
+    let extrema = compiler_inputs
+        .var_os("MECH_PRIVATE_VECTOR_PROVE_UNSIGNED_EXTREMA")
+        .is_some();
     let unsigned_guards = if !observe
         && cleanup.enabled
         && private.is_some()
         && vectors.is_some()
         && controls.enabled(OptimizationPass::UnsignedGuardFacts)
-        && (extrema || std::env::var_os("MECH_PRIVATE_VECTOR_UNSIGNED_GUARDS").is_some())
+        && (extrema
+            || compiler_inputs
+                .var_os("MECH_PRIVATE_VECTOR_UNSIGNED_GUARDS")
+                .is_some())
     {
         let removed = unsigned_guard_facts::optimize_with_ranges(
             &mut context,
@@ -1637,56 +1929,20 @@ fn prepare_impl<M: Module>(
     if !observe
         && vectors.is_some()
         && prepared.metadata().parallel.regions.is_empty()
-        && std::env::var_os("MECH_REUSE_COMPARED_BYTES").is_some()
+        && compiler_inputs
+            .var_os("MECH_REUSE_COMPARED_BYTES")
+            .is_some()
         && let Some(private) = private.filter(|contract| contract.permits(proof))
-        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
-        // Only current fixed immutable byte views from this sealed caller
-        // qualify. Later defaults remain unless a current source read has
-        // already proved their exact logical bounds.
-        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
-        let views = private
-            .immutable_fixed_arrays(proof)
-            .into_iter()
-            .filter(|&array| proof.arrays[array].width == 1)
-            .filter_map(|array| {
-                Some((
-                    array,
-                    (
-                        packet.iter().position(|&word| word == proof.view(array))?,
-                        packet
-                            .iter()
-                            .position(|&word| word == proof.view(array) + 1)?,
-                    ),
-                ))
-            })
-            .collect::<BTreeMap<_, _>>();
-        let pointers = loads
-            .iter()
-            .filter_map(|(&value, &(_, word))| {
-                views
-                    .values()
-                    .any(|&(pointer, _)| pointer == word)
-                    .then_some(value)
-            })
-            .collect();
-        let current_views = views
-            .into_iter()
-            .filter_map(|(array, (pointer, length))| {
-                let word = |at| {
-                    loads
-                        .iter()
-                        .find_map(|(&value, &(_, word))| (word == at).then_some(value))
-                };
-                Some((array, (word(pointer)?, word(length)?)))
-            })
-            .collect();
-        let reused = cfg_cleanup::compared_bytes::fold(
+        let (reused, _) = reuse_phase_compared_reads(
+            compiler_inputs,
             &mut context,
-            &pointers,
-            &report.bounded_byte_reads,
-            &current_views,
-        );
+            proof,
+            region,
+            private,
+            input_words,
+            ComparedReads::Bytes(&report.bounded_byte_reads),
+        )?;
         if reused != 0 {
             context.verify(module.isa()).map_err(backend)?;
             eprintln!("{symbol} reused compared byte pairs: {reused}");
@@ -1695,7 +1951,8 @@ fn prepare_impl<M: Module>(
     if !observe
         && let Some(private) = private.filter(|contract| contract.permits(proof))
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_IMMUTABLE_DEFAULTED_READS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_IMMUTABLE_DEFAULTED_READS")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -1717,8 +1974,9 @@ fn prepare_impl<M: Module>(
                 })
             })
             .collect::<Vec<_>>();
-        let rematerialize =
-            std::env::var_os("MECH_COMPACT_REMATERIALIZE_IMMUTABLE_READS").is_some();
+        let rematerialize = compiler_inputs
+            .var_os("MECH_COMPACT_REMATERIALIZE_IMMUTABLE_READS")
+            .is_some();
         let (folded, immutable) = cfg_cleanup::defaulted_loads::fold_immutable(
             module,
             &mut context,
@@ -1730,7 +1988,8 @@ fn prepare_impl<M: Module>(
     } else if !observe
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_SELECT_PHASE_DEFAULTED_LOADS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SELECT_PHASE_DEFAULTED_LOADS")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
     {
         let folded = cfg_cleanup::defaulted_loads::fold(module, &mut context)?;
@@ -1740,10 +1999,11 @@ fn prepare_impl<M: Module>(
         && private.is_some()
         && vectors.is_some()
         && controls.enabled(OptimizationPass::ScalarSelects)
-        && std::env::var_os("MECH_COMPACT_PHASE_SELECTS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_PHASE_SELECTS")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
     {
-        let selected = select_phase_choices(&mut context.func);
+        let selected = select_phase_choices(compiler_inputs, &mut context.func);
         if selected != 0 {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
@@ -1774,9 +2034,14 @@ fn prepare_impl<M: Module>(
             &mut context,
             &loads,
             &lengths,
-            std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WINDOWS").is_some(),
+            compiler_inputs
+                .var_os("MECH_REUSE_ADMITTED_INPUT_WINDOWS")
+                .is_some(),
         );
-        if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
+        if compiler_inputs
+            .var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS")
+            .is_some()
+        {
             cfg_cleanup::admitted_spans::admit_word_length(
                 &mut context.func,
                 &loads,
@@ -1800,7 +2065,8 @@ fn prepare_impl<M: Module>(
     if !observe
         && let Some(private) = private.filter(|contract| contract.permits(proof))
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_SCHEDULE_IMMUTABLE_WORDS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SCHEDULE_IMMUTABLE_WORDS")
             .is_some_and(|scope| scope == "all" || scope == symbol.as_str())
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -1820,7 +2086,10 @@ fn prepare_impl<M: Module>(
                 })
             })
             .collect::<Vec<_>>();
-        let moved = if std::env::var_os("MECH_COMPACT_DELAY_IMMUTABLE_WORDS").is_some() {
+        let moved = if compiler_inputs
+            .var_os("MECH_COMPACT_DELAY_IMMUTABLE_WORDS")
+            .is_some()
+        {
             cfg_cleanup::immutable_word_reads::schedule_delayed(
                 module,
                 &mut context,
@@ -1831,12 +2100,17 @@ fn prepare_impl<M: Module>(
             cfg_cleanup::immutable_word_reads::schedule(module, &mut context, &loads, &views)?
         };
         if moved != 0
-            && std::env::var_os("MECH_COMPACT_REFINE_IMMUTABLE_WORDS").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_REFINE_IMMUTABLE_WORDS")
+                .is_some()
             && !entry_spans.is_empty()
         {
             let windows =
                 cfg_cleanup::admitted_spans::refine_windows(&mut context, &loads, &mut entry_spans);
-            let lengths = if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
+            let lengths = if compiler_inputs
+                .var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS")
+                .is_some()
+            {
                 cfg_cleanup::admitted_spans::admit_word_length(
                     &mut context.func,
                     &loads,
@@ -1862,7 +2136,8 @@ fn prepare_impl<M: Module>(
     if !observe
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
             .is_some_and(|scope| scope == "vector" || scope == "all")
     {
         let count = cfg_cleanup::empty_jumps::forward(&mut context.func);
@@ -1877,7 +2152,8 @@ fn prepare_impl<M: Module>(
     if !observe
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
             .is_some_and(|scope| scope == "vector" || scope == "all")
     {
         let count = cfg_cleanup::argument_jumps::forward(&mut context.func);
@@ -1892,14 +2168,15 @@ fn prepare_impl<M: Module>(
     if !observe
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
             .is_some_and(|scope| scope == "vector" || scope == "all")
     {
         let removed =
             cfg_cleanup::coalesce_identical_join_arguments(&controls, &mut context, module.isa())?;
         eprintln!("{symbol} coalesced identical arguments: {removed}");
         if removed != 0
-            && let Ok(mode) = std::env::var("MECH_COMPACT_REFINE_COALESCED_ARGUMENTS")
+            && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_REFINE_COALESCED_ARGUMENTS")
         {
             let mut jumps = 0;
             if matches!(mode.as_str(), "transport" | "all") {
@@ -1929,10 +2206,11 @@ fn prepare_impl<M: Module>(
         }
         if removed != 0
             && controls.enabled(OptimizationPass::ScalarSelects)
-            && std::env::var_os("MECH_COMPACT_LATE_PHASE_SELECTS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_LATE_PHASE_SELECTS")
                 .is_some_and(|target| target == "all" || target == symbol.as_str())
         {
-            let selected = select_phase_choices(&mut context.func);
+            let selected = select_phase_choices(compiler_inputs, &mut context.func);
             if selected != 0 {
                 context.flowgraph();
                 context
@@ -1942,7 +2220,8 @@ fn prepare_impl<M: Module>(
             }
             eprintln!("{symbol} late scalar choices folded: {selected}");
             if selected != 0
-                && std::env::var_os("MECH_COMPACT_REFINE_SELECTED_VALUES")
+                && compiler_inputs
+                    .var_os("MECH_COMPACT_REFINE_SELECTED_VALUES")
                     .is_some_and(|target| target == "all" || target == symbol.as_str())
             {
                 let ranges =
@@ -1955,7 +2234,7 @@ fn prepare_impl<M: Module>(
         && cleanup.enabled
         && private.is_some()
         && vectors.is_some()
-        && let Ok(mode) = std::env::var("MECH_COMPACT_NORMALIZE_INDEXED_ADDRESSES")
+        && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_NORMALIZE_INDEXED_ADDRESSES")
         && matches!(mode.as_str(), "local" | "hoisted")
     {
         let changed =
@@ -1966,11 +2245,24 @@ fn prepare_impl<M: Module>(
     if !observe && cleanup.enabled && private.is_some() && vectors.is_some() {
         // Packet and scalar-choice rewrites can leave an incoming edge with
         // enough information to bypass a later pure branch in this phase.
-        if phase_selected("MECH_COMPACT_FORWARD_PHASE_ROUTES", &symbol) {
+        if phase_selected(
+            compiler_inputs,
+            "MECH_COMPACT_FORWARD_PHASE_ROUTES",
+            &symbol,
+        ) {
             let isa = module.isa();
-            let loops = cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?;
-            let routes = cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?;
-            if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+            let mut sequence = cfg_cleanup::RouteSequence::new(
+                &controls,
+                &mut context,
+                isa,
+                cfg_cleanup::RouteCleanup::Ordered,
+            );
+            let loops = sequence.thread_loops()?;
+            let routes = sequence.forward_identity(cfg_cleanup::IdentityRouteOptions::default())?;
+            if compiler_inputs
+                .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+                .is_some()
+            {
                 eprintln!(
                     "{symbol} forwarded late routes: {} loop edges, {} acyclic edges",
                     loops.threaded_edges, routes.threaded_edges
@@ -1978,29 +2270,36 @@ fn prepare_impl<M: Module>(
             }
         }
         if module.isa().name() == "aarch64"
-            && std::env::var_os("MECH_COMPACT_PHASE_BRANCH_ON_ZERO")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PHASE_BRANCH_ON_ZERO")
                 .is_some_and(|target| target == "all" || target == symbol.as_str())
         {
             context.func.aarch64_branch_on_zero = true;
         }
         if module.isa().name() == "aarch64"
-            && std::env::var_os("MECH_COMPACT_FOLD_SINGLE_USE_CSET")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_FOLD_SINGLE_USE_CSET")
                 .is_some_and(|target| target == "all" || target == symbol.as_str())
         {
             context.func.aarch64_fold_single_use_cset = true;
         }
         if module.isa().name() == "aarch64"
-            && std::env::var_os("MECH_COMPACT_CCMP_LITERAL_CONSTANTS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_CCMP_LITERAL_CONSTANTS")
                 .is_some_and(|target| target == "all" || target == symbol.as_str())
         {
             context.func.aarch64_ccmp_literal_constants = true;
         }
-        if std::env::var_os("MECH_COMPACT_REFINE_PHASE_PREDICATES")
+        if compiler_inputs
+            .var_os("MECH_COMPACT_REFINE_PHASE_PREDICATES")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
         {
             let report =
                 cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa())?;
-            if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+            if compiler_inputs
+                .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+                .is_some()
+            {
                 eprintln!(
                     "{symbol} refined late predicates: {}",
                     report.removed_branches
@@ -2008,7 +2307,7 @@ fn prepare_impl<M: Module>(
             }
         }
         if module.isa().name() == "aarch64"
-            && let Ok(selection) = std::env::var("MECH_COMPACT_CARRY_BRANCH_OUTCOMES")
+            && let Ok(selection) = compiler_inputs.var("MECH_COMPACT_CARRY_BRANCH_OUTCOMES")
         {
             let (target, thread) = selection
                 .strip_prefix("thread:")
@@ -2023,7 +2322,10 @@ fn prepare_impl<M: Module>(
                 } else {
                     0
                 };
-                if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+                if compiler_inputs
+                    .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+                    .is_some()
+                {
                     eprintln!(
                         "{symbol} carried branch outcomes to {joins} joins and forwarded {routes} routes"
                     );
@@ -2036,9 +2338,43 @@ fn prepare_impl<M: Module>(
         && private.is_some()
         && vectors.is_some()
         && module.isa().name() == "aarch64"
-        && std::env::var("MECH_COMPACT_HOIST_PREFETCH_BASES").as_deref() == Ok("1")
+        && compiler_inputs
+            .var("MECH_COMPACT_HOIST_PREFETCH_BASES")
+            .as_deref()
+            == Ok("1")
     {
         context.func.aarch64_hoist_prefetch_bases = true;
+    }
+    if !observe
+        && cleanup.enabled
+        && vectors.is_some()
+        && prepared.metadata().parallel.regions.is_empty()
+        && phase_selected(
+            compiler_inputs,
+            "MECH_COMPACT_REUSE_WORD_MISMATCH_ORDER",
+            &symbol,
+        )
+        && !phase_cleanup.equality.word_mismatches.is_empty()
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+    {
+        let (forwarded, reversed) = reuse_phase_compared_reads(
+            compiler_inputs,
+            &mut context,
+            proof,
+            region,
+            private,
+            input_words,
+            ComparedReads::Words(
+                &phase_cleanup.equality.word_mismatches,
+                compiler_inputs
+                    .var_os("MECH_COMPACT_WORD_MISMATCH_EXTRACT")
+                    .is_none(),
+            ),
+        )?;
+        if forwarded != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded word mismatches: {forwarded}, reversed: {reversed}");
     }
     if let Some(floors) = zero_store_floors {
         context.flowgraph();
@@ -2052,7 +2388,10 @@ fn prepare_impl<M: Module>(
             packed_halfword_stores += zeroes;
             context.verify(module.isa()).map_err(backend)?;
         }
-        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+        if compiler_inputs
+            .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+            .is_some()
+        {
             eprintln!("{symbol} admitted zero-store byte bounds: {floors:?}");
             eprintln!("{symbol} packed private zero stores: {zeroes}");
         }
@@ -2062,7 +2401,8 @@ fn prepare_impl<M: Module>(
         && no_growth.is_none()
         && vectors.is_some()
         && private.is_some_and(|contract| contract.permits(proof))
-        && std::env::var_os("MECH_COMPACT_ADMIT_DECREASING_INDICES")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_ADMIT_DECREASING_INDICES")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -2100,7 +2440,8 @@ fn prepare_impl<M: Module>(
         && vectors.is_some()
         && entry_spans.iter().any(|span| span.begin_word.is_some())
         && private.is_some_and(|contract| contract.permits(proof))
-        && std::env::var_os("MECH_COMPACT_ADMIT_CARRIED_HALFWORDS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_ADMIT_CARRIED_HALFWORDS")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -2119,18 +2460,30 @@ fn prepare_impl<M: Module>(
         && vectors.is_some()
         && !entry_spans.is_empty()
         && private.is_some_and(|contract| contract.permits(proof))
-        && phase_selected("MECH_COMPACT_SPECIALIZE_TAGGED_STORE_TAILS", &symbol)
+        && phase_selected(
+            compiler_inputs,
+            "MECH_COMPACT_SPECIALIZE_TAGGED_STORE_TAILS",
+            &symbol,
+        )
     {
         // Only the already-admitted tail is eligible for specialization.
         let isa = module.isa();
         let tails = cfg_cleanup::specialize_tagged_store_tails(&mut context, isa)?;
-        let routes = if tails != 0 && phase_selected("MECH_COMPACT_FORWARD_PHASE_ROUTES", &symbol) {
+        let routes = if tails != 0
+            && phase_selected(
+                compiler_inputs,
+                "MECH_COMPACT_FORWARD_PHASE_ROUTES",
+                &symbol,
+            ) {
             cfg_cleanup::forward_identity_routes_from(&controls, &mut context, isa, None, true)?
                 .threaded_edges
         } else {
             0
         };
-        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+        if compiler_inputs
+            .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+            .is_some()
+        {
             eprintln!(
                 "{symbol} specialized tagged store tails: {tails}, forwarded routes: {routes}"
             );
@@ -2141,7 +2494,7 @@ fn prepare_impl<M: Module>(
     } else {
         None
     };
-    if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
+    if let Some(path) = compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {
             std::fs::write(&path, context.func.display().to_string()).map_err(backend)?;
@@ -2149,17 +2502,18 @@ fn prepare_impl<M: Module>(
                 .map_err(backend)?;
         }
     }
-    let vcode_path = std::env::var_os("MECH_INSPECT_PHASE_VCODE")
+    let vcode_path = compiler_inputs
+        .var_os("MECH_INSPECT_PHASE_VCODE")
         // Keep register-profile capture on the normal refused-general and
         // preparation route. The older VCode probe observes the general IR.
-        .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
+        .or_else(|| compiler_inputs.var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
         .map(std::path::PathBuf::from)
         .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()));
     if vcode_path.is_some() {
         context.set_disasm(true);
     }
     let checked_regions = if !observe
-        && let Ok(manifest) = std::env::var("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS")
+        && let Ok(manifest) = compiler_inputs.var("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS")
         && let Some(windows) = manifest
             .strip_prefix(&symbol)
             .and_then(|prefix| prefix.strip_prefix('@'))
@@ -2173,10 +2527,11 @@ fn prepare_impl<M: Module>(
             base.parse().map_err(backend)?,
         )?;
         let checked = checked_traversals::share_phase_regions(
+            compiler_inputs,
             module,
             &mut context.func,
             families,
-            checked_traversals::CaptureBindings::from_environment(),
+            checked_traversals::CaptureBindings::capture(compiler_inputs),
         )?;
         if checked.is_some() {
             context.flowgraph();
@@ -2189,7 +2544,8 @@ fn prepare_impl<M: Module>(
     context.func.forward_spill_reloads = !observe
         && private.is_some()
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
             .is_some_and(|phase| phase == symbol.as_str());
     if !observe
         && vectors.is_some()
@@ -2203,20 +2559,40 @@ fn prepare_impl<M: Module>(
         && entry_spans
             .iter()
             .any(|span| span.begin_word.is_none() && span.end_word == 0 && span.length_word == 3)
-        && std::env::var_os("MECH_COMPACT_NATIVE_GAP_SORT").is_some()
+        && compiler_inputs
+            .var_os("MECH_COMPACT_NATIVE_GAP_SORT")
+            .is_some()
         && let Some(sort) = gap_proof::prove(&context.func)
     {
+        let scratch = compiler_inputs
+            .var_os("MECH_COMPACT_SORT_SNAPSHOT_SCRATCH")
+            .is_some();
         let mut signature = module.make_signature();
-        signature.params.extend([AbiParam::new(types::I64); 3]);
+        signature
+            .params
+            .extend(vec![AbiParam::new(types::I64); if scratch { 4 } else { 3 }]);
         signature.returns.push(AbiParam::new(types::I64));
+        let name = if scratch {
+            "mech_compact_sort_gapped_u32_with_scratch"
+        } else {
+            "mech_compact_sort_gapped_u32"
+        };
         let kernel = module
-            .declare_function("mech_compact_sort_gapped_u32", Linkage::Import, &signature)
+            .declare_function(name, Linkage::Import, &signature)
             .map_err(backend)?;
         let kernel = module.declare_func_in_func(kernel, &mut context.func);
+        let mut arguments = Vec::with_capacity(4);
+        if scratch {
+            let entry = context
+                .func
+                .layout
+                .entry_block()
+                .expect("numeric phase entry");
+            arguments.push(context.func.dfg.block_params(entry)[0]);
+        }
+        arguments.extend([sort.data, sort.length, sort.gaps]);
         let mut cursor = FuncCursor::new(&mut context.func).at_inst(sort.entry);
-        let call = cursor
-            .ins()
-            .call(kernel, &[sort.data, sort.length, sort.gaps]);
+        let call = cursor.ins().call(kernel, &arguments);
         let sorted = cursor.func.dfg.first_result(call);
         let lists = &cursor.func.dfg.value_lists;
         let original = sort.original.block(lists);
@@ -2284,13 +2660,19 @@ fn prepare_impl<M: Module>(
     }
     if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
         if private.is_some() {
-            phase_layout::apply_fp_spill_cache(&mut context, &symbol).map_err(backend)?;
+            phase_layout::apply_fp_spill_cache(compiler_inputs, &mut context, &symbol)
+                .map_err(backend)?;
         }
-        phase_layout::apply(&mut context, &symbol).map_err(backend)?;
+        phase_layout::apply(compiler_inputs, selected_profiles, &mut context, &symbol)
+            .map_err(backend)?;
     }
     if !observe
         && cleanup.enabled
-        && phase_selected("MECH_COMPACT_FOLD_PHASE_CHECKED_ARITHMETIC", &symbol)
+        && phase_selected(
+            compiler_inputs,
+            "MECH_COMPACT_FOLD_PHASE_CHECKED_ARITHMETIC",
+            &symbol,
+        )
     {
         context.compute_cfg();
         let carries =
@@ -2300,19 +2682,29 @@ fn prepare_impl<M: Module>(
         if carries != 0 || products != 0 {
             context.verify(module.isa()).map_err(backend)?;
         }
-        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+        if compiler_inputs
+            .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+            .is_some()
+        {
             eprintln!(
                 "{symbol} proved checked arithmetic: {carries} carry tests, {products} high products"
             );
         }
     }
-    prepare_body(module.isa(), &mut context)?;
+    prepare_body(compiler_inputs, module.isa(), &mut context)?;
     if !observe && vectors.is_some() {
-        phase_layout::apply_register_weights(&mut context, &symbol).map_err(backend)?;
+        phase_layout::apply_register_weights(
+            compiler_inputs,
+            selected_profiles,
+            &mut context,
+            &symbol,
+        )
+        .map_err(backend)?;
     }
     // Inspect the actual prepared body without requesting the general observed
     // pipeline or changing disassembly, compilation sharing, or admission.
-    if let Some(path) = std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+    if let Some(path) = compiler_inputs
+        .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
         .map(std::path::PathBuf::from)
         .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()))
     {
@@ -2566,7 +2958,7 @@ fn phase_ir<M: Module>(
         b.append_block_param(error, types::I64);
         b.set_cold_block(error);
         let done = b.create_block();
-        let storage = Arrays::new(module, &mut b, args[0], observe)?;
+        let storage = Arrays::new(controls.inputs(), module, &mut b, args[0], observe)?;
         let native = numeric_minimal::Boundary::new(
             &mut b,
             args[1],
@@ -2622,8 +3014,9 @@ fn optimize_phase(
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
+    let compiler_inputs = controls.inputs();
     let selected = |option| {
-        std::env::var_os(option).is_some_and(|selection| {
+        compiler_inputs.var_os(option).is_some_and(|selection| {
             // An exact phase list permits held-feature experiments without changing
             // the existing all-phase option or the input packet's proof contract.
             selection
@@ -2652,34 +3045,49 @@ fn optimize_phase(
     }
     let compact_equality = private
         && vectors.is_some()
-        && std::env::var_os("MECH_COMPACT_SHORT_EQUALITY_PHASE")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SHORT_EQUALITY_PHASE")
             .is_some_and(|target| target == symbol);
     let equality = wide_equal::optimize(
+        compiler_inputs,
         context,
         &word_loops.compact_word_loops,
-        private && vectors.is_some() && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
+        private
+            && vectors.is_some()
+            && compiler_inputs
+                .var_os("MECH_REUSE_EQUALITY_PREFIX")
+                .is_some(),
         !compact_equality,
     );
     // Named experimental condition: growth state is absent from this callee.
     let threaded = if no_growth.is_some()
-        && std::env::var_os("MECH_THREAD_AFTER_GROWTH_ISOLATION").is_some()
+        && compiler_inputs
+            .var_os("MECH_THREAD_AFTER_GROWTH_ISOLATION")
+            .is_some()
     {
         Some(cfg_cleanup::thread_loop_edges(controls, context, isa)?)
     } else {
         None
     };
     let mut append_previous = None;
-    if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
-        let packet = std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
+    if no_growth.is_some() && compiler_inputs.var_os("MECH_CHECKED_APPEND_RUN").is_some() {
+        let packet = compiler_inputs
+            .var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
             .map(|value| (input_words, value == "all"));
-        let paired = (report_diagnostics || std::env::var_os("MECH_PAIR_BIASED_APPENDS").is_some())
+        let paired = (report_diagnostics
+            || compiler_inputs.var_os("MECH_PAIR_BIASED_APPENDS").is_some())
             && isa.name() == "aarch64"
             && isa.endianness() == cranelift_codegen::ir::Endianness::Little
-            && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some();
-        let outcome = if std::env::var_os("MECH_FORWARD_PREVIOUS_APPEND").is_some()
+            && compiler_inputs
+                .var_os("MECH_PAIR_CHECKED_APPENDS")
+                .is_some();
+        let outcome = if compiler_inputs
+            .var_os("MECH_FORWARD_PREVIOUS_APPEND")
+            .is_some()
             && let Some(contract) = no_growth
         {
             crate::native_artifact::program::codegen::append_run::optimize_with_previous(
+                compiler_inputs,
                 context,
                 word_loops.machine_header,
                 packet,
@@ -2692,21 +3100,25 @@ fn optimize_phase(
             )
         } else {
             crate::native_artifact::program::codegen::append_run::optimize(
+                compiler_inputs,
                 context,
                 word_loops.machine_header,
                 packet,
                 paired,
             )
         };
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} checked append run: {outcome:?}");
         }
     }
     let narrow_fixed = (private && vectors.is_some())
-        .then(|| std::env::var_os("MECH_NARROW_PRIVATE_ARITHMETIC"))
+        .then(|| compiler_inputs.var_os("MECH_NARROW_PRIVATE_ARITHMETIC"))
         .flatten();
     if narrow_fixed.is_some()
-        || (no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some())
+        || (no_growth.is_some()
+            && compiler_inputs
+                .var_os("MECH_NARROW_MASKED_ARITHMETIC")
+                .is_some())
     {
         let narrowed =
             crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
@@ -2717,7 +3129,7 @@ fn optimize_phase(
         } else {
             0
         };
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} low-word operations: {narrowed} arithmetic, {shifts} shifts");
         }
     }
@@ -2731,7 +3143,7 @@ fn optimize_phase(
             Some(&word_loops.reduction_completions),
             false,
         )?;
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!(
                 "{symbol} completed reduction routes: {}",
                 serde_json::to_string(&report).unwrap()
@@ -2740,10 +3152,14 @@ fn optimize_phase(
     }
     let vector_predicates = if private
         && vectors.is_some()
-        && std::env::var_os("MECH_PRIVATE_VECTOR_PREDICATES").is_some()
+        && compiler_inputs
+            .var_os("MECH_PRIVATE_VECTOR_PREDICATES")
+            .is_some()
     {
         let report = cfg_cleanup::refine_current_predicates(controls, context, isa)?;
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() && report.removed_branches != 0 {
+        if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some()
+            && report.removed_branches != 0
+        {
             eprintln!(
                 "{symbol} selected-edge predicates: {} branches",
                 report.removed_branches
@@ -2753,17 +3169,20 @@ fn optimize_phase(
     } else {
         None
     };
-    let width_guards =
-        if private && vectors.is_some() && std::env::var_os("MECH_PRIVATE_VECTOR_WIDTHS").is_some()
-        {
-            let removed = cfg_cleanup::fold_proved_widths(controls, context, isa)?;
-            if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-                eprintln!("{symbol} proved-width guards: {removed}");
-            }
-            removed
-        } else {
-            0
-        };
+    let width_guards = if private
+        && vectors.is_some()
+        && compiler_inputs
+            .var_os("MECH_PRIVATE_VECTOR_WIDTHS")
+            .is_some()
+    {
+        let removed = cfg_cleanup::fold_proved_widths(controls, context, isa)?;
+        if removed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} proved-width guards: {removed}");
+        }
+        removed
+    } else {
+        0
+    };
     let window_bounds = if private && vectors.is_some() {
         cfg_cleanup::combine_window_bounds(controls, context, isa)?
     } else {
@@ -2772,30 +3191,35 @@ fn optimize_phase(
     let paired_spans = if private
         && vectors.is_some()
         && !equality.reused.is_empty()
-        && std::env::var_os("MECH_ORDERED_CAPTURE_SPANS").is_some()
+        && compiler_inputs
+            .var_os("MECH_ORDERED_CAPTURE_SPANS")
+            .is_some()
     {
         cfg_cleanup::fold_ordered_capture_spans(controls, context, isa)?
     } else {
         0
     };
-    if paired_spans != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+    if paired_spans != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
         eprintln!("{symbol} ordered capture spans: {paired_spans}");
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_ADJACENT_ADDRESSES").is_some() {
+    if private && vectors.is_some() && compiler_inputs.var_os("MECH_ADJACENT_ADDRESSES").is_some() {
         let changed = cfg_cleanup::reuse_adjacent_addresses(controls, context, isa)?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if changed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} adjacent typed accesses: {changed}");
         }
     }
-    if std::env::var_os("MECH_SHARE_REPEATED_BOUNDS").is_some() {
+    if compiler_inputs
+        .var_os("MECH_SHARE_REPEATED_BOUNDS")
+        .is_some()
+    {
         let changed = cfg_cleanup::share_repeated_bounds(controls, context, isa)?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if changed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} repeated bounds checks: {changed}");
         }
     }
     if private
         && vectors.is_some()
-        && let Some(mode) = std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS")
+        && let Some(mode) = compiler_inputs.var_os("MECH_DEFER_EXIT_PACKET_WORDS")
     {
         let changed = super::phase_storage::sink_exit_packet_words(
             &mut context.func,
@@ -2805,55 +3229,65 @@ fn optimize_phase(
         );
         if changed != 0 {
             context.verify(isa).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} deferred exit packet words: {changed}");
             }
         }
     }
     if private
         && vectors.is_some()
-        && std::env::var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS").is_some()
+        && compiler_inputs
+            .var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS")
+            .is_some()
     {
         let changed = cfg_cleanup::reuse_dominating_window_facts(controls, context, isa)?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if changed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} reused dominating window facts: {changed}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some() {
+    if private && vectors.is_some() && compiler_inputs.var_os("MECH_PROVE_SCALAR_SPANS").is_some() {
         let changed = cfg_cleanup::prove_scalar_spans(controls, context, isa)?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if changed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved scalar spans: {changed}");
         }
     }
     if private
         && vectors.is_some()
-        && let Some(mode) = std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS")
+        && let Some(mode) = compiler_inputs.var_os("MECH_PROVE_PACKED_BASE_SPANS")
     {
         let proved = cfg_cleanup::prove_packed_bases(controls, context, isa, mode == "offsets")?;
-        if proved != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if proved != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved packed base spans: {proved}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
+    if private
+        && vectors.is_some()
+        && compiler_inputs
+            .var_os("MECH_REUSE_SELECTED_READ_BOUND")
+            .is_some()
     {
         let changed = cfg_cleanup::reuse_selected_read_bounds(controls, context, isa)?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if changed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} reused selected readable bounds: {changed}");
         }
     }
     if private
         && vectors.is_some()
-        && std::env::var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS").is_some()
+        && compiler_inputs
+            .var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS")
+            .is_some()
     {
         let removed = cfg_cleanup::coalesce_equal_join_arguments(controls, context, isa)?;
-        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        if removed != 0 && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} merged equal block arguments: {removed}");
         }
     }
     if private
         && vectors.is_some()
         && cleanup.enabled
-        && std::env::var_os("MECH_FORWARD_SELECTED_CONTINUATIONS").is_some()
+        && compiler_inputs
+            .var_os("MECH_FORWARD_SELECTED_CONTINUATIONS")
+            .is_some()
     {
         context.compute_cfg();
         context.compute_domtree();
@@ -2866,7 +3300,9 @@ fn optimize_phase(
             context.compute_cfg();
             context.compute_domtree();
             if cfg!(target_arch = "aarch64")
-                && std::env::var_os("MECH_NORMALIZE_SELECTED_LOOP_TEST").is_some()
+                && compiler_inputs
+                    .var_os("MECH_NORMALIZE_SELECTED_LOOP_TEST")
+                    .is_some()
             {
                 context.eliminate_unreachable_code(isa).map_err(backend)?;
                 context.compute_cfg();
@@ -2878,13 +3314,13 @@ fn optimize_phase(
                 if normalized != 0 {
                     context.compute_cfg();
                     context.compute_domtree();
-                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                         eprintln!("{symbol} normalized selected loop tests: {normalized}");
                     }
                 }
             }
             context.verify(isa).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} forwarded selected continuations: {forwarded}");
             }
         }

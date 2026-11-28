@@ -42,7 +42,8 @@ fn rewrite(
         Enter(Block),
         Leave(Vec<(Value, Option<Value>)>),
     }
-    let Some(entry) = f.layout.entry_block() else {
+    let (layout, dfg) = (&f.stencil.layout, &mut f.stencil.dfg);
+    let Some(entry) = layout.entry_block() else {
         return;
     };
     let mut steps = vec![Step::Enter(entry)];
@@ -65,17 +66,26 @@ fn rewrite(
                         undo.push((old, active.insert(old, new)));
                     }
                 }
-                let instructions = f.layout.block_insts(block).collect::<Vec<_>>();
-                for inst in instructions {
-                    for value in f.dfg.inst_args_mut(inst) {
+                if active.is_empty() {
+                    steps.extend(dom.children(block).map(Step::Enter));
+                    continue;
+                }
+                for inst in layout.block_insts(block) {
+                    for value in dfg.inst_args_mut(inst) {
                         if let Some(&new) = active.get(value) {
                             *value = new;
                         }
                     }
-                    let dfg = &mut f.dfg;
                     for call in dfg.insts[inst]
                         .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)
                     {
+                        let changed = call
+                            .args(&dfg.value_lists)
+                            .filter_map(|arg| arg.as_value())
+                            .any(|old| active.get(&old).is_some_and(|&new| new != old));
+                        if !changed {
+                            continue;
+                        }
                         let args = call
                             .args(&dfg.value_lists)
                             .map(|arg| {
@@ -238,9 +248,11 @@ pub(super) fn optimize(
         report.threaded_edges += 1;
         report.selected_conditions += plan.conditions;
     }
-    rewrite(f, dom, &replacements);
+    if report.threaded_edges != 0 {
+        rewrite(f, dom, &replacements);
+    }
     report
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

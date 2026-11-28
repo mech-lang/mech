@@ -116,8 +116,16 @@ fn compile(shift: u32, key_mask: u32, tuning: Option<Options>) -> (JITModule, Ru
     if let Some(options) = tuning {
         let mut fast = module.make_context();
         fast.func = ctx.func.clone();
-        let admission = optimize(&mut fast, header, &loads, &nodes, &bins, options)
-            .expect("recognized descending packed-node histogram");
+        let admission = optimize(
+            &CompilationInputs::capture([]),
+            &mut fast,
+            header,
+            &loads,
+            &nodes,
+            &bins,
+            options,
+        )
+        .expect("recognized descending packed-node histogram");
         assert_eq!(
             admission,
             Admission {
@@ -133,7 +141,13 @@ fn compile(shift: u32, key_mask: u32, tuning: Option<Options>) -> (JITModule, Ru
             .unwrap();
         module.define_function(id, &mut fast).unwrap();
         let call = module.declare_func_in_func(id, &mut ctx.func);
-        guard_entry(&mut ctx, admission, call);
+        guard_entry(
+            &CompilationInputs::capture([]),
+            &mut ctx,
+            admission,
+            call,
+            None,
+        );
     }
     ctx.verify(module.isa()).unwrap();
     let id = module
@@ -316,6 +330,7 @@ fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
         let before = ctx.func.display().to_string();
         assert_eq!(
             optimize(
+                &CompilationInputs::capture([]),
                 &mut ctx,
                 header,
                 &loads,

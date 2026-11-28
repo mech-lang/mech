@@ -29,6 +29,7 @@ pub(super) fn reverse_low_words(b: &mut FunctionBuilder<'_>, first: Value, secon
 }
 
 pub(super) struct Inputs {
+    reverse_low_words: bool,
     words: BTreeMap<usize, Value>,
     vector_words: BTreeMap<usize, Value>,
     bases: BTreeMap<Window, Value>,
@@ -49,8 +50,10 @@ impl Inputs {
         proof: &Proof,
         shadow: usize,
         cost: &Cost,
+        reverse_low_words: bool,
     ) -> Self {
         let mut out = Self {
+            reverse_low_words,
             words: BTreeMap::new(),
             vector_words: BTreeMap::new(),
             bases: BTreeMap::new(),
@@ -197,10 +200,7 @@ impl Inputs {
         let first = b.ins().load(types::I8X16, flags, pointer, 0);
         let bytes = if width == 8 {
             let second = b.ins().load(types::I8X16, flags, pointer, 16);
-            if w.reverse
-                && cfg!(target_arch = "aarch64")
-                && std::env::var_os("MECH_ORDERED_REVERSE_LOW_WORDS").is_some()
-            {
+            if w.reverse && cfg!(target_arch = "aarch64") && self.reverse_low_words {
                 reverse_low_words(b, first, second)
             } else {
                 let mask = if w.reverse {

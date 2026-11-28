@@ -22,6 +22,7 @@ pub(super) struct Pool {
     submitted: std::cell::Cell<usize>,
     cleanup_submitted: std::cell::Cell<usize>,
     direct_runtime_calls: DirectRuntimeCalls,
+    log_jobs: bool,
 }
 
 pub(super) struct Ticket<T = Context>(mpsc::Receiver<Result<T, NativeCompileError>>);
@@ -31,6 +32,7 @@ impl Pool {
         isa: OwnedTargetIsa,
         count: usize,
         direct_runtime_calls: DirectRuntimeCalls,
+        log_jobs: bool,
     ) -> Result<Self, NativeCompileError> {
         assert!(count > 0);
         let (queue, jobs) = mpsc::sync_channel::<Job>(count);
@@ -42,6 +44,7 @@ impl Pool {
             submitted: std::cell::Cell::new(0),
             cleanup_submitted: std::cell::Cell::new(0),
             direct_runtime_calls,
+            log_jobs,
         };
         for index in 0..count {
             let jobs = jobs.clone();
@@ -220,7 +223,7 @@ mod tests {
             let (second, mut context) = later(&mut module);
             module.define_function(second, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default(), false).unwrap();
             let mut recorded = pool.record(&module).unwrap();
             let (second, context) = later(&mut recorded);
             let (first_job, second_job) = if reverse_submission {
@@ -261,7 +264,7 @@ mod tests {
             .define_function(first, &mut context)
             .unwrap_err()
             .to_string();
-        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default(), false).unwrap();
         let first_job = pool.submit(body(&mut module, false)).unwrap();
         let mut recorded = pool.record(&module).unwrap();
         let data = recorded.declare_anonymous_data(false, false).unwrap();
@@ -275,7 +278,14 @@ mod tests {
         );
     }
 
-    fn cleaned_image(count: usize) -> Vec<u8> {
+    fn cleaned_image(count: usize) -> (Vec<u8>, serde_json::Value) {
+        use crate::native_artifact::{
+            codegen::{
+                options::{CompilationControls, OptimizationOptions},
+                route_work::RouteWorkCollector,
+            },
+            program::codegen::cfg_cleanup::{RouteCleanup, RouteSequence},
+        };
         let (mut module, isa) = module();
         let signature = signature(&module);
         let function = module
@@ -305,7 +315,12 @@ mod tests {
             b.seal_all_blocks();
             b.finalize();
         }
-        fn clean(context: &mut Context, isa: &dyn TargetIsa) -> Result<String, NativeCompileError> {
+        fn clean(
+            context: &mut Context,
+            isa: &dyn TargetIsa,
+            controls: &CompilationControls,
+        ) -> Result<String, NativeCompileError> {
+            RouteSequence::new(controls, context, isa, RouteCleanup::Ordered).thread_loops()?;
             context.compute_cfg();
             context.compute_domtree();
             context.remove_constant_phis(isa).map_err(backend)?;
@@ -313,15 +328,24 @@ mod tests {
             Ok(context.func.display().to_string())
         }
         let mut reference = Context::for_function(context.func.clone());
-        let expected = clean(&mut reference, isa.as_ref()).unwrap();
+        let expected = clean(
+            &mut reference,
+            isa.as_ref(),
+            &CompilationControls::new(OptimizationOptions::default()),
+        )
+        .unwrap();
+        let work = RouteWorkCollector::new();
+        let controls = CompilationControls::new(OptimizationOptions::default())
+            .with_route_recorder(Some(work.register("cleaned")));
         if count == 0 {
-            clean(&mut context, isa.as_ref()).unwrap();
+            clean(&mut context, isa.as_ref(), &controls).unwrap();
+            drop(controls);
             module.define_function(function, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default(), false).unwrap();
             let ticket = pool
                 .submit_work(move |isa| {
-                    let ir = clean(&mut context, isa)?;
+                    let ir = clean(&mut context, isa, &controls)?;
                     let context = compile(context, isa)?;
                     Ok((context, ir))
                 })
@@ -330,12 +354,13 @@ mod tests {
             assert_eq!(actual, expected);
             publish(&mut module, function, &context).unwrap();
         }
-        module.finish().emit().unwrap()
+        (module.finish().emit().unwrap(), work.json())
     }
 
     #[test]
     fn owned_cleanup_and_machine_jobs_match_coordinator_ir_and_object() {
         let expected = cleaned_image(0);
+        assert_eq!(expected.1["totals"]["loop_searches"], 1);
         for count in [1, 2, 4] {
             for _ in 0..4 {
                 assert_eq!(cleaned_image(count), expected);
@@ -345,22 +370,42 @@ mod tests {
 
     #[test]
     fn typed_cleanup_errors_remain_ordered_by_their_tickets() {
+        use crate::native_artifact::codegen::route_work::RouteWorkCollector;
         let (_, isa) = module();
-        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default(), false).unwrap();
+        let work = RouteWorkCollector::new();
+        let first_work = work.register("earlier cleanup");
+        let second_work = work.register("later cleanup");
+        let (complete, later_finished) = std::sync::mpsc::channel();
         let first = pool
-            .submit_work::<()>(|_| Err(backend("earlier cleanup")))
+            .submit_work::<()>(move |_| {
+                later_finished.recv().unwrap();
+                first_work.record(|work| work.loop_searches += 1);
+                Err(backend("earlier cleanup"))
+            })
             .unwrap();
         let second = pool
-            .submit_work::<()>(|_| Err(backend("later cleanup")))
+            .submit_work::<()>(move |_| {
+                second_work.record(|work| work.identity_searches += 2);
+                drop(second_work);
+                complete.send(()).unwrap();
+                Err(backend("later cleanup"))
+            })
             .unwrap();
         assert_eq!(first.wait().unwrap_err(), backend("earlier cleanup"));
         assert_eq!(second.wait().unwrap_err(), backend("later cleanup"));
+        drop(pool);
+        let report = work.json();
+        assert_eq!(report["units"][0]["symbol"], "earlier cleanup");
+        assert_eq!(report["units"][1]["symbol"], "later cleanup");
+        assert_eq!(report["totals"]["loop_searches"], 1);
+        assert_eq!(report["totals"]["identity_searches"], 2);
     }
 }
 
 impl Drop for Pool {
     fn drop(&mut self) {
-        if std::env::var_os("MECH_PROFILE_COMPILE_JOBS").is_some() {
+        if self.log_jobs {
             eprintln!(
                 "compact-compile-jobs: workers={} submitted={} cleanup={}",
                 self.workers.len(),

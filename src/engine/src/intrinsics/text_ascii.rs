@@ -5,7 +5,7 @@ pub(super) const CARRIAGE_RETURN: u8 = 1;
 
 // Keep one compiled reduction boundary: when inlined into grapheme counting,
 // separate high-bit/CR users can turn the reduction into multiple live-outs
-// that LLVM leaves scalar. Callers interpret the returned flags afterwards.
+// that the Rust compiler leaves scalar. Callers interpret the returned flags afterwards.
 #[inline(never)]
 pub(super) fn flags(text: &str) -> u8 {
     // Keep raw byte bits and all-bits comparison masks in separate reductions.

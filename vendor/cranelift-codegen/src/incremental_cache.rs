@@ -144,6 +144,7 @@ impl<'a> Hash for CacheKey<'a> {
         self.isa.triple().hash(state);
         self.isa.flags().hash(state);
         self.isa.isa_flags_hash_key().hash(state);
+        self.isa.aarch64_compilation_options().hash(state);
     }
 }
 

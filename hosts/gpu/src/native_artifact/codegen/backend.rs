@@ -1,4 +1,5 @@
 //! Compiler-only module construction; each family retains its emission flags.
+use super::compilation_inputs::CompilationInputs;
 use crate::native_artifact::compiler::{NativeCompileError, backend};
 use cranelift_codegen::settings::{self, Configurable};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -22,7 +23,21 @@ pub(in crate::native_artifact) const CONTROL_FLAGS: &[(&str, &str)] = &[
 pub(in crate::native_artifact) fn jit(
     flags: &[(&str, &str)],
 ) -> Result<JITModule, NativeCompileError> {
-    let builder = JITBuilder::with_flags(flags, default_libcall_names()).map_err(backend)?;
+    jit_with_inputs(flags, &CompilationInputs::legacy())
+}
+
+pub(in crate::native_artifact) fn jit_with_inputs(
+    options: &[(&str, &str)],
+    inputs: &CompilationInputs,
+) -> Result<JITModule, NativeCompileError> {
+    let mut flags = shared_flags(options)?;
+    // Match the existing JITBuilder native relocation policy.
+    flags
+        .set("use_colocated_libcalls", "false")
+        .map_err(backend)?;
+    flags.set("is_pic", "false").map_err(backend)?;
+    let isa = native_isa(flags, inputs)?;
+    let builder = JITBuilder::with_isa(isa, default_libcall_names());
     // x86 local calls and data references use signed 32-bit displacements.
     // Independent system mappings can be more than 2 GiB apart after a large
     // compilation. Reserve one address range for code and data instead. Unix
@@ -42,25 +57,40 @@ pub(in crate::native_artifact) fn object(
     name: &str,
     options: &[(&str, &str)],
 ) -> Result<ObjectModule, NativeCompileError> {
-    object_with_isa(name, options).map(|(module, _)| module)
+    object_with_isa(name, options, &CompilationInputs::legacy()).map(|(module, _)| module)
 }
 
 pub(in crate::native_artifact) fn object_with_isa(
     name: &str,
     options: &[(&str, &str)],
+    inputs: &CompilationInputs,
 ) -> Result<(ObjectModule, cranelift_codegen::isa::OwnedTargetIsa), NativeCompileError> {
-    let mut flags = settings::builder();
-    for &(key, value) in options {
-        flags.set(key, value).map_err(backend)?;
-    }
-    let isa = cranelift_native::builder()
-        .map_err(backend)?
-        .finish(settings::Flags::new(flags))
-        .map_err(backend)?;
+    let isa = native_isa(shared_flags(options)?, inputs)?;
     let module = ObjectModule::new(
         ObjectBuilder::new(isa.clone(), name, default_libcall_names()).map_err(backend)?,
     );
     Ok((module, isa))
+}
+
+fn shared_flags(options: &[(&str, &str)]) -> Result<settings::Builder, NativeCompileError> {
+    let mut flags = settings::builder();
+    for &(key, value) in options {
+        flags.set(key, value).map_err(backend)?;
+    }
+    Ok(flags)
+}
+
+fn native_isa(
+    flags: settings::Builder,
+    inputs: &CompilationInputs,
+) -> Result<cranelift_codegen::isa::OwnedTargetIsa, NativeCompileError> {
+    cranelift_native::builder()
+        .map_err(backend)?
+        .finish_with_aarch64_compilation_options(
+            settings::Flags::new(flags),
+            inputs.aarch64_options(),
+        )
+        .map_err(backend)
 }
 
 #[cfg(all(test, target_arch = "x86_64", not(target_os = "windows")))]

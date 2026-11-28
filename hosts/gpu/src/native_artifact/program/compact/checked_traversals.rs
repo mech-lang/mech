@@ -1,5 +1,6 @@
 //! Share repeated checked regions with explicit continuation boundaries.
 use super::{body_relocations::matching_relocations, checked_byte_append::ShortAppend};
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes},
@@ -296,6 +297,7 @@ fn local_cold_return(function: &Function, block: Block, origin_base: i64) -> boo
 }
 
 fn plan(
+    compiler_inputs: &CompilationInputs,
     f: &Function,
     cfg: &ControlFlowGraph,
     users: &[Vec<Block>],
@@ -358,7 +360,9 @@ fn plan(
             .all(|pred| blocks.contains(&pred.block))
     });
     let allow_retained_returns = kind.is_continuation()
-        && std::env::var_os("MECH_COMPACT_KEEP_SHARED_TERMINAL_RETURNS").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_KEEP_SHARED_TERMINAL_RETURNS")
+            .is_some();
     let mut retained_returns = BTreeSet::new();
     for &block in &blocks {
         let entry = block == candidate.start;
@@ -1204,6 +1208,7 @@ struct Prepared {
 }
 
 pub(super) fn share<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &mut Function,
     families: BTreeMap<FuncId, Vec<Candidate>>,
@@ -1219,9 +1224,12 @@ pub(super) fn share<M: Module>(
     if !all_families {
         families.truncate(1);
     }
-    let pack_large_refusals = std::env::var_os("MECH_COMPACT_PACK_LARGE_REFUSALS").is_some();
-    let literal_mode = std::env::var_os("MECH_COMPACT_BIND_REFUSAL_LITERALS");
+    let pack_large_refusals = compiler_inputs
+        .var_os("MECH_COMPACT_PACK_LARGE_REFUSALS")
+        .is_some();
+    let literal_mode = compiler_inputs.var_os("MECH_COMPACT_BIND_REFUSAL_LITERALS");
     share_families(
+        compiler_inputs,
         module,
         root,
         families,
@@ -1249,23 +1257,37 @@ pub(super) struct CaptureBindings {
 }
 
 impl CaptureBindings {
-    pub(super) fn from_environment() -> Self {
+    pub(super) fn capture(compiler_inputs: &CompilationInputs) -> Self {
         Self {
-            literals: std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some(),
+            literals: compiler_inputs
+                .var_os("MECH_COMPACT_BIND_REGION_LITERALS")
+                .is_some(),
             shared_literal_columns: false,
             retry_refusal_bounds: false,
-            input_roles: std::env::var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES").is_some(),
-            return_error_origin: std::env::var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
+            input_roles: compiler_inputs
+                .var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES")
                 .is_some(),
-            align_outputs: std::env::var_os("MECH_COMPACT_ALIGN_REGION_OUTPUTS").is_some(),
-            pad_outputs: std::env::var_os("MECH_COMPACT_PAD_REGION_OUTPUTS").is_some(),
-            register_inputs: std::env::var_os("MECH_COMPACT_REGION_REGISTER_INPUTS").is_some(),
-            register_outputs: std::env::var_os("MECH_COMPACT_REGION_REGISTER_OUTPUTS").is_some(),
+            return_error_origin: compiler_inputs
+                .var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
+                .is_some(),
+            align_outputs: compiler_inputs
+                .var_os("MECH_COMPACT_ALIGN_REGION_OUTPUTS")
+                .is_some(),
+            pad_outputs: compiler_inputs
+                .var_os("MECH_COMPACT_PAD_REGION_OUTPUTS")
+                .is_some(),
+            register_inputs: compiler_inputs
+                .var_os("MECH_COMPACT_REGION_REGISTER_INPUTS")
+                .is_some(),
+            register_outputs: compiler_inputs
+                .var_os("MECH_COMPACT_REGION_REGISTER_OUTPUTS")
+                .is_some(),
         }
     }
 }
 
 pub(super) fn share_controllers<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
@@ -1274,8 +1296,10 @@ pub(super) fn share_controllers<M: Module>(
     if families.iter().map(Vec::len).sum::<usize>() < 2 {
         return Ok(None);
     }
-    let direct_inputs = direct_input_limit("MECH_COMPACT_DIRECT_CONTROLLER_WORDS")?;
+    let direct_inputs =
+        direct_input_limit(compiler_inputs, "MECH_COMPACT_DIRECT_CONTROLLER_WORDS")?;
     share_families(
+        compiler_inputs,
         module,
         root,
         families,
@@ -1286,6 +1310,7 @@ pub(super) fn share_controllers<M: Module>(
 }
 
 pub(super) fn share_phase_regions<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
@@ -1294,27 +1319,42 @@ pub(super) fn share_phase_regions<M: Module>(
     // The resume path can be a shared failure continuation inside the phase.
     // Its original block arguments and preceding stores travel through the
     // same checked boundary as any other partial continuation.
-    share_families(module, root, families, RegionKind::Phase, true, bindings)
+    share_families(
+        compiler_inputs,
+        module,
+        root,
+        families,
+        RegionKind::Phase,
+        true,
+        bindings,
+    )
 }
 
 pub(super) fn share_continuations<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
-    let direct_inputs = direct_input_limit("MECH_COMPACT_DIRECT_CONTINUATION_WORDS")?;
+    let direct_inputs =
+        direct_input_limit(compiler_inputs, "MECH_COMPACT_DIRECT_CONTINUATION_WORDS")?;
     share_families(
+        compiler_inputs,
         module,
         root,
         families,
         RegionKind::Continuation { direct_inputs },
         false,
-        CaptureBindings::from_environment(),
+        CaptureBindings::capture(compiler_inputs),
     )
 }
 
-fn direct_input_limit(variable: &str) -> Result<usize, NativeCompileError> {
-    let limit = std::env::var(variable)
+fn direct_input_limit(
+    compiler_inputs: &CompilationInputs,
+    variable: &str,
+) -> Result<usize, NativeCompileError> {
+    let limit = compiler_inputs
+        .var(variable)
         .ok()
         .map(|n| n.parse::<usize>().map_err(backend))
         .transpose()?
@@ -1326,6 +1366,7 @@ fn direct_input_limit(variable: &str) -> Result<usize, NativeCompileError> {
 }
 
 fn prepare_bodies<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &Function,
     traversals: impl IntoIterator<Item = Traversal>,
@@ -1338,15 +1379,25 @@ fn prepare_bodies<M: Module>(
     let compose_origins = region_kind.is_continuation();
     let short_appends = compose_origins
         && module.isa().name() == "aarch64"
-        && std::env::var_os("MECH_COMPACT_SHORT_BYTE_APPENDS").is_some();
-    let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
-    let compact_refusal_bodies =
-        refusal_regions && std::env::var_os("MECH_COMPACT_PREPARE_REFUSAL_IR").is_some();
-    let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
-    let share_retirements = std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SHORT_BYTE_APPENDS")
+            .is_some();
+    let compact_layout_bodies = compiler_inputs
+        .var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR")
+        .is_some();
+    let compact_refusal_bodies = refusal_regions
+        && compiler_inputs
+            .var_os("MECH_COMPACT_PREPARE_REFUSAL_IR")
+            .is_some();
+    let layout_regions_last = compiler_inputs
+        .var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST")
+        .is_some();
+    let share_retirements = compiler_inputs
+        .var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
         .is_some_and(|scope| scope == "helpers" || scope == "all");
     let pair_words = super::word_pairs::available(module.isa())
-        && std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_PAIR_WORDS")
             .is_some_and(|scope| scope == "helpers" || scope == "all");
     let order = OnceCell::new();
     let mut groups: Vec<Prepared> = Vec::new();
@@ -1431,7 +1482,10 @@ fn prepare_bodies<M: Module>(
             );
         }
         if region_kind == RegionKind::Phase {
-            if std::env::var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS").is_some() {
+            if compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS")
+                .is_some()
+            {
                 context.flowgraph();
                 let shared = super::cold_status::share(&mut context.func, &context.cfg);
                 if shared != 0 {
@@ -1443,7 +1497,9 @@ fn prepare_bodies<M: Module>(
                 );
             }
             if super::word_pairs::available(module.isa())
-                && std::env::var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS").is_some()
+                && compiler_inputs
+                    .var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS")
+                    .is_some()
             {
                 let folded =
                     crate::native_artifact::program::codegen::cfg_cleanup::defaulted_loads::fold(
@@ -1457,9 +1513,12 @@ fn prepare_bodies<M: Module>(
             }
         }
         let release_stubs = if region_kind == RegionKind::Phase
-            && std::env::var_os("MECH_COMPACT_SHARE_RELEASE_SETUP").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_RELEASE_SETUP")
+                .is_some()
         {
             super::release_stubs::ReleaseStubs::prepare_captured(
+                compiler_inputs,
                 module,
                 &mut context.func,
                 candidate.header,
@@ -1502,7 +1561,7 @@ fn prepare_bodies<M: Module>(
             .map(|reloc| ModuleReloc::from_mach_reloc(reloc, &context.func, function))
             .collect::<Vec<_>>();
         let short_append = short_appends
-            .then(|| ShortAppend::recognize(&context.func))
+            .then(|| ShortAppend::recognize(compiler_inputs, &context.func))
             .flatten();
         let bytes = compiled.buffer.data();
         let alignment = compiled.buffer.alignment;
@@ -1519,7 +1578,7 @@ fn prepare_bodies<M: Module>(
         } else {
             "MECH_COMPACT_DUMP_CONTROLLER_MATCHES"
         };
-        if let Some(folder) = std::env::var_os(dump) {
+        if let Some(folder) = compiler_inputs.var_os(dump) {
             let folder = std::path::PathBuf::from(folder);
             std::fs::create_dir_all(&folder).map_err(backend)?;
             let stem = candidate.header.to_string();
@@ -1564,6 +1623,7 @@ fn prepare_bodies<M: Module>(
 }
 
 fn share_families<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
@@ -1576,7 +1636,11 @@ fn share_families<M: Module>(
         return Ok(None);
     }
     let excluded = refusal_regions
-        .then(|| std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS").ok())
+        .then(|| {
+            compiler_inputs
+                .var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS")
+                .ok()
+        })
         .flatten()
         .map(|list| {
             list.split(',')
@@ -1585,7 +1649,9 @@ fn share_families<M: Module>(
         })
         .transpose()?
         .unwrap_or_default();
-    let order_layout_captures = std::env::var_os("MECH_COMPACT_ORDER_REGION_CAPTURES").is_some();
+    let order_layout_captures = compiler_inputs
+        .var_os("MECH_COMPACT_ORDER_REGION_CAPTURES")
+        .is_some();
     let mut proven = BTreeSet::new();
     let cfg = ControlFlowGraph::with_function(root);
     let users = use_blocks(root);
@@ -1600,6 +1666,7 @@ fn share_families<M: Module>(
                 continue;
             }
             let mut traversal = match plan(
+                compiler_inputs,
                 root,
                 &cfg,
                 &users,
@@ -1644,6 +1711,7 @@ fn share_families<M: Module>(
     }
     drop((users, proven));
     let mut groups = prepare_bodies(
+        compiler_inputs,
         module,
         root,
         traversals,
@@ -1686,6 +1754,7 @@ fn share_families<M: Module>(
                 .values_mut()
                 .flat_map(|family| family.extract_if(.., |t| !t.aligned_outputs.is_empty()));
             groups.extend(prepare_bodies(
+                compiler_inputs,
                 module,
                 root,
                 aligned,
@@ -1697,7 +1766,13 @@ fn share_families<M: Module>(
         }
     }
     if refusal_regions && bindings.retry_refusal_bounds {
-        refusal_bounds::retry(module, root, &mut groups, dominance.as_ref())?;
+        refusal_bounds::retry(
+            compiler_inputs,
+            module,
+            root,
+            &mut groups,
+            dominance.as_ref(),
+        )?;
     }
     drop((cfg, dominance));
     let groups = groups
@@ -1741,14 +1816,16 @@ fn share_families<M: Module>(
             ))
         });
     let packets = CallSlots { result, captures };
-    let observe_refusals =
-        refusal_regions && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some();
+    let observe_refusals = refusal_regions
+        && compiler_inputs
+            .var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS")
+            .is_some();
     let observer_flag = if region_kind.is_continuation() {
         "MECH_COMPACT_OBSERVE_CONTINUATIONS"
     } else {
         "MECH_COMPACT_OBSERVE_LAYOUT_REGIONS"
     };
-    let observe_layout = std::env::var_os(observer_flag).is_some()
+    let observe_layout = compiler_inputs.var_os(observer_flag).is_some()
         && groups.iter().any(|group| {
             group
                 .traversals
@@ -1770,7 +1847,9 @@ fn share_families<M: Module>(
         })
         .transpose()?;
     let cold = refusal_regions
-        && std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
+        && compiler_inputs
+            .var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT")
+            .is_some();
     if region_kind != RegionKind::Phase {
         // Lay out the checked bodies before adding specialized entries.
         for selected in &groups {
@@ -1785,7 +1864,9 @@ fn share_families<M: Module>(
         }
     }
     let mut report = Vec::new();
-    let inline_short_appends = std::env::var_os("MECH_COMPACT_INLINE_SHORT_BYTE_APPENDS").is_some();
+    let inline_short_appends = compiler_inputs
+        .var_os("MECH_COMPACT_INLINE_SHORT_BYTE_APPENDS")
+        .is_some();
     let mut short_bodies = BTreeMap::new();
     for selected in groups {
         let mut code_bytes = selected.bytes.len();
@@ -1797,7 +1878,7 @@ fn share_families<M: Module>(
             let entry = module
                 .declare_function(&symbol, Linkage::Local, &selected.signature)
                 .map_err(backend)?;
-            let context = append.define(module, entry, selected.function)?;
+            let context = append.define(compiler_inputs, module, entry, selected.function)?;
             let fast = context.compiled_code().expect("compiled short append");
             let fast_stack = compiled_stack_bytes(&fast.buffer)?;
             code_bytes = fast.code_info().total_size as usize;
@@ -1808,6 +1889,10 @@ fn share_families<M: Module>(
                 "checked_code_bytes": selected.bytes.len(),
                 "checked_stack_bytes": selected.stack,
             }));
+            if append.maximum > 1 {
+                short_append_report.as_mut().expect("short append report")["maximum_bytes"] =
+                    serde_json::json!(append.maximum);
+            }
             if inline_short_appends {
                 short_bodies.insert(entry, context.func);
             }

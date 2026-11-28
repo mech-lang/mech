@@ -652,7 +652,10 @@ impl TerminalAppends {
             }
             candidates.push(fallback);
             for (route, blocks) in self.routes.iter().zip(candidates.windows(2)) {
-                b.switch_to_block(blocks[0]);
+                // The first route starts in the current entry block.
+                if blocks[0] != entry {
+                    b.switch_to_block(blocks[0]);
+                }
                 let mut packet = Packet {
                     base: input,
                     lanes: BTreeMap::new(),

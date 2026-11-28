@@ -3,6 +3,8 @@
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod byte_boolean_tests;
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+mod ccmp_immediate_tests;
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod narrow_pack_tests;
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod shared_boolean_tests;

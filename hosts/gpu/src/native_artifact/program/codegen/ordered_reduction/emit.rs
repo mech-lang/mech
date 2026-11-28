@@ -2,6 +2,7 @@
 use super::cost::ScalarRead;
 use super::*;
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::compiler::primitive;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Block, ConstantData, Endianness, InstBuilder, MemFlags, Value, types};
@@ -10,6 +11,7 @@ use cranelift_frontend::FunctionBuilder;
 impl Reduction {
     pub fn emit(
         &self,
+        compiler_inputs: &CompilationInputs,
         b: &mut FunctionBuilder<'_>,
         words: &Words,
         proof: &Proof,
@@ -21,11 +23,15 @@ impl Reduction {
         countdown: bool,
     ) -> Block {
         let c = &self.candidate;
-        let singleton =
-            carry_item && std::env::var_os("MECH_SINGLETON_ORDERED_REDUCTION").is_some();
+        let singleton = carry_item
+            && compiler_inputs
+                .var_os("MECH_SINGLETON_ORDERED_REDUCTION")
+                .is_some();
         let reverse = if singleton
             && cfg!(target_arch = "aarch64")
-            && std::env::var_os("MECH_REVERSE_REDUCTION_CURSOR").is_some()
+            && compiler_inputs
+                .var_os("MECH_REVERSE_REDUCTION_CURSOR")
+                .is_some()
         {
             self.reads.iter().copied().find(|read| read.reverse)
         } else {
@@ -33,7 +39,7 @@ impl Reduction {
         };
         let biased = reverse.and_then(|_| {
             if !countdown
-                || std::env::var_os("MECH_NARROW_ORDERED_ITEM").is_none()
+                || compiler_inputs.var_os("MECH_NARROW_ORDERED_ITEM").is_none()
                 || super::cost::Inputs::uses_index(&self.cost)
             {
                 return None;
@@ -46,7 +52,10 @@ impl Reduction {
             Some((window, split_shifted_item(&self.selected, window.delta)?))
         });
         let encoded_winner = biased.and_then(|(window, offset)| {
-            if std::env::var_os("MECH_ORDERED_ENCODE_WINNER_WITH_OFFSET").is_none() {
+            if compiler_inputs
+                .var_os("MECH_ORDERED_ENCODE_WINNER_WITH_OFFSET")
+                .is_none()
+            {
                 return None;
             }
             let low_bits = shifted_item_low_zeros(offset)?;
@@ -91,9 +100,27 @@ impl Reduction {
         b.switch_to_block(setup);
         let best = words.read(b, self.best);
         let best = b.ins().ireduce(types::I32, best);
-        let mut inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
+        let mut inputs = super::cost::Inputs::new(
+            b,
+            words,
+            proof,
+            shadow,
+            &self.cost,
+            compiler_inputs
+                .var_os("MECH_ORDERED_REVERSE_LOW_WORDS")
+                .is_some(),
+        );
         let key = encoded_winner.map(|(offset, _)| {
-            let low = emit_item_low32(b, words, proof, shadow, offset, start, ordinary);
+            let low = emit_item_low32(
+                compiler_inputs,
+                b,
+                words,
+                proof,
+                shadow,
+                offset,
+                start,
+                ordinary,
+            );
             b.ins().uextend(types::I64, low)
         });
         let old_item = carry_item.then(|| {
@@ -111,7 +138,9 @@ impl Reduction {
         let forward = biased.map(|(window, _)| window);
         let deferred = biased.filter(|_| {
             encoded_winner.is_some()
-                || std::env::var_os("MECH_ORDERED_PACK_WINNER_AT_EXIT").is_some()
+                || compiler_inputs
+                    .var_os("MECH_ORDERED_PACK_WINNER_AT_EXIT")
+                    .is_some()
         });
         if reverse.is_some() {
             b.append_block_param(scalar_body, types::I64);
@@ -124,7 +153,9 @@ impl Reduction {
         b.append_block_param(scalar_finish, carried);
         let pair = biased.filter(|_| {
             cfg!(target_arch = "aarch64")
-                && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").is_some()
+                && compiler_inputs
+                    .var_os("MECH_ORDERED_PAIRED_CONTINUATION")
+                    .is_some()
         });
         let scalar_entry = if pair.is_some() {
             let entry = b.create_block();
@@ -138,7 +169,9 @@ impl Reduction {
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
         let initial = old_item.unwrap_or(missing);
-        let count_admitted = std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
+        let count_admitted = compiler_inputs
+            .var_os("MECH_ORDERED_PACKED_COST_INDEX")
+            .is_some()
             && facts.check(
                 initialize,
                 super::super::traversal_facts::Check::Le(
@@ -146,10 +179,14 @@ impl Reduction {
                     super::super::traversal_facts::Operand::Constant(65535),
                 ),
             );
-        let eight_entry = std::env::var_os("MECH_ORDERED_PACKED_EIGHT_ENTRY").is_some()
-            && std::env::var_os("MECH_ORDERED_PACKED_ACCUMULATORS").as_deref()
+        let eight_entry = compiler_inputs
+            .var_os("MECH_ORDERED_PACKED_EIGHT_ENTRY")
+            .is_some()
+            && compiler_inputs
+                .var_os("MECH_ORDERED_PACKED_ACCUMULATORS")
+                .as_deref()
                 == Some(std::ffi::OsStr::new("2"))
-            && super::vector_loop::packed_enabled(self);
+            && super::vector_loop::packed_enabled(compiler_inputs, self);
         let long = b.ins().icmp_imm(
             IntCC::UnsignedGreaterThanOrEqual,
             remaining,
@@ -168,12 +205,16 @@ impl Reduction {
                     && back.delta == front.delta
                     && proof.arrays[back.array].width == 8
                     && proof.arrays[front.array].width == 4
-                    && std::env::var_os("MECH_FIRST_PACKED_REVERSE_READ").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_FIRST_PACKED_REVERSE_READ")
+                        .is_some()
             });
             let mut reads = Vec::new();
             let cursor = if let Some((back, (front, other))) = wide {
                 let index = if front.delta <= 1
-                    && std::env::var_os("MECH_ORDERED_SHORT_NARROW_ORDINAL").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_ORDERED_SHORT_NARROW_ORDINAL")
+                        .is_some()
                 {
                     // The selected entry proved start < stop <= U32::MAX.
                     let narrow = b.ins().ireduce(types::I32, start);
@@ -185,7 +226,9 @@ impl Reduction {
                 let base = words.read(b, shadow + proof.view(front.array));
                 let offset = b.ins().ishl_imm(index, 2);
                 reads.push((front, ScalarRead::LowWord(b.ins().iadd(base, offset))));
-                let from_end = std::env::var_os("MECH_ORDERED_FIRST_REVERSE_FROM_END").is_some();
+                let from_end = compiler_inputs
+                    .var_os("MECH_ORDERED_FIRST_REVERSE_FROM_END")
+                    .is_some();
                 let pointer = if from_end {
                     // Both addresses use the same admitted U64 cell. Basing
                     // the reverse access on start leaves the forward ordinal
@@ -219,12 +262,22 @@ impl Reduction {
                     b.ins().iadd_imm(start, window.delta as i64)
                 }
             } else if let Some((_, index, other, _)) = cursor {
-                let other = emit_item_low32(b, words, proof, shadow, other, start, ordinary);
+                let other = emit_item_low32(
+                    compiler_inputs,
+                    b,
+                    words,
+                    proof,
+                    shadow,
+                    other,
+                    start,
+                    ordinary,
+                );
                 let index = b.ins().ireduce(types::I32, index);
                 let item = b.ins().bor(index, other);
                 b.ins().uextend(types::I64, item)
             } else {
                 emit_item(
+                    compiler_inputs,
                     b,
                     words,
                     proof,
@@ -251,7 +304,11 @@ impl Reduction {
             let mut args = vec![next.into(), minimum.into(), item.into()];
             if let Some(window) = reverse {
                 let pointer = if let Some((pointer, _, _, from_end)) = cursor {
-                    if !from_end && std::env::var_os("MECH_ORDERED_LAZY_REVERSE_CURSOR").is_some() {
+                    if !from_end
+                        && compiler_inputs
+                            .var_os("MECH_ORDERED_LAZY_REVERSE_CURSOR")
+                            .is_some()
+                    {
                         // The same address expressed from the adjusted reverse
                         // window base. Only the continuing edge needs this cursor.
                         inputs.pointer(b, proof, window, start)
@@ -269,14 +326,20 @@ impl Reduction {
                 args.push(pointer.into());
             }
             if let Some(window) = forward {
-                let previous = cursor
-                    .filter(|_| std::env::var_os("MECH_ORDERED_REUSE_FIRST_ORDINAL").is_some());
+                let previous = cursor.filter(|_| {
+                    compiler_inputs
+                        .var_os("MECH_ORDERED_REUSE_FIRST_ORDINAL")
+                        .is_some()
+                });
                 let index = if let Some((_, index, _, _)) = previous {
                     b.ins().iadd_imm(index, 1)
                 } else {
                     b.ins().iadd_imm(next, window.delta as i64)
                 };
-                let left = if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
+                let left = if compiler_inputs
+                    .var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH")
+                    .is_some()
+                {
                     b.ins().iadd_imm(remaining, -1)
                 } else {
                     b.ins().isub(stop, next)
@@ -323,7 +386,10 @@ impl Reduction {
         } else {
             None
         };
-        if std::env::var_os("MECH_ORDERED_VECTOR_HOIST_COST_WORDS").is_some() {
+        if compiler_inputs
+            .var_os("MECH_ORDERED_VECTOR_HOIST_COST_WORDS")
+            .is_some()
+        {
             inputs.prepare_vector_words(b);
         }
         let prefix = b.ins().band_imm(remaining, -4);
@@ -340,6 +406,7 @@ impl Reduction {
                     b.ins().iadd_imm(index, window.delta as i64)
                 } else {
                     emit_item(
+                        compiler_inputs,
                         b,
                         words,
                         proof,
@@ -358,6 +425,7 @@ impl Reduction {
             }
         };
         let selected = super::vector_loop::Kernel {
+            compiler_inputs,
             reduction: self,
             proof,
             inputs: &inputs,
@@ -419,13 +487,23 @@ impl Reduction {
                 if deferred.is_some() {
                     winner
                 } else {
-                    let high = emit_item_low32(b, words, proof, shadow, other, winner, ordinary);
+                    let high = emit_item_low32(
+                        compiler_inputs,
+                        b,
+                        words,
+                        proof,
+                        shadow,
+                        other,
+                        winner,
+                        ordinary,
+                    );
                     let winner = b.ins().ireduce(types::I32, winner);
                     let selected = b.ins().bor(winner, high);
                     b.ins().uextend(types::I64, selected)
                 }
             };
-            if std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION")
+            if compiler_inputs
+                .var_os("MECH_ORDERED_PAIRED_CONTINUATION")
                 .as_deref()
                 .is_some_and(|mode| mode == "sequential" || mode == "sequential-tail")
             {
@@ -527,12 +605,22 @@ impl Reduction {
         let selected = if deferred.is_some() {
             params[0]
         } else if let Some((_, other)) = biased {
-            let other = emit_item_low32(b, words, proof, shadow, other, params[0], ordinary);
+            let other = emit_item_low32(
+                compiler_inputs,
+                b,
+                words,
+                proof,
+                shadow,
+                other,
+                params[0],
+                ordinary,
+            );
             let index = b.ins().ireduce(types::I32, params[0]);
             let low = b.ins().bor(index, other);
             b.ins().uextend(types::I64, low)
         } else if carry_item {
             emit_item(
+                compiler_inputs,
                 b,
                 words,
                 proof,
@@ -547,7 +635,9 @@ impl Reduction {
         };
         let choice = b.ins().select(less, selected, params[2]);
         if pair.is_some()
-            && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").as_deref()
+            && compiler_inputs
+                .var_os("MECH_ORDERED_PAIRED_CONTINUATION")
+                .as_deref()
                 == Some(std::ffi::OsStr::new("sequential-tail"))
         {
             // The paired entry rejects only its nonzero count below two;
@@ -587,7 +677,16 @@ impl Reduction {
             // unchanged exactly when the carried word is the original
             // item. Otherwise that word is the winning biased ordinal.
             let improved = b.ins().icmp(IntCC::UnsignedLessThan, minimum, best);
-            let other = emit_item_low32(b, words, proof, shadow, offset, params[1], ordinary);
+            let other = emit_item_low32(
+                compiler_inputs,
+                b,
+                words,
+                proof,
+                shadow,
+                offset,
+                params[1],
+                ordinary,
+            );
             let index = b.ins().ireduce(types::I32, params[1]);
             let low = b.ins().bor(index, other);
             let packed = b.ins().uextend(types::I64, low);
@@ -608,6 +707,7 @@ impl Reduction {
             b.switch_to_block(selected);
             let winner = b.ins().uextend(types::I64, winner);
             let item = emit_item(
+                compiler_inputs,
                 b,
                 words,
                 proof,
@@ -642,9 +742,15 @@ impl Reduction {
 
 /// Broadcast the unsigned minimum using the existing portable vector vocabulary.
 /// Two pairwise shuffles keep both costs and stable indices in vector registers.
-pub(super) fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
+pub(super) fn minimum_splat(
+    compiler_inputs: &CompilationInputs,
+    b: &mut FunctionBuilder<'_>,
+    mut values: Value,
+) -> Value {
     if cfg!(target_arch = "aarch64")
-        && std::env::var_os("MECH_ORDERED_HORIZONTAL_MINIMUM").is_some()
+        && compiler_inputs
+            .var_os("MECH_ORDERED_HORIZONTAL_MINIMUM")
+            .is_some()
     {
         let minimum = minimum_word(b, values);
         return b.ins().splat(types::I32X4, minimum);
@@ -685,6 +791,7 @@ pub(super) fn minimum_word(b: &mut FunctionBuilder<'_>, values: Value) -> Value 
 }
 
 fn emit_item(
+    compiler_inputs: &CompilationInputs,
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     proof: &Proof,
@@ -700,15 +807,36 @@ fn emit_item(
         Item::Index => index,
         Item::Length(array) => words.read(b, shadow + proof.view(*array) + 1),
         Item::Scalar(Op::U64ToU32, args)
-            if total && std::env::var_os("MECH_NARROW_ORDERED_ITEM").is_some() =>
+            if total && compiler_inputs.var_os("MECH_NARROW_ORDERED_ITEM").is_some() =>
         {
-            let low = emit_item_low32(b, words, proof, shadow, &args[0], index, error);
+            let low = emit_item_low32(
+                compiler_inputs,
+                b,
+                words,
+                proof,
+                shadow,
+                &args[0],
+                index,
+                error,
+            );
             b.ins().uextend(types::I64, low)
         }
         Item::Scalar(op, args) => {
             let args = args
                 .iter()
-                .map(|arg| emit_item(b, words, proof, shadow, arg, index, error, total))
+                .map(|arg| {
+                    emit_item(
+                        compiler_inputs,
+                        b,
+                        words,
+                        proof,
+                        shadow,
+                        arg,
+                        index,
+                        error,
+                        total,
+                    )
+                })
                 .collect::<Vec<_>>();
             // The complete-child proof certifies all reached source checks,
             // and this value is observable only on the same strict winner
@@ -745,6 +873,7 @@ fn emit_item(
 /// specialized operator commutes with truncation to U32. Unrecognized
 /// operators retain their full-width inputs before the projection.
 fn emit_item_low32(
+    compiler_inputs: &CompilationInputs,
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     proof: &Proof,
@@ -757,7 +886,7 @@ fn emit_item_low32(
         return b.ins().iconst(types::I32, i64::from(*value as u32));
     }
     let low = |b: &mut FunctionBuilder<'_>, arg| {
-        emit_item_low32(b, words, proof, shadow, arg, index, error)
+        emit_item_low32(compiler_inputs, b, words, proof, shadow, arg, index, error)
     };
     if let Item::Scalar(op, args) = item {
         match (*op, args.as_slice()) {
@@ -788,7 +917,17 @@ fn emit_item_low32(
             _ => {}
         }
     }
-    let full = emit_item(b, words, proof, shadow, item, index, error, true);
+    let full = emit_item(
+        compiler_inputs,
+        b,
+        words,
+        proof,
+        shadow,
+        item,
+        index,
+        error,
+        true,
+    );
     b.ins().ireduce(types::I32, full)
 }
 

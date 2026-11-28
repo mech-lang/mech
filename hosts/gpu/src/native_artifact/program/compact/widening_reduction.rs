@@ -215,7 +215,10 @@ pub(super) fn derive(
     initial: &BTreeMap<usize, Initial>,
 ) -> BTreeMap<usize, Reduction> {
     if !cfg!(all(target_arch = "aarch64", target_endian = "little"))
-        || std::env::var_os("MECH_WIDENING_REDUCTION").is_none()
+        || prepared
+            .compiler_inputs()
+            .var_os("MECH_WIDENING_REDUCTION")
+            .is_none()
     {
         return BTreeMap::new();
     }

@@ -125,6 +125,7 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
             header,
             blocks: BTreeSet::from([header, body, back]),
             source_header: 7,
+            shared_array: None,
             reuse_scope: None,
         };
     }
@@ -145,7 +146,14 @@ fn check_first_bad_word(wide_tier: bool) {
     let cleanup = cfg_cleanup::optimize(&controls, &mut c, module.isa()).unwrap();
     assert_eq!(cleanup.boolean_conditions_simplified, 2);
     assert_eq!(
-        optimize(&mut c, &[certificate], false, wide_tier).wider,
+        optimize(
+            &CompilationInputs::capture([]),
+            &mut c,
+            &[certificate],
+            false,
+            wide_tier
+        )
+        .wider,
         [7]
     );
     cranelift_codegen::verify_function(&c.func, module.isa()).unwrap();
@@ -215,7 +223,14 @@ fn compact_wide_equal_keeps_scalar_backedge_after_entering_tiers() {
         .unwrap();
     let entry = predecessors.into_iter().find(|&inst| inst != back).unwrap();
     assert_eq!(
-        optimize(&mut context, &[certificate], false, true).wider,
+        optimize(
+            &CompilationInputs::capture([]),
+            &mut context,
+            &[certificate],
+            false,
+            true
+        )
+        .wider,
         [7]
     );
     let destinations = |inst| {
@@ -251,9 +266,15 @@ fn compact_wide_equal_refuses_effects_other_steps_extra_state_or_unproved_geomet
         cranelift_codegen::verify_function(&c.func, module.isa()).unwrap();
         let before = c.func.display().to_string();
         assert!(
-            optimize(&mut c, &[certificate], false, true)
-                .wider
-                .is_empty(),
+            optimize(
+                &CompilationInputs::capture([]),
+                &mut c,
+                &[certificate],
+                false,
+                true
+            )
+            .wider
+            .is_empty(),
             "{variant}"
         );
         assert_eq!(c.func.display().to_string(), before);
@@ -261,9 +282,15 @@ fn compact_wide_equal_refuses_effects_other_steps_extra_state_or_unproved_geomet
     let (mut c, mut certificate) = fixture(&module, "normal");
     certificate.blocks.clear();
     assert!(
-        optimize(&mut c, &[certificate], false, true)
-            .wider
-            .is_empty()
+        optimize(
+            &CompilationInputs::capture([]),
+            &mut c,
+            &[certificate],
+            false,
+            true
+        )
+        .wider
+        .is_empty()
     );
 }
 
@@ -367,6 +394,7 @@ fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
         let (mut context, certificate) = fixture(&module, "normal");
         let original = context.func.display().to_string();
         let outcome = optimize_with_strategy(
+            &CompilationInputs::capture([]),
             &mut context,
             &[certificate],
             false,

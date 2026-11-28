@@ -1,6 +1,8 @@
 //! Put an affine address bias on the base, outside the scaled index.
-use super::word_ranges::literal;
+use super::word_ranges::{Facts, constant_offset, literal};
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
+use cranelift_codegen::flowgraph::ControlFlowGraph;
+use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{
     Function, Inst, InstBuilder, InstructionData as Data, Opcode as Op, Value, ValueDef, types,
 };
@@ -202,6 +204,43 @@ pub(in crate::native_artifact) fn normalize(f: &mut Function, hoist: bool) -> us
         cursor.func.dfg.replace(plan.inst).iadd(base, index);
     }
     plans.len()
+}
+
+pub(in crate::native_artifact) fn rebase_bounded_comparisons(f: &mut Function) -> usize {
+    let cfg = ControlFlowGraph::with_function(f);
+    let mut facts = Facts::across_edges(f, &cfg, None);
+    let replacements = f
+        .layout
+        .blocks()
+        .flat_map(|block| f.layout.block_insts(block))
+        .filter_map(|inst| {
+            let Data::IntCompareImm {
+                opcode: Op::IcmpImm,
+                cond: cond @ (IntCC::UnsignedLessThan | IntCC::UnsignedLessThanOrEqual),
+                arg,
+                imm,
+            } = f.dfg.insts[inst]
+            else {
+                return None;
+            };
+            if f.dfg.value_type(arg) != types::I64 {
+                return None;
+            }
+            let (base, bias) = constant_offset(f, arg);
+            let limit = (imm.bits() as u64).checked_sub(bias)?;
+            if bias == 0 || f.dfg.value_type(base) != types::I64 {
+                return None;
+            }
+            // The rebased unsigned comparison is equivalent when the index
+            // never wraps across zero after adding this bias.
+            facts.value_range(base)?.1.checked_add(bias)?;
+            Some((inst, cond, base, limit as i64))
+        })
+        .collect::<Vec<_>>();
+    for &(inst, cond, base, limit) in &replacements {
+        f.dfg.replace(inst).icmp_imm(cond, base, limit);
+    }
+    replacements.len()
 }
 
 #[cfg(all(test, feature = "jit"))]

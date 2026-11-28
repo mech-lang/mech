@@ -8,6 +8,7 @@ use super::{
     owner_flow::OwnerFlow,
     recipes::Recipe,
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{
     NativeCompileError,
     codegen::common::ssa_words::Words,
@@ -568,6 +569,7 @@ impl Analysis<'_> {
 }
 
 pub(super) fn derive(
+    compiler_inputs: &CompilationInputs,
     plan: &Plan,
     layout: &Layout,
     flow: &Flow,
@@ -622,7 +624,10 @@ pub(super) fn derive(
                 tail,
                 iteration,
             );
-            if std::env::var_os("MECH_INSPECT_OVERWRITE_PROOF").is_some() {
+            if compiler_inputs
+                .var_os("MECH_INSPECT_OVERWRITE_PROOF")
+                .is_some()
+            {
                 eprintln!(
                     "whole overwrite {clear} -> {exit} {}",
                     result.as_ref().err().unwrap_or(&"eligible")

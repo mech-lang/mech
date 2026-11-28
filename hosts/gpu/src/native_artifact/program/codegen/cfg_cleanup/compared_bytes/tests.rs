@@ -159,6 +159,7 @@ fn compile(
     c.flowgraph();
     let reused = if optimize {
         super::fold(
+            &CompilationInputs::capture([]),
             &mut c,
             &if admitted {
                 BTreeSet::from([pointer])

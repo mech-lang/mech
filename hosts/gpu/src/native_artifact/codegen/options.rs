@@ -1,5 +1,7 @@
 //! Explicit compile-time choices. Public entry points always use the fixed
 //! default; no option grants source proof or changes runtime admission.
+#[cfg(feature = "canonical-native-program")]
+use super::compilation_inputs::CompilationInputs;
 #[derive(Clone, Copy, Default)]
 pub(in crate::native_artifact) struct OptimizationOptions {
     #[cfg(feature = "canonical-native-program")]
@@ -156,30 +158,56 @@ pub(in crate::native_artifact) struct EmissionCounters {
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) struct CompilationControls {
     options: OptimizationOptions,
+    inputs: CompilationInputs,
     packed_regions: std::cell::Cell<usize>,
     scalar_regions: std::cell::Cell<usize>,
     scalar_captures: std::cell::RefCell<std::collections::BTreeSet<usize>>,
     invariant: EmissionBudget,
     mutation: EmissionBudget,
     count_value: EmissionBudget,
+    route_work: Option<super::route_work::RouteUnitRecorder>,
     steady: EmissionBudget,
 }
 #[cfg(feature = "canonical-native-program")]
 impl CompilationControls {
+    #[cfg(test)]
     pub fn new(options: OptimizationOptions) -> Self {
+        Self::with_inputs(options, &CompilationInputs::legacy())
+    }
+
+    pub fn with_inputs(options: OptimizationOptions, inputs: &CompilationInputs) -> Self {
         Self {
             options,
+            inputs: inputs.clone(),
             packed_regions: Default::default(),
             scalar_regions: Default::default(),
             scalar_captures: Default::default(),
             invariant: Default::default(),
             mutation: Default::default(),
             count_value: Default::default(),
+            route_work: None,
             steady: Default::default(),
         }
     }
+    pub fn with_route_recorder(
+        mut self,
+        recorder: Option<super::route_work::RouteUnitRecorder>,
+    ) -> Self {
+        self.route_work = recorder;
+        self
+    }
+
+    pub fn record_route_work(&self, update: impl FnOnce(&mut super::route_work::RouteWork)) {
+        if let Some(recorder) = &self.route_work {
+            recorder.record(update);
+        }
+    }
+
     pub fn enabled(&self, pass: OptimizationPass) -> bool {
         self.options.enabled(pass)
+    }
+    pub fn inputs(&self) -> &CompilationInputs {
+        &self.inputs
     }
     pub fn options(&self) -> OptimizationOptions {
         self.options

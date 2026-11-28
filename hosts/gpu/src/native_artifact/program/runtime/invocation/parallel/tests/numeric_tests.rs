@@ -326,3 +326,33 @@ fn native_row_blocks_preserve_scalar_kinds_empty_shapes_and_atomic_output_limits
         }
     }
 }
+
+#[test]
+fn compact_report_retains_native_worker_entries() {
+    use crate::native_artifact::{
+        NativeCompilationReport, NativeCompilerConfiguration,
+        emit_compact_closed_object_with_configuration_for_diagnostic as compile,
+    };
+
+    let artifact = crate::native_artifact::program::runtime::tests::artifact_source(NUMERIC);
+    let catalog = mech_stdlib::source_catalog();
+    let configuration = NativeCompilerConfiguration::capture([]);
+    let observe = false;
+    let ordinary = compile(&artifact, &catalog, &configuration, observe, None).unwrap();
+    let mut report = NativeCompilationReport::default();
+    let measured = compile(
+        &artifact,
+        &catalog,
+        &configuration,
+        observe,
+        Some(&mut report),
+    )
+    .unwrap();
+    assert_eq!(measured, ordinary);
+    let workers = &measured.1["native_worker_entries"];
+    assert!(!workers.as_array().unwrap().is_empty());
+    let json = report.json(&measured.1);
+    assert_eq!(json["phase_observer"], observe);
+    assert_eq!(json["compile_workers"], 0);
+    assert_eq!(json["selection"]["native_worker_entries"], *workers);
+}

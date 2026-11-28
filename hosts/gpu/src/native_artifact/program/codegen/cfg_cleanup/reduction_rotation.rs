@@ -2,6 +2,7 @@
 //! incoming edges. Keep the current visit's typed values on both exits.
 use super::composed_reads::read_comparison;
 use super::window_bounds::sole_predecessor;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
@@ -231,7 +232,7 @@ fn plan(
     })
 }
 
-fn apply(f: &mut Function, plan: Plan) {
+fn apply(compiler_inputs: &CompilationInputs, f: &mut Function, plan: Plan) {
     let mut exit_lanes = Vec::new();
     for (old, insts) in plan.live_exit {
         let ValueDef::Param(_, lane) = f.dfg.value_def(old) else {
@@ -255,7 +256,10 @@ fn apply(f: &mut Function, plan: Plan) {
     let body = plan.body.block(&f.dfg.value_lists);
     let args = plan.body.args(&f.dfg.value_lists).collect::<Vec<_>>();
     f.dfg.replace(plan.test).jump(body, &args);
-    if std::env::var_os("MECH_EMIT_REDUCTION_FALLTHROUGH").is_some() {
+    if compiler_inputs
+        .var_os("MECH_EMIT_REDUCTION_FALLTHROUGH")
+        .is_some()
+    {
         f.preferred_fallthrough = Some((plan.latch, plan.header));
     }
     let location = f.srcloc(plan.test);
@@ -274,6 +278,7 @@ fn apply(f: &mut Function, plan: Plan) {
 }
 
 pub(in crate::native_artifact) fn rotate(
+    compiler_inputs: &CompilationInputs,
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
@@ -293,7 +298,7 @@ pub(in crate::native_artifact) fn rotate(
         })
         .max_by_key(|(level, _)| level.level());
     if let Some((_, plan)) = selected {
-        apply(f, plan);
+        apply(compiler_inputs, f, plan);
         true
     } else {
         false

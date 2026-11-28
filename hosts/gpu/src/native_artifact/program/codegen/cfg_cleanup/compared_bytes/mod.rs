@@ -3,6 +3,7 @@
 //! proves those exact logical bounds. Only effect-free paths are bypassed;
 //! no read permission, index bound or work allowance grows.
 use super::window_bounds::comparison;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{
     Context,
     cursor::{Cursor, FuncCursor},
@@ -17,7 +18,36 @@ use std::collections::{BTreeMap, BTreeSet};
 mod symbols;
 use symbols::{Address, Symbol, Symbols, current};
 mod read_bounds;
+use cranelift_codegen::ir::condcodes::CondCode;
+mod word_order;
 pub(in crate::native_artifact) use read_bounds::BoundedRead;
+pub(in crate::native_artifact) use word_order::fold_word_order;
+
+#[derive(PartialEq, Eq)]
+struct Fact {
+    cond: IntCC,
+    left: Address,
+    right: Address,
+}
+
+impl Fact {
+    fn relates(&self, cond: IntCC, left: &Address, right: &Address) -> Option<bool> {
+        let known = if &self.left == left && &self.right == right {
+            self.cond
+        } else if &self.left == right && &self.right == left {
+            self.cond.swap_args()
+        } else {
+            return None;
+        };
+        if known == cond {
+            Some(true)
+        } else if known.complement() == cond {
+            Some(false)
+        } else {
+            None
+        }
+    }
+}
 
 fn pure(op: Op) -> bool {
     matches!(
@@ -108,6 +138,7 @@ struct Byte {
     address: Address,
     flags: MemFlags,
     bounds: Option<(Address, Address)>,
+    must_match_bound: bool,
 }
 struct Walk<'a> {
     f: &'a Function,
@@ -116,6 +147,9 @@ struct Walk<'a> {
     origin: Inst,
     bytes: [Byte; 2],
     symbols: Symbols,
+    facts: Vec<Fact>,
+    word_difference: Option<Value>,
+    byte_offset: Option<Symbol>,
 }
 type Values = BTreeMap<Value, Symbol>;
 struct Arm {
@@ -133,6 +167,7 @@ struct Plan {
     values: Values,
     region: BTreeSet<Block>,
     proved_bounds: usize,
+    reverse_words: bool,
 }
 
 impl Walk<'_> {
@@ -175,7 +210,8 @@ impl Walk<'_> {
         if self.symbols.len() >= 512 {
             return None;
         }
-        if !pure(self.f.dfg.insts[inst].opcode()) {
+        let opcode = self.f.dfg.insts[inst].opcode();
+        if !(pure(opcode) || self.word_difference.is_some() && opcode == Op::Ctz) {
             return None;
         }
         let &[result] = self.f.dfg.inst_results(inst) else {
@@ -189,6 +225,14 @@ impl Walk<'_> {
             .map(|&v| self.value(values, v))
             .collect::<Option<Vec<_>>>()?;
         let symbol = self.symbols.copy(inst, args);
+        if self.byte_offset.is_none()
+            && let Some(difference) = self.word_difference
+            && self
+                .symbols
+                .first_bad_byte(self.f, self.cfg, symbol, difference)
+        {
+            self.byte_offset = Some(symbol);
+        }
         values.insert(self.f.dfg.resolve_aliases(result), symbol);
         Some(())
     }
@@ -224,14 +268,23 @@ impl Walk<'_> {
                         return None;
                     }
                     let arg = self.value(&values, arg)?;
-                    let address = self
-                        .symbols
-                        .address(self.f, self.cfg, arg, i32::from(offset))?;
+                    let address = self.symbols.address_with_offset(
+                        self.f,
+                        self.cfg,
+                        arg,
+                        i32::from(offset),
+                        self.byte_offset,
+                    )?;
                     let at = self
                         .bytes
                         .iter()
                         .position(|byte| byte.address == address && byte.flags == flags)?;
-                    let symbol = self.symbols.existing(self.bytes[at].value);
+                    let byte = self.bytes[at].value;
+                    let symbol = if self.word_difference.is_some() {
+                        self.symbols.word_byte(byte, self.byte_offset?)
+                    } else {
+                        self.symbols.existing(byte)
+                    };
                     values.insert(result, symbol);
                     reused.push(at);
                 } else {
@@ -244,7 +297,16 @@ impl Walk<'_> {
             call = destination;
         }
     }
-    fn trace(mut self, edge: usize, mut call: BlockCall) -> Option<Plan> {
+    fn trace(
+        mut self,
+        compiler_inputs: &CompilationInputs,
+        edge: usize,
+        mut call: BlockCall,
+    ) -> Option<Plan> {
+        let inspect_word = self.word_difference.is_some()
+            && compiler_inputs
+                .var_os("MECH_INSPECT_WORD_MISMATCH_ORDER")
+                .is_some();
         let mut values = Values::new();
         let mut visited = BTreeSet::new();
         let mut reused = BTreeSet::new();
@@ -262,16 +324,59 @@ impl Walk<'_> {
             if visited.len() >= 128 || !visited.insert(block) {
                 return None;
             }
+            if !self.facts.is_empty()
+                && self
+                    .dom
+                    .block_dominates(block, self.f.layout.inst_block(self.origin)?)
+            {
+                return None;
+            }
+            if inspect_word {
+                eprintln!("word mismatch {} follows {block}", self.origin);
+            }
             self.enter(&mut values, block, &args)?;
             let last = self.f.layout.last_inst(block)?;
             for inst in self.f.layout.block_insts(block).take_while(|&i| i != last) {
-                self.copy(&mut values, inst)?;
+                if self.copy(&mut values, inst).is_none() {
+                    if inspect_word {
+                        eprintln!("word mismatch {} cannot replay {inst}", self.origin);
+                    }
+                    return None;
+                }
             }
             match self.f.dfg.insts[last] {
                 Data::Jump { destination, .. } => call = destination,
                 Data::Brif { arg, blocks, .. } => {
                     let condition = self.value(&values, arg)?;
-                    let yes = self.arm(values.clone(), blocks[0])?;
+                    if !self.facts.is_empty()
+                        && let Some(taken) = self.symbols.truth(
+                            self.f,
+                            self.cfg,
+                            condition,
+                            &self.facts,
+                            self.byte_offset,
+                            0,
+                        )
+                    {
+                        if inspect_word {
+                            eprintln!(
+                                "word mismatch {} proved {block} outcome {taken}",
+                                self.origin
+                            );
+                        }
+                        call = blocks[usize::from(!taken)];
+                        continue;
+                    }
+                    let yes = self.arm(values.clone(), blocks[0]);
+                    if inspect_word {
+                        eprintln!(
+                            "word mismatch {} {block} read path: {}, offset: {:?}",
+                            self.origin,
+                            yes.is_some(),
+                            self.byte_offset
+                        );
+                    }
+                    let yes = yes?;
                     let no = self.arm(values.clone(), blocks[1])?;
                     if yes.join != no.join
                         || yes.args.len() != no.args.len()
@@ -281,6 +386,9 @@ impl Walk<'_> {
                         return None;
                     }
                     let admitted = self.admitted(&values, arg, yes.reused[0]);
+                    if self.bytes[yes.reused[0]].must_match_bound && !admitted {
+                        return None;
+                    }
                     proved_bounds += usize::from(admitted);
                     let mut merged = Vec::new();
                     let mut differences = 0;
@@ -315,6 +423,7 @@ impl Walk<'_> {
                             values,
                             region: visited,
                             proved_bounds,
+                            reverse_words: false,
                         });
                     }
                     visited.extend(yes.blocks);
@@ -327,7 +436,33 @@ impl Walk<'_> {
     }
 }
 
-fn repairs(f: &Function, dom: &DominatorTree, plan: &Plan) -> Option<Vec<(Value, Symbol)>> {
+impl Plan {
+    fn install_edge(&self, f: &mut Function) {
+        let fast = f.dfg.make_block();
+        f.layout.append_block(fast);
+        let mut cursor = FuncCursor::new(f).at_bottom(fast);
+        let args = self
+            .symbols
+            .emit(&mut cursor, &self.args, self.reverse_words)
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<_>>();
+        cursor.ins().jump(self.join, &args);
+        let target = BlockCall::new(fast, [], &mut cursor.func.dfg.value_lists);
+        let Data::Brif { blocks, .. } = &mut cursor.func.dfg.insts[self.origin] else {
+            unreachable!("proved byte comparison");
+        };
+        blocks[self.edge] = target;
+    }
+}
+
+fn repairs(
+    f: &Function,
+    dom: &DominatorTree,
+    plan: &Plan,
+    verify_other_routes: bool,
+) -> Option<Vec<(Value, Symbol)>> {
+    let mut alternate = None;
     let mut escaped = BTreeSet::new();
     for block in f
         .layout
@@ -342,10 +477,36 @@ fn repairs(f: &Function, dom: &DominatorTree, plan: &Plan) -> Option<Vec<(Value,
                     ValueDef::Union(..) => return None,
                 };
                 if plan.region.contains(&owner) {
-                    if !dom.block_dominates(plan.join, block) {
+                    if dom.block_dominates(plan.join, block) {
+                        escaped.insert(value);
+                        continue;
+                    }
+                    if !verify_other_routes {
                         return None;
                     }
-                    escaped.insert(value);
+                    // A definition on the bypassed path can still dominate
+                    // another branch if the new edge never reaches that use
+                    // before the definition. Check the actual proposed CFG.
+                    let context = alternate.get_or_insert_with(|| {
+                        let mut context = Context::for_function(f.clone());
+                        plan.install_edge(&mut context.func);
+                        context.flowgraph();
+                        context
+                    });
+                    let still_dominates = match f.dfg.value_def(value) {
+                        ValueDef::Param(block, _) => context
+                            .domtree
+                            .block_dominates(block, f.layout.inst_block(inst)?),
+                        ValueDef::Result(definition, _) => {
+                            context
+                                .domtree
+                                .dominates(definition, inst, &context.func.layout)
+                        }
+                        ValueDef::Union(..) => false,
+                    };
+                    if !still_dominates {
+                        return None;
+                    }
                 }
             }
         }
@@ -367,7 +528,52 @@ fn repairs(f: &Function, dom: &DominatorTree, plan: &Plan) -> Option<Vec<(Value,
         .collect()
 }
 
+fn install(context: &mut Context, mut plan: Plan, repairs: Vec<(Value, Symbol)>) {
+    let predecessors = context
+        .cfg
+        .pred_iter(plan.join)
+        .map(|p| p.inst)
+        .collect::<BTreeSet<_>>();
+    let mut replacement = BTreeMap::new();
+    for (value, symbol) in repairs {
+        let ty = context.func.dfg.value_type(value);
+        let parameter = context.func.dfg.append_block_param(plan.join, ty);
+        let dfg = &mut context.func.dfg;
+        for &inst in &predecessors {
+            for call in dfg.insts[inst]
+                .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)
+            {
+                if call.block(&dfg.value_lists) == plan.join {
+                    call.append_argument(value, &mut dfg.value_lists);
+                }
+            }
+        }
+        replacement.insert(value, parameter);
+        plan.args.push(symbol);
+    }
+    for block in context.func.layout.blocks().collect::<Vec<_>>() {
+        if context.domtree.block_dominates(plan.join, block) {
+            for inst in context.func.layout.block_insts(block).collect::<Vec<_>>() {
+                let aliases = &context.func.dfg;
+                let mapped = aliases
+                    .inst_values(inst)
+                    .map(|raw| {
+                        let value = aliases.resolve_aliases(raw);
+                        (raw, replacement.get(&value).copied().unwrap_or(value))
+                    })
+                    .collect::<BTreeMap<_, _>>();
+                context
+                    .func
+                    .dfg
+                    .map_inst_values(inst, |value| mapped.get(&value).copied().unwrap_or(value));
+            }
+        }
+    }
+    plan.install_edge(&mut context.func);
+}
+
 pub(in crate::native_artifact) fn fold(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     immutable_bytes: &BTreeSet<Value>,
     bounded_reads: &[BoundedRead],
@@ -440,6 +646,7 @@ pub(in crate::native_artifact) fn fold(
                     value,
                     address,
                     flags,
+                    must_match_bound: false,
                     bounds: bounded_reads
                         .iter()
                         .find_map(|read| read.keys(f, &context.cfg, value, views)),
@@ -460,82 +667,34 @@ pub(in crate::native_artifact) fn fold(
                             address: bytes[0].address.clone(),
                             flags: bytes[0].flags,
                             bounds: bytes[0].bounds.clone(),
+                            must_match_bound: false,
                         },
                         Byte {
                             value: bytes[1].value,
                             address: bytes[1].address.clone(),
                             flags: bytes[1].flags,
                             bounds: bytes[1].bounds.clone(),
+                            must_match_bound: false,
                         },
                     ],
                     symbols: Symbols::default(),
+                    facts: Vec::new(),
+                    word_difference: None,
+                    byte_offset: None,
                 };
-                if let Some(found) = walk.trace(edge, call) {
-                    if let Some(repairs) = repairs(f, &context.domtree, &found) {
+                if let Some(found) = walk.trace(compiler_inputs, edge, call) {
+                    if let Some(repairs) = repairs(f, &context.domtree, &found, false) {
                         plan = Some((found, repairs));
                         break 'search;
                     }
                 }
             }
         }
-        let Some((mut plan, repairs)) = plan else {
+        let Some((plan, repairs)) = plan else {
             break;
         };
         proved_bounds += plan.proved_bounds;
-        let predecessors = context
-            .cfg
-            .pred_iter(plan.join)
-            .map(|p| p.inst)
-            .collect::<BTreeSet<_>>();
-        let mut replacement = BTreeMap::new();
-        for (value, symbol) in repairs {
-            let ty = context.func.dfg.value_type(value);
-            let parameter = context.func.dfg.append_block_param(plan.join, ty);
-            let dfg = &mut context.func.dfg;
-            for &inst in &predecessors {
-                for call in dfg.insts[inst]
-                    .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)
-                {
-                    if call.block(&dfg.value_lists) == plan.join {
-                        call.append_argument(value, &mut dfg.value_lists);
-                    }
-                }
-            }
-            replacement.insert(value, parameter);
-            plan.args.push(symbol);
-        }
-        for block in context.func.layout.blocks().collect::<Vec<_>>() {
-            if context.domtree.block_dominates(plan.join, block) {
-                for inst in context.func.layout.block_insts(block).collect::<Vec<_>>() {
-                    let aliases = &context.func.dfg;
-                    let mapped = aliases
-                        .inst_values(inst)
-                        .map(|raw| {
-                            let value = aliases.resolve_aliases(raw);
-                            (raw, replacement.get(&value).copied().unwrap_or(value))
-                        })
-                        .collect::<BTreeMap<_, _>>();
-                    context.func.dfg.map_inst_values(inst, |value| {
-                        mapped.get(&value).copied().unwrap_or(value)
-                    });
-                }
-            }
-        }
-        let fast = context.func.dfg.make_block();
-        context.func.layout.append_block(fast);
-        let mut cursor = FuncCursor::new(&mut context.func).at_bottom(fast);
-        let args = plan
-            .symbols
-            .emit(&mut cursor, &plan.args)
-            .into_iter()
-            .map(Into::into)
-            .collect::<Vec<_>>();
-        cursor.ins().jump(plan.join, &args);
-        let target = BlockCall::new(fast, [], &mut cursor.func.dfg.value_lists);
-        let Data::Brif { blocks, .. } = &mut cursor.func.dfg.insts[plan.origin] else {
-            unreachable!("proved byte comparison");
-        };
-        blocks[plan.edge] = target;
+        install(context, plan, repairs);
         total += 1;
     }
     context.flowgraph();

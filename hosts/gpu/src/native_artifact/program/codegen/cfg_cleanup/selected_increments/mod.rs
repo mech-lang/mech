@@ -2,6 +2,7 @@
 //! Each state names current SSA atoms. Phi arguments are substituted together
 //! at their exact incoming edge; definitions are never re-evaluated using a
 //! later loop visit's values. Backedges, cycles and exhausted proofs decline.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::condcodes::CondCode;
@@ -379,13 +380,20 @@ impl Proof<'_> {
     }
 }
 
-pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
+pub(super) fn optimize(
+    compiler_inputs: &CompilationInputs,
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+) -> usize {
     optimize_bounded(
         f,
         cfg,
         dom,
         MAX_STEPS,
-        std::env::var_os("MECH_PROVE_BOUNDED_UNSIGNED_INCREMENTS").is_some(),
+        compiler_inputs
+            .var_os("MECH_PROVE_BOUNDED_UNSIGNED_INCREMENTS")
+            .is_some(),
     )
 }
 fn optimize_bounded(

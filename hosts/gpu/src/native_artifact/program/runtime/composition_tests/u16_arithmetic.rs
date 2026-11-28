@@ -136,6 +136,8 @@ fn u16_compact_native_operations_keep_values_first_failure_origins_and_retry() {
                 &prepared,
                 false,
                 false,
+                &crate::native_artifact::program::compact::profile_inputs::SelectedProfiles::new(),
+                None,
             )
             .unwrap();
             let (_, object_metadata) =

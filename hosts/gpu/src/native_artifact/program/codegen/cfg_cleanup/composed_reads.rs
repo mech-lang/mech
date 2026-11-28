@@ -5,6 +5,7 @@ use super::{
     window_bounds::comparison,
     word_ranges::{Facts, constant_offset, literal},
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -125,7 +126,7 @@ pub(super) struct Read {
     pub(super) view: View,
     pub(super) join: Block,
     pub(super) result: Value,
-    arms: Vec<Block>,
+    pub(super) arms: Vec<Block>,
 }
 
 pub(super) fn definition(f: &Function, value: Value) -> Option<(Inst, Data)> {
@@ -712,6 +713,7 @@ struct Rewrite {
 }
 
 fn plan(
+    compiler_inputs: &CompilationInputs,
     f: &Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
@@ -725,7 +727,9 @@ fn plan(
     if slot.view.width != 1 || !data.length.is_power_of_two() || size > 2048 {
         return None;
     }
-    let inspect = std::env::var_os("MECH_INSPECT_COMPOSED_READS").is_some();
+    let inspect = compiler_inputs
+        .var_os("MECH_INSPECT_COMPOSED_READS")
+        .is_some();
     let (branch, mut region) = between(f, cfg, slot.join)?;
     if inspect {
         eprintln!(
@@ -826,7 +830,10 @@ fn plan(
     if !dom.dominates(selection_inst, slot.branch, &f.layout) {
         return None;
     }
-    let dense_codes = if std::env::var_os("MECH_COMPOSE_IMMUTABLE_COST_CODES").is_some() {
+    let dense_codes = if compiler_inputs
+        .var_os("MECH_COMPOSE_IMMUTABLE_COST_CODES")
+        .is_some()
+    {
         (|| {
             let bytes = data.bytes.as_ref()?;
             if bytes.len() as u64 != data.length || floor > 256 {
@@ -980,6 +987,7 @@ impl Rewrite {
 impl Rewrite {
     fn emit_dense<M: Module>(
         &self,
+        compiler_inputs: &CompilationInputs,
         f: &mut Function,
         module: &mut M,
         tables: &mut DenseTables,
@@ -1003,7 +1011,7 @@ impl Rewrite {
         else {
             return Ok(None);
         };
-        let packed = code_pages::selected_shift()
+        let packed = code_pages::selected_shift(compiler_inputs)
             .and_then(|shift| code_pages::pack(&dense.key.encode(), shift));
         let id = tables.intern(module, &dense.key, packed.as_ref())?;
         let global = module.declare_data_in_func(id, f);
@@ -1039,6 +1047,7 @@ impl Rewrite {
 }
 
 pub(super) fn compose<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     tables: &mut DenseTables,
     f: &mut Function,
@@ -1068,14 +1077,22 @@ pub(super) fn compose<M: Module>(
         .values()
         .map(|read| (read.result, read))
         .collect::<BTreeMap<_, _>>();
-    let Some(rewrite) = reads
-        .values()
-        .find_map(|first| plan(f, cfg, dom, capture, first, &reads, &results))
-    else {
+    let Some(rewrite) = reads.values().find_map(|first| {
+        plan(
+            compiler_inputs,
+            f,
+            cfg,
+            dom,
+            capture,
+            first,
+            &reads,
+            &results,
+        )
+    }) else {
         return Ok(None);
     };
     if let Some(dense) = &rewrite.dense_codes {
-        return rewrite.emit_dense(f, module, tables, dense);
+        return rewrite.emit_dense(compiler_inputs, f, module, tables, dense);
     }
     if !rewrite
         .admission

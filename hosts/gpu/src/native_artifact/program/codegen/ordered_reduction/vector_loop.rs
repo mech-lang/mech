@@ -1,9 +1,11 @@
 //! Shared emission of the existing vector loop and its bounded packed-key form.
 use super::{Proof, Reduction, Window, cost::Inputs};
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{InstBuilder, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
 pub(super) struct Kernel<'a> {
+    pub compiler_inputs: &'a CompilationInputs,
     pub reduction: &'a Reduction,
     pub proof: &'a Proof,
     pub inputs: &'a Inputs,
@@ -14,10 +16,14 @@ pub(super) struct Kernel<'a> {
     pub count_admitted: bool,
     pub packed_fit: Option<Value>,
 }
-pub(super) fn packed_enabled(reduction: &Reduction) -> bool {
+pub(super) fn packed_enabled(compiler_inputs: &CompilationInputs, reduction: &Reduction) -> bool {
     cfg!(all(target_arch = "aarch64", target_endian = "little"))
-        && std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
-        && std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS").is_none()
+        && compiler_inputs
+            .var_os("MECH_ORDERED_PACKED_COST_INDEX")
+            .is_some()
+        && compiler_inputs
+            .var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS")
+            .is_none()
         && !Inputs::uses_index(&reduction.cost)
 }
 struct Lanes {
@@ -46,7 +52,9 @@ impl Kernel<'_> {
             super::cost::constant(b, [0, 1, 2, 3])
         };
         let index_type = if packed { types::I16X8 } else { types::I32X4 };
-        let induction_step = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES")
+        let induction_step = self
+            .compiler_inputs
+            .var_os("MECH_ORDERED_VECTOR_CARRY_LANES")
             .is_some()
             .then(|| {
                 if packed {
@@ -55,8 +63,13 @@ impl Kernel<'_> {
                     super::cost::constant(b, [4; 4])
                 }
             });
-        let test_at_latch = std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some();
-        let pointer_scope = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS");
+        let test_at_latch = self
+            .compiler_inputs
+            .var_os("MECH_ORDERED_VECTOR_LATCH_TEST")
+            .is_some();
+        let pointer_scope = self
+            .compiler_inputs
+            .var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS");
         let carry_end_pointers = pointer_scope.as_deref() != Some(std::ffi::OsStr::new("body"));
         let pointer_windows = if pointer_scope.is_some() {
             self.reduction.reads.as_slice()
@@ -218,7 +231,10 @@ impl Kernel<'_> {
         F: FnMut(&mut FunctionBuilder<'_>, Value, bool) -> Value,
     {
         let lanes = if packed
-            && std::env::var_os("MECH_ORDERED_PACKED_ACCUMULATORS").as_deref()
+            && self
+                .compiler_inputs
+                .var_os("MECH_ORDERED_PACKED_ACCUMULATORS")
+                .as_deref()
                 == Some(std::ffi::OsStr::new("2"))
         {
             let costs = super::packed_loop::emit(
@@ -226,9 +242,15 @@ impl Kernel<'_> {
                 self.start,
                 self.end,
                 self.best,
-                std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES").is_some(),
-                std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some(),
-                std::env::var_os("MECH_ORDERED_PACKED_HEAD_GROUP").is_some(),
+                self.compiler_inputs
+                    .var_os("MECH_ORDERED_VECTOR_CARRY_LANES")
+                    .is_some(),
+                self.compiler_inputs
+                    .var_os("MECH_ORDERED_VECTOR_LATCH_TEST")
+                    .is_some(),
+                self.compiler_inputs
+                    .var_os("MECH_ORDERED_PACKED_HEAD_GROUP")
+                    .is_some(),
                 |b, k, index| {
                     self.inputs
                         .emit(b, self.proof, &self.reduction.cost, k, index)
@@ -244,7 +266,10 @@ impl Kernel<'_> {
         };
         let (minimum, item) = if packed {
             let (minimum, winner) = if old_item.is_some()
-                && std::env::var_os("MECH_ORDERED_PACKED_WIDE_ITEM").is_some()
+                && self
+                    .compiler_inputs
+                    .var_os("MECH_ORDERED_PACKED_WIDE_ITEM")
+                    .is_some()
             {
                 super::packed_key::finish_wide_item(b, lanes.costs)
             } else {
@@ -255,6 +280,7 @@ impl Kernel<'_> {
             && let Some(old_item) = old_item
         {
             super::winner::emit_mapped(
+                self.compiler_inputs,
                 b,
                 lanes.costs,
                 lanes.indices.unwrap(),
@@ -266,6 +292,7 @@ impl Kernel<'_> {
             )
         } else {
             let (minimum, winner) = super::winner::emit(
+                self.compiler_inputs,
                 b,
                 lanes.costs,
                 lanes.indices.unwrap(),
@@ -291,8 +318,10 @@ impl Kernel<'_> {
     where
         F: FnMut(&mut FunctionBuilder<'_>, Value, bool) -> Value,
     {
-        let selection = std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER");
-        let packed = packed_enabled(self.reduction);
+        let selection = self
+            .compiler_inputs
+            .var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER");
+        let packed = packed_enabled(self.compiler_inputs, self.reduction);
         if !packed {
             return self.selected(b, false, missing, old_item, selection.as_deref(), &mut map);
         }

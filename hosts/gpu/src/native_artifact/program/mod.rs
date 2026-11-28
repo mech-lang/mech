@@ -10,6 +10,10 @@ pub(in crate::native_artifact) mod protocol;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod application;
 #[cfg(feature = "canonical-native-program")]
+mod compilation;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod compilation_report;
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod compiler;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod image;
@@ -17,8 +21,6 @@ pub(in crate::native_artifact) mod image;
 pub(in crate::native_artifact) mod limits;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod linked;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) mod llvm_backend;
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod runtime;
 

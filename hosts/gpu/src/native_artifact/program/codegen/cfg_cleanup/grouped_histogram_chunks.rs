@@ -1,6 +1,7 @@
 //! Commit literal chunks in source order, stopping before the first mixed chunk.
 //! The existing entry proves the complete node and counter views are disjoint.
 use super::*;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{BlockArg, ConstantData};
 
 enum Chunk {
@@ -121,7 +122,7 @@ pub(super) fn vector_words(c: &mut FuncCursor<'_>, address: Value, offset: i32) 
     )
 }
 
-fn vector_mixed(
+pub(super) fn vector_mixed(
     c: &mut FuncCursor<'_>,
     length_mask: u32,
     words: Value,
@@ -173,6 +174,66 @@ fn increment(c: &mut FuncCursor<'_>, bins: Value, key: Value) {
     c.ins().store(flags, updated, bin, 0);
 }
 
+fn cursor_args(position: Value, last_literal: Option<Value>) -> Vec<BlockArg> {
+    std::iter::once(position.into())
+        .chain(last_literal.map(BlockArg::from))
+        .collect()
+}
+
+fn literal_path(f: &mut Function, group: Group, last_literal: Option<Value>) -> Block {
+    // This path has already selected a literal. The entry admits every
+    // bin reachable by the proved mask and the original latch advances one.
+    let scalar = block(f);
+    let mut c = FuncCursor::new(f).at_bottom(scalar);
+    let key = c.ins().ushr_imm(group.packed, i64::from(group.key_shift));
+    let key = c.ins().band_imm(key, i64::from(group.key_mask));
+    increment(&mut c, group.bins, key);
+    let next = c.ins().iadd_imm(group.cursor, 1);
+    c.ins().jump(group.header, &cursor_args(next, last_literal));
+    scalar
+}
+
+pub(super) fn emit_single(f: &mut Function, group: Group) {
+    let Data::Brif {
+        arg, mut blocks, ..
+    } = f.dfg.insts[group.literal]
+    else {
+        unreachable!("group was derived from an integer branch")
+    };
+    let scalar = literal_path(f, group, None);
+    blocks[group.selected] = BlockCall::new(scalar, [], &mut f.dfg.value_lists);
+    f.dfg.insts[group.literal] = Data::Brif {
+        opcode: Op::Brif,
+        arg,
+        blocks,
+    };
+}
+
+fn literal_history(f: &mut Function, header: Block) -> (Value, Value) {
+    let entry = f.layout.entry_block().expect("grouped phase has an entry");
+    let mut c = FuncCursor::new(f);
+    c.goto_first_inst(entry);
+    let other = c.ins().iconst(types::I8, 0);
+    let literal = c.ins().iconst(types::I8, 1);
+    let parameter = f.dfg.append_block_param(header, types::I8);
+    // Existing routes start with a scalar visit. Newly emitted literal
+    // paths carry the positive hint to their next visit.
+    let (layout, dfg) = (&f.stencil.layout, &mut f.stencil.dfg);
+    for block in layout.blocks() {
+        let Some(last) = layout.last_inst(block) else {
+            continue;
+        };
+        for call in
+            dfg.insts[last].branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)
+        {
+            if call.block(&dfg.value_lists) == header {
+                call.append_argument(other, &mut dfg.value_lists);
+            }
+        }
+    }
+    (parameter, literal)
+}
+
 // The first chunk committed and the extension has at least one complete
 // chunk. Its exclusive logical limit and last physical group are invariant.
 fn stream(
@@ -181,6 +242,7 @@ fn stream(
     first: Value,
     remaining: Value,
     options: &Options,
+    last_literal: Option<Value>,
 ) {
     let paired = options.vector_chunks && options.pair_vector_chunks;
     let visits = if paired { 8 } else { 4 };
@@ -222,7 +284,7 @@ fn stream(
     c.ins().brif(
         finished,
         group.header,
-        &[resume.into()],
+        &cursor_args(resume, last_literal),
         read,
         &[next.into()],
     );
@@ -240,17 +302,28 @@ fn stream(
         // Keep a full first chunk if only the second chunk had mixed tags.
         let prefix = block(c.func);
         let mixed = vector_mixed(c, group.length_mask, words, None);
-        c.ins().brif(mixed, group.header, &[at.into()], prefix, &[]);
+        c.ins().brif(
+            mixed,
+            group.header,
+            &cursor_args(at, last_literal),
+            prefix,
+            &[],
+        );
         c.goto_bottom(prefix);
         increment_vector(c, group, words, options.byte_keys);
         let next = c.ins().iadd_imm(at, 4);
-        c.ins().jump(group.header, &[next.into()]);
+        c.ins().jump(group.header, &cursor_args(next, last_literal));
     } else {
-        c.ins().jump(group.header, &[at.into()]);
+        c.ins().jump(group.header, &cursor_args(at, last_literal));
     }
 }
 
-pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
+pub(super) fn emit(
+    compiler_inputs: &CompilationInputs,
+    f: &mut Function,
+    group: Group,
+    options: Options,
+) {
     let Options {
         visits,
         wide_keys,
@@ -266,13 +339,25 @@ pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
         unreachable!("group was derived from an integer branch")
     };
     let fallback = blocks[group.selected];
-    let scalar = fallback.block(&f.dfg.value_lists);
-    let scalar_args = fallback.args(&f.dfg.value_lists).collect::<Vec<_>>();
+    let history = compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM_WAIT_FOR_RUN")
+        .is_some()
+        .then(|| literal_history(f, group.header));
+    let last_literal = history.map(|(_, literal)| literal);
+    let (scalar, scalar_args) = if history.is_some() {
+        (literal_path(f, group, last_literal), Vec::new())
+    } else {
+        (
+            fallback.block(&f.dfg.value_lists),
+            fallback.args(&f.dfg.value_lists).collect::<Vec<_>>(),
+        )
+    };
     let check = block(f);
+    let dispatch = history.map_or(check, |_| block(f));
     let chunks = if stream_chunks { 1 } else { visits / 4 };
     let reads = (0..chunks).map(|_| block(f)).collect::<Vec<_>>();
     let updates = (0..chunks).map(|_| block(f)).collect::<Vec<_>>();
-    blocks[group.selected] = BlockCall::new(check, [], &mut f.dfg.value_lists);
+    blocks[group.selected] = BlockCall::new(dispatch, [], &mut f.dfg.value_lists);
     f.dfg.insts[group.literal] = Data::Brif {
         opcode: Op::Brif,
         arg,
@@ -280,6 +365,10 @@ pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
     };
 
     let mut c = FuncCursor::new(f);
+    if let Some((previous, _)) = history {
+        c.goto_bottom(dispatch);
+        c.ins().brif(previous, check, &[], scalar, &scalar_args);
+    }
     c.goto_bottom(check);
     let before_end = c
         .ins()
@@ -315,14 +404,19 @@ pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
             // Earlier chunks have committed. Reenter the exact original
             // iteration boundary at the first visit of this uncommitted chunk.
             let at = c.ins().iadd_imm(group.cursor, (chunk * 4) as i64);
-            loaded.branch(&mut c, updates[chunk], group.header, &[at.into()]);
+            loaded.branch(
+                &mut c,
+                updates[chunk],
+                group.header,
+                &cursor_args(at, last_literal),
+            );
         }
 
         c.goto_bottom(updates[chunk]);
         loaded.update(&mut c, &group, &options);
         let next = c.ins().iadd_imm(group.cursor, ((chunk + 1) * 4) as i64);
         if chunk + 1 == chunks && !stream_chunks {
-            c.ins().jump(group.header, &[next.into()]);
+            c.ins().jump(group.header, &cursor_args(next, last_literal));
         } else if chunk == 0 {
             // Admit the whole extension before any additional input read.
             // The four-visit prefix remains useful on shorter logical tails.
@@ -347,11 +441,16 @@ pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
             } else {
                 reads[chunk + 1]
             };
-            c.ins()
-                .brif(ready, extend, &[], group.header, &[next.into()]);
+            c.ins().brif(
+                ready,
+                extend,
+                &[],
+                group.header,
+                &cursor_args(next, last_literal),
+            );
             if stream_chunks {
                 c.goto_bottom(extend);
-                stream(&mut c, &group, address, remaining, &options);
+                stream(&mut c, &group, address, remaining, &options, last_literal);
             }
         } else {
             c.ins().jump(reads[chunk + 1], &[]);

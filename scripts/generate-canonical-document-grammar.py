@@ -459,7 +459,18 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
         "pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[",
     ]
     for name in names:
-        if name in BEST_CHOICE_RULES and choice_count(parsed[name]) != 1:
+        expression = parsed[name]
+        if name == "ordered-list-item" and expression[0] == "sequence":
+            items = expression[1]
+            prefix = (
+                ("rule", "number"),
+                ("rule", "period"),
+                ("not", ("rule", "period")),
+            )
+            if items[:4] == (("not", ("rule", "ul-subtitle")), *prefix):
+                # Reject non-list lines before the subtitle probe scans them.
+                expression = ("sequence", (("peek", ("sequence", prefix)), *items))
+        if name in BEST_CHOICE_RULES and choice_count(expression) != 1:
             raise ValueError(
                 f"{name} must contain exactly one alt_best choice"
             )
@@ -472,7 +483,7 @@ def render_grammar(names: list[str], parsed: dict[str, Expression]) -> str:
             [
                 "    DocumentRule {",
                 f"        rule: rules::{rust_constant(name)},",
-                f"        expression: {rust_expression(parsed[name], known_rules, name in BEST_CHOICE_RULES)},",
+                f"        expression: {rust_expression(expression, known_rules, name in BEST_CHOICE_RULES)},",
                 f"        kind: {kind},",
                 f"        root: {'true' if name in ROOT_KINDS else 'false'},",
                 f"        feature: {'Some(' + json.dumps(feature_gates[name]) + ')' if name in feature_gates else 'None'},",

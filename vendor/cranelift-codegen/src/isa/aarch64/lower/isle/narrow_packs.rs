@@ -69,7 +69,11 @@ enum Plan {
     },
 }
 
-pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> {
+pub(super) fn lower(
+    lower: &mut Lower<MInst>,
+    inst: Inst,
+    options: &crate::isa::Aarch64CompilationOptions,
+) -> Option<InstOutput> {
     let dfg = lower.dfg();
     let InstructionData::Binary { opcode, args } = dfg.insts[inst] else {
         return None;
@@ -84,8 +88,8 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
     if !matches!(ty, I32 | I64) {
         return None;
     }
-    let pack = std::env::var_os("MECH_ARM64_PACK_NARROW_HALVES").is_some_and(|v| v == "1");
-    let fold = std::env::var_os("MECH_ARM64_FOLD_SHIFTED_EXTENSIONS").is_some_and(|v| v == "1");
+    let pack = options.pack_narrow_halves;
+    let fold = options.fold_shifted_extensions;
     if !pack && !fold {
         return None;
     }

@@ -2,6 +2,7 @@
 //! The enclosing append-run proof fixes the read's (length - 1) geometry.
 //! The compact caller additionally admits only this one append mutation; every
 //! ordinary, literal-run and paired-run store is recorded by its own emitter.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{
     Block, Function, Inst, InstBuilder, InstructionData as Data, MemFlags, Opcode, Value,
     condcodes::IntCC, types,
@@ -12,6 +13,8 @@ use cranelift_codegen::{
     flowgraph::ControlFlowGraph,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "append_store_pairs.rs"]
+mod store_pairs;
 #[cfg(all(test, feature = "jit", target_pointer_width = "64"))]
 #[path = "append_previous_tests.rs"]
 mod tests;
@@ -28,6 +31,7 @@ impl Hint {
     }
     pub(in crate::native_artifact) fn apply(
         &self,
+        compiler_inputs: &CompilationInputs,
         context: &mut Context,
         loads: &BTreeMap<Value, (Inst, usize)>,
         output_word: usize,
@@ -75,7 +79,9 @@ impl Hint {
         {
             return Err("append lineage does not name the admitted current view");
         }
-        let seed = if std::env::var_os("MECH_FORWARD_PREVIOUS_APPEND").is_some_and(|v| v == "seed")
+        let seed = if compiler_inputs
+            .var_os("MECH_FORWARD_PREVIOUS_APPEND")
+            .is_some_and(|v| v == "seed")
         {
             let word = |at| {
                 loads.iter().find_map(|(&value, &(inst, word))| {
@@ -89,13 +95,26 @@ impl Hint {
         } else {
             None
         };
-        forward(
+        let result = forward(
             context,
             self.read,
             &stores,
             seed,
-            std::env::var_os("MECH_FORWARD_PREVIOUS_NARROW").is_some(),
-        )
+            compiler_inputs
+                .var_os("MECH_FORWARD_PREVIOUS_NARROW")
+                .is_some(),
+        )?;
+        if compiler_inputs
+            .var_os("MECH_COMPACT_PAIR_ADMITTED_APPEND_STORES")
+            .is_some()
+        {
+            // The caller's sealed NoGrowth contract admits this exclusive
+            // append vector, and the complete write census above classifies
+            // every mutation before changing the previous-value recurrence.
+            let paired = store_pairs::fold(&mut context.func, &stores);
+            eprintln!("compact admitted append store pairs: {paired}");
+        }
+        Ok(result)
     }
 }
 

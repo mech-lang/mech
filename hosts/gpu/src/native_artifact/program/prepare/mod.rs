@@ -146,6 +146,8 @@ pub(in crate::native_artifact) struct PreparedNativeProgram {
     // Compiler-only source facts belong to this exact immutable Plan owner.
     // Never serialized or moved into runtime ProgramMetadata.
     #[cfg(feature = "canonical-native-program")]
+    compiler_inputs: crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
+    #[cfg(feature = "canonical-native-program")]
     producer_element_reads: std::cell::OnceCell<std::collections::BTreeSet<(usize, u32)>>,
     #[cfg(feature = "canonical-native-program")]
     boolean_branch_targets: std::cell::OnceCell<Vec<Option<u32>>>,
@@ -159,6 +161,32 @@ impl PreparedNativeProgram {
         artifact: &ProgramArtifact,
         catalog: &FunctionCatalog,
         plan: NativeProgramArtifactPlan,
+    ) -> Result<Self, String> {
+        Self::prepare_inner(
+            artifact,
+            catalog,
+            plan,
+            #[cfg(feature = "canonical-native-program")]
+            crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+        )
+    }
+
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact::program) fn prepare_with_inputs(
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        plan: NativeProgramArtifactPlan,
+        inputs: &crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
+    ) -> Result<Self, String> {
+        Self::prepare_inner(artifact, catalog, plan, inputs.clone())
+    }
+
+    fn prepare_inner(
+        artifact: &ProgramArtifact,
+        catalog: &FunctionCatalog,
+        plan: NativeProgramArtifactPlan,
+        #[cfg(feature = "canonical-native-program")]
+        compiler_inputs: crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
     ) -> Result<Self, String> {
         if artifact.revision() != plan.program_revision() {
             return Err("mixed canonical revision mismatch".into());
@@ -525,12 +553,21 @@ impl PreparedNativeProgram {
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
             #[cfg(feature = "canonical-native-program")]
+            compiler_inputs,
+            #[cfg(feature = "canonical-native-program")]
             producer_element_reads: std::cell::OnceCell::new(),
             #[cfg(feature = "canonical-native-program")]
             boolean_branch_targets: std::cell::OnceCell::new(),
             #[cfg(feature = "canonical-native-program")]
             visit_predecessors: std::cell::OnceCell::new(),
         })
+    }
+
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn compiler_inputs(
+        &self,
+    ) -> &crate::native_artifact::codegen::compilation_inputs::CompilationInputs {
+        &self.compiler_inputs
     }
 
     #[cfg(feature = "canonical-native-program")]
