@@ -101,7 +101,7 @@ fn numeric_masked_maps_prove_three_optimization_masks_from_exact_source_cfg() {
     }
 }
 
-pub(super) const MATRIX_SOURCE: &str = r#"#Masked(initial<[u64]:3,4>, bound<u64>, rounds<u64>) => <[u64]:3,4>
+const MATRIX_SOURCE: &str = r#"#Masked(initial<[u64]:3,4>, bound<u64>, rounds<u64>) => <[u64]:3,4>
   | :Step(data<[u64]:3,4>,pass<u64>)
   | :Done(data<[u64]:3,4>).
 #Masked(initial,bound,rounds) -> :Step(initial,0u64)
@@ -115,7 +115,7 @@ data := input<[u64]:3,4>
 answer := #Masked(data,bound<u64>,rounds<u64>)
 (answer,data)
 "#;
-pub(super) fn emitted_masks(value: &serde_json::Value) -> usize {
+fn emitted_masks(value: &serde_json::Value) -> usize {
     match value {
         serde_json::Value::Object(fields) => fields
             .iter()
@@ -131,7 +131,7 @@ pub(super) fn emitted_masks(value: &serde_json::Value) -> usize {
         _ => 0,
     }
 }
-pub(super) fn output_data(outputs: &[Option<Value>]) -> Vec<Data> {
+fn output_data(outputs: &[Option<Value>]) -> Vec<Data> {
     outputs
         .iter()
         .map(|v| v.as_ref().unwrap().canonical_data_draft().unwrap())
@@ -356,7 +356,7 @@ fn numeric_masked_maps_preserve_all_scalar_bits_and_packed_width_tails() {
     }
 }
 
-pub(super) const VECTOR_SOURCE: &str = r#"#Vector(initial<[u64]:$SHAPE>, bound<u64>, rounds<u64>) => <[u64]:$SHAPE>
+const VECTOR_SOURCE: &str = r#"#Vector(initial<[u64]:$SHAPE>, bound<u64>, rounds<u64>) => <[u64]:$SHAPE>
   | :Step(data<[u64]:$SHAPE>,pass<u64>)
   | :Done(data<[u64]:$SHAPE>).
 #Vector(initial,bound,rounds) -> :Step(initial,0u64)
@@ -370,7 +370,7 @@ data := input<[u64]:$SHAPE>
 answer := #Vector(data,bound<u64>,rounds<u64>)
 (answer,data)
 "#;
-pub(super) fn check_success(
+fn check_success(
     artifact: &ProgramArtifact,
     native: &JitProgramArtifact,
     dense: &JitProgramArtifact,
@@ -466,7 +466,7 @@ fn numeric_masked_maps_keep_vector_orientations_false_active_edges_and_neighbour
     }
 }
 
-pub(super) const SEQUENCE_SOURCE: &str = r#"#Sequence(initial<[u64]:3,4>, bound<u64>, bad<u64>, badj<u64>, rounds<u64>) => <[u64]:3,4>
+const SEQUENCE_SOURCE: &str = r#"#Sequence(initial<[u64]:3,4>, bound<u64>, bad<u64>, badj<u64>, rounds<u64>) => <[u64]:3,4>
   | :Step(data<[u64]:3,4>,pass<u64>)
   | :Done(data<[u64]:3,4>).
 #Sequence(initial,bound,bad,badj,rounds) -> :Step(initial,0u64)

@@ -146,7 +146,7 @@ pub(super) fn emit(
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
     emit_with_selection(
-        b, frame, region, plan, captures, None, None, complete, miss, malformed,
+        b, frame, region, plan, captures, None, complete, miss, malformed,
     )
 }
 pub(super) fn emit_with_selection(
@@ -156,14 +156,10 @@ pub(super) fn emit_with_selection(
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
     selection: Option<&selection::Selection>,
-    whole_output_initialized: Option<Value>,
     complete: Block,
     miss: Block,
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
-    if whole_output_initialized.is_some() && selection.is_none() {
-        return Err(backend("partial scratch requires an exact selected map"));
-    }
     // Arithmetic failures carry the common emitter's diagnostic word. A
     // bounds miss needs no synthetic source error: ordinary replay owns it.
     let index_miss = b.create_block();
@@ -585,16 +581,12 @@ pub(super) fn emit_with_selection(
             offset_of!(Frame, fold) as i32,
         );
     }
-    // `next` certifies a complete initialized prefix, never logical source
-    // visits. Selected-only scratch may have uninitialized holes: its caller
-    // publishes only the exact cells written above and must not use ordinary
-    // NumericMapFinish. Conservatively grant no complete-prefix certificate.
-    let initialized = whole_output_initialized
-        .map(|whole| b.ins().select(whole, count, zero))
-        .unwrap_or(count);
+    // A selected phase map first initialized the complete scratch bank from
+    // its exact identity source. Both skipped identity cells and evaluated cells
+    // are genuinely initialized here; this is not a source-visit counter.
     b.ins().store(
         MemFlags::new(),
-        initialized,
+        count,
         frame,
         offset_of!(Frame, next) as i32,
     );

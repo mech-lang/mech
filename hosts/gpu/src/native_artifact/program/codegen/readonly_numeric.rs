@@ -62,8 +62,6 @@ pub(in crate::native_artifact) struct Report {
     pub fused_matrix_maps: Vec<(usize, u32, u64)>,
     /// Emitted source mask selectors and axes; diagnostic metadata only.
     pub masked_matrix_maps: Vec<(usize, u32, u8)>,
-    /// Guarded full-scratch copies (site, source selector, bytes); not wire proof.
-    pub guarded_map_initializations: Vec<(usize, u32, u32)>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
@@ -643,7 +641,6 @@ pub(in crate::native_artifact) fn emit_entry(
         fused_reductions: Vec::new(),
         fused_matrix_maps: Vec::new(),
         masked_matrix_maps: Vec::new(),
-        guarded_map_initializations: Vec::new(),
         static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
@@ -1108,19 +1105,11 @@ pub(in crate::native_artifact) fn emit_entry(
                     replacement,
                     &program.metadata().plan,
                     controls.enabled(OptimizationPass::MaskedMatrixMaps),
-                    controls.enabled(OptimizationPass::SelectiveScratchInitialization),
                     reduction_miss
                         .ok_or_else(|| backend("phase map lost its original cold edge"))?,
                 )?;
-                if let Some(mask) = mask {
-                    report
-                        .masked_matrix_maps
-                        .push((site, mask.selector, mask.axis));
-                    if let Some(bytes) = mask.guarded_initialization_bytes {
-                        report
-                            .guarded_map_initializations
-                            .push((site, mask.selector, bytes));
-                    }
+                if let Some((selector, axis)) = mask {
+                    report.masked_matrix_maps.push((site, selector, axis));
                 }
                 report.fused_matrix_maps.push((
                     site,

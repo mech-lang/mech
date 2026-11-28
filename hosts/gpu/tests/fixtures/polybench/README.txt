@@ -2789,3 +2789,11 @@ The instrumented external host allocator passed known-allocation/reallocation/li
 Uninstrumented warm-residence CPU samples resolve actual owned PID JIT maps; fresh Objects for all5 sampled optimization programs exactly match the frozen accepted48 Objects. Generated self time is87.4514% Gram–Schmidt,53.6851% Durbin,32.8063% MVT,30.0745% correlation and63.3362% Deriche. These samples do not reproduce cold-cache benchmark timing and do not enter selection or performance history. Hardware retired-instruction/cache counters were unavailable. No holdout diagnosis was performed.
 
 [Full15-program telemetry](round-48-runtime-telemetry.json) · [CPU sampling](round-48-cpu-telemetry.json) · [Reproducible probe sources/raw evidence](training-experiments/accepted48-telemetry.json)
+
+Selected scratch initialization: formal evaluation
+
+General guarded same-bank selected publication skips redundant complete scratch initialization; different-bank complete publication retains it. Partial scratch grants no full-output completion certificate. All734 broad/13 focused checks, both features, all30 original/decoded/restored C cases and the untimed optimization15 exact-fee/counter/Object gate passed.
+
+One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history50 without altering earlier entries. Formal optimization9.4153094154070995x C, independent holdout25.3710300143922964x C. V4 optimization-only decision: not_promoted. Raw runtime and C/reference drift controls remain in round-49-audit.json. All observations and regressions are preserved, no retries/exclusions. Exact accepted48 compiler restored solely because optimization failed its strict formal score gate.
+
+[Qualification](round-49-qualification.json) · [Audit](round-49-audit.json) · [Progress](round-49-progress.json) · [Complete experiment](training-experiments/selected-scratch-initialization-formal.json)
