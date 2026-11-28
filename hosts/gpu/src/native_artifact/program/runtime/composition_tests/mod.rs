@@ -62,7 +62,6 @@ mod numeric_generator_execution;
 mod numeric_generator_kernel;
 mod numeric_generators;
 mod numeric_induction;
-mod numeric_map_read_reuse;
 mod numeric_matrix_sums;
 mod numeric_outlining;
 mod numeric_product_epilogues;

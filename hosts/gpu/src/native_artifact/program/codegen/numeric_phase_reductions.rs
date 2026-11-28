@@ -29,7 +29,6 @@ pub(super) fn emit(
     proof: &Proof,
     fold: &Fold,
     plan: &Plan,
-    reuse: &mut super::numeric_map::read_reuse::Reuse,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
@@ -49,9 +48,7 @@ pub(super) fn emit(
         .iter()
         .map(|&v| (v, words.read(b, v as usize)))
         .collect::<BTreeMap<_, _>>();
-    let value = emit_from_views(
-        b, source, plan, first, last, &matrices, &captures, reuse, miss,
-    )?;
+    let value = emit_from_views(b, source, plan, first, last, &matrices, &captures, miss)?;
     words.write(
         b,
         source
@@ -75,7 +72,6 @@ pub(super) fn emit_from_views(
     last: Value,
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
-    reuse: &mut super::numeric_map::read_reuse::Reuse,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let region = &source.region;
@@ -107,7 +103,7 @@ pub(super) fn emit_from_views(
         count
     };
     let frame = emit_region(
-        b, region, plan, first, count, matrices, captures, None, reuse, miss,
+        b, region, plan, first, count, matrices, captures, None, miss,
     )?;
     let value = b.ins().load(
         types::I64,
@@ -129,11 +125,10 @@ pub(super) fn emit_region(
     matrices: &[[Value; 4]],
     captures: &BTreeMap<u32, Value>,
     output: Option<(Value, Value)>,
-    reuse: &mut super::numeric_map::read_reuse::Reuse,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     emit_region_with_selection(
-        b, region, plan, first, count, matrices, captures, output, None, None, reuse, miss,
+        b, region, plan, first, count, matrices, captures, output, None, None, miss,
     )
 }
 pub(super) fn emit_region_with_selection(
@@ -147,7 +142,6 @@ pub(super) fn emit_region_with_selection(
     output: Option<(Value, Value)>,
     selection: Option<&super::numeric_map::selection::Selection>,
     whole_output_initialized: Option<Value>,
-    reuse: &mut super::numeric_map::read_reuse::Reuse,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let slot = b.create_sized_stack_slot(StackSlotData::new(
@@ -272,7 +266,6 @@ pub(super) fn emit_region_with_selection(
         captures,
         selection,
         whole_output_initialized,
-        reuse,
         complete,
         arithmetic,
         miss,

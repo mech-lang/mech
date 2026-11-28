@@ -2835,3 +2835,11 @@ General ordered products pair independent output rows, sharing right loads and k
 One210-observation optimization-only probe selected; one frozen900-observation formal run matched29482 finite C liveouts and appended history52 without altering earlier entries. Formal optimization9.0969086510528872x C, independent holdout24.6009906555209206x C. V4 optimization-only decision: accepted. Raw runtime and C/reference drift controls remain in round-51-audit.json. All observations and regressions are preserved, no retries/exclusions. Compiler promoted to accepted51.
 
 [Qualification](round-51-qualification.json) · [Audit](round-51-audit.json) · [Progress](round-51-progress.json) · [Complete experiment](training-experiments/ordered-product-row-pairs-formal.json)
+
+Immutable map read reuse (not selected)
+
+All748 broad/4 focused checks, both features, all30 C cases and restored images, and the untimed optimization15 C/source-fee/unchanged-visit/Object gate passed. Identical later immutable matrix reads reuse a successful checked word under source dominance and stable selectors. Full buffers, original failures, checks and source fees remain; static removal does not establish a runtime gain.
+
+The single210-observation optimization-only probe measured0.9906874989625698x raw GM speedup versus accepted51, with 2 regressions over5%. It fails the prospective selection rule. All observations remain; no exact fingerprint retry and no holdout/formal timing ran. Exact accepted51 source is restored. Accepted scores remain9.096908651052887x optimization /24.60099065552092x holdout, independently reported.
+
+[Unselected observations](training-experiments/immutable-map-read-reuse-unselected-probe.json) · [Qualification/restoration](training-experiments/immutable-map-read-reuse-unselected.json)

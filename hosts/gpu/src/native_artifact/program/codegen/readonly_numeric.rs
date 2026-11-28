@@ -59,8 +59,6 @@ pub(in crate::native_artifact) struct Report {
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
     pub fused_reductions: Vec<(usize, u32, u64)>,
-    /// Reused successful immutable reads: region header, first site, later site.
-    pub map_read_reuses: Vec<(u32, u32, u32)>,
     pub fused_matrix_maps: Vec<(usize, u32, u64)>,
     /// Emitted source mask selectors and axes; diagnostic metadata only.
     pub masked_matrix_maps: Vec<(usize, u32, u8)>,
@@ -645,7 +643,6 @@ pub(in crate::native_artifact) fn emit_entry(
             .collect(),
         length_sites: Vec::new(),
         fused_reductions: Vec::new(),
-        map_read_reuses: Vec::new(),
         fused_matrix_maps: Vec::new(),
         masked_matrix_maps: Vec::new(),
         guarded_map_initializations: Vec::new(),
@@ -1089,9 +1086,6 @@ pub(in crate::native_artifact) fn emit_entry(
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
             Some(Operation::Reduce { fold }) => {
-                let mut reuse = super::numeric_map::read_reuse::Reuse::new(
-                    controls.enabled(OptimizationPass::RepeatedMatrixReads),
-                );
                 super::numeric_phase_reductions::emit(
                     b,
                     &words,
@@ -1099,11 +1093,9 @@ pub(in crate::native_artifact) fn emit_entry(
                     proof,
                     fold,
                     &program.metadata().plan,
-                    &mut reuse,
                     reduction_miss
                         .ok_or_else(|| backend("phase fold lost its original cold edge"))?,
                 )?;
-                report.map_read_reuses.extend(reuse.sites);
                 report.fused_reductions.push((
                     site,
                     fold.source.region.header,
@@ -1111,9 +1103,6 @@ pub(in crate::native_artifact) fn emit_entry(
                 ));
             }
             Some(Operation::Map { replacement }) => {
-                let mut reuse = super::numeric_map::read_reuse::Reuse::new(
-                    controls.enabled(OptimizationPass::RepeatedMatrixReads),
-                );
                 let mask = super::numeric_phase_maps::emit(
                     b,
                     &words,
@@ -1124,11 +1113,9 @@ pub(in crate::native_artifact) fn emit_entry(
                     controls.enabled(OptimizationPass::MaskedMatrixMaps),
                     controls.enabled(OptimizationPass::SelectiveScratchInitialization),
                     controls.enabled(OptimizationPass::CompoundMatrixMasks),
-                    &mut reuse,
                     reduction_miss
                         .ok_or_else(|| backend("phase map lost its original cold edge"))?,
                 )?;
-                report.map_read_reuses.extend(reuse.sites);
                 if let Some((selector, axis)) = mask.mask {
                     report.masked_matrix_maps.push((site, selector, axis));
                 }
