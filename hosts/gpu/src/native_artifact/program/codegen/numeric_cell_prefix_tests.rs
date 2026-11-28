@@ -100,7 +100,20 @@ fn compile(prefix: Prefix) -> (JITModule, Kernel) {
             (4, load(48)),
             (5, load(56)),
         ]);
-        let views = BTreeMap::from([(0, [pointer, rows, columns])]);
+        let length = prefix
+            .steps
+            .iter()
+            .any(|(_, step)| matches!(step, Step::LinearRead { .. }))
+            .then(|| b.ins().imul(rows, columns));
+        let views = BTreeMap::from([(
+            0,
+            View {
+                pointer,
+                rows,
+                columns,
+                length,
+            },
+        )]);
         let values = evaluate(
             &mut b,
             OptimizationOptions::default(),
@@ -119,7 +132,16 @@ fn compile(prefix: Prefix) -> (JITModule, Kernel) {
         b.seal_all_blocks();
         b.finalize();
     }
-    assert_eq!(ctx.func.layout.blocks().flat_map(|block| ctx.func.layout.block_insts(block)).filter(|inst| ctx.func.dfg.insts[*inst].opcode()==cranelift_codegen::ir::Opcode::Brif).count(),2,"one complete read admission and one escaping result guard");
+    let expected_branches = if prefix
+        .steps
+        .iter()
+        .any(|(_, s)| matches!(s, Step::LinearRead { .. }))
+    {
+        3
+    } else {
+        2
+    };
+    assert_eq!(ctx.func.layout.blocks().flat_map(|block| ctx.func.layout.block_insts(block)).filter(|inst| ctx.func.dfg.insts[*inst].opcode()==cranelift_codegen::ir::Opcode::Brif).count(),expected_branches,"complete read admission/result guards plus general linear address conversion");
     module.define_function(id, &mut ctx).unwrap();
     module.finalize_definitions().unwrap();
     // SAFETY: owned emitted function has the exact two-pointer signature above.
@@ -223,6 +245,88 @@ fn cell_prefix_direct_nonfinite_results_decline_but_intermediate_infinity_can_co
             assert_eq!(out, expected.to_bits())
         } else {
             assert_eq!(out, 0xabcd)
+        }
+    }
+}
+
+#[test]
+fn cell_prefix_direct_single_linear_read_checks_full_index_before_load_and_preserves_bits() {
+    let mut prefix = recipe(false);
+    prefix.read_sites = vec![3];
+    prefix.kinds.remove(&21);
+    prefix.steps[3] = (
+        20,
+        Step::LinearRead {
+            array: 0,
+            index: 11,
+            schema: mech_core::SchemaBody::Matrix {
+                element: Box::new(mech_core::SchemaBody::FloatingPoint(
+                    mech_core::FloatWidth::W64,
+                )),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(2),
+                    mech_core::DimensionExpr::Constant(3),
+                ]
+                .into(),
+            },
+        },
+    );
+    prefix.steps.remove(4);
+    prefix.steps[4] = (30, Step::Primitive(Op::F64Mul, vec![20, 4]));
+    prefix.steps[5] = (31, Step::Primitive(Op::F64Add, vec![30, 20]));
+    let (_module, kernel) = compile(prefix);
+    for bits in [
+        0,
+        (-0.0f64).to_bits(),
+        1,
+        1.25f64.to_bits(),
+        f64::MAX.to_bits(),
+        f64::INFINITY.to_bits(),
+        0x7ff8_1234_5678_9abc,
+        0x7ff0_1234_5678_9abc,
+    ] {
+        let data = if bits == 0 {
+            [0.0f64, 1.25, -4.0, 8.5, 0.125, -0.0].map(f64::to_bits)
+        } else {
+            [bits; 6]
+        };
+        for (rows, columns) in [(0, 3), (2, 3), (3, 2), (1, 6)] {
+            for base in [0, 1, 2, 5, u64::MAX] {
+                for offset in [0, 1, 6, u64::MAX] {
+                    for scale in [0, 1, u64::MAX] {
+                        let index = base.checked_mul(scale).and_then(|v| v.checked_add(offset));
+                        let admitted = index.is_some_and(|v| v >= 1 && v <= rows * columns)
+                            && 1u64.checked_add(offset).is_some();
+                        let value = if admitted {
+                            let ordinal = index.unwrap() - 1;
+                            let physical = (ordinal % rows) * columns + ordinal / rows;
+                            f64::from_bits(data[physical as usize])
+                        } else {
+                            0.0
+                        };
+                        let expected = value * 9.0 + value;
+                        let frame = [
+                            if admitted { data.as_ptr() as u64 } else { 0 },
+                            rows,
+                            columns,
+                            base,
+                            1,
+                            offset,
+                            9.0f64.to_bits(),
+                            scale,
+                        ];
+                        let mut out = [0xface_f00d_dead_beef; 3];
+                        // SAFETY: complete successful views contain six cells. Invalid
+                        // checked indices use a null bank and must refuse before loading.
+                        let status = unsafe { kernel(frame.as_ptr(), out.as_mut_ptr().add(1)) };
+                        let success = admitted && expected.is_finite();
+                        assert_eq!(status, u64::from(!success));
+                        assert_eq!(out[0], 0xface_f00d_dead_beef);
+                        assert_eq!(out[2], out[0]);
+                        assert_eq!(out[1], if success { expected.to_bits() } else { out[0] });
+                    }
+                }
+            }
         }
     }
 }

@@ -88,6 +88,8 @@ answer := #Walk(a,row<u64>,first<u64>,last<u64>,offset<u64>,gain<f64>)
 fn cell_prefix_public_sequential_dependencies_bits_aliases_errors_and_restored_replay() {
     for expression in [
         "(a[r,c] + a[r,c + offset]) / gain",
+        "a[c + offset] * gain + gain",
+        "a[r,c] * gain + gain",
         "a[r,c - offset] - gain * a[r,c]",
         "-math/sqrt(1.0 / (a[r,c] * a[r,c + offset]))",
         "(a[r,c] + a[r,c + offset]) * (a[r,c] - a[r,c + offset]) / gain",
@@ -154,83 +156,90 @@ fn cell_prefix_public_sequential_dependencies_bits_aliases_errors_and_restored_r
 }
 #[test]
 fn cell_prefix_public_finite_caps_exact_reports_and_cleanup_after_prior_changes() {
-    for artifact in artifacts(&source("(a[r,c] + a[r,c + offset]) / gain", [3, 4])) {
-        let (fast, old) = pair(&artifact);
-        let mode = NativeProgramLimitMode::NoLimits;
-        let memory = mode.memory_budget();
-        let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-        for restored in [false, true] {
-            for zero in [false, true] {
-                let cells = (0..12)
-                    .map(|v| Data::F64(F64Bits::from_f64(if zero { 0.0 } else { v as f64 + 1.0 })))
-                    .collect::<Vec<_>>();
-                let mut outputs = vec![None; artifact.outputs().len()];
-                let mut previous = outputs.clone();
-                for last in [4, 5] {
-                    let args = numeric_maps::typed_arguments(
-                        &artifact,
-                        &memory,
-                        &[
-                            ("input", Data::Matrix(cells.clone().into()), &[3, 4]),
-                            ("row", Data::U64(2), &[]),
-                            ("first", Data::U64(1), &[]),
-                            ("last", Data::U64(last), &[]),
-                            ("offset", Data::U64(1), &[]),
-                            ("gain", Data::F64(F64Bits::from_f64(2.0)), &[]),
-                        ],
-                    );
-                    compare_pair(
-                        &fast,
-                        &old,
-                        &args,
-                        &memory,
-                        mode.execution(),
-                        restored,
-                        &mut outputs,
-                        &mut previous,
-                    );
-                    let mut cap = mode.execution();
-                    cap.library.max_compute_work = Some(1);
-                    compare_pair(
-                        &fast,
-                        &old,
-                        &args,
-                        &memory,
-                        cap,
-                        restored,
-                        &mut outputs,
-                        &mut previous,
-                    );
-                    cap = mode.execution();
-                    cap.library.max_cloned_bytes = Some(0);
-                    compare_pair(
-                        &fast,
-                        &old,
-                        &args,
-                        &memory,
-                        cap,
-                        restored,
-                        &mut outputs,
-                        &mut previous,
-                    );
-                    compare_pair(
-                        &fast,
-                        &old,
-                        &args,
-                        &memory,
-                        mode.execution(),
-                        restored,
-                        &mut outputs,
-                        &mut previous,
+    for expression in [
+        "(a[r,c] + a[r,c + offset]) / gain",
+        "a[c + offset] * gain + gain",
+    ] {
+        for artifact in artifacts(&source(expression, [3, 4])) {
+            let (fast, old) = pair(&artifact);
+            let mode = NativeProgramLimitMode::NoLimits;
+            let memory = mode.memory_budget();
+            let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            for restored in [false, true] {
+                for zero in [false, true] {
+                    let cells = (0..12)
+                        .map(|v| {
+                            Data::F64(F64Bits::from_f64(if zero { 0.0 } else { v as f64 + 1.0 }))
+                        })
+                        .collect::<Vec<_>>();
+                    let mut outputs = vec![None; artifact.outputs().len()];
+                    let mut previous = outputs.clone();
+                    for last in [4, 5] {
+                        let args = numeric_maps::typed_arguments(
+                            &artifact,
+                            &memory,
+                            &[
+                                ("input", Data::Matrix(cells.clone().into()), &[3, 4]),
+                                ("row", Data::U64(2), &[]),
+                                ("first", Data::U64(1), &[]),
+                                ("last", Data::U64(last), &[]),
+                                ("offset", Data::U64(1), &[]),
+                                ("gain", Data::F64(F64Bits::from_f64(2.0)), &[]),
+                            ],
+                        );
+                        compare_pair(
+                            &fast,
+                            &old,
+                            &args,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            &mut outputs,
+                            &mut previous,
+                        );
+                        let mut cap = mode.execution();
+                        cap.library.max_compute_work = Some(1);
+                        compare_pair(
+                            &fast,
+                            &old,
+                            &args,
+                            &memory,
+                            cap,
+                            restored,
+                            &mut outputs,
+                            &mut previous,
+                        );
+                        cap = mode.execution();
+                        cap.library.max_cloned_bytes = Some(0);
+                        compare_pair(
+                            &fast,
+                            &old,
+                            &args,
+                            &memory,
+                            cap,
+                            restored,
+                            &mut outputs,
+                            &mut previous,
+                        );
+                        compare_pair(
+                            &fast,
+                            &old,
+                            &args,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            &mut outputs,
+                            &mut previous,
+                        );
+                    }
+                    outputs.fill(None);
+                    previous.fill(None);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained,
+                        "cleanup after prior published values, late errors, finite denial and retry"
                     );
                 }
-                outputs.fill(None);
-                previous.fill(None);
-                assert_eq!(
-                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
-                    retained,
-                    "cleanup after prior published values, late errors, finite denial and retry"
-                );
             }
         }
     }
@@ -269,20 +278,48 @@ fn cell_prefix_source_proof_declines_integer_reads_writes_and_branch_crossings()
     let split = ordinary.replace("value := a[r,c] + a[r,c + offset]", "x := a[r,c]\n        ~changed := a\n        changed[r,c] = gain\n        value := x + changed[r,c + offset]");
     let branch = ordinary.replace("value := a[r,c] + a[r,c + offset]", "x := a[r,c]\n        choice := gain > 0.0\n        value := x + (choice? | true => a[r,c + offset] | false => a[r,c])");
     let cases = [ordinary.replace("f64", "u64"), split, branch];
-    for source in cases {
+    for (index, source) in cases.into_iter().enumerate() {
         for artifact in artifacts(&source) {
             let catalog = mech_stdlib::source_catalog();
             let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
             let metadata = jit.descriptor().metadata();
-            assert!(
-                metadata
-                    .closed_tails
-                    .regions
-                    .iter()
-                    .filter_map(|r| r.numeric.as_ref())
-                    .all(|p| numeric_cell_prefix::derive(&metadata.plan.facts(), p).is_empty()),
-                "no prefix crosses an unsupported read kind, write or branch"
-            );
+            let prefixes = metadata
+                .closed_tails
+                .regions
+                .iter()
+                .filter_map(|r| r.numeric.as_ref())
+                .flat_map(|p| numeric_cell_prefix::derive(&metadata.plan.facts(), p))
+                .collect::<Vec<_>>();
+            if index == 0 {
+                assert!(
+                    prefixes.is_empty(),
+                    "integer reads cannot enter a floating expression"
+                );
+            }
+            for prefix in prefixes {
+                // A profitable single-read suffix is valid after a write or
+                // branch; neither source boundary may belong to the prefix.
+                assert_eq!(prefix.read_sites.len(), 1);
+                for site in prefix.sites {
+                    use mech_engine::native_artifact::{
+                        NativeCollectionPrimitive as P, NativeIterationAction as A,
+                        NativeIterationTerminator as T, NativeMatchTerminator as B,
+                    };
+                    let block = &metadata.plan.blocks()[site];
+                    assert!(matches!(block.terminator(), T::Scalar(B::Jump(_))));
+                    assert!(
+                        match block.action() {
+                            A::Scalar(_) => true,
+                            A::LibraryCall { template, .. } => matches!(
+                                template.primitive(),
+                                P::MatrixCellAccess | P::MatrixScalarAccess
+                            ),
+                            _ => false,
+                        },
+                        "no prefix contains the intervening source write or branch"
+                    );
+                }
+            }
         }
     }
 }
@@ -296,7 +333,8 @@ fn cell_prefix_load_only_escaping_values_keep_original_checks_and_public_errors(
         "right := a[r,c + offset]",
         "right := a[r,c + offset] + gain",
     );
-    for text in [text, partial] {
+    let bare_linear = source("a[c + offset]", [2, 5]);
+    for text in [text, partial, bare_linear] {
         for artifact in artifacts(&text) {
             let catalog = mech_stdlib::source_catalog();
             let fast = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
@@ -370,6 +408,35 @@ fn cell_prefix_load_only_escaping_values_keep_original_checks_and_public_errors(
                     }
                 }
             }
+        }
+    }
+}
+
+#[test]
+fn cell_prefix_source_proof_admits_single_linear_recurrences_without_crossing_writes() {
+    for artifact in artifacts(include_str!(
+        "../../../../../tests/fixtures/polybench/deriche.mec"
+    )) {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let metadata = jit.descriptor().metadata();
+        let prefixes = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .filter_map(|r| r.numeric.as_ref())
+            .flat_map(|p| numeric_cell_prefix::derive(&metadata.plan.facts(), p))
+            .collect::<Vec<_>>();
+        assert_eq!(prefixes.len(), 2, "both source causal filter orientations");
+        for prefix in prefixes {
+            assert_eq!(prefix.read_sites.len(), 1);
+            assert_eq!(
+                prefix.exports.len(),
+                1,
+                "only the ordered recurrence result escapes"
+            );
+            assert!(prefix.sites.len() >= 8);
+            assert!(!prefix.sites.contains(&(prefix.next as usize)));
         }
     }
 }

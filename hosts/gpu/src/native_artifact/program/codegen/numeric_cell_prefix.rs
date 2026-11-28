@@ -18,7 +18,16 @@ use std::collections::{BTreeMap, BTreeSet};
 enum Step {
     Copy(u32),
     Primitive(Op, Vec<u32>),
-    Read { array: usize, row: u32, column: u32 },
+    Read {
+        array: usize,
+        row: u32,
+        column: u32,
+    },
+    LinearRead {
+        array: usize,
+        index: u32,
+        schema: mech_core::SchemaBody,
+    },
 }
 #[derive(Clone, Debug)]
 pub(in crate::native_artifact) struct Prefix {
@@ -45,28 +54,75 @@ fn scalar(op: Op) -> bool {
             | Op::F64Sqrt
     )
 }
-fn supported(facts: &NativeProgramFacts<'_>, proof: &Proof, site: usize) -> bool {
-    match proof.action(site) {
-        Some(Operation::CellRead {
+fn selected_read(
+    facts: &NativeProgramFacts<'_>,
+    proof: &Proof,
+    site: usize,
+) -> Option<(u32, Step)> {
+    use mech_engine::native_artifact::NativeCollectionPrimitive as Primitive;
+    let (array, output, primitive, selectors, step) = match proof.action(site)? {
+        Operation::CellRead {
             array,
             row,
             column,
             output,
-        }) => {
-            proof.arrays[*array].width == 8
-                && facts.plan().values()[*output as usize].scalar_kind() == Some(Kind::F64)
-                && matches!(facts.plan().blocks()[site].action(), Action::LibraryCall { template, operands, output: selected }
-                    if template.primitive() == mech_engine::native_artifact::NativeCollectionPrimitive::MatrixCellAccess
-                    && selected.get() == *output && operands.len() == 3
-                    && operands[1].get() == *row && operands[2].get() == *column
-                    && template.output().body() == &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
+        } => (
+            *array,
+            *output,
+            Primitive::MatrixCellAccess,
+            vec![*row, *column],
+            Step::Read {
+                array: *array,
+                row: *row,
+                column: *column,
+            },
+        ),
+        Operation::Read {
+            array,
+            index,
+            output,
+        } => {
+            let Action::LibraryCall {
+                template: witness, ..
+            } = facts.plan().blocks()[proof.arrays[*array].witness].action()
+            else {
+                return None;
+            };
+            (
+                *array,
+                *output,
+                Primitive::MatrixScalarAccess,
+                vec![*index],
+                Step::LinearRead {
+                    array: *array,
+                    index: *index,
+                    schema: witness.inputs().first()?.body().clone(),
+                },
+            )
         }
-        _ => false,
-    }
+        _ => return None,
+    };
+    let Action::LibraryCall {
+        template,
+        operands,
+        output: selected,
+    } = facts.plan().blocks()[site].action()
+    else {
+        return None;
+    };
+    (proof.arrays[array].width == 8
+        && facts.plan().values()[output as usize].scalar_kind() == Some(Kind::F64)
+        && template.primitive() == primitive
+        && selected.get() == output
+        && operands.len() == selectors.len() + 1
+        && operands[1..].iter().map(|v| v.get()).eq(selectors)
+        && template.output().body()
+            == &mech_core::SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
+        .then_some((output, step))
 }
 fn plain(facts: &NativeProgramFacts<'_>, proof: &Proof, site: usize) -> bool {
     if proof.action(site).is_some() {
-        return supported(facts, proof, site);
+        return selected_read(facts, proof, site).is_some();
     }
     match facts.plan().blocks()[site].action() {
         Action::Scalar(Scalar::None) => true,
@@ -122,21 +178,10 @@ fn find(
             return None;
         }
         let selected = match proof.action(at) {
-            Some(Operation::CellRead {
-                array,
-                row,
-                column,
-                output,
-            }) => {
+            Some(_) => {
+                let read = selected_read(facts, proof, at)?;
                 reads.push(at);
-                Some((
-                    *output,
-                    Step::Read {
-                        array: *array,
-                        row: *row,
-                        column: *column,
-                    },
-                ))
+                Some(read)
             }
             None => match plan.blocks()[at].action() {
                 Action::Scalar(Scalar::None) => None,
@@ -153,7 +198,6 @@ fn find(
                 )),
                 _ => return None,
             },
-            _ => return None,
         };
         if let Some((output, step)) = selected {
             let source_value = match plan.blocks()[at].action() {
@@ -183,7 +227,7 @@ fn find(
             break;
         }
     }
-    if reads.len() < 2 || reads.len() > 32 || sites.contains(&(next as usize)) {
+    if reads.is_empty() || reads.len() > 32 || sites.contains(&(next as usize)) {
         return None;
     }
     if proof
@@ -200,6 +244,7 @@ fn find(
             Step::Copy(value) => vec![*value],
             Step::Primitive(_, values) => values.clone(),
             Step::Read { row, column, .. } => vec![*row, *column],
+            Step::LinearRead { index, .. } => vec![*index],
         };
         for input in operands {
             if !defined.contains(&input) {
@@ -264,7 +309,7 @@ pub(in crate::native_artifact) fn derive(
     let mut prefixes = Vec::new();
     for &site in &proof.sites {
         if available.contains(&site)
-            && matches!(proof.action(site), Some(Operation::CellRead { .. }))
+            && selected_read(facts, proof, site).is_some()
             && let Some(prefix) = find(facts, proof, site, &available, &forbidden)
         {
             for at in &prefix.sites {
@@ -276,15 +321,24 @@ pub(in crate::native_artifact) fn derive(
     prefixes
 }
 
-/// Evaluate only a proved prefix. Inputs are current raw source words, views
-/// are the already admitted current numeric banks (pointer, rows, columns).
+#[derive(Clone, Copy)]
+struct View {
+    pointer: Value,
+    rows: Value,
+    columns: Value,
+    // Loaded only for actual source linear indexing. Cell-only regions retain
+    // their existing current geometry and emit no extra shadow-word read.
+    length: Option<Value>,
+}
+/// Evaluate only a proved prefix. Inputs are current raw source words; views
+/// contain the already admitted current numeric bank and source geometry.
 /// Do not export any SSA word until both admission and result guards succeed.
 fn evaluate(
     b: &mut FunctionBuilder<'_>,
     options: OptimizationOptions,
     prefix: &Prefix,
     inputs: &BTreeMap<u32, Value>,
-    views: &BTreeMap<usize, [Value; 3]>,
+    views: &BTreeMap<usize, View>,
     slow: Block,
 ) -> Vec<(u32, Value)> {
     let mut integers = BTreeMap::new();
@@ -351,7 +405,7 @@ fn evaluate(
     let mut checked = BTreeSet::new();
     for (_, step) in &prefix.steps {
         if let Step::Read { array, row, column } = step {
-            let [_, rows, columns] = views[array];
+            let View { rows, columns, .. } = views[array];
             for (axis, id, bound) in [(0, row, rows), (1, column, columns)] {
                 let index = integers[id];
                 if checked.insert((*array, axis, index)) {
@@ -359,6 +413,20 @@ fn evaluate(
                     let good = b.ins().icmp(IntCC::UnsignedLessThan, index, bound);
                     valid = b.ins().band(valid, good);
                 }
+            }
+        }
+        if let Step::LinearRead { array, index, .. } = step {
+            let index = integers[index];
+            if checked.insert((*array, 2, index)) {
+                let ordinal = b.ins().iadd_imm(index, -1);
+                let good = b.ins().icmp(
+                    IntCC::UnsignedLessThan,
+                    ordinal,
+                    views[array]
+                        .length
+                        .expect("source linear read retains current bank length"),
+                );
+                valid = b.ins().band(valid, good);
             }
         }
     }
@@ -372,13 +440,37 @@ fn evaluate(
         let value = match step {
             Step::Copy(source) => floats[source],
             Step::Read { array, row, column } => {
-                let [pointer, _, columns] = views[array];
+                let View {
+                    pointer, columns, ..
+                } = views[array];
                 let row = b.ins().iadd_imm(integers[row], -1);
                 let column = b.ins().iadd_imm(integers[column], -1);
                 let base = b.ins().imul(row, columns);
                 let physical = b.ins().iadd(base, column);
                 let bytes = b.ins().ishl_imm(physical, 3);
                 let address = b.ins().iadd(pointer, bytes);
+                b.ins().load(
+                    types::F64,
+                    super::numeric_words::guarded_load_flags(options),
+                    address,
+                    0,
+                )
+            }
+            Step::LinearRead {
+                array,
+                index,
+                schema,
+            } => {
+                let ordinal = b.ins().iadd_imm(integers[index], -1);
+                let physical = super::numeric_words::linear_ordinal(
+                    b,
+                    ordinal,
+                    views[array].rows,
+                    views[array].columns,
+                    schema,
+                );
+                let bytes = b.ins().ishl_imm(physical, 3);
+                let address = b.ins().iadd(views[array].pointer, bytes);
                 b.ins().load(
                     types::F64,
                     super::numeric_words::guarded_load_flags(options),
@@ -440,7 +532,7 @@ pub(super) fn emit(
         .steps
         .iter()
         .filter_map(|(_, step)| match step {
-            Step::Read { array, .. } => Some(*array),
+            Step::Read { array, .. } | Step::LinearRead { array, .. } => Some(*array),
             _ => None,
         })
         .collect::<BTreeSet<_>>();
@@ -450,11 +542,14 @@ pub(super) fn emit(
             let at = shadow + proof.view(array);
             (
                 array,
-                [
-                    words.read(b, at),
-                    words.read(b, at + 2),
-                    words.read(b, at + 3),
-                ],
+                View {
+                    pointer: words.read(b, at),
+                    rows: words.read(b, at + 2),
+                    columns: words.read(b, at + 3),
+                    length: prefix.steps.iter().any(|(_, step)|
+                        matches!(step, Step::LinearRead { array: selected, .. } if *selected == array))
+                        .then(|| words.read(b, at + 1)),
+                },
             )
         })
         .collect();
