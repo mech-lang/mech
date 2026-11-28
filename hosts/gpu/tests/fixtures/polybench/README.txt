@@ -2773,3 +2773,11 @@ All728 broad/eight focused checks, both features, all30 original/decoded/restore
 The single210-observation optimization-only probe measured0.9883820880980985x raw GM speedup versus accepted47, with 2 regressions over5%. The complete optimization aggregate fails the prospective selection rule; all observations remain and the fingerprint is ineligible for an exact retry. No holdout or formal timing ran. Exact accepted47 source is restored; history remains48 entries and accepted scores remain9.575943659594117x optimization /27.506517683644883x holdout (reported independently).
 
 [Unselected observations](training-experiments/hoisted-transpose-product-views-unselected-probe.json) · [Qualification/restoration](training-experiments/hoisted-transpose-product-views-unselected.json) · [All30 source line counts](training-experiments/source-line-counts.json)
+
+Accepted48: ordered product epilogues
+
+General source-closed ordered F64 product epilogues remove real product/scaling/addition intermediate buffers and passes while retaining source arithmetic order, resident geometry and resource obligations. Actual fused Objects and honest visit reductions were verified in 2mm/GEMM/MVT; all729 broad/eight focused checks and both features passed.
+
+The single210-observation optimization probe selected at1.0093501643084763x raw GM speedup. One frozen900-observation formal evaluation matched29482 finite C liveouts and appended history49 without altering earlier entries. The v4 optimization-only gate accepts optimization9.401799375716326x C; holdout24.666190246754944x C is independently reported. Raw optimization Mech runtime was essentially flat (0.9985868065558229x speedup); measured C runtime rose1.0199638482497508x, contributing to the ratio gain. Holdout raw Mech speedup is1.1407256700285937x. No source tuning or rollback uses holdout. The below1.0x C holdout goal remains unmet.
+
+[Qualification](round-48-qualification.json) · [Performance audit](round-48-audit.json) · [Progress](round-48-progress.json) · [Accepted evidence](training-experiments/ordered-product-epilogues-accepted.json) · [Static telemetry](round-48-static-telemetry.json)
