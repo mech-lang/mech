@@ -17,7 +17,9 @@ use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeProgramArtifactPlan as Plan;
 use std::{collections::BTreeMap, mem::offset_of};
 mod batch;
+pub(super) mod cells;
 mod streams;
+mod windows;
 
 fn require(b: &mut FunctionBuilder<'_>, good: Value, slow: Block) {
     let next = b.create_block();

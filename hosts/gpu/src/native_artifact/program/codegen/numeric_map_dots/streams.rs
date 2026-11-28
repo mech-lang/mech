@@ -6,6 +6,7 @@ pub(super) struct Prepared {
     inner_step: Value,
     outer_step: Value,
     outer_dependent: bool,
+    inner_dependent: bool,
 }
 impl Prepared {
     pub fn stream(&self, b: &mut FunctionBuilder<'_>, at: Option<Value>, vector: bool) -> Stream {
@@ -20,6 +21,36 @@ impl Prepared {
             pointer,
             step: self.inner_step,
             vector: vector && self.outer_dependent,
+        }
+    }
+    pub fn packed_inner(&self, b: &mut FunctionBuilder<'_>) -> Value {
+        if self.inner_dependent {
+            b.ins().icmp_imm(IntCC::Equal, self.inner_step, 8)
+        } else {
+            b.ins().iconst(types::I8, 1)
+        }
+    }
+    pub fn cell(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        inner: Value,
+        outer: Value,
+        vector: bool,
+    ) -> Value {
+        let dx = b.ins().imul(inner, self.inner_step);
+        let dy = b.ins().imul(outer, self.outer_step);
+        let displacement = b.ins().iadd(dx, dy);
+        let pointer = b.ins().iadd(self.pointer, displacement);
+        if vector && self.inner_dependent {
+            b.ins()
+                .load(types::F64.by(2).unwrap(), MemFlags::new(), pointer, 0)
+        } else {
+            let value = b.ins().load(types::F64, MemFlags::new(), pointer, 0);
+            if vector {
+                b.ins().splat(types::F64.by(2).unwrap(), value)
+            } else {
+                value
+            }
         }
     }
     pub fn packed(&self, b: &mut FunctionBuilder<'_>) -> Value {
@@ -177,5 +208,6 @@ pub(super) fn prepare(
         inner_step,
         outer_step,
         outer_dependent: operand.indices.iter().any(|i| i.dependencies[1]),
+        inner_dependent: operand.indices.iter().any(|i| i.dependencies[0]),
     })
 }

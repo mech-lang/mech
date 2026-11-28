@@ -31,6 +31,7 @@ pub(super) fn emit(
     plan: &Plan,
     typed_folds: bool,
     ordered_dots: bool,
+    affine_cells: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
@@ -60,6 +61,7 @@ pub(super) fn emit(
         &captures,
         typed_folds,
         ordered_dots,
+        affine_cells,
         miss,
     )?;
     words.write(
@@ -87,6 +89,7 @@ pub(super) fn emit_from_views(
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
     ordered_dots: bool,
+    affine_cells: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let region = &source.region;
@@ -127,6 +130,7 @@ pub(super) fn emit_from_views(
         captures,
         typed_folds,
         ordered_dots,
+        affine_cells,
         None,
         miss,
     )?;
@@ -151,6 +155,7 @@ pub(super) fn emit_region(
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
     ordered_dots: bool,
+    affine_cells: bool,
     output: Option<(Value, Value)>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
@@ -164,6 +169,7 @@ pub(super) fn emit_region(
         captures,
         typed_folds,
         ordered_dots,
+        affine_cells,
         output,
         None,
         None,
@@ -180,6 +186,7 @@ pub(super) fn emit_region_with_selection(
     captures: &BTreeMap<u32, Value>,
     typed_folds: bool,
     ordered_dots: bool,
+    affine_cells: bool,
     output: Option<(Value, Value)>,
     selection: Option<&super::numeric_map::selection::Selection>,
     whole_output_initialized: Option<Value>,
@@ -307,6 +314,7 @@ pub(super) fn emit_region_with_selection(
         captures,
         typed_folds,
         ordered_dots,
+        affine_cells,
         selection,
         whole_output_initialized,
         complete,

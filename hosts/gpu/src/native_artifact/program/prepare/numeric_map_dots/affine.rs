@@ -124,7 +124,7 @@ impl<'a> Builder<'a> {
             .contains(&value)
             .then(|| Index::leaf(Expr::Capture(value), None))
     }
-    fn read(&mut self, value: u32, depth: usize) -> Option<Operand> {
+    pub(super) fn read(&mut self, value: u32, depth: usize) -> Option<Operand> {
         if depth > 32 || !self.kind(value, NativeScalarKind::F64) {
             return None;
         }
