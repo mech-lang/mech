@@ -27,7 +27,6 @@
     "Reuse maintained numeric-product scalar/SIMD emission and exact synchronous NumericBinaryFrame loan. Preserve +0.0 and each dot product k order, independent SIMD outputs, scalar tails and no FMA/reassociation.",
     "Admit both original transpose and product demands and the full old coexistence/replay envelope before mutation. Retain original selected schema/shape/current owner checks, NaN fallback, finite limits, source work/comparison charges and clone/publication/retirement obligations. Extra preflight may decline to the exact ordinary producer path.",
     "Pin actual original operands; validate physical spans, logical geometry and all source-bound arithmetic before native access. Publish only the final product after complete success. One private source-proved bulk control transition replaces skipped callbacks; report physical visits honestly and do not pad counters.",
-    "IR413/work157/ABI47 intended; record a prospective refinement before emission if the existing frame cannot express the checked geometry. No serialized authority or benchmark/timing changes.",
     "Carry one computed output row and column from the reached nonempty product body into either scalar or SIMD cell. Derive the column from index-row*columns, sharing the quotient and removing the extra remainder division.",
     "Compute original-row stride count/columns outside the ordered k reduction. For a transposed left operand, dynamic division decreases from one per k term to one per reached output group; empty results never divide and each cell retains its original +0/k order.",
     "Remove the per-loan Option<(consumer,epoch)> field. Preserve the original Pending field layout; identify the genuine fused loan by a private mode in its immutable issued frame, store the entry epoch in an existing product-unused scalar word, and rederive the consumer from the same private source proof. Full issued-frame/epoch/context checks remain. Ordinary loans retain their original frame modes and layout.",
@@ -42,15 +41,15 @@
   "training_probe": {
     "observations": 210,
     "actors": [
-      "accepted45",
+      "accepted47",
       "candidate"
     ],
     "samples_per_actor_case": 7,
     "method": "One new driver process per actor/case/sample; alternate/interleave, fixed formal cache/warmup/checked-call boundaries. Exactly one prospective probe per qualified fingerprint; no retry/exclusion.",
-    "selection": "Raw equal-weight GM accepted45/candidate median runtime speedup strictly>1 after full qualification and the source/fee/census gate."
+    "selection": "Raw equal-weight GM accepted47/candidate median runtime speedup strictly>1 after full qualification and the source/fee/census gate."
   },
   "formal_acceptance": "Promote only if optimization15 kernel Mech/C GM strictly improves accepted47 (9.575943659594117). Retain/report the full holdout aggregate independently, regardless of regression; do not select, tune or roll back based on holdout. Correctness, freeze, source obligations, timing boundaries and one-probe/no-exclusion rules remain.",
-  "prior_related_work": "Rejected36 grouped operator kernels and retained each physical intermediate; this plan actually removes the transpose computation/storage. Rejected47 conditional maps remain restored, with all measurements preserved and its observed fingerprint ineligible for exact retry.",
+  "prior_related_work": "Rejected36 grouped operator kernels and retained each physical intermediate; this plan actually removes the transpose computation/storage. Accepted47 conditional maps remain the baseline. The initial transpose-product probe at fingerprint95bb12a9533b8bfc1d4c882997c028de7b38af122dae318f1c89ffe3bf6b1c15 was not selected by optimization15; all210 observations remain and exact retry is forbidden.",
   "profiling_basis": [
     "training-experiments/accepted44-long-training-profile.json",
     "training-experiments/accepted45-gramschmidt-profile.json",
@@ -135,5 +134,6 @@
       "     d50:      \tb\t0xd0c <_mech_canonical_program_entry_v1+0xd0c>"
     ],
     "interpretation": "Scalar loop headercc0/backedgecf8 includes invariant udiv atcd8; vector headerd0c/backedge followsd4c includes invariant udiv atd28. Output quotient/remainder also execute separate divisions atc9c/cb4."
-  }
+  },
+  "copied_plan_text_correction": "Before follow-up source edits/performance, remove inherited accepted45/IR413/rejected47 wording. Accepted47, IR414 and optimization-only selection are authoritative."
 }
