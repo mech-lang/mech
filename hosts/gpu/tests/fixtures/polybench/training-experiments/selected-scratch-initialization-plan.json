@@ -1,0 +1,87 @@
+{
+  "schema": "mech.polybench.selected-scratch-initialization-plan.v1",
+  "created_at": "2026-11-28T04:57:49.258140+00:00",
+  "status": "Prospective before compiler edits or timing",
+  "source_parent": "fcbaacc0ac6935190c69912f3c25db963ec37eea",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_selected_initialization.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "b3f0330854d3a0ba52e0aaba5a40f40e41d00d3449a3c683a10c2bce54ab6e6c",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "7e38cb6b3a36976bf0d780909550aef4b265f5663be2b99acf149612362d4abe",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "cfac5aa7e46f7c8f17ce7657d187c307a456dde5dff089a03437239f9e62fb27",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9277248fc7f7c0554dfe2f4b070a05917713a11d6645b8d23c5f73b374cc4de9",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "15cf9ce560f3239fbe26956fbcc269c9bc6eb1ba9fbaad8985a6bf407ffcea66",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "5a81afc9662af5cf29fd70879cda78d79cb16e856f0305c96986c3b1b8e67717",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "bf22bbf6dcc2d0dabbb737ecc323990c89aadfb582193e0cafabe430672950dd",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_selected_initialization.rs": null,
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs": "f9df4990f3381e6ed44d6d9878550969bb9f3b370883d4cb53c474fb79c2313f"
+  },
+  "accepted_round": 48,
+  "accepted_compiler_fingerprint": "ecc417a8e887b1bac94af3a6b70e447b989edbc1d620668208c25f4cd6847021",
+  "accepted_scores": {
+    "optimization": 9.401799375716326,
+    "holdout": 24.666190246754944
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-48/ordered-product-epilogues/ordered-product-epilogues-driver",
+  "accepted_driver_sha256": "420a7d599f580d491924fae887ebf266441b4ccfcdbf6c5b36b7d8526ac5538d",
+  "formal_history_entries": 49,
+  "selection_policy": "performance-selection-policy-v4.json",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "versions": {
+    "ir": 416,
+    "work": 157,
+    "abi": 48
+  },
+  "scope": "General source-proved conditional maps only. Reuse existing identity-complement proof, current exclusive phase banks, checked scratch capacity and exact source evaluation/publication. No port, input, arithmetic-tree, C binary, limit, tolerance or cache/timing-boundary changes.",
+  "profiling_basis": {
+    "source": "round-48-runtime-telemetry.json and round-48-cpu-telemetry.json",
+    "optimization_only": true,
+    "gramschmidt_generated_self_percent": 87.45141588006663,
+    "gramschmidt_allocations_per_call": 90,
+    "gramschmidt_peak_additional_requested_heap_bytes": 62160,
+    "gramschmidt_reported_native_stack_bytes": 23072,
+    "source_finding": "numeric_phase_maps unconditionally initializes full scratch from the identity base before evaluating selected cells, even when same-base selected-only publication never reads the complement.",
+    "static_copy_payload_upper_bound_bytes_per_invocation": 504000,
+    "limit": "The504000B is a source-derived upper bound (30 times4800+7200+4800), not measured memory traffic or a runtime forecast. Actual same-bank cases determine which copies disappear. Sampled PID function mappings and identically sized/exact Objects support static inspection; sampled process machine bytes were not separately captured."
+  },
+  "different_from_previous_experiments": "The targeted initialization routine was introduced with the round47 conditional maps, after rejected rounds32\u201343. This experiment removes dead initialization on the newer selected-publication path; it does not repeat whole-map direct-publication or loan experiments.",
+  "physical_work_removed": [
+    "On the exact current destination==identity-base bank path, omit the full source-to-scratch initialization pass. Only selected coordinates are evaluated/stored and later read for selected publication.",
+    "Retain the full initialization pass when the destination differs, so complete publication has every complement cell defined. Keep complete scratch capacity and all owner/span/disjointness/admission checks."
+  ],
+  "implementation": [
+    "Derive current bank identity before evaluation; private scratch remains raw generated-code storage, never a Rust full typed slice or canonical Value while partially initialized. Audit that the map body reads only original captured views, writes selected scratch cells exactly once, and exposes no scratch pointer.",
+    "Carry an explicit internal whole-output-initialized condition through the phase/map emitter. Frame.next must not claim a full initialized output after skipped initialization; conservatively retain a zero completion certificate on that path. Logical output shape/count and source fees remain full. Standalone maps/folds retain existing complete-output behavior.",
+    "After checked evaluation, require that an initially same-bank destination still matches the identity bank before any destination store. Selected publication reads only the exact selected cells; full publication requires the initial complete-scratch path. No partial destination publication on failure.",
+    "Add a separate default-enabled compiler ablation for selected scratch initialization, so new code can be compared against the accepted complete-initialization path without disabling existing conditional-map selection. No helper/root-frame/layout changes.",
+    "Record emitted guarded-initialization sites and byte spans descriptively in Object diagnostics; no new wire proof or authority. Bump typed IR to416; work157 and ABI48 remain."
+  ],
+  "required_qualification": [
+    "Original/decoded exact source proof and actual Object selection with the new ablation; all old masked-map tests and their six comparisons, both axes, extreme bounds, rectangular/vector orientations and all supported scalar widths remain.",
+    "Enabled versus full-initialization and dense exact bits across repeated rounds, old-vector neighbour reads, NaNs/signed zeros/subnormals, empty selected domains, odd packed tails and same-bank/different-bank/alternating identity sources. Preserve simultaneous reads.",
+    "Finite/missing/zero/spent caps and physical bytes/nodes, atomic checked failures, clean output/owner release and retry; restored helpers plus forged image/loan/binding checks.",
+    "All maintained broad scalar/compression/numeric regressions, both feature configurations, all30 original/decoded/restored finite C cases. Independently inspect generated guards and completion stores to verify that partial scratch never grants a full-output certificate."
+  ],
+  "untimed_gate": "All optimization15 finite C liveouts and actual checked Objects. Source work/comparison cannot decrease; every other execution counter must match accepted48. Source callback visits are expected unchanged; any deviation requires an exact independent source proof rather than padding.",
+  "training_probe": {
+    "actors": [
+      "accepted48",
+      "candidate"
+    ],
+    "observations": 210,
+    "samples_per_actor_case": 7,
+    "selection": "Exactly one prospective fresh-process probe per fully qualified materially changed fingerprint; raw equal-weight GM accepted48/candidate medians must exceed1. No retries or exclusions; all regressions retained."
+  },
+  "formal_acceptance": "Only after full qualification, selected probe, clean committed/pushed/frozen source and driver: one900-observation run,29482 finite liveouts, immutable history append. Promote iff optimization15 kernel Mech/C is strictly below9.401799375716326. Holdout is independently reported and cannot veto/select/tune/trigger rollback or retry.",
+  "restoration": "If unselected or not promoted, preserve every observation and source snapshot, then restore all planned compiler paths exactly from source_parent (accepted48 fingerprint). Only commit/push PR1001 branch.",
+  "performance_observations": 0
+}
