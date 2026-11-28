@@ -2759,3 +2759,9 @@ User-directed selection correction after round47
 Round47 is accepted from its optimization improvement: 9.784192694066512x C ->9.575943659594117x C (1.0542683121826288x raw Mech speedup). Holdout is reported independently: 25.86144806723818x C ->27.506517683644883x C. Its regression does not select, veto, retune or roll back compiler changes. Exact qualified47 source/driver are restored without new observations. The earlier two-set decision remains in the immutable round47 receipts and archived prior global ledger; an explicit amendment changes promotion from history47 onward. Historical decisions through46, all900 observations, all29,482 finite C outputs, the48-entry append-only measurement history, fixed benchmark protocol and below1.0x C holdout goal remain.
 
 [Optimization acceptance](round-47-optimization-acceptance.json) · [Policy amendment](performance-selection-policy-v4.json)
+
+Initial transpose/product-view probe (not selected)
+
+All728 broad/eight focused checks, both features, all30 C cases and the untimed optimization15 fee/callback/Object gate passed. The single210-observation probe measured0.9957168176603722x raw GM speedup versus accepted47, with four regressions over5%. All four physically transformed optimization programs improved, but the complete optimization aggregate did not meet the preregistered selection rule. All observations remain; the fingerprint is ineligible for an exact retry. No holdout or formal timing ran. Exact accepted47 compiler is restored; measurement history remains48 entries and accepted scores remain9.575943659594117x optimization /27.506517683644883x holdout.
+
+[Unselected observations](training-experiments/transpose-product-views-unselected-probe.json) · [Qualification/restoration](training-experiments/transpose-product-views-unselected.json)

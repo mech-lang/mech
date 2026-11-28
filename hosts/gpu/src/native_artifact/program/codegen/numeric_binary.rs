@@ -203,78 +203,7 @@ pub(in crate::native_artifact) fn emit_entry(
     is_scalar: impl Fn(NativeMatchValue) -> bool,
     error: Block,
 ) -> Result<Block, NativeCompileError> {
-    let joined = b.create_block();
-    emit_entry_to(
-        b,
-        hooks,
-        site,
-        op,
-        operands,
-        locals,
-        is_scalar,
-        error,
-        &op.operands,
-        [false, false],
-        joined,
-    )?;
-    Ok(joined)
-}
-/// The ordinary producer remains the exact refusal path. Successful native
-/// execution jumps beyond its sole product consumer after one checked loan.
-pub(in crate::native_artifact) fn emit_view_entry(
-    b: &mut FunctionBuilder<'_>,
-    hooks: &Hooks,
-    site: usize,
-    view: &crate::native_artifact::program::prepare::numeric_transpose_products::ProductView,
-    consumer: &Operation,
-    operands: &[NativeMatchValue],
-    locals: Value,
-    is_scalar: impl Fn(NativeMatchValue) -> bool,
-    target: Block,
-    error: Block,
-) -> Result<(), NativeCompileError> {
-    if view.entry as usize != site || consumer.kind != Kind::Product {
-        return Err(backend(
-            "transpose/product entry lost its exact source consumer",
-        ));
-    }
-    let mut transposed = [false, false];
-    transposed[view.transposed_operand] = true;
-    emit_entry_to(
-        b,
-        hooks,
-        site,
-        consumer,
-        operands,
-        locals,
-        is_scalar,
-        error,
-        &view.operands,
-        transposed,
-        target,
-    )
-}
-
-fn emit_entry_to(
-    b: &mut FunctionBuilder<'_>,
-    hooks: &Hooks,
-    site: usize,
-    op: &Operation,
-    operands: &[NativeMatchValue],
-    locals: Value,
-    is_scalar: impl Fn(NativeMatchValue) -> bool,
-    error: Block,
-    expected_operands: &[u32],
-    transposed: [bool; 2],
-    joined: Block,
-) -> Result<(), NativeCompileError> {
-    if operands
-        .iter()
-        .map(|v| v.get())
-        .collect::<Vec<_>>()
-        .as_slice()
-        != expected_operands
-    {
+    if operands.iter().map(|v| v.get()).collect::<Vec<_>>() != op.operands {
         return Err(backend("matrix arithmetic source operands differ"));
     }
     hooks.library_operation(
@@ -289,6 +218,7 @@ fn emit_entry_to(
     let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let native = b.create_block();
     let ordinary = b.create_block();
+    let joined = b.create_block();
     b.ins().brif(frame, native, &[], ordinary, &[]);
     b.switch_to_block(native);
     let left = get(b, frame, offset_of!(Frame, left));
@@ -390,15 +320,7 @@ fn emit_entry_to(
         }
         Kind::Product => {
             let inner = get(b, frame, offset_of!(Frame, inner));
-            if transposed.iter().any(|&value| value) {
-                super::numeric_product::emit_with_views(
-                    b, left, right, output, count, columns, inner, transposed, complete,
-                );
-            } else {
-                super::numeric_product::emit(
-                    b, left, right, output, count, columns, inner, complete,
-                );
-            }
+            super::numeric_product::emit(b, left, right, output, count, columns, inner, complete);
         }
         Kind::Elementwise(op) => {
             let flat_entry = b.create_block();
@@ -466,5 +388,5 @@ fn emit_entry_to(
     );
     b.ins().jump(joined, &[]);
     b.switch_to_block(ordinary);
-    Ok(())
+    Ok(joined)
 }
