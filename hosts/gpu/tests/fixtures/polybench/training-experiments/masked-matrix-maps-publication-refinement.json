@@ -1,0 +1,17 @@
+{
+  "schema": "mech.polybench.masked-publication-refinement.v1",
+  "created_at": "2026-11-28T00:34:27.678761+00:00",
+  "status": "Prospective before selected-iteration emission or any candidate timing",
+  "plan": "training-experiments/masked-matrix-maps-plan.json",
+  "source_parent": "53d423809bab602f9e70efbfb4c5843b31b01f4c",
+  "source_proof_result": "attempt-02: original/decoded Gram source yields all three masks; no emission changes or performance samples yet",
+  "implementation": "Initialize complete private scratch from the old destination; evaluate selected coordinates in original order through the original checked DAG. After success, use the original full publication copy if the private destination bank differs from the old current view. When their exact pointers match, identity proof establishes every skipped cell already has the final bits, so publish only selected coordinates. Source views remain immutable throughout checked evaluation, and no fallible operation/helper follows the first publication store.",
+  "correctness": [
+    "The full scratch bank is genuinely initialized before any active evaluation. A selected check/error discards it and resumes at the exact pre-map boundary, preserving earlier completed maps.",
+    "The current target view and full private bank geometry/span/owner guarantees are checked before copying. Pointer equality selects partial publication only after the complete selected body succeeds; a fresh bank always receives the full result.",
+    "Source mask proves every skipped prefix/path is total, effect-free and yields the destination exact same cell. Selected source order and arithmetic/checked errors/FP bits remain unchanged.",
+    "Retain every original source work/comparison fee, visit and finite/physical/clone/temporary/output/node/replay envelope. No credits for skipped native evaluations/stores, no fabricated visits.",
+    "This differs from rejected direct in-place/total-map work: checked source evaluation still completes entirely in disjoint scratch before destination mutation."
+  ],
+  "performance_observations": 0
+}
