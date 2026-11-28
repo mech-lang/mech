@@ -201,7 +201,6 @@ pub(in crate::native_artifact) fn emit_entry(
     operands: &[NativeMatchValue],
     locals: Value,
     is_scalar: impl Fn(NativeMatchValue) -> bool,
-    transpose_induction: bool,
     error: Block,
 ) -> Result<Block, NativeCompileError> {
     if operands.iter().map(|v| v.get()).collect::<Vec<_>>() != op.operands {
@@ -268,14 +267,13 @@ pub(in crate::native_artifact) fn emit_entry(
                     *target = b.ins().iconst(types::I64, known as i64);
                 }
             }
-            super::numeric_transpose::emit_selected(
+            super::numeric_transpose::emit(
                 b,
                 left,
                 output,
                 count,
                 output_columns,
                 input_columns,
-                transpose_induction,
                 complete,
             );
         }

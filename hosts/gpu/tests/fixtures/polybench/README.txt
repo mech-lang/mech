@@ -2813,3 +2813,11 @@ Current accepted50 Gram-Schmidt/Durbin/MVT were sampled in owned warm checked-ca
 Generated self-time is82.92% Gram-Schmidt,50.83% Durbin,33.86% MVT. Residence includes output reset/drop and is not the exact kernel timer. The verified MVT transpose reconstructs coordinates with two integer divisions per copied cell; the next proposed general experiment replaces that reconstruction with induction, retaining traversal/admission/buffers/fees/ownership/publication. No runtime win is inferred from static operations.
 
 [CPU telemetry](round-50-cpu-telemetry.json) · [Full profile/code evidence](training-experiments/accepted50-optimization-profile.json)
+
+Native transpose induction (not selected)
+
+All743 broad/13 focused checks, both features, all30 C cases and restored images, and the untimed optimization15 C/source-fee/unchanged-visit/Object gate passed. Carried coordinates remove per-cell hardware division from the original native transpose copy loop. Every cell is still copied in the same order with the same buffers, checks and source fees. Static removal does not establish a runtime gain.
+
+The single210-observation optimization-only probe measured0.9928689728233402x raw GM speedup versus accepted50, with 1 regressions over5%. It fails the prospective selection rule. All observations remain; no exact fingerprint retry and no holdout/formal timing ran. Exact accepted50 source is restored. Accepted scores remain9.243502020687457x optimization /25.148487819220833x holdout, independently reported.
+
+[Unselected observations](training-experiments/native-transpose-induction-unselected-probe.json) · [Qualification/restoration](training-experiments/native-transpose-induction-unselected.json)

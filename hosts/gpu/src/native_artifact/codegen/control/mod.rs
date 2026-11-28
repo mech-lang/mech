@@ -1621,9 +1621,7 @@ impl<'plan> CfgDefinition<'plan> {
                             }
                             Some(crate::native_artifact::program::codegen::numeric_binary::emit_entry(
                                 b, hooks, index, proof, operands, locals,
-                                |operand| plan.kind(operand).is_some(),
-                                controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::TransposeInduction),
-                                error,
+                                |operand| plan.kind(operand).is_some(), error,
                             )?)
                         } else { None }
                     } else { None };
