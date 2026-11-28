@@ -2989,3 +2989,9 @@ Rejected rolling-cell cache profile
 The exact rejected79c3 compiler was sampled in one owned process and all5592 numeric code bytes bound to its frozen genuine Object; the caller local BL is resolved to that same process. Generated code accounts for1711/1752=97.66% of execution samples. Credit stack accesses remain prominent. Static rolling code performs three new matrix reads plus six128-bit cache reloads/spills, with cache values surviving a possible first-change/COW call and state-reset edges. The next material experiment will explicitly drop cache SSA fields at invalidation and before that call, retaining original ordered arithmetic, write/no-op/owner behavior and source fees. No official timing or history/holdout change. Exact accepted59 restored.
 
 [Same-process profile and full provenance](training-experiments/unselected-rolling-cell-profile.json)
+
+Rolling point expression prefixes: unselected probe
+
+The bounded-cache-lifetime compiler passed784 broad invocations,12 focused groups, both features, all30 source forms, and an exact17002-value optimization counter gate. Genuine Objects show nine-to-three source-read reuse, exact center-read consumer reuse, elimination of19 vector-width stack accesses, native stack384-to272bytes versus rejected79c3, and exact source-fee conservation. Physical work removal did not establish a timing win. Its single210-observation optimization-only probe returned0.9494564774319688x raw speedup, with8 regressions over5%. It was not selected. All observations and attempted sources are retained. Exact accepted59 fingerprint5f852e1540d271e5161ea6afae5da28ed4f01066bedee152436b211b51ff987f is restored; no formal history append or holdout observation. The recorded accepted scores remain7.852513248471486x /23.989161547848273x C.
+
+[Full probe and source restoration](training-experiments/bounded-cell-cache-lifetimes-probe.json) · [Selection](training-experiments/bounded-cell-cache-lifetimes-selection.json)
