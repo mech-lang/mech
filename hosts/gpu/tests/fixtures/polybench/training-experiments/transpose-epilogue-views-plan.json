@@ -1,0 +1,63 @@
+{
+  "schema": "mech.polybench.prospective-compiler-experiment.v1",
+  "created_at": "2026-11-28T12:58:23.459837+00:00",
+  "name": "transpose-epilogue-views",
+  "source_parent": "3109bd5d9531899928e7cc696e21888f1241e0ad",
+  "accepted_round": 56,
+  "accepted_scores": {
+    "optimization": 8.175763531282765,
+    "holdout": 23.016525775215847
+  },
+  "accepted_compiler_fingerprint": "09ed79f2d2b652ed5cb62487dc92872d5ac2f8cdbd0d2fa78871ea2c317a8eb1",
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-62/ordered-map-dots/ordered-map-dots-driver",
+  "accepted_driver_sha256": "88268fb43825aa4cdb24deec72d03dbbe4fbd6d9544838a7f2e5269951ecbaaa",
+  "formal_history_index": 58,
+  "versions": {
+    "ir": 427,
+    "work": 157,
+    "abi": 48
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_rows.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_product_view_tests.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_product_epilogues.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_product_views.rs",
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs"
+  ],
+  "profiling_basis": [
+    "Accepted56 same-PID Correlation/MVT profiles: allocation22.06%/19.35%, schema/planning15.99%/10.98%, generated22.92%/25.38%. MVT materialized transpose actually sampled. No holdout diagnosis.",
+    "Rejected57 preserved native tile/source/counter success but formal optimization8.42568 failed accepted8.17576. Raw gain only1.00937x; this plan removes a complete output bank, canonical result and prepare/finish boundary rather than just per-cell divisions."
+  ],
+  "transformation": "Recognize one nonescaping left transpose followed by a matrix product and optional sole-consumer pointwise epilogue. Represent the transpose as source-proved logical dimensions/strides inside the current product-epilogue recipe and existing NumericProductFrame loan. Retain the original external owner; execute the strict shared ordered dot/product-row kernel directly over transposed source strides, then the existing epilogue and only the final canonical result. No transpose traversal, intermediate payload or separate transpose execution boundary.",
+  "invariants": [
+    "All30 sources/inputs/C binaries/flags/cache/timer boundaries/limits/tolerance/split fixed. Compiler rules use source operators, closed CFG/liveness/ownership/geometry; no benchmark names or MINI extents.",
+    "The prefix is exactly one selected pure F64 transpose with immutable external root, its exact left-product use, external right operand and optional original elementwise epilogue. No escaping/reused virtual transpose, right transpose or additional product. Every original source binding/read role/shape/factory must be proved.",
+    "Maintain ordinary product epilogue/reduction recipes independently of the new prefix recipes. Declining or ablating the view executes the old transpose and retains the existing suffix fusion. No observed fingerprint retry.",
+    "Use current synchronous NumericProductPrepare/Finish and NumericProductFrame only; no helper/frame/ABI/mode/loan class/state/cache/per-operation allocation. Validate both omitted factory shapes/source demands, full logical geometry and real source spans/current owners/epoch/context before access.",
+    "For source physicalKxM and logical productMxN, the left base is row and k strideM; each lane retains +0 then original ordered separate F64 multiply/add. Shared1/2/4-row and adjacent-column output kernels remain, with exact scalar tails; no reassociation/FMA/horizontal sums. Empty output or inner axes never access null/empty spans or divide by zero.",
+    "All original source resource obligations, retained/copy/publication/retirement costs and complete original replay envelope remain. Source work/comparison never decrease; all other counters match accepted56 except independently source-proved physical visit changes. No padding counters or weak admission.",
+    "NaN/nonfinite input/intermediate or new proof/geometry/cap decline retains complete old source replay before canonical publication. Only final private completed output publishes; aliases, source first failures, atomic outputs, current loan/forge/cancellation/cleanup/retry semantics remain.",
+    "Cranelift sole Mech generator; efficient scalar/compression emission retained. No Rust edits during builds/tests/profiles/timing. IR427/work157/ABI48; normal product code should remain unchanged."
+  ],
+  "prior_related_work": "Unselected initial/hoisted transpose-product views95bb12a/742a83d2 used NumericBinaryPrepare/Finish and a special standalone transpose/product loan before current product-epilogue and shared row-core work. This new source prefix is integrated into the accepted56 epilogue loan, can also elide the product-result-plus-following-arithmetic intermediates, retains independent suffix fallback recipes and uses the current shared strided dot and row-grouping core. Rejected36 already used a scratch arena with separate operator kernels/banks and is not proposed again. Rejected57 tile code is absent.",
+  "qualification": "Direct dynamic Cranelift transposed-left kernel tests across1/2/4 grouped rows, column SIMD, odd/zero axes/null spans/ordered cancellation values and canaries, no FMA. Source graph admission/escape/reuse/wrong-operand/extra-control proof tests. Original/decoded/restored runtime differential versus view ablation, existing product fusion and ordinary calls; exact IEEE bits, all broadcast modes, partial nonfinite cancellation, shape/error ordering, finite caps/physical refusal, forged loan fields/context, source aliases/atomic outputs and cleanup/retry. Existing full broad numeric/matrix/scalar/compression/type/source/image/protocol/all30 C and both features. Every attempted source/build/test failure retained.",
+  "untimed_gate": "Optimization15 finite17002 C values, source work/comparison not lower, all other counters unchanged except exact independently proved source-step visit delta. Genuine Objects identify new combined prefix recipes and absent transpose owner/buffer/callback path; show code/instruction/stack deltas and ordinary-product code equality. Runtime observation confirms elided canonical values absent.",
+  "training_probe": {
+    "actors": [
+      "accepted56",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "selection": "One prospective fresh-process optimization probe after complete qualification. Select iff equal-weight raw GM accepted56/candidate medians>1 and resource/counter gate passes; all210 samples/regressions retained, no retries/exclusions."
+  },
+  "formal_acceptance": "If selected, commit/push clean exact source and driver then freeze for one900-observation formal run,29482 finite C outputs, immutable history58. Promote solely optimization15 Mech/C<8.175763531282765. Holdout independently reported, never diagnosis/tuning/selection/veto/rollback/retry. Report raw Mech and C/original-reference drift separately.",
+  "performance_observations": 0
+}
