@@ -1,0 +1,179 @@
+{
+  "schema": "mech.polybench.masked-matrix-maps-focused.v1",
+  "status": "Untimed candidate; accepted performance remains round45",
+  "compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+  "source_parent": "71b48ec19b214e8810ff5aa8e2c97a2368b8d297",
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/codegen/options.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs"
+  ],
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f4007038c261259c8d59aa27a0d8ab593345ee22eab7d2af8c895c27cee2a8fc",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/mod.rs": "0cbc3823634db009cc8bfc74909d4e1e081b0ab5e0c1647d5ffb606eb2a57045",
+    "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/masks.rs": "e76afb0609a38f9b1cc182bc9746c4247620b991ee81db9e0fc822ec11294f27",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "cfac5aa7e46f7c8f17ce7657d187c307a456dde5dff089a03437239f9e62fb27",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_selection.rs": "a2839221b7154924e56dd1060f7ba8b4ba92e06196b061480cfe5e34ac61ccd0",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "b3f0330854d3a0ba52e0aaba5a40f40e41d00d3449a3c683a10c2bce54ab6e6c",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "7e38cb6b3a36976bf0d780909550aef4b265f5663be2b99acf149612362d4abe",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9277248fc7f7c0554dfe2f4b070a05917713a11d6645b8d23c5f73b374cc4de9",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "c293ea9bfa7b8f66faac3bf562ccfe9460be24a6b5f94858b183d5bb685ec0ab",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_masked_maps.rs": "f9df4990f3381e6ed44d6d9878550969bb9f3b370883d4cb53c474fb79c2313f",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "f87ce2044ec3772051b71a596723709002b040daf5a69549dcb18c751b0cfd1b"
+  },
+  "focused": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "numeric_masked_maps",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 100.67213487485424,
+    "compiler_fingerprint": "9706c3591434cca37c9830878c2974d799a47d0f95afea318f459864c52d9e4b",
+    "source_unchanged": true,
+    "passed_tests": [
+      8
+    ],
+    "scope": "Source proof plus selected iteration/publication differential checks; no performance measurements.",
+    "complete": true,
+    "raw_receipt": "attempt-09/result.json",
+    "raw_receipt_sha256": "12442725d78744d0e79a3c557bbb2e702c4bf5165511e3e26d4c376b221d980e",
+    "log_sha256": "a29b7977b9edd1ef89d6b29623bef8cd846f90048e9a47426e2156215bce9917",
+    "tests": 8,
+    "performance_observations": 0
+  },
+  "development_attempts": 9,
+  "failed_attempts_preserved": true,
+  "archives": [
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-01/proof-check.log.gz",
+      "source_sha256": "5aa14e5cf69aaca3abb50726a240e0251ba64981df488f3858bc2fcbdbfaab7a",
+      "archive_sha256": "0c52d5f94efe4a54fba2b2dbcc0ba42bbd3bb7e38386499527c60f8e271509dc"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-01/result.json.gz",
+      "source_sha256": "88a68703c40ef3cf755d419d50857b7d7be94daf3023277b7dcd903a6a37ab47",
+      "archive_sha256": "2585b63c22a3ba0dc4cecc76943dc1fee9f88d23cbd28d056d4e45dd666d09c4"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-02/proof-check.log.gz",
+      "source_sha256": "f4e6a7fc9d23044c36c8cf8783a4e887e805a5c427002868a8a9e38f598755df",
+      "archive_sha256": "e996de8130e6c9fadcdee0caa46921ef22c91e0a7217d27faf87d96ae4afd429"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-02/result.json.gz",
+      "source_sha256": "10f1f27871e74dfd0051135726ea645547416a7c540ec58da855537f1d35d0c0",
+      "archive_sha256": "fa6fd07fa310d038d9bc0a33a9945fc360268053bb294ad13c98d242999a5e41"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-03/proof-check.log.gz",
+      "source_sha256": "af1a79eb4833766a19fcad92f8e3bb159fc718834da8a00665f367f358aa61dd",
+      "archive_sha256": "6af21af7cb0bfe110d7d811f4372d9cd1a5b5026ac174c878eed0d3c738534c9"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-03/result.json.gz",
+      "source_sha256": "5b7c34759b44b0209e52a45bcf234f8ecde80d35bb9487cbd37828de2c391deb",
+      "archive_sha256": "1bf39ed35c181151a6d0e03f4900560e658c878212433fc5a9152af93e6f23a3"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-04/proof-check.log.gz",
+      "source_sha256": "d6ad6dbc30bc95697f925e5d92c031443eb0a1b237c6a7490eab2dd57a6d97b4",
+      "archive_sha256": "1f1b574b48fda9b2adad9fb923432a812bd1cd238530dede0268ef025d0cc957"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-04/result.json.gz",
+      "source_sha256": "52bd48c9b970f4a7029d28aedd508a22b2a6d2cfd12c35457cd0652c4bebd0f2",
+      "archive_sha256": "5dda7dd3359daebfb317c3b4f3c0df892291b3f56a6abf2676e5e69c35b42b20"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-05/proof-check.log.gz",
+      "source_sha256": "d19d7110650ed80816efc69c68f3eb1175ccb3fb79a503a16522fa4350af567b",
+      "archive_sha256": "1442ad19814031646dd2d6de8d8a1095e31fe6f792c9e4c5f1a4dcf601fa3190"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-05/result.json.gz",
+      "source_sha256": "2a58623c6d26bbcbb5534692f8d62663ed9a1f80cf7a2a9c5b392714ef9c4dc6",
+      "archive_sha256": "c8c09e4a3abbfab50dc164abb8414d767bbc6b20ca669b8fe5b926f4c165d3f7"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-06/proof-check.log.gz",
+      "source_sha256": "f090a88505ab899ed69b15f9f69111a2fbf44c5e9cbd8135889ac9ca1eeccde1",
+      "archive_sha256": "7e99e49b331109a38f8282cf7c8b7ea1ffe0a2b2d8ec8af9a39f42506113e5f6"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-06/result.json.gz",
+      "source_sha256": "5dd97267a053b2eb2905556411a142fd9acec824ed930d688fbfbf8c99ee47b0",
+      "archive_sha256": "7193ec7734807d35bc4f089c2ed868308d8fa5fba2d372565bf7bcf579a5b29a"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-07/proof-check.log.gz",
+      "source_sha256": "d826e213ee9946b40d1041752bdf604fa7e1cd0b18d8ed6ae9e343b1f91187cb",
+      "archive_sha256": "bfd67999532e53c06fbb2feb4f8df95ecb6195ed9926428f6a19b9b670b08078"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-07/result.json.gz",
+      "source_sha256": "04325db861fc2bad7a0d97411d2d628f673cc8ddf2c949d16c1285c7c9493ce0",
+      "archive_sha256": "c3271125e58496514a2343e5c6b8d5eb4c2cad3da00217813175a63d591561b0"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-08/proof-check.log.gz",
+      "source_sha256": "7e15ca91a95c257a072a034244b773be5a5aadaf2e138b796af8318b9ba5b2ba",
+      "archive_sha256": "9a82e0fb5f12c5956b870c21dac23de9e06a516641d26caac927d206fa42ea90"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-08/result.json.gz",
+      "source_sha256": "f599f68022458730b7a06155095ccac5d9c6645c493ce0e29c1d407bbc6438c0",
+      "archive_sha256": "10980f0edaec8b56f144c636cb801df60b9bb0740da20975ff3d8134eea703c7"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-09/proof-check.log.gz",
+      "source_sha256": "a29b7977b9edd1ef89d6b29623bef8cd846f90048e9a47426e2156215bce9917",
+      "archive_sha256": "23ef93a3586ff1e62c77bde2d7e44420b70438b368bc10ef71def81d71a3688e"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/attempt-09/result.json.gz",
+      "source_sha256": "12442725d78744d0e79a3c557bbb2e702c4bf5165511e3e26d4c376b221d980e",
+      "archive_sha256": "e28e55f378a486d2dca8079c264724d41d97f3c9bae66c6b80c25de12ea32ebb"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/focused-result.json.gz",
+      "source_sha256": "c003ab18fcc1ad2f3d77bfeeaa28c4798b5247fbbee16a804d44317c8222e014",
+      "archive_sha256": "72940547f7ed1574779da592cd53ffb186cddf4b227d4d59d6b0753037813004"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/run-qualification.py.gz",
+      "source_sha256": "cfe0ce135812a801308ce76fd1b43975ec88c8a0a45e1637c2384d38c6bfd6d9",
+      "archive_sha256": "efb95bf9ee1c2312c829191507393e589105c93fb63d4af55556e84e28e2d843"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/prepare-qualification-manifest.py.gz",
+      "source_sha256": "f691cbb1bd48d942170b421f903a5d8c063beb1a500e5d0245c3c09ff8a9d626",
+      "archive_sha256": "305e3c435d951f38185041e07f84b79d1c75f708e556ac67f711924dcdedc13d"
+    },
+    {
+      "path": "hosts/gpu/tests/fixtures/polybench/qualification/experiments/masked-matrix-maps-focused/current-work.json.gz",
+      "source_sha256": "7cf2414904c6c90a9db620599247a06b17c97518068e881518b0cb45268f6679",
+      "archive_sha256": "9405903f3d93389966c927fb8ca127bda55a0c4a319e932b065a90bfafcccc21"
+    }
+  ],
+  "performance_observations": 0,
+  "next": "Broad feature/corpus correctness, untimed optimization-only census/Object verification, then one prospective training probe; formal acceptance requires both aggregate scores to improve accepted45."
+}

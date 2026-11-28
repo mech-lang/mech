@@ -60,6 +60,8 @@ pub(in crate::native_artifact) struct Report {
     pub length_sites: Vec<usize>,
     pub fused_reductions: Vec<(usize, u32, u64)>,
     pub fused_matrix_maps: Vec<(usize, u32, u64)>,
+    /// Emitted source mask selectors and axes; diagnostic metadata only.
+    pub masked_matrix_maps: Vec<(usize, u32, u8)>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
@@ -638,6 +640,7 @@ pub(in crate::native_artifact) fn emit_entry(
         length_sites: Vec::new(),
         fused_reductions: Vec::new(),
         fused_matrix_maps: Vec::new(),
+        masked_matrix_maps: Vec::new(),
         static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
@@ -1094,16 +1097,20 @@ pub(in crate::native_artifact) fn emit_entry(
                 ));
             }
             Some(Operation::Map { replacement }) => {
-                super::numeric_phase_maps::emit(
+                let mask = super::numeric_phase_maps::emit(
                     b,
                     &words,
                     shadow,
                     proof,
                     replacement,
                     &program.metadata().plan,
+                    controls.enabled(OptimizationPass::MaskedMatrixMaps),
                     reduction_miss
                         .ok_or_else(|| backend("phase map lost its original cold edge"))?,
                 )?;
+                if let Some((selector, axis)) = mask {
+                    report.masked_matrix_maps.push((site, selector, axis));
+                }
                 report.fused_matrix_maps.push((
                     site,
                     replacement.source.region.header,

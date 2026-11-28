@@ -1,0 +1,10 @@
+{
+  "schema": "mech.polybench.masked-base-view-refinement.v1",
+  "created_at": "2026-11-28T01:05:36.429606+00:00",
+  "status": "Refined during untimed implementation; no candidate performance observations",
+  "plan": "training-experiments/masked-matrix-maps-plan.json",
+  "refinement": "The identity branch may refer to one exact source array that differs from the destination, including an earlier completed phase-local map. Derive that base array from the actual read sites and checked enclosing phase binding. Validate its complete current dimensions/span against the output before initializing scratch. The enclosing phase retains all destination ownership authority. Partial publication requires exact destination-bank/base-view pointer equality after successful checked evaluation; otherwise copy the full result.",
+  "source_lowering": "Selected source axes remain in native SSA. The proven selector takes its certified active CFG edge, while all active checked operations keep their original order. The complete original source body/fees remain in the descriptor; no wire mask or extra runtime authority is accepted.",
+  "evidence": "Attempt04: 48 original/decoded comparison forms passed dense ablation and exact counters. Attempt05 caught a missing selected inner-row definition through counter inequality despite equal outputs. Attempt06 fixes that definition and passes both predicate checks and all scalar kinds/packed tails, exact FP bits, aliases and restored descriptors. All failures remain.",
+  "performance_observations": 0
+}

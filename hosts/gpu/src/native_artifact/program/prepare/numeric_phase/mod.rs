@@ -22,6 +22,8 @@ pub(in crate::native_artifact) use fixed_state::{StateTrips, fixed_state_trips};
 mod homes;
 mod intervals;
 pub(in crate::native_artifact) mod map_banks;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod masks;
 pub(in crate::native_artifact) mod matrix_maps;
 mod reductions;
 mod schedule;
